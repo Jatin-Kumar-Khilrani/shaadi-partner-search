@@ -1,0 +1,157 @@
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { MagnifyingGlass, Heart, Users, ShieldCheck, BookOpen, HandHeart } from '@phosphor-icons/react'
+import { useState } from 'react'
+import type { SearchFilters } from '@/types/profile'
+
+interface HeroSearchProps {
+  onSearch: (filters: SearchFilters) => void
+}
+
+export function HeroSearch({ onSearch }: HeroSearchProps) {
+  const [filters, setFilters] = useState<SearchFilters>({})
+
+  const handleSearch = () => {
+    onSearch(filters)
+  }
+
+  return (
+    <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-primary/80">
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255,255,255,.1) 35px, rgba(255,255,255,.1) 70px)`
+        }} />
+      </div>
+      
+      <div className="relative container mx-auto px-4 md:px-8 py-16 md:py-24">
+        <div className="max-w-4xl mx-auto text-center mb-12">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6 leading-tight">
+            सिंधी समाज के लिए, सिंधी समाज द्वारा
+          </h1>
+          <p className="text-xl md:text-2xl text-primary-foreground/90 mb-4">
+            विवाह एक पवित्र बंधन है, व्यापार नहीं।
+          </p>
+          <p className="text-lg text-primary-foreground/80">
+            ShaadiPartnerSearch — एक निःस्वार्थ समुदाय सेवा
+          </p>
+        </div>
+
+        <Card className="max-w-3xl mx-auto shadow-2xl border-2">
+          <CardHeader>
+            <CardTitle className="text-2xl flex items-center gap-2">
+              <MagnifyingGlass size={28} weight="bold" />
+              जीवनसाथी खोजें
+            </CardTitle>
+            <CardDescription className="text-base">
+              सरल और सटीक खोज — अपने मानदंड भरें
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="gender">लिंग / Gender</Label>
+                  <Select onValueChange={(value: 'male' | 'female') => setFilters({ ...filters, gender: value })}>
+                    <SelectTrigger id="gender">
+                      <SelectValue placeholder="चुनें / Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">पुरुष / Male</SelectItem>
+                      <SelectItem value="female">महिला / Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="location">स्थान / Location</Label>
+                  <Input
+                    id="location"
+                    placeholder="शहर या देश / City or Country"
+                    value={filters.location || ''}
+                    onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="age-min">न्यूनतम आयु / Min Age</Label>
+                  <Input
+                    id="age-min"
+                    type="number"
+                    placeholder="21"
+                    min="18"
+                    max="80"
+                    value={filters.ageMin || ''}
+                    onChange={(e) => setFilters({ ...filters, ageMin: parseInt(e.target.value) || undefined })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="age-max">अधिकतम आयु / Max Age</Label>
+                  <Input
+                    id="age-max"
+                    type="number"
+                    placeholder="35"
+                    min="18"
+                    max="80"
+                    value={filters.ageMax || ''}
+                    onChange={(e) => setFilters({ ...filters, ageMax: parseInt(e.target.value) || undefined })}
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="gotra">गोत्र / Gotra (यदि ज्ञात हो)</Label>
+                  <Input
+                    id="gotra"
+                    placeholder="उदाहरण: आहूजा, चुघ, भाटिया"
+                    value={filters.gotra || ''}
+                    onChange={(e) => setFilters({ ...filters, gotra: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                <MagnifyingGlass size={20} weight="bold" className="mr-2" />
+                खोजें / Search
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <div className="max-w-5xl mx-auto mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <FeatureCard
+            icon={<Heart size={32} weight="fill" />}
+            title="100% निःशुल्क"
+            description="कोई सदस्यता शुल्क नहीं, कोई छुपी हुई लागत नहीं"
+          />
+          <FeatureCard
+            icon={<ShieldCheck size={32} weight="fill" />}
+            title="सुरक्षित और सत्यापित"
+            description="हर प्रोफ़ाइल की मैन्युअल जांच स्वयंसेवकों द्वारा"
+          />
+          <FeatureCard
+            icon={<Users size={32} weight="fill" />}
+            title="समुदाय संचालित"
+            description="सिंधी समाज के लिए, सिंधी समाज द्वारा बनाया गया"
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+  return (
+    <Card className="bg-white/95 backdrop-blur border-white/50 hover:shadow-lg transition-shadow duration-300">
+      <CardContent className="pt-6 text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/20 text-accent mb-4">
+          {icon}
+        </div>
+        <h3 className="font-bold text-lg mb-2">{title}</h3>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </CardContent>
+    </Card>
+  )
+}
