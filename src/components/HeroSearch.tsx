@@ -3,19 +3,48 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { MagnifyingGlass, Heart, Users, ShieldCheck, BookOpen, HandHeart } from '@phosphor-icons/react'
+import { MagnifyingGlass, Heart, Users, ShieldCheck } from '@phosphor-icons/react'
 import { useState } from 'react'
 import type { SearchFilters } from '@/types/profile'
 
 interface HeroSearchProps {
   onSearch: (filters: SearchFilters) => void
+  language?: 'hi' | 'en'
 }
 
-export function HeroSearch({ onSearch }: HeroSearchProps) {
+export function HeroSearch({ onSearch, language = 'hi' }: HeroSearchProps) {
   const [filters, setFilters] = useState<SearchFilters>({})
 
   const handleSearch = () => {
     onSearch(filters)
+  }
+
+  const t = {
+    title: language === 'hi' ? 'अपना जीवनसाथी खोजें' : 'Find Your Life Partner',
+    subtitle1: language === 'hi' ? 'विवाह एक पवित्र बंधन है, व्यापार नहीं।' : 'Marriage is a sacred bond, not a business.',
+    subtitle2: language === 'hi' ? 'ShaadiPartnerSearch — मॅट्रिमोनी प्लेटफॉर्म' : 'ShaadiPartnerSearch — Matrimony Platform',
+    searchTitle: language === 'hi' ? 'जीवनसाथी खोजें' : 'Find Life Partner',
+    searchDesc: language === 'hi' ? 'सरल और सटीक खोज — अपने मानदंड भरें' : 'Simple and accurate search — fill your criteria',
+    gender: language === 'hi' ? 'लिंग' : 'Gender',
+    location: language === 'hi' ? 'स्थान' : 'Location',
+    minAge: language === 'hi' ? 'न्यूनतम आयु' : 'Min Age',
+    maxAge: language === 'hi' ? 'अधिकतम आयु' : 'Max Age',
+    religion: language === 'hi' ? 'धर्म' : 'Religion',
+    caste: language === 'hi' ? 'जाति' : 'Caste',
+    optional: language === 'hi' ? 'वैकल्पिक' : 'Optional',
+    select: language === 'hi' ? 'चुनें' : 'Select',
+    male: language === 'hi' ? 'पुरुष' : 'Male',
+    female: language === 'hi' ? 'महिला' : 'Female',
+    searchButton: language === 'hi' ? 'खोजें' : 'Search',
+    feature1: language === 'hi' ? 'किफायती सदस्यता' : 'Affordable Membership',
+    feature1Desc: language === 'hi' ? '6 महीने ₹500 या 1 साल ₹900 — कोई छुपी लागत नहीं' : '6 months ₹500 or 1 year ₹900 — no hidden costs',
+    feature2: language === 'hi' ? 'सुरक्षित और सत्यापित' : 'Secure and Verified',
+    feature2Desc: language === 'hi' ? 'हर प्रोफ़ाइल की मैन्युअल जांच स्वयंसेवकों द्वारा' : 'Every profile manually checked by volunteers',
+    feature3: language === 'hi' ? 'सभी समुदायों के लिए' : 'For All Communities',
+    feature3Desc: language === 'hi' ? 'सभी धर्मों और समुदायों का स्वागत' : 'All religions and communities welcome',
+    locationPlaceholder: language === 'hi' ? 'शहर या देश' : 'City or Country',
+    religionPlaceholder: language === 'hi' ? 'उदाहरण: हिंदू, मुस्लिम, सिख, ईसाई' : 'Example: Hindu, Muslim, Sikh, Christian',
+    castePlaceholder: language === 'hi' ? 'यदि ज्ञात हो' : 'If known',
   }
 
   return (
@@ -29,13 +58,13 @@ export function HeroSearch({ onSearch }: HeroSearchProps) {
       <div className="relative container mx-auto px-4 md:px-8 py-16 md:py-24">
         <div className="max-w-4xl mx-auto text-center mb-12">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6 leading-tight">
-            अपना जीवनसाथी खोजें
+            {t.title}
           </h1>
           <p className="text-xl md:text-2xl text-primary-foreground/90 mb-4">
-            विवाह एक पवित्र बंधन है, व्यापार नहीं।
+            {t.subtitle1}
           </p>
           <p className="text-lg text-primary-foreground/80">
-            ShaadiPartnerSearch — भारतीय मॅट्रिमोनी प्लेटफॉर्म
+            {t.subtitle2}
           </p>
         </div>
 
@@ -43,40 +72,40 @@ export function HeroSearch({ onSearch }: HeroSearchProps) {
           <CardHeader>
             <CardTitle className="text-2xl flex items-center gap-2">
               <MagnifyingGlass size={28} weight="bold" />
-              जीवनसाथी खोजें
+              {t.searchTitle}
             </CardTitle>
             <CardDescription className="text-base">
-              सरल और सटीक खोज — अपने मानदंड भरें
+              {t.searchDesc}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="gender">लिंग / Gender</Label>
+                  <Label htmlFor="gender">{t.gender}</Label>
                   <Select onValueChange={(value: 'male' | 'female') => setFilters({ ...filters, gender: value })}>
                     <SelectTrigger id="gender">
-                      <SelectValue placeholder="चुनें / Select" />
+                      <SelectValue placeholder={t.select} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="male">पुरुष / Male</SelectItem>
-                      <SelectItem value="female">महिला / Female</SelectItem>
+                      <SelectItem value="male">{t.male}</SelectItem>
+                      <SelectItem value="female">{t.female}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="location">स्थान / Location</Label>
+                  <Label htmlFor="location">{t.location}</Label>
                   <Input
                     id="location"
-                    placeholder="शहर या देश / City or Country"
+                    placeholder={t.locationPlaceholder}
                     value={filters.location || ''}
                     onChange={(e) => setFilters({ ...filters, location: e.target.value })}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="age-min">न्यूनतम आयु / Min Age</Label>
+                  <Label htmlFor="age-min">{t.minAge}</Label>
                   <Input
                     id="age-min"
                     type="number"
@@ -89,7 +118,7 @@ export function HeroSearch({ onSearch }: HeroSearchProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="age-max">अधिकतम आयु / Max Age</Label>
+                  <Label htmlFor="age-max">{t.maxAge}</Label>
                   <Input
                     id="age-max"
                     type="number"
@@ -102,20 +131,20 @@ export function HeroSearch({ onSearch }: HeroSearchProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="religion">धर्म / Religion</Label>
+                  <Label htmlFor="religion">{t.religion}</Label>
                   <Input
                     id="religion"
-                    placeholder="उदाहरण: हिंदू, मुस्लिम, सिख, ईसाई"
+                    placeholder={t.religionPlaceholder}
                     value={filters.religion || ''}
                     onChange={(e) => setFilters({ ...filters, religion: e.target.value })}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="caste">जाति / Caste (वैकल्पिक)</Label>
+                  <Label htmlFor="caste">{t.caste} ({t.optional})</Label>
                   <Input
                     id="caste"
-                    placeholder="यदि ज्ञात हो"
+                    placeholder={t.castePlaceholder}
                     value={filters.caste || ''}
                     onChange={(e) => setFilters({ ...filters, caste: e.target.value })}
                   />
@@ -124,7 +153,7 @@ export function HeroSearch({ onSearch }: HeroSearchProps) {
 
               <Button type="submit" size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
                 <MagnifyingGlass size={20} weight="bold" className="mr-2" />
-                खोजें / Search
+                {t.searchButton}
               </Button>
             </form>
           </CardContent>
@@ -133,18 +162,18 @@ export function HeroSearch({ onSearch }: HeroSearchProps) {
         <div className="max-w-5xl mx-auto mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
           <FeatureCard
             icon={<Heart size={32} weight="fill" />}
-            title="किफायती सदस्यता"
-            description="6 महीने ₹500 या 1 साल ₹900 — कोई छुपी लागत नहीं"
+            title={t.feature1}
+            description={t.feature1Desc}
           />
           <FeatureCard
             icon={<ShieldCheck size={32} weight="fill" />}
-            title="सुरक्षित और सत्यापित"
-            description="हर प्रोफ़ाइल की मैन्युअल जांच स्वयंसेवकों द्वारा"
+            title={t.feature2}
+            description={t.feature2Desc}
           />
           <FeatureCard
             icon={<Users size={32} weight="fill" />}
-            title="सभी समुदायों के लिए"
-            description="सभी धर्मों और समुदायों का स्वागत"
+            title={t.feature3}
+            description={t.feature3Desc}
           />
         </div>
       </div>

@@ -9,23 +9,45 @@ import { motion } from 'framer-motion'
 interface ProfileCardProps {
   profile: Profile
   onViewProfile: (profile: Profile) => void
+  language?: 'hi' | 'en'
 }
 
-export function ProfileCard({ profile, onViewProfile }: ProfileCardProps) {
+export function ProfileCard({ profile, onViewProfile, language = 'hi' }: ProfileCardProps) {
   const initials = profile.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   
   const getTrustBadge = () => {
     if (profile.trustLevel >= 5) {
-      return { text: 'स्तर 5 - वीडियो सत्यापित', color: 'bg-accent text-accent-foreground', icon: <Seal weight="fill" /> }
+      return { 
+        text: language === 'hi' ? 'स्तर 5 - वीडियो सत्यापित' : 'Level 5 - Video Verified', 
+        color: 'bg-accent text-accent-foreground', 
+        icon: <Seal weight="fill" /> 
+      }
     } else if (profile.trustLevel >= 3) {
-      return { text: 'स्तर 3 - ID सत्यापित', color: 'bg-teal text-teal-foreground', icon: <ShieldCheck weight="fill" /> }
+      return { 
+        text: language === 'hi' ? 'स्तर 3 - ID सत्यापित' : 'Level 3 - ID Verified', 
+        color: 'bg-teal text-teal-foreground', 
+        icon: <ShieldCheck weight="fill" /> 
+      }
     } else if (profile.trustLevel >= 1) {
-      return { text: 'स्तर 1 - मोबाइल सत्यापित', color: 'bg-muted text-muted-foreground', icon: <ShieldCheck weight="regular" /> }
+      return { 
+        text: language === 'hi' ? 'स्तर 1 - मोबाइल सत्यापित' : 'Level 1 - Mobile Verified', 
+        color: 'bg-muted text-muted-foreground', 
+        icon: <ShieldCheck weight="regular" /> 
+      }
     }
     return null
   }
 
   const badge = getTrustBadge()
+  
+  const t = {
+    years: language === 'hi' ? 'वर्ष' : 'years',
+    male: language === 'hi' ? 'पुरुष' : 'Male',
+    female: language === 'hi' ? 'महिला' : 'Female',
+    religion: language === 'hi' ? 'धर्म' : 'Religion',
+    caste: language === 'hi' ? 'जाति' : 'Caste',
+    viewProfile: language === 'hi' ? 'प्रोफाइल देखें' : 'View Profile',
+  }
 
   return (
     <motion.div
@@ -52,7 +74,7 @@ export function ProfileCard({ profile, onViewProfile }: ProfileCardProps) {
                 )}
               </div>
               <p className="text-muted-foreground text-sm mt-1">
-                {profile.age} वर्ष | {profile.gender === 'male' ? 'पुरुष' : 'महिला'}
+                {profile.age} {t.years} | {profile.gender === 'male' ? t.male : t.female}
               </p>
             </div>
           </div>
@@ -77,14 +99,14 @@ export function ProfileCard({ profile, onViewProfile }: ProfileCardProps) {
           {profile.religion && (
             <div className="flex items-center gap-2 text-sm">
               <UserCircle size={16} className="text-muted-foreground shrink-0" />
-              <span className="truncate">धर्म: {profile.religion}</span>
+              <span className="truncate">{t.religion}: {profile.religion}</span>
             </div>
           )}
 
           {profile.caste && (
             <div className="flex items-center gap-2 text-sm">
               <UserCircle size={16} className="text-muted-foreground shrink-0" />
-              <span className="truncate">जाति: {profile.caste}</span>
+              <span className="truncate">{t.caste}: {profile.caste}</span>
             </div>
           )}
 
@@ -101,7 +123,7 @@ export function ProfileCard({ profile, onViewProfile }: ProfileCardProps) {
             className="w-full"
             variant="default"
           >
-            प्रोफाइल देखें / View Profile
+            {t.viewProfile}
           </Button>
         </CardFooter>
       </Card>

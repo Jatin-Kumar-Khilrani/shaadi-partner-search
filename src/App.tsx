@@ -3,26 +3,32 @@ import { useKV } from '@github/spark/hooks'
 import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, Translate } from '@phosphor-icons/react'
+import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, Translate, SignIn, SignOut } from '@phosphor-icons/react'
 import { HeroSearch } from '@/components/HeroSearch'
 import { ProfileCard } from '@/components/ProfileCard'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
 import { RegistrationDialog } from '@/components/RegistrationDialog'
+import { LoginDialog } from '@/components/LoginDialog'
 import type { Profile, SearchFilters } from '@/types/profile'
+import type { User } from '@/types/user'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
 import { AdminPanel } from '@/components/AdminPanel'
+import { useTranslation, type Language } from '@/lib/translations'
+import { toast } from 'sonner'
 
 type View = 'home' | 'search-results' | 'admin'
-type Language = 'hi' | 'en'
 
 function App() {
   const [profiles, setProfiles] = useKV<Profile[]>('profiles', [])
+  const [users, setUsers] = useKV<User[]>('users', [])
+  const [loggedInUser, setLoggedInUser] = useState<string | null>(null)
   
   const [currentView, setCurrentView] = useState<View>('home')
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({})
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [showRegistration, setShowRegistration] = useState(false)
+  const [showLogin, setShowLogin] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [language, setLanguage] = useState<Language>('hi')
 
@@ -51,20 +57,54 @@ function App() {
   }, [profiles, searchFilters])
 
   const handleRegisterProfile = (profileData: Omit<Profile, 'id' | 'status' | 'trustLevel' | 'createdAt'>) => {
+    const profileId = `profile-${Date.now()}`
+    const userId = `USER${Math.random().toString(36).substr(2, 6).toUpperCase()}`
+    const password = Math.random().toString(36).substr(2, 8)
+    
     const newProfile: Profile = {
       ...profileData,
-      id: `profile-${Date.now()}`,
+      id: profileId,
       status: 'pending',
       trustLevel: 1,
       createdAt: new Date().toISOString()
     }
+    
+    const newUser: User = {
+      userId,
+      password,
+      profileId,
+      createdAt: new Date().toISOString()
+    }
+    
     setProfiles(current => [...(current || []), newProfile])
+    setUsers(current => [...(current || []), newUser])
+    
+    setTimeout(() => {
+      toast.info(
+        language === 'hi' ? 'लॉगिन क्रेडेंशियल्स' : 'Login Credentials',
+        {
+          description: `User ID: ${userId} | Password: ${password}`,
+          duration: 10000
+        }
+      )
+    }, 2500)
+  }
+
+  const handleLogin = (userId: string, profileId: string) => {
+    setLoggedInUser(userId)
+  }
+
+  const handleLogout = () => {
+    setLoggedInUser(null)
+    toast.success(language === 'hi' ? 'लॉगआउट सफल' : 'Logged out successfully')
   }
 
   const t = {
-    home: language === 'hi' ? 'मुखपृष्ठ' : 'Home',
+    homeButton: language === 'hi' ? 'मुखपृष्ठ' : 'Home',
     register: language === 'hi' ? 'पंजीकरण करें' : 'Register',
-    admin: language === 'hi' ? 'एडमिन' : 'Admin',
+    login: language === 'hi' ? 'लॉगिन करें' : 'Login',
+    logout: language === 'hi' ? 'लॉगआउट' : 'Logout',
+    adminButton: language === 'hi' ? 'एडमिन' : 'Admin',
     searchResults: language === 'hi' ? 'खोज परिणाम' : 'Search Results',
     profilesFound: language === 'hi' ? 'प्रोफाइल मिली' : 'profiles found',
     newSearch: language === 'hi' ? 'नई खोज' : 'New Search',
@@ -95,7 +135,7 @@ function App() {
               className="gap-2"
             >
               <Heart size={20} weight="fill" />
-              {t.home}
+              {t.homeButton}
             </Button>
             <Button
               variant={currentView === 'admin' ? 'default' : 'ghost'}
@@ -103,7 +143,7 @@ function App() {
               className="gap-2"
             >
               <ShieldCheck size={20} weight="fill" />
-              {t.admin}
+              {t.adminButton}
             </Button>
             <Button 
               variant="ghost" 
@@ -113,10 +153,23 @@ function App() {
             >
               <Translate size={20} weight="bold" />
             </Button>
-            <Button onClick={() => setShowRegistration(true)} className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground">
-              <UserPlus size={20} weight="bold" />
-              {t.register}
-            </Button>
+            {!loggedInUser ? (
+              <>
+                <Button onClick={() => setShowLogin(true)} variant="ghost" className="gap-2">
+                  <SignIn size={20} weight="bold" />
+                  {t.login}
+                </Button>
+                <Button onClick={() => setShowRegistration(true)} className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <UserPlus size={20} weight="bold" />
+                  {t.register}
+                </Button>
+              </>
+            ) : (
+              <Button onClick={handleLogout} variant="ghost" className="gap-2">
+                <SignOut size={20} weight="bold" />
+                {t.logout}
+              </Button>
+            )}
           </nav>
 
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -136,7 +189,7 @@ function App() {
                   className="justify-start gap-2"
                 >
                   <Heart size={20} weight="fill" />
-                  {t.home}
+                  {t.homeButton}
                 </Button>
                 <Button
                   variant={currentView === 'admin' ? 'default' : 'ghost'}
@@ -147,7 +200,7 @@ function App() {
                   className="justify-start gap-2"
                 >
                   <ShieldCheck size={20} weight="fill" />
-                  {t.admin}
+                  {t.adminButton}
                 </Button>
                 <Button 
                   variant="ghost"
@@ -157,16 +210,43 @@ function App() {
                   <Translate size={20} weight="bold" />
                   {language === 'hi' ? 'English' : 'हिंदी'}
                 </Button>
-                <Button 
-                  onClick={() => {
-                    setShowRegistration(true)
-                    setMobileMenuOpen(false)
-                  }} 
-                  className="justify-start gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
-                >
-                  <UserPlus size={20} weight="bold" />
-                  {t.register}
-                </Button>
+                {!loggedInUser ? (
+                  <>
+                    <Button 
+                      onClick={() => {
+                        setShowLogin(true)
+                        setMobileMenuOpen(false)
+                      }}
+                      variant="ghost"
+                      className="justify-start gap-2"
+                    >
+                      <SignIn size={20} weight="bold" />
+                      {t.login}
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        setShowRegistration(true)
+                        setMobileMenuOpen(false)
+                      }} 
+                      className="justify-start gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
+                    >
+                      <UserPlus size={20} weight="bold" />
+                      {t.register}
+                    </Button>
+                  </>
+                ) : (
+                  <Button 
+                    onClick={() => {
+                      handleLogout()
+                      setMobileMenuOpen(false)
+                    }}
+                    variant="ghost"
+                    className="justify-start gap-2"
+                  >
+                    <SignOut size={20} weight="bold" />
+                    {t.logout}
+                  </Button>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
@@ -176,12 +256,12 @@ function App() {
       <main className="flex-1">
         {currentView === 'home' && (
           <>
-            <HeroSearch onSearch={handleSearch} />
+            <HeroSearch onSearch={handleSearch} language={language} />
             
             <section className="container mx-auto px-4 md:px-8 py-16">
               <div className="max-w-5xl mx-auto">
                 <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">
-                  हमारी सेवा क्यों विशेष है
+                  {language === 'hi' ? 'हमारी सेवा क्यों विशेष है' : 'Why Our Service is Special'}
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
@@ -192,8 +272,12 @@ function App() {
                           <ShieldCheck size={32} weight="fill" className="text-primary" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-xl mb-2">किफायती सदस्यता</h3>
-                          <p className="text-muted-foreground">6 महीने के लिए ₹500 या 1 साल के लिए ₹900 — कोई छुपी लागत नहीं।</p>
+                          <h3 className="font-bold text-xl mb-2">
+                            {language === 'hi' ? 'किफायती सदस्यता' : 'Affordable Membership'}
+                          </h3>
+                          <p className="text-muted-foreground">
+                            {language === 'hi' ? '6 महीने के लिए ₹500 या 1 साल के लिए ₹900 — कोई छुपी लागत नहीं।' : '₹500 for 6 months or ₹900 for 1 year — no hidden costs.'}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -206,8 +290,12 @@ function App() {
                           <ShieldCheck size={32} weight="fill" className="text-teal" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-xl mb-2">सभी समुदाय स्वागत हैं</h3>
-                          <p className="text-muted-foreground">सभी धर्मों, जातियों और समुदायों के लिए।</p>
+                          <h3 className="font-bold text-xl mb-2">
+                            {language === 'hi' ? 'सभी समुदाय स्वागत हैं' : 'All Communities Welcome'}
+                          </h3>
+                          <p className="text-muted-foreground">
+                            {language === 'hi' ? 'सभी धर्मों, जातियों और समुदायों के लिए।' : 'For all religions, castes and communities.'}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -220,8 +308,12 @@ function App() {
                           <Heart size={32} weight="fill" className="text-accent" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-xl mb-2">स्वयंसेवकों द्वारा संचालित</h3>
-                          <p className="text-muted-foreground">हर शहर में समुदाय के सदस्य परिवारों की मदद करते हैं।</p>
+                          <h3 className="font-bold text-xl mb-2">
+                            {language === 'hi' ? 'स्वयंसेवकों द्वारा संचालित' : 'Managed by Volunteers'}
+                          </h3>
+                          <p className="text-muted-foreground">
+                            {language === 'hi' ? 'हर शहर में समुदाय के सदस्य परिवारों की मदद करते हैं।' : 'Community members in every city help families.'}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -234,8 +326,12 @@ function App() {
                           <Heart size={32} weight="fill" className="text-primary" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-xl mb-2">विवाह सेवाएं</h3>
-                          <p className="text-muted-foreground">सत्यापित विवाह सेवा प्रदाताओं की डायरेक्टरी — सिर्फ ₹200 परामर्श शुल्क।</p>
+                          <h3 className="font-bold text-xl mb-2">
+                            {language === 'hi' ? 'विवाह सेवाएं' : 'Wedding Services'}
+                          </h3>
+                          <p className="text-muted-foreground">
+                            {language === 'hi' ? 'सत्यापित विवाह सेवा प्रदाताओं की डायरेक्टरी — सिर्फ ₹200 परामर्श शुल्क।' : 'Directory of verified wedding service providers — only ₹200 consultation fee.'}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -245,8 +341,11 @@ function App() {
                 <Alert className="bg-primary/5 border-primary/20">
                   <ShieldCheck size={20} weight="fill" />
                   <AlertDescription className="text-base">
-                    <strong>गोपनीयता और सुरक्षा:</strong> सभी प्रोफाइल की मैन्युअल जांच • कोई डेटा बिक्री नहीं • 
-                    केवल सत्यापित उपयोगकर्ताओं को संपर्क की अनुमति • रिपोर्ट/ब्लॉक विकल्प उपलब्ध
+                    <strong>{language === 'hi' ? 'गोपनीयता और सुरक्षा:' : 'Privacy and Security:'}</strong>{' '}
+                    {language === 'hi' 
+                      ? 'सभी प्रोफाइल की मैन्युअल जांच • कोई डेटा बिक्री नहीं • केवल सत्यापित उपयोगकर्ताओं को संपर्क की अनुमति • रिपोर्ट/ब्लॉक विकल्प उपलब्ध'
+                      : 'All profiles manually checked • No data selling • Only verified users can contact • Report/Block options available'
+                    }
                   </AlertDescription>
                 </Alert>
               </div>
@@ -283,6 +382,7 @@ function App() {
                       key={profile.id}
                       profile={profile}
                       onViewProfile={setSelectedProfile}
+                      language={language}
                     />
                   ))}
                 </div>
@@ -322,6 +422,14 @@ function App() {
         open={showRegistration}
         onClose={() => setShowRegistration(false)}
         onSubmit={handleRegisterProfile}
+        language={language}
+      />
+
+      <LoginDialog
+        open={showLogin}
+        onClose={() => setShowLogin(false)}
+        onLogin={handleLogin}
+        users={users || []}
         language={language}
       />
 

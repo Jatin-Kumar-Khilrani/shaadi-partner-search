@@ -43,18 +43,62 @@ export function ProfileDetailDialog({ profile, open, onClose, language }: Profil
   }
 
   const handleExpressInterest = () => {
-    toast.success('रुचि दर्ज की गई!', {
-      description: 'हमारे स्वयंसेवक जल्द ही संपर्क करेंगे और दोनों परिवारों को सूचित करेंगे।'
-    })
+    toast.success(
+      language === 'hi' ? 'रुचि दर्ज की गई!' : 'Interest recorded!',
+      {
+        description: language === 'hi' 
+          ? 'हमारे स्वयंसेवक जल्द ही संपर्क करेंगे और दोनों परिवारों को सूचित करेंगे।'
+          : 'Our volunteers will contact you soon and inform both families.'
+      }
+    )
   }
 
   const handleRequestContact = () => {
-    toast.info('संपर्क अनुरोध भेजा गया', {
-      description: 'स्वयंसेवक समीक्षा के बाद संपर्क जानकारी साझा की जाएगी।'
-    })
+    toast.info(
+      language === 'hi' ? 'संपर्क अनुरोध भेजा गया' : 'Contact request sent',
+      {
+        description: language === 'hi' 
+          ? 'स्वयंसेवक समीक्षा के बाद संपर्क जानकारी साझा की जाएगी।'
+          : 'Contact information will be shared after volunteer review.'
+      }
+    )
   }
 
   const badge = getTrustBadge()
+  
+  const getMaritalStatus = () => {
+    if (profile.maritalStatus === 'never-married') {
+      return language === 'hi' ? 'अविवाहित' : 'Never Married'
+    } else if (profile.maritalStatus === 'divorced') {
+      return language === 'hi' ? 'तलाकशुदा' : 'Divorced'
+    } else {
+      return language === 'hi' ? 'विधुर/विधवा' : 'Widowed'
+    }
+  }
+  
+  const t = {
+    years: language === 'hi' ? 'वर्ष' : 'years',
+    male: language === 'hi' ? 'पुरुष' : 'Male',
+    female: language === 'hi' ? 'महिला' : 'Female',
+    personalInfo: language === 'hi' ? 'व्यक्तिगत जानकारी' : 'Personal Information',
+    location: language === 'hi' ? 'स्थान' : 'Location',
+    dateOfBirth: language === 'hi' ? 'जन्म तिथि' : 'Date of Birth',
+    education: language === 'hi' ? 'शिक्षा' : 'Education',
+    occupation: language === 'hi' ? 'व्यवसाय' : 'Occupation',
+    religion: language === 'hi' ? 'धर्म' : 'Religion',
+    caste: language === 'hi' ? 'जाति' : 'Caste',
+    height: language === 'hi' ? 'ऊंचाई' : 'Height',
+    bio: language === 'hi' ? 'परिचय' : 'About',
+    familyDetails: language === 'hi' ? 'पारिवारिक विवरण' : 'Family Details',
+    contactInfo: language === 'hi' ? 'संपर्क जानकारी' : 'Contact Information',
+    privacyNotice: language === 'hi' 
+      ? 'गोपनीयता और सुरक्षा के लिए, संपर्क विवरण केवल स्वयंसेवक अनुमोदन के बाद साझा किए जाते हैं।'
+      : 'For privacy and security, contact details are shared only after volunteer approval.',
+    expressInterest: language === 'hi' ? 'रुचि दर्ज करें' : 'Express Interest',
+    requestContact: language === 'hi' ? 'संपर्क अनुरोध करें' : 'Request Contact',
+    profileId: language === 'hi' ? 'प्रोफाइल ID' : 'Profile ID',
+    createdOn: language === 'hi' ? 'बनाया गया' : 'Created on',
+  }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -70,7 +114,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language }: Profil
             <div className="flex-1">
               <DialogTitle className="text-3xl mb-2">{profile.fullName}</DialogTitle>
               <DialogDescription className="text-base">
-                {profile.age} वर्ष | {profile.gender === 'male' ? 'पुरुष' : 'महिला'} | {profile.maritalStatus === 'never-married' ? 'अविवाहित' : profile.maritalStatus === 'divorced' ? 'तलाकशुदा' : 'विधुर/विधवा'}
+                {profile.age} {t.years} | {profile.gender === 'male' ? t.male : t.female} | {getMaritalStatus()}
               </DialogDescription>
               {badge && (
                 <Badge className={`${badge.color} gap-1.5 mt-2`}>
@@ -86,21 +130,21 @@ export function ProfileDetailDialog({ profile, open, onClose, language }: Profil
           <section>
             <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
               <UserCircle size={22} weight="fill" />
-              व्यक्तिगत जानकारी
+              {t.personalInfo}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <InfoItem icon={<MapPin size={18} />} label="स्थान" value={`${profile.location}, ${profile.country}`} />
-              <InfoItem icon={<Calendar size={18} />} label="जन्म तिथि" value={new Date(profile.dateOfBirth).toLocaleDateString('hi-IN')} />
-              <InfoItem icon={<GraduationCap size={18} />} label="शिक्षा" value={profile.education} />
-              <InfoItem icon={<Briefcase size={18} />} label="व्यवसाय" value={profile.occupation} />
+              <InfoItem icon={<MapPin size={18} />} label={t.location} value={`${profile.location}, ${profile.country}`} />
+              <InfoItem icon={<Calendar size={18} />} label={t.dateOfBirth} value={new Date(profile.dateOfBirth).toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-US')} />
+              <InfoItem icon={<GraduationCap size={18} />} label={t.education} value={profile.education} />
+              <InfoItem icon={<Briefcase size={18} />} label={t.occupation} value={profile.occupation} />
               {profile.religion && (
-                <InfoItem icon={<UserCircle size={18} />} label="धर्म" value={profile.religion} />
+                <InfoItem icon={<UserCircle size={18} />} label={t.religion} value={profile.religion} />
               )}
               {profile.caste && (
-                <InfoItem icon={<UserCircle size={18} />} label="जाति" value={profile.caste} />
+                <InfoItem icon={<UserCircle size={18} />} label={t.caste} value={profile.caste} />
               )}
               {profile.height && (
-                <InfoItem icon={<UserCircle size={18} />} label="ऊंचाई" value={profile.height} />
+                <InfoItem icon={<UserCircle size={18} />} label={t.height} value={profile.height} />
               )}
             </div>
           </section>
@@ -109,7 +153,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language }: Profil
             <>
               <Separator />
               <section>
-                <h3 className="font-bold text-lg mb-3">परिचय</h3>
+                <h3 className="font-bold text-lg mb-3">{t.bio}</h3>
                 <p className="text-muted-foreground leading-relaxed">{profile.bio}</p>
               </section>
             </>
@@ -119,7 +163,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language }: Profil
             <>
               <Separator />
               <section>
-                <h3 className="font-bold text-lg mb-3">पारिवारिक विवरण</h3>
+                <h3 className="font-bold text-lg mb-3">{t.familyDetails}</h3>
                 <p className="text-muted-foreground leading-relaxed">{profile.familyDetails}</p>
               </section>
             </>
@@ -130,25 +174,25 @@ export function ProfileDetailDialog({ profile, open, onClose, language }: Profil
           <section className="bg-muted/30 p-4 rounded-lg">
             <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
               <Phone size={22} weight="fill" />
-              संपर्क जानकारी
+              {t.contactInfo}
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
-              गोपनीयता और सुरक्षा के लिए, संपर्क विवरण केवल स्वयंसेवक अनुमोदन के बाद साझा किए जाते हैं।
+              {t.privacyNotice}
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button onClick={handleExpressInterest} className="flex-1 bg-primary hover:bg-primary/90">
                 <Heart size={20} weight="fill" className="mr-2" />
-                रुचि दर्ज करें
+                {t.expressInterest}
               </Button>
               <Button onClick={handleRequestContact} variant="outline" className="flex-1">
                 <Phone size={20} className="mr-2" />
-                संपर्क अनुरोध करें
+                {t.requestContact}
               </Button>
             </div>
           </section>
 
           <div className="text-xs text-muted-foreground text-center pt-2">
-            प्रोफाइल ID: {profile.id} | बनाया गया: {new Date(profile.createdAt).toLocaleDateString('hi-IN')}
+            {t.profileId}: {profile.id} | {t.createdOn}: {new Date(profile.createdAt).toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-US')}
           </div>
         </div>
       </DialogContent>
