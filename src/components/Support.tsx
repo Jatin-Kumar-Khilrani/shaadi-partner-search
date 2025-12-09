@@ -4,9 +4,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { HandHeart, User, EnvelopeSimple, Phone, Info } from '@phosphor-icons/react'
+import { HandHeart, User, Info } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { useState } from 'react'
+import { AdminPanel } from '@/components/AdminPanel'
 
 export function Support() {
   const [volunteerForm, setVolunteerForm] = useState({
@@ -124,14 +125,14 @@ export function Support() {
               <Alert>
                 <Info size={18} />
                 <AlertDescription>
-                  ShaadiPartnerSearch पूर्णतः निःस्वार्थ सेवा है। कोई विज्ञापन नहीं, कोई सदस्यता शुल्क नहीं।
+                  ShaadiPartnerSearch किफायती सदस्यता शुल्क पर चलती है। अतिरिक्त दान से हम सेवा बेहतर बना सकते हैं।
                 </AlertDescription>
               </Alert>
 
               <div className="space-y-4">
                 <div className="bg-muted p-4 rounded-lg">
                   <h4 className="font-bold mb-2">UPI ID:</h4>
-                  <p className="font-mono text-sm mb-2">shaadi@sindhi</p>
+                  <p className="font-mono text-sm mb-2">shaadi@matrimony</p>
                   <Button variant="outline" size="sm" className="w-full">
                     QR कोड देखें
                   </Button>
@@ -140,7 +141,7 @@ export function Support() {
                 <div className="bg-muted p-4 rounded-lg">
                   <h4 className="font-bold mb-2">बैंक विवरण:</h4>
                   <div className="text-sm space-y-1">
-                    <p><strong>खाता नाम:</strong> Sindhi Matrimony Trust</p>
+                    <p><strong>खाता नाम:</strong> Shaadi Partner Search</p>
                     <p><strong>खाता संख्या:</strong> XXXX-XXXX-XXXX</p>
                     <p><strong>IFSC:</strong> XXXX0000XXX</p>
                   </div>
@@ -160,11 +161,15 @@ export function Support() {
           </Card>
         </div>
 
+        <div className="mb-12">
+          <AdminPanel />
+        </div>
+
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="pt-6">
             <h3 className="font-bold text-xl mb-4 text-center">💝 हमारे मिशन को आगे बढ़ाएं</h3>
             <p className="text-center text-muted-foreground max-w-2xl mx-auto">
-              हर स्वयंसेवक और दानकर्ता सिंधी समाज के लिए एक पवित्र बंधन बनाने में योगदान देता है। 
+              हर स्वयंसेवक और दानकर्ता समाज के लिए एक पवित्र बंधन बनाने में योगदान देता है। 
               साथ मिलकर, हम विवाह को व्यापार नहीं बल्कि संस्कार बनाए रखते हैं।
             </p>
           </CardContent>

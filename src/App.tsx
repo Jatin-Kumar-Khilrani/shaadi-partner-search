@@ -3,7 +3,7 @@ import { useKV } from '@github/spark/hooks'
 import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { List, Heart, UserPlus, Users, BookOpen, HandHeart, MagnifyingGlass, ShieldCheck } from '@phosphor-icons/react'
+import { List, Heart, UserPlus, Users, BookOpen, HandHeart, MagnifyingGlass, ShieldCheck, Confetti } from '@phosphor-icons/react'
 import { HeroSearch } from '@/components/HeroSearch'
 import { ProfileCard } from '@/components/ProfileCard'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
@@ -11,16 +11,18 @@ import { RegistrationDialog } from '@/components/RegistrationDialog'
 import { VolunteerDirectory } from '@/components/VolunteerDirectory'
 import { Resources } from '@/components/Resources'
 import { Support } from '@/components/Support'
-import type { Profile, SearchFilters, Volunteer, Resource } from '@/types/profile'
+import { WeddingServices } from '@/components/WeddingServices'
+import type { Profile, SearchFilters, Volunteer, Resource, WeddingService } from '@/types/profile'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
 
-type View = 'home' | 'search-results' | 'volunteers' | 'resources' | 'support'
+type View = 'home' | 'search-results' | 'volunteers' | 'resources' | 'support' | 'wedding-services'
 
 function App() {
   const [profiles, setProfiles] = useKV<Profile[]>('profiles', [])
   const [volunteers] = useKV<Volunteer[]>('volunteers', [])
   const [resources] = useKV<Resource[]>('resources', [])
+  const [weddingServices] = useKV<WeddingService[]>('wedding-services', [])
   
   const [currentView, setCurrentView] = useState<View>('home')
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({})
@@ -44,7 +46,8 @@ function App() {
       if (searchFilters.ageMax && profile.age > searchFilters.ageMax) return false
       if (searchFilters.location && !profile.location.toLowerCase().includes(searchFilters.location.toLowerCase()) && 
           !profile.country.toLowerCase().includes(searchFilters.location.toLowerCase())) return false
-      if (searchFilters.gotra && !profile.gotra?.toLowerCase().includes(searchFilters.gotra.toLowerCase())) return false
+      if (searchFilters.religion && !profile.religion?.toLowerCase().includes(searchFilters.religion.toLowerCase())) return false
+      if (searchFilters.caste && !profile.caste?.toLowerCase().includes(searchFilters.caste.toLowerCase())) return false
       if (searchFilters.education && !profile.education.toLowerCase().includes(searchFilters.education.toLowerCase())) return false
       
       return true
@@ -65,6 +68,7 @@ function App() {
   const navItems = [
     { label: 'मुखपृष्ठ', icon: <Heart size={20} weight="fill" />, view: 'home' as View },
     { label: 'स्वयंसेवक', icon: <Users size={20} weight="fill" />, view: 'volunteers' as View },
+    { label: 'विवाह सेवाएं', icon: <Confetti size={20} weight="fill" />, view: 'wedding-services' as View },
     { label: 'संसाधन', icon: <BookOpen size={20} weight="fill" />, view: 'resources' as View },
     { label: 'सहयोग', icon: <HandHeart size={20} weight="fill" />, view: 'support' as View }
   ]
@@ -78,7 +82,7 @@ function App() {
               <Heart size={32} weight="fill" className="text-primary" />
               <div className="hidden sm:block">
                 <div className="font-bold text-lg leading-tight">ShaadiPartnerSearch</div>
-                <div className="text-xs text-muted-foreground">सिंधी मॅट्रिमोनी</div>
+                <div className="text-xs text-muted-foreground">भारतीय मॅट्रिमोनी</div>
               </div>
             </button>
           </div>
@@ -158,8 +162,8 @@ function App() {
                           <ShieldCheck size={32} weight="fill" className="text-primary" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-xl mb-2">100% निःशुल्क पंजीकरण</h3>
-                          <p className="text-muted-foreground">कोई विज्ञापन, कोई सदस्यता शुल्क नहीं। पूरी तरह से समुदाय सेवा।</p>
+                          <h3 className="font-bold text-xl mb-2">किफायती सदस्यता</h3>
+                          <p className="text-muted-foreground">6 महीने के लिए ₹500 या 1 साल के लिए ₹900 — कोई छुपी लागत नहीं।</p>
                         </div>
                       </div>
                     </CardContent>
@@ -172,8 +176,8 @@ function App() {
                           <Users size={32} weight="fill" className="text-teal" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-xl mb-2">केवल सिंधी समुदाय</h3>
-                          <p className="text-muted-foreground">सिंधी परंपराओं और संस्कृति को ध्यान में रखकर बनाया गया।</p>
+                          <h3 className="font-bold text-xl mb-2">सभी समुदाय स्वागत हैं</h3>
+                          <p className="text-muted-foreground">सभी धर्मों, जातियों और समुदायों के लिए।</p>
                         </div>
                       </div>
                     </CardContent>
@@ -197,11 +201,11 @@ function App() {
                     <CardContent className="pt-6">
                       <div className="flex items-start gap-4">
                         <div className="p-3 rounded-full bg-primary/10">
-                          <BookOpen size={32} weight="fill" className="text-primary" />
+                          <Confetti size={32} weight="fill" className="text-primary" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-xl mb-2">पारंपरिक और आधुनिक</h3>
-                          <p className="text-muted-foreground">पुरानी मूल्यों के साथ नई तकनीक का संगम।</p>
+                          <h3 className="font-bold text-xl mb-2">विवाह सेवाएं</h3>
+                          <p className="text-muted-foreground">सत्यापित विवाह सेवा प्रदाताओं की डायरेक्टरी — सिर्फ ₹200 परामर्श शुल्क।</p>
                         </div>
                       </div>
                     </CardContent>
@@ -258,6 +262,7 @@ function App() {
         )}
 
         {currentView === 'volunteers' && <VolunteerDirectory volunteers={volunteers || []} />}
+        {currentView === 'wedding-services' && <WeddingServices services={weddingServices || []} />}
         {currentView === 'resources' && <Resources resources={resources || []} />}
         {currentView === 'support' && <Support />}
       </main>
@@ -270,7 +275,7 @@ function App() {
               <span className="font-bold text-lg">ShaadiPartnerSearch</span>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
-              सिंधी समाज के लिए, सिंधी समाज द्वारा — विवाह एक पवित्र बंधन है, व्यापार नहीं।
+              सभी समुदायों के लिए — विवाह एक पवित्र बंधन है, व्यापार नहीं।
             </p>
             <p className="text-xs text-muted-foreground">
               © 2024 ShaadiPartnerSearch. एक निःस्वार्थ समुदाय सेवा।

@@ -29,13 +29,13 @@ export function HeroSearch({ onSearch }: HeroSearchProps) {
       <div className="relative container mx-auto px-4 md:px-8 py-16 md:py-24">
         <div className="max-w-4xl mx-auto text-center mb-12">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6 leading-tight">
-            सिंधी समाज के लिए, सिंधी समाज द्वारा
+            अपना जीवनसाथी खोजें
           </h1>
           <p className="text-xl md:text-2xl text-primary-foreground/90 mb-4">
             विवाह एक पवित्र बंधन है, व्यापार नहीं।
           </p>
           <p className="text-lg text-primary-foreground/80">
-            ShaadiPartnerSearch — एक निःस्वार्थ समुदाय सेवा
+            ShaadiPartnerSearch — भारतीय मॅट्रिमोनी प्लेटफॉर्म
           </p>
         </div>
 
@@ -101,13 +101,23 @@ export function HeroSearch({ onSearch }: HeroSearchProps) {
                   />
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="gotra">गोत्र / Gotra (यदि ज्ञात हो)</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="religion">धर्म / Religion</Label>
                   <Input
-                    id="gotra"
-                    placeholder="उदाहरण: आहूजा, चुघ, भाटिया"
-                    value={filters.gotra || ''}
-                    onChange={(e) => setFilters({ ...filters, gotra: e.target.value })}
+                    id="religion"
+                    placeholder="उदाहरण: हिंदू, मुस्लिम, सिख, ईसाई"
+                    value={filters.religion || ''}
+                    onChange={(e) => setFilters({ ...filters, religion: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="caste">जाति / Caste (वैकल्पिक)</Label>
+                  <Input
+                    id="caste"
+                    placeholder="यदि ज्ञात हो"
+                    value={filters.caste || ''}
+                    onChange={(e) => setFilters({ ...filters, caste: e.target.value })}
                   />
                 </div>
               </div>
@@ -123,8 +133,8 @@ export function HeroSearch({ onSearch }: HeroSearchProps) {
         <div className="max-w-5xl mx-auto mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
           <FeatureCard
             icon={<Heart size={32} weight="fill" />}
-            title="100% निःशुल्क"
-            description="कोई सदस्यता शुल्क नहीं, कोई छुपी हुई लागत नहीं"
+            title="किफायती सदस्यता"
+            description="6 महीने ₹500 या 1 साल ₹900 — कोई छुपी लागत नहीं"
           />
           <FeatureCard
             icon={<ShieldCheck size={32} weight="fill" />}
@@ -133,8 +143,8 @@ export function HeroSearch({ onSearch }: HeroSearchProps) {
           />
           <FeatureCard
             icon={<Users size={32} weight="fill" />}
-            title="समुदाय संचालित"
-            description="सिंधी समाज के लिए, सिंधी समाज द्वारा बनाया गया"
+            title="सभी समुदायों के लिए"
+            description="सभी धर्मों और समुदायों का स्वागत"
           />
         </div>
       </div>

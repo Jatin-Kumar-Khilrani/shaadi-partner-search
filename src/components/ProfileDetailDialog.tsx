@@ -80,8 +80,11 @@ export function ProfileDetailDialog({ profile, open, onClose }: ProfileDetailDia
               <InfoItem icon={<Calendar size={18} />} label="जन्म तिथि" value={new Date(profile.dateOfBirth).toLocaleDateString('hi-IN')} />
               <InfoItem icon={<GraduationCap size={18} />} label="शिक्षा" value={profile.education} />
               <InfoItem icon={<Briefcase size={18} />} label="व्यवसाय" value={profile.occupation} />
-              {profile.gotra && (
-                <InfoItem icon={<UserCircle size={18} />} label="गोत्र / कुल" value={profile.gotra} />
+              {profile.religion && (
+                <InfoItem icon={<UserCircle size={18} />} label="धर्म" value={profile.religion} />
+              )}
+              {profile.caste && (
+                <InfoItem icon={<UserCircle size={18} />} label="जाति" value={profile.caste} />
               )}
               {profile.height && (
                 <InfoItem icon={<UserCircle size={18} />} label="ऊंचाई" value={profile.height} />

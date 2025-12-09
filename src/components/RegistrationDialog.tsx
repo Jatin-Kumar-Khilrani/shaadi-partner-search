@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { UserPlus, CheckCircle, Info } from '@phosphor-icons/react'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { UserPlus, CheckCircle, Info, CurrencyInr } from '@phosphor-icons/react'
 import { toast } from 'sonner'
-import type { Gender, MaritalStatus, Profile } from '@/types/profile'
+import type { Gender, MaritalStatus, Profile, MembershipPlan } from '@/types/profile'
 
 interface RegistrationDialogProps {
   open: boolean
@@ -23,7 +24,8 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
     fullName: '',
     dateOfBirth: '',
     gender: '' as Gender,
-    gotra: '',
+    religion: '',
+    caste: '',
     education: '',
     occupation: '',
     location: '',
@@ -33,7 +35,8 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
     mobile: '',
     height: '',
     bio: '',
-    familyDetails: ''
+    familyDetails: '',
+    membershipPlan: '' as MembershipPlan
   })
 
   const updateField = (field: string, value: string) => {
@@ -52,7 +55,7 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
   }
 
   const handleSubmit = () => {
-    if (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.email || !formData.mobile) {
+    if (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.email || !formData.mobile || !formData.membershipPlan) {
       toast.error('कृपया सभी आवश्यक फ़ील्ड भरें')
       return
     }
@@ -63,15 +66,20 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
       return
     }
 
+    const membershipCost = formData.membershipPlan === '6-month' ? 500 : 900
+    const membershipExpiry = new Date()
+    membershipExpiry.setMonth(membershipExpiry.getMonth() + (formData.membershipPlan === '6-month' ? 6 : 12))
+
     const profile: Omit<Profile, 'id' | 'status' | 'trustLevel' | 'createdAt'> = {
       ...formData,
       age,
-      photoUrl: undefined
+      photoUrl: undefined,
+      membershipExpiry: membershipExpiry.toISOString()
     }
 
     onSubmit(profile)
     toast.success('प्रोफाइल सबमिट की गई!', {
-      description: 'OTP सत्यापन के लिए ईमेल और SMS भेजा जा रहा है।'
+      description: `सदस्यता शुल्क: ₹${membershipCost}। OTP सत्यापन के लिए ईमेल और SMS भेजा जा रहा है।`
     })
     
     setTimeout(() => {
@@ -84,7 +92,8 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
       fullName: '',
       dateOfBirth: '',
       gender: '' as Gender,
-      gotra: '',
+      religion: '',
+      caste: '',
       education: '',
       occupation: '',
       location: '',
@@ -94,7 +103,8 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
       mobile: '',
       height: '',
       bio: '',
-      familyDetails: ''
+      familyDetails: '',
+      membershipPlan: '' as MembershipPlan
     })
     setStep(1)
     onClose()
@@ -127,12 +137,12 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
             प्रोफाइल पंजीकरण
           </DialogTitle>
           <DialogDescription>
-            सिंधी मॅट्रिमोनी में अपना प्रोफाइल बनाएं — पूर्णतः निःशुल्क
+            भारतीय मॅट्रिमोनी में अपना प्रोफाइल बनाएं
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex items-center justify-center gap-2 mb-6">
-          {[1, 2, 3, 4].map((s) => (
+          {[1, 2, 3, 4, 5].map((s) => (
             <div key={s} className="flex items-center">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
                 s === step ? 'bg-primary text-primary-foreground scale-110' :
@@ -140,7 +150,7 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
               }`}>
                 {s < step ? <CheckCircle size={20} weight="fill" /> : s}
               </div>
-              {s < 4 && <div className={`w-12 h-1 ${s < step ? 'bg-teal' : 'bg-muted'}`} />}
+              {s < 5 && <div className={`w-12 h-1 ${s < step ? 'bg-teal' : 'bg-muted'}`} />}
             </div>
           ))}
         </div>
@@ -152,6 +162,7 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
             {step === 2 && 'शिक्षा और व्यवसाय की जानकारी'}
             {step === 3 && 'संपर्क विवरण और स्थान'}
             {step === 4 && 'अतिरिक्त जानकारी (वैकल्पिक)'}
+            {step === 5 && 'सदस्यता योजना चुनें'}
           </AlertDescription>
         </Alert>
 
@@ -198,12 +209,22 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="gotra">गोत्र / कुल / Gotra</Label>
+                    <Label htmlFor="religion">धर्म / Religion</Label>
                     <Input
-                      id="gotra"
-                      placeholder="उदाहरण: आहूजा, चुघ, भाटिया"
-                      value={formData.gotra}
-                      onChange={(e) => updateField('gotra', e.target.value)}
+                      id="religion"
+                      placeholder="उदाहरण: हिंदू, मुस्लिम, सिख, ईसाई"
+                      value={formData.religion}
+                      onChange={(e) => updateField('religion', e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="caste">जाति / Caste (वैकल्पिक)</Label>
+                    <Input
+                      id="caste"
+                      placeholder="यदि ज्ञात हो"
+                      value={formData.caste}
+                      onChange={(e) => updateField('caste', e.target.value)}
                     />
                   </div>
 
@@ -220,16 +241,16 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="height">ऊंचाई / Height (वैकल्पिक)</Label>
-                  <Input
-                    id="height"
-                    placeholder="उदाहरण: 5'8&quot; या 172 cm"
-                    value={formData.height}
-                    onChange={(e) => updateField('height', e.target.value)}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="height">ऊंचाई / Height (वैकल्पिक)</Label>
+                    <Input
+                      id="height"
+                      placeholder="उदाहरण: 5'8&quot; या 172 cm"
+                      value={formData.height}
+                      onChange={(e) => updateField('height', e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -335,11 +356,100 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
                     rows={4}
                   />
                 </div>
+              </div>
+            )}
+
+            {step === 5 && (
+              <div className="space-y-6">
+                <div className="text-center mb-6">
+                  <h3 className="text-2xl font-bold mb-2">सदस्यता योजना चुनें</h3>
+                  <p className="text-muted-foreground">किफायती मूल्य पर पूर्ण सुविधाएं</p>
+                </div>
+
+                <RadioGroup value={formData.membershipPlan} onValueChange={(value: MembershipPlan) => updateField('membershipPlan', value)}>
+                  <div className="space-y-4">
+                    <label htmlFor="6-month" className="cursor-pointer">
+                      <Card className={`border-2 transition-all ${formData.membershipPlan === '6-month' ? 'border-primary shadow-lg' : 'hover:border-primary/50'}`}>
+                        <CardContent className="pt-6">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-4 flex-1">
+                              <RadioGroupItem value="6-month" id="6-month" />
+                              <div className="flex-1">
+                                <h4 className="font-bold text-xl mb-2">6 महीने की योजना</h4>
+                                <div className="flex items-baseline gap-2 mb-3">
+                                  <CurrencyInr size={24} weight="bold" className="text-primary" />
+                                  <span className="text-3xl font-bold text-primary">500</span>
+                                  <span className="text-muted-foreground">/ 6 महीने</span>
+                                </div>
+                                <ul className="space-y-2 text-sm text-muted-foreground">
+                                  <li className="flex items-center gap-2">
+                                    <CheckCircle size={16} weight="fill" className="text-teal" />
+                                    असीमित प्रोफाइल देखें
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <CheckCircle size={16} weight="fill" className="text-teal" />
+                                    संपर्क जानकारी का उपयोग
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <CheckCircle size={16} weight="fill" className="text-teal" />
+                                    स्वयंसेवक सहायता
+                                  </li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </label>
+
+                    <label htmlFor="1-year" className="cursor-pointer">
+                      <Card className={`border-2 transition-all ${formData.membershipPlan === '1-year' ? 'border-accent shadow-lg' : 'hover:border-accent/50'}`}>
+                        <CardContent className="pt-6 relative">
+                          <div className="absolute top-0 right-4 -translate-y-1/2">
+                            <span className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-xs font-bold">सबसे लोकप्रिय</span>
+                          </div>
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-4 flex-1">
+                              <RadioGroupItem value="1-year" id="1-year" />
+                              <div className="flex-1">
+                                <h4 className="font-bold text-xl mb-2">1 साल की योजना</h4>
+                                <div className="flex items-baseline gap-2 mb-3">
+                                  <CurrencyInr size={24} weight="bold" className="text-accent" />
+                                  <span className="text-3xl font-bold text-accent">900</span>
+                                  <span className="text-muted-foreground">/ 1 साल</span>
+                                  <span className="text-sm text-teal font-medium ml-2">₹300 की बचत!</span>
+                                </div>
+                                <ul className="space-y-2 text-sm text-muted-foreground">
+                                  <li className="flex items-center gap-2">
+                                    <CheckCircle size={16} weight="fill" className="text-teal" />
+                                    असीमित प्रोफाइल देखें
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <CheckCircle size={16} weight="fill" className="text-teal" />
+                                    संपर्क जानकारी का उपयोग
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <CheckCircle size={16} weight="fill" className="text-teal" />
+                                    प्राथमिकता स्वयंसेवक सहायता
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <CheckCircle size={16} weight="fill" className="text-teal" />
+                                    प्रोफाइल हाइलाइट सुविधा
+                                  </li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </label>
+                  </div>
+                </RadioGroup>
 
                 <Alert>
                   <Info size={18} />
                   <AlertDescription>
-                    आपकी प्रोफाइल स्वयंसेवकों द्वारा सत्यापित की जाएगी। OTP सत्यापन के बाद आपको ईमेल और SMS द्वारा सूचित किया जाएगा।
+                    आपकी प्रोफाइल स्वयंसेवकों द्वारा सत्यापित की जाएगी। OTP सत्यापन के बाद आपको भुगतान लिंक भेजा जाएगा।
                   </AlertDescription>
                 </Alert>
               </div>
@@ -353,7 +463,7 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
               पीछे जाएं
             </Button>
           )}
-          {step < 4 ? (
+          {step < 5 ? (
             <Button onClick={nextStep} className="ml-auto">
               आगे बढ़ें
             </Button>

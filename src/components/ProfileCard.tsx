@@ -74,10 +74,17 @@ export function ProfileCard({ profile, onViewProfile }: ProfileCardProps) {
             <span className="truncate">{profile.occupation}</span>
           </div>
 
-          {profile.gotra && (
+          {profile.religion && (
             <div className="flex items-center gap-2 text-sm">
               <UserCircle size={16} className="text-muted-foreground shrink-0" />
-              <span className="truncate">गोत्र: {profile.gotra}</span>
+              <span className="truncate">धर्म: {profile.religion}</span>
+            </div>
+          )}
+
+          {profile.caste && (
+            <div className="flex items-center gap-2 text-sm">
+              <UserCircle size={16} className="text-muted-foreground shrink-0" />
+              <span className="truncate">जाति: {profile.caste}</span>
             </div>
           )}
 
