@@ -16,10 +16,13 @@ interface RegistrationDialogProps {
   open: boolean
   onClose: () => void
   onSubmit: (profile: Omit<Profile, 'id' | 'status' | 'trustLevel' | 'createdAt'>) => void
+  language: 'hi' | 'en'
 }
 
-export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDialogProps) {
+export function RegistrationDialog({ open, onClose, onSubmit, language }: RegistrationDialogProps) {
   const [step, setStep] = useState(1)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | undefined>(undefined)
   const [formData, setFormData] = useState({
     fullName: '',
     dateOfBirth: '',
@@ -56,13 +59,19 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
 
   const handleSubmit = () => {
     if (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.email || !formData.mobile || !formData.membershipPlan) {
-      toast.error('कृपया सभी आवश्यक फ़ील्ड भरें')
+      toast.error(language === 'hi' ? 'कृपया सभी आवश्यक फ़ील्ड भरें' : 'Please fill all required fields')
       return
     }
 
     const age = calculateAge(formData.dateOfBirth)
-    if (age < 18) {
-      toast.error('न्यूनतम आयु 18 वर्ष होनी चाहिए')
+    const minAge = formData.gender === 'male' ? 21 : 18
+    
+    if (age < minAge) {
+      toast.error(
+        language === 'hi' 
+          ? `${formData.gender === 'male' ? 'पुरुष' : 'महिला'} की न्यूनतम आयु ${minAge} वर्ष होनी चाहिए` 
+          : `Minimum age for ${formData.gender === 'male' ? 'males' : 'females'} is ${minAge} years`
+      )
       return
     }
 
@@ -73,19 +82,29 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
     const profile: Omit<Profile, 'id' | 'status' | 'trustLevel' | 'createdAt'> = {
       ...formData,
       age,
-      photoUrl: undefined,
+      photoUrl: photoPreview,
       membershipExpiry: membershipExpiry.toISOString()
     }
 
     onSubmit(profile)
-    toast.success('प्रोफाइल सबमिट की गई!', {
-      description: `सदस्यता शुल्क: ₹${membershipCost}। OTP सत्यापन के लिए ईमेल और SMS भेजा जा रहा है।`
-    })
+    toast.success(
+      language === 'hi' ? 'प्रोफाइल सबमिट की गई!' : 'Profile submitted!',
+      {
+        description: language === 'hi' 
+          ? `सदस्यता शुल्क: ₹${membershipCost}। OTP सत्यापन के लिए ईमेल और SMS भेजा जा रहा है।`
+          : `Membership fee: ₹${membershipCost}. Sending email and SMS for OTP verification.`
+      }
+    )
     
     setTimeout(() => {
-      toast.info('सत्यापन प्रक्रिया', {
-        description: 'स्वयंसेवक द्वारा समीक्षा के बाद आपकी प्रोफाइल सक्रिय की जाएगी।'
-      })
+      toast.info(
+        language === 'hi' ? 'सत्यापन प्रक्रिया' : 'Verification Process',
+        {
+          description: language === 'hi' 
+            ? 'स्वयंसेवक द्वारा समीक्षा के बाद आपकी प्रोफाइल सक्रिय की जाएगी।'
+            : 'Your profile will be activated after review by volunteers.'
+        }
+      )
     }, 2000)
 
     setFormData({
@@ -106,24 +125,54 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
       familyDetails: '',
       membershipPlan: '' as MembershipPlan
     })
+    setPhotoFile(null)
+    setPhotoPreview(undefined)
     setStep(1)
     onClose()
   }
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setPhotoFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const nextStep = () => {
     if (step === 1 && (!formData.fullName || !formData.dateOfBirth || !formData.gender)) {
-      toast.error('कृपया सभी आवश्यक फ़ील्ड भरें')
+      toast.error(language === 'hi' ? 'कृपया सभी आवश्यक फ़ील्ड भरें' : 'Please fill all required fields')
       return
     }
     if (step === 2 && (!formData.education || !formData.occupation)) {
-      toast.error('कृपया शिक्षा और व्यवसाय भरें')
+      toast.error(language === 'hi' ? 'कृपया शिक्षा और व्यवसाय भरें' : 'Please fill education and occupation')
       return
     }
     if (step === 3 && (!formData.location || !formData.country || !formData.email || !formData.mobile)) {
-      toast.error('कृपया सभी संपर्क विवरण भरें')
+      toast.error(language === 'hi' ? 'कृपया सभी संपर्क विवरण भरें' : 'Please fill all contact details')
       return
     }
     setStep(step + 1)
+  }
+
+  const t = {
+    title: language === 'hi' ? 'प्रोफाइल पंजीकरण' : 'Profile Registration',
+    subtitle: language === 'hi' ? 'मॅट्रिमोनी सेवा में अपना प्रोफाइल बनाएं' : 'Create your profile in Matrimony Service',
+    step1: language === 'hi' ? 'व्यक्तिगत जानकारी दर्ज करें' : 'Enter personal information',
+    step2: language === 'hi' ? 'शिक्षा और व्यवसाय की जानकारी' : 'Education and occupation information',
+    step3: language === 'hi' ? 'संपर्क विवरण और स्थान' : 'Contact details and location',
+    step4: language === 'hi' ? 'फोटो और अतिरिक्त जानकारी' : 'Photo and additional information',
+    step5: language === 'hi' ? 'सदस्यता योजना चुनें' : 'Choose membership plan',
+    back: language === 'hi' ? 'पीछे जाएं' : 'Go Back',
+    next: language === 'hi' ? 'आगे बढ़ें' : 'Next',
+    submit: language === 'hi' ? 'प्रोफाइल बनाएं' : 'Create Profile',
+    uploadPhoto: language === 'hi' ? 'फोटो अपलोड करें' : 'Upload Photo',
+    uploadLivePhoto: language === 'hi' ? 'लाइव फोटो/सेल्फी अपलोड करें' : 'Upload Live Photo/Selfie',
+    changePhoto: language === 'hi' ? 'फोटो बदलें' : 'Change Photo'
   }
 
   const prevStep = () => setStep(step - 1)
@@ -134,10 +183,10 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
         <DialogHeader>
           <DialogTitle className="text-3xl flex items-center gap-2">
             <UserPlus size={32} weight="bold" />
-            प्रोफाइल पंजीकरण
+            {t.title}
           </DialogTitle>
           <DialogDescription>
-            भारतीय मॅट्रिमोनी में अपना प्रोफाइल बनाएं
+            {t.subtitle}
           </DialogDescription>
         </DialogHeader>
 
@@ -158,11 +207,11 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
         <Alert className="mb-4">
           <Info size={18} />
           <AlertDescription>
-            {step === 1 && 'व्यक्तिगत जानकारी दर्ज करें'}
-            {step === 2 && 'शिक्षा और व्यवसाय की जानकारी'}
-            {step === 3 && 'संपर्क विवरण और स्थान'}
-            {step === 4 && 'अतिरिक्त जानकारी (वैकल्पिक)'}
-            {step === 5 && 'सदस्यता योजना चुनें'}
+            {step === 1 && t.step1}
+            {step === 2 && t.step2}
+            {step === 3 && t.step3}
+            {step === 4 && t.step4}
+            {step === 5 && t.step5}
           </AlertDescription>
         </Alert>
 
@@ -336,10 +385,50 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
             {step === 4 && (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="bio">परिचय / About Yourself</Label>
+                  <Label htmlFor="photo">{t.uploadPhoto} / {t.uploadLivePhoto}</Label>
+                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                    {photoPreview ? (
+                      <div className="space-y-4">
+                        <img 
+                          src={photoPreview} 
+                          alt="Preview" 
+                          className="mx-auto w-48 h-48 object-cover rounded-lg"
+                        />
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => {
+                            setPhotoFile(null)
+                            setPhotoPreview(undefined)
+                          }}
+                        >
+                          {t.changePhoto}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="text-muted-foreground">
+                          <p className="mb-2">{language === 'hi' ? 'फोटो या लाइव सेल्फी अपलोड करें' : 'Upload photo or live selfie'}</p>
+                          <p className="text-sm">{language === 'hi' ? 'JPG, PNG या JPEG (अधिकतम 5MB)' : 'JPG, PNG or JPEG (Max 5MB)'}</p>
+                        </div>
+                        <Input
+                          id="photo"
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={handlePhotoChange}
+                          className="cursor-pointer"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bio">{language === 'hi' ? 'परिचय' : 'About Yourself'}</Label>
                   <Textarea
                     id="bio"
-                    placeholder="अपने बारे में कुछ शब्द लिखें..."
+                    placeholder={language === 'hi' ? 'अपने बारे में कुछ शब्द लिखें...' : 'Write a few words about yourself...'}
                     value={formData.bio}
                     onChange={(e) => updateField('bio', e.target.value)}
                     rows={4}
@@ -347,10 +436,10 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="familyDetails">पारिवारिक विवरण / Family Details</Label>
+                  <Label htmlFor="familyDetails">{language === 'hi' ? 'पारिवारिक विवरण' : 'Family Details'}</Label>
                   <Textarea
                     id="familyDetails"
-                    placeholder="परिवार के बारे में जानकारी..."
+                    placeholder={language === 'hi' ? 'परिवार के बारे में जानकारी...' : 'Information about family...'}
                     value={formData.familyDetails}
                     onChange={(e) => updateField('familyDetails', e.target.value)}
                     rows={4}
@@ -460,16 +549,16 @@ export function RegistrationDialog({ open, onClose, onSubmit }: RegistrationDial
         <div className="flex justify-between gap-4 mt-6">
           {step > 1 && (
             <Button variant="outline" onClick={prevStep}>
-              पीछे जाएं
+              {t.back}
             </Button>
           )}
           {step < 5 ? (
             <Button onClick={nextStep} className="ml-auto">
-              आगे बढ़ें
+              {t.next}
             </Button>
           ) : (
             <Button onClick={handleSubmit} className="ml-auto bg-accent hover:bg-accent/90 text-accent-foreground">
-              प्रोफाइल बनाएं
+              {t.submit}
             </Button>
           )}
         </div>

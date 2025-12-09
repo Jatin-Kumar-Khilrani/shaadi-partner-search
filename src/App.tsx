@@ -3,32 +3,28 @@ import { useKV } from '@github/spark/hooks'
 import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { List, Heart, UserPlus, Users, BookOpen, HandHeart, MagnifyingGlass, ShieldCheck, Confetti } from '@phosphor-icons/react'
+import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, Translate } from '@phosphor-icons/react'
 import { HeroSearch } from '@/components/HeroSearch'
 import { ProfileCard } from '@/components/ProfileCard'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
 import { RegistrationDialog } from '@/components/RegistrationDialog'
-import { VolunteerDirectory } from '@/components/VolunteerDirectory'
-import { Resources } from '@/components/Resources'
-import { Support } from '@/components/Support'
-import { WeddingServices } from '@/components/WeddingServices'
-import type { Profile, SearchFilters, Volunteer, Resource, WeddingService } from '@/types/profile'
+import type { Profile, SearchFilters } from '@/types/profile'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
+import { AdminPanel } from '@/components/AdminPanel'
 
-type View = 'home' | 'search-results' | 'volunteers' | 'resources' | 'support' | 'wedding-services'
+type View = 'home' | 'search-results' | 'admin'
+type Language = 'hi' | 'en'
 
 function App() {
   const [profiles, setProfiles] = useKV<Profile[]>('profiles', [])
-  const [volunteers] = useKV<Volunteer[]>('volunteers', [])
-  const [resources] = useKV<Resource[]>('resources', [])
-  const [weddingServices] = useKV<WeddingService[]>('wedding-services', [])
   
   const [currentView, setCurrentView] = useState<View>('home')
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({})
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [showRegistration, setShowRegistration] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [language, setLanguage] = useState<Language>('hi')
 
   const handleSearch = (filters: SearchFilters) => {
     setSearchFilters(filters)
@@ -65,13 +61,18 @@ function App() {
     setProfiles(current => [...(current || []), newProfile])
   }
 
-  const navItems = [
-    { label: 'मुखपृष्ठ', icon: <Heart size={20} weight="fill" />, view: 'home' as View },
-    { label: 'स्वयंसेवक', icon: <Users size={20} weight="fill" />, view: 'volunteers' as View },
-    { label: 'विवाह सेवाएं', icon: <Confetti size={20} weight="fill" />, view: 'wedding-services' as View },
-    { label: 'संसाधन', icon: <BookOpen size={20} weight="fill" />, view: 'resources' as View },
-    { label: 'सहयोग', icon: <HandHeart size={20} weight="fill" />, view: 'support' as View }
-  ]
+  const t = {
+    home: language === 'hi' ? 'मुखपृष्ठ' : 'Home',
+    register: language === 'hi' ? 'पंजीकरण करें' : 'Register',
+    admin: language === 'hi' ? 'एडमिन' : 'Admin',
+    searchResults: language === 'hi' ? 'खोज परिणाम' : 'Search Results',
+    profilesFound: language === 'hi' ? 'प्रोफाइल मिली' : 'profiles found',
+    newSearch: language === 'hi' ? 'नई खोज' : 'New Search',
+    noProfiles: language === 'hi' ? 'कोई प्रोफाइल नहीं मिली। कृपया अपने खोज मानदंड बदलें या बाद में पुनः प्रयास करें।' : 'No profiles found. Please change your search criteria or try again later.',
+    subtitle: language === 'hi' ? 'मॅट्रिमोनी सेवा' : 'Matrimony Service',
+    footerText: language === 'hi' ? 'सभी समुदायों के लिए — विवाह एक पवित्र बंधन है, व्यापार नहीं।' : 'For all communities — Marriage is a sacred bond, not a business.',
+    footerCopyright: language === 'hi' ? '© 2024 ShaadiPartnerSearch. एक निःस्वार्थ समुदाय सेवा।' : '© 2024 ShaadiPartnerSearch. A selfless community service.'
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -82,26 +83,39 @@ function App() {
               <Heart size={32} weight="fill" className="text-primary" />
               <div className="hidden sm:block">
                 <div className="font-bold text-lg leading-tight">ShaadiPartnerSearch</div>
-                <div className="text-xs text-muted-foreground">भारतीय मॅट्रिमोनी</div>
+                <div className="text-xs text-muted-foreground">{t.subtitle}</div>
               </div>
             </button>
           </div>
 
           <nav className="hidden md:flex items-center gap-2">
-            {navItems.map((item) => (
-              <Button
-                key={item.view}
-                variant={currentView === item.view ? 'default' : 'ghost'}
-                onClick={() => setCurrentView(item.view)}
-                className="gap-2"
-              >
-                {item.icon}
-                {item.label}
-              </Button>
-            ))}
+            <Button
+              variant={currentView === 'home' ? 'default' : 'ghost'}
+              onClick={() => setCurrentView('home')}
+              className="gap-2"
+            >
+              <Heart size={20} weight="fill" />
+              {t.home}
+            </Button>
+            <Button
+              variant={currentView === 'admin' ? 'default' : 'ghost'}
+              onClick={() => setCurrentView('admin')}
+              className="gap-2"
+            >
+              <ShieldCheck size={20} weight="fill" />
+              {t.admin}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setLanguage(language === 'hi' ? 'en' : 'hi')}
+              title={language === 'hi' ? 'Switch to English' : 'हिंदी में बदलें'}
+            >
+              <Translate size={20} weight="bold" />
+            </Button>
             <Button onClick={() => setShowRegistration(true)} className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground">
               <UserPlus size={20} weight="bold" />
-              पंजीकरण करें
+              {t.register}
             </Button>
           </nav>
 
@@ -113,20 +127,36 @@ function App() {
             </SheetTrigger>
             <SheetContent side="right">
               <nav className="flex flex-col gap-2 mt-8">
-                {navItems.map((item) => (
-                  <Button
-                    key={item.view}
-                    variant={currentView === item.view ? 'default' : 'ghost'}
-                    onClick={() => {
-                      setCurrentView(item.view)
-                      setMobileMenuOpen(false)
-                    }}
-                    className="justify-start gap-2"
-                  >
-                    {item.icon}
-                    {item.label}
-                  </Button>
-                ))}
+                <Button
+                  variant={currentView === 'home' ? 'default' : 'ghost'}
+                  onClick={() => {
+                    setCurrentView('home')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="justify-start gap-2"
+                >
+                  <Heart size={20} weight="fill" />
+                  {t.home}
+                </Button>
+                <Button
+                  variant={currentView === 'admin' ? 'default' : 'ghost'}
+                  onClick={() => {
+                    setCurrentView('admin')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="justify-start gap-2"
+                >
+                  <ShieldCheck size={20} weight="fill" />
+                  {t.admin}
+                </Button>
+                <Button 
+                  variant="ghost"
+                  onClick={() => setLanguage(language === 'hi' ? 'en' : 'hi')}
+                  className="justify-start gap-2"
+                >
+                  <Translate size={20} weight="bold" />
+                  {language === 'hi' ? 'English' : 'हिंदी'}
+                </Button>
                 <Button 
                   onClick={() => {
                     setShowRegistration(true)
@@ -135,7 +165,7 @@ function App() {
                   className="justify-start gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
                 >
                   <UserPlus size={20} weight="bold" />
-                  पंजीकरण करें
+                  {t.register}
                 </Button>
               </nav>
             </SheetContent>
@@ -173,7 +203,7 @@ function App() {
                     <CardContent className="pt-6">
                       <div className="flex items-start gap-4">
                         <div className="p-3 rounded-full bg-teal/10">
-                          <Users size={32} weight="fill" className="text-teal" />
+                          <ShieldCheck size={32} weight="fill" className="text-teal" />
                         </div>
                         <div>
                           <h3 className="font-bold text-xl mb-2">सभी समुदाय स्वागत हैं</h3>
@@ -201,7 +231,7 @@ function App() {
                     <CardContent className="pt-6">
                       <div className="flex items-start gap-4">
                         <div className="p-3 rounded-full bg-primary/10">
-                          <Confetti size={32} weight="fill" className="text-primary" />
+                          <Heart size={32} weight="fill" className="text-primary" />
                         </div>
                         <div>
                           <h3 className="font-bold text-xl mb-2">विवाह सेवाएं</h3>
@@ -229,21 +259,21 @@ function App() {
             <div className="max-w-6xl mx-auto">
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h2 className="text-3xl font-bold mb-2">खोज परिणाम</h2>
+                  <h2 className="text-3xl font-bold mb-2">{t.searchResults}</h2>
                   <p className="text-muted-foreground">
-                    {filteredProfiles.length} प्रोफाइल मिली
+                    {filteredProfiles.length} {t.profilesFound}
                   </p>
                 </div>
                 <Button variant="outline" onClick={() => setCurrentView('home')}>
                   <MagnifyingGlass size={20} className="mr-2" />
-                  नई खोज
+                  {t.newSearch}
                 </Button>
               </div>
 
               {filteredProfiles.length === 0 ? (
                 <Alert>
                   <AlertDescription>
-                    कोई प्रोफाइल नहीं मिली। कृपया अपने खोज मानदंड बदलें या बाद में पुनः प्रयास करें।
+                    {t.noProfiles}
                   </AlertDescription>
                 </Alert>
               ) : (
@@ -261,10 +291,7 @@ function App() {
           </section>
         )}
 
-        {currentView === 'volunteers' && <VolunteerDirectory volunteers={volunteers || []} />}
-        {currentView === 'wedding-services' && <WeddingServices services={weddingServices || []} />}
-        {currentView === 'resources' && <Resources resources={resources || []} />}
-        {currentView === 'support' && <Support />}
+        {currentView === 'admin' && <AdminPanel profiles={profiles} setProfiles={setProfiles} language={language} />}
       </main>
 
       <footer className="border-t bg-muted/30 py-8">
@@ -275,10 +302,10 @@ function App() {
               <span className="font-bold text-lg">ShaadiPartnerSearch</span>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
-              सभी समुदायों के लिए — विवाह एक पवित्र बंधन है, व्यापार नहीं।
+              {t.footerText}
             </p>
             <p className="text-xs text-muted-foreground">
-              © 2024 ShaadiPartnerSearch. एक निःस्वार्थ समुदाय सेवा।
+              {t.footerCopyright}
             </p>
           </div>
         </div>
@@ -288,12 +315,14 @@ function App() {
         profile={selectedProfile}
         open={!!selectedProfile}
         onClose={() => setSelectedProfile(null)}
+        language={language}
       />
 
       <RegistrationDialog
         open={showRegistration}
         onClose={() => setShowRegistration(false)}
         onSubmit={handleRegisterProfile}
+        language={language}
       />
 
       <Toaster position="top-right" />

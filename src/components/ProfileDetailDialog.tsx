@@ -11,20 +11,33 @@ interface ProfileDetailDialogProps {
   profile: Profile | null
   open: boolean
   onClose: () => void
+  language: 'hi' | 'en'
 }
 
-export function ProfileDetailDialog({ profile, open, onClose }: ProfileDetailDialogProps) {
+export function ProfileDetailDialog({ profile, open, onClose, language }: ProfileDetailDialogProps) {
   if (!profile) return null
 
   const initials = profile.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 
   const getTrustBadge = () => {
     if (profile.trustLevel >= 5) {
-      return { text: 'स्तर 5 - वीडियो सत्यापित', color: 'bg-accent text-accent-foreground', icon: <Seal weight="fill" size={18} /> }
+      return { 
+        text: language === 'hi' ? 'स्तर 5 - वीडियो सत्यापित' : 'Level 5 - Video Verified', 
+        color: 'bg-accent text-accent-foreground', 
+        icon: <Seal weight="fill" size={18} /> 
+      }
     } else if (profile.trustLevel >= 3) {
-      return { text: 'स्तर 3 - ID सत्यापित', color: 'bg-teal text-teal-foreground', icon: <ShieldCheck weight="fill" size={18} /> }
+      return { 
+        text: language === 'hi' ? 'स्तर 3 - ID सत्यापित' : 'Level 3 - ID Verified', 
+        color: 'bg-teal text-teal-foreground', 
+        icon: <ShieldCheck weight="fill" size={18} /> 
+      }
     } else if (profile.trustLevel >= 1) {
-      return { text: 'स्तर 1 - मोबाइल सत्यापित', color: 'bg-muted text-muted-foreground', icon: <ShieldCheck weight="regular" size={18} /> }
+      return { 
+        text: language === 'hi' ? 'स्तर 1 - मोबाइल सत्यापित' : 'Level 1 - Mobile Verified', 
+        color: 'bg-muted text-muted-foreground', 
+        icon: <ShieldCheck weight="regular" size={18} /> 
+      }
     }
     return null
   }

@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { HandHeart, User, Info } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { useState } from 'react'
-import { AdminPanel } from '@/components/AdminPanel'
 
 export function Support() {
   const [volunteerForm, setVolunteerForm] = useState({
@@ -159,10 +158,6 @@ export function Support() {
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        <div className="mb-12">
-          <AdminPanel />
         </div>
 
         <Card className="bg-primary/5 border-primary/20">
