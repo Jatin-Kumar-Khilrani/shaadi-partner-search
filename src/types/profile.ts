@@ -20,6 +20,7 @@ export interface Profile {
   email: string
   mobile: string
   photoUrl?: string
+  selfieUrl?: string
   bio?: string
   height?: string
   familyDetails?: string

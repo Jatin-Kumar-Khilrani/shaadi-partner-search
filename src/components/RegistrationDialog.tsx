@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,21 +8,30 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { UserPlus, CheckCircle, Info, CurrencyInr } from '@phosphor-icons/react'
+import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Gender, MaritalStatus, Profile, MembershipPlan } from '@/types/profile'
+import { useTranslation, type Language } from '@/lib/translations'
 
 interface RegistrationDialogProps {
   open: boolean
   onClose: () => void
   onSubmit: (profile: Omit<Profile, 'id' | 'status' | 'trustLevel' | 'createdAt'>) => void
-  language: 'hi' | 'en'
+  language: Language
 }
 
 export function RegistrationDialog({ open, onClose, onSubmit, language }: RegistrationDialogProps) {
+  const t = useTranslation(language)
   const [step, setStep] = useState(1)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | undefined>(undefined)
+  const [selfieFile, setSelfieFile] = useState<File | null>(null)
+  const [selfiePreview, setSelfiePreview] = useState<string | undefined>(undefined)
+  const [showCamera, setShowCamera] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  
   const [formData, setFormData] = useState({
     fullName: '',
     dateOfBirth: '',
@@ -46,6 +55,20 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
     setFormData({ ...formData, [field]: value })
   }
 
+  const getMaxDate = () => {
+    const today = new Date()
+    const minAge = formData.gender === 'male' ? 21 : formData.gender === 'female' ? 18 : 18
+    const maxDate = new Date(today.getFullYear() - minAge, today.getMonth(), today.getDate())
+    return maxDate.toISOString().split('T')[0]
+  }
+
+  const getMinDate = () => {
+    const today = new Date()
+    const maxAge = 100
+    const minDate = new Date(today.getFullYear() - maxAge, today.getMonth(), today.getDate())
+    return minDate.toISOString().split('T')[0]
+  }
+
   const calculateAge = (dob: string) => {
     const birthDate = new Date(dob)
     const today = new Date()
@@ -57,9 +80,55 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
     return age
   }
 
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user' },
+        audio: false 
+      })
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        streamRef.current = stream
+        setShowCamera(true)
+      }
+    } catch (err) {
+      toast.error(t.registration.cameraAccessDenied)
+    }
+  }
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+    }
+    setShowCamera(false)
+  }
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current
+      const video = videoRef.current
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        ctx.drawImage(video, 0, 0)
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], 'selfie.jpg', { type: 'image/jpeg' })
+            setSelfieFile(file)
+            setSelfiePreview(canvas.toDataURL('image/jpeg'))
+            stopCamera()
+            toast.success(t.registration.selfieCaptured)
+          }
+        }, 'image/jpeg')
+      }
+    }
+  }
+
   const handleSubmit = () => {
     if (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.email || !formData.mobile || !formData.membershipPlan) {
-      toast.error(language === 'hi' ? 'कृपया सभी आवश्यक फ़ील्ड भरें' : 'Please fill all required fields')
+      toast.error(t.registration.fillAllFields)
       return
     }
 
@@ -68,9 +137,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
     
     if (age < minAge) {
       toast.error(
-        language === 'hi' 
-          ? `${formData.gender === 'male' ? 'पुरुष' : 'महिला'} की न्यूनतम आयु ${minAge} वर्ष होनी चाहिए` 
-          : `Minimum age for ${formData.gender === 'male' ? 'males' : 'females'} is ${minAge} years`
+        `${formData.gender === 'male' ? (language === 'hi' ? 'पुरुष' : 'Male') : (language === 'hi' ? 'महिला' : 'Female')} ${t.registration.minAgeError} ${minAge} ${t.registration.yearsRequired}`
       )
       return
     }
@@ -83,26 +150,23 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
       ...formData,
       age,
       photoUrl: photoPreview,
+      selfieUrl: selfiePreview,
       membershipExpiry: membershipExpiry.toISOString()
     }
 
     onSubmit(profile)
     toast.success(
-      language === 'hi' ? 'प्रोफाइल सबमिट की गई!' : 'Profile submitted!',
+      t.registration.profileSubmitted,
       {
-        description: language === 'hi' 
-          ? `सदस्यता शुल्क: ₹${membershipCost}। OTP सत्यापन के लिए ईमेल और SMS भेजा जा रहा है।`
-          : `Membership fee: ₹${membershipCost}. Sending email and SMS for OTP verification.`
+        description: `${t.registration.membershipFee}: ₹${membershipCost}। ${t.registration.otpSending}`
       }
     )
     
     setTimeout(() => {
       toast.info(
-        language === 'hi' ? 'सत्यापन प्रक्रिया' : 'Verification Process',
+        t.registration.verificationProcess,
         {
-          description: language === 'hi' 
-            ? 'स्वयंसेवक द्वारा समीक्षा के बाद आपकी प्रोफाइल सक्रिय की जाएगी।'
-            : 'Your profile will be activated after review by volunteers.'
+          description: t.registration.reviewNote
         }
       )
     }, 2000)
@@ -127,6 +191,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
     })
     setPhotoFile(null)
     setPhotoPreview(undefined)
+    setSelfieFile(null)
+    setSelfiePreview(undefined)
+    stopCamera()
     setStep(1)
     onClose()
   }
@@ -143,36 +210,32 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
     }
   }
 
+  const handleSelfieUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setSelfieFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setSelfiePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const nextStep = () => {
     if (step === 1 && (!formData.fullName || !formData.dateOfBirth || !formData.gender)) {
-      toast.error(language === 'hi' ? 'कृपया सभी आवश्यक फ़ील्ड भरें' : 'Please fill all required fields')
+      toast.error(t.registration.fillAllFields)
       return
     }
     if (step === 2 && (!formData.education || !formData.occupation)) {
-      toast.error(language === 'hi' ? 'कृपया शिक्षा और व्यवसाय भरें' : 'Please fill education and occupation')
+      toast.error(t.registration.fillEducation)
       return
     }
     if (step === 3 && (!formData.location || !formData.country || !formData.email || !formData.mobile)) {
-      toast.error(language === 'hi' ? 'कृपया सभी संपर्क विवरण भरें' : 'Please fill all contact details')
+      toast.error(t.registration.fillContact)
       return
     }
     setStep(step + 1)
-  }
-
-  const t = {
-    title: language === 'hi' ? 'प्रोफाइल पंजीकरण' : 'Profile Registration',
-    subtitle: language === 'hi' ? 'मॅट्रिमोनी सेवा में अपना प्रोफाइल बनाएं' : 'Create your profile in Matrimony Service',
-    step1: language === 'hi' ? 'व्यक्तिगत जानकारी दर्ज करें' : 'Enter personal information',
-    step2: language === 'hi' ? 'शिक्षा और व्यवसाय की जानकारी' : 'Education and occupation information',
-    step3: language === 'hi' ? 'संपर्क विवरण और स्थान' : 'Contact details and location',
-    step4: language === 'hi' ? 'फोटो और अतिरिक्त जानकारी' : 'Photo and additional information',
-    step5: language === 'hi' ? 'सदस्यता योजना चुनें' : 'Choose membership plan',
-    back: language === 'hi' ? 'पीछे जाएं' : 'Go Back',
-    next: language === 'hi' ? 'आगे बढ़ें' : 'Next',
-    submit: language === 'hi' ? 'प्रोफाइल बनाएं' : 'Create Profile',
-    uploadPhoto: language === 'hi' ? 'फोटो अपलोड करें' : 'Upload Photo',
-    uploadLivePhoto: language === 'hi' ? 'लाइव फोटो/सेल्फी अपलोड करें' : 'Upload Live Photo/Selfie',
-    changePhoto: language === 'hi' ? 'फोटो बदलें' : 'Change Photo'
   }
 
   const prevStep = () => setStep(step - 1)
@@ -183,10 +246,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
         <DialogHeader>
           <DialogTitle className="text-3xl flex items-center gap-2">
             <UserPlus size={32} weight="bold" />
-            {t.title}
+            {t.registration.title}
           </DialogTitle>
           <DialogDescription>
-            {t.subtitle}
+            {t.registration.subtitle}
           </DialogDescription>
         </DialogHeader>
 
@@ -207,11 +270,11 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
         <Alert className="mb-4">
           <Info size={18} />
           <AlertDescription>
-            {step === 1 && t.step1}
-            {step === 2 && t.step2}
-            {step === 3 && t.step3}
-            {step === 4 && t.step4}
-            {step === 5 && t.step5}
+            {step === 1 && t.registration.step1}
+            {step === 2 && t.registration.step2}
+            {step === 3 && t.registration.step3}
+            {step === 4 && t.registration.step4}
+            {step === 5 && t.registration.step5}
           </AlertDescription>
         </Alert>
 
@@ -220,10 +283,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
             {step === 1 && (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">पूरा नाम / Full Name *</Label>
+                  <Label htmlFor="fullName">{t.fields.fullName} / Full Name *</Label>
                   <Input
                     id="fullName"
-                    placeholder="उदाहरण: राज आहूजा"
+                    placeholder={language === 'hi' ? 'उदाहरण: राज आहूजा' : 'Example: Raj Ahuja'}
                     value={formData.fullName}
                     onChange={(e) => updateField('fullName', e.target.value)}
                     required
@@ -232,70 +295,83 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="dateOfBirth">जन्म तिथि / Date of Birth *</Label>
+                    <Label htmlFor="gender">{t.fields.gender} / Gender *</Label>
+                    <Select onValueChange={(value: Gender) => updateField('gender', value)} value={formData.gender}>
+                      <SelectTrigger id="gender">
+                        <SelectValue placeholder={t.fields.select} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">{t.fields.male} / Male</SelectItem>
+                        <SelectItem value="female">{t.fields.female} / Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="dateOfBirth">{t.fields.dateOfBirth} / Date of Birth *</Label>
                     <Input
                       id="dateOfBirth"
                       type="date"
                       value={formData.dateOfBirth}
                       onChange={(e) => updateField('dateOfBirth', e.target.value)}
+                      max={getMaxDate()}
+                      min={getMinDate()}
                       required
+                      disabled={!formData.gender}
                     />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="gender">लिंग / Gender *</Label>
-                    <Select onValueChange={(value: Gender) => updateField('gender', value)} value={formData.gender}>
-                      <SelectTrigger id="gender">
-                        <SelectValue placeholder="चुनें" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="male">पुरुष / Male</SelectItem>
-                        <SelectItem value="female">महिला / Female</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {!formData.gender && (
+                      <p className="text-xs text-muted-foreground">
+                        {t.registration.selectGenderFirst}
+                      </p>
+                    )}
+                    {formData.gender && (
+                      <p className="text-xs text-muted-foreground">
+                        {t.registration.minAgeInfo}: {formData.gender === 'male' ? '21' : '18'} {t.registration.yearsText}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="religion">धर्म / Religion</Label>
+                    <Label htmlFor="religion">{t.fields.religion} / Religion</Label>
                     <Input
                       id="religion"
-                      placeholder="उदाहरण: हिंदू, मुस्लिम, सिख, ईसाई"
+                      placeholder={language === 'hi' ? 'उदाहरण: हिंदू, मुस्लिम, सिख, ईसाई' : 'Example: Hindu, Muslim, Sikh, Christian'}
                       value={formData.religion}
                       onChange={(e) => updateField('religion', e.target.value)}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="caste">जाति / Caste (वैकल्पिक)</Label>
+                    <Label htmlFor="caste">{t.fields.caste} / Caste ({t.fields.optional})</Label>
                     <Input
                       id="caste"
-                      placeholder="यदि ज्ञात हो"
+                      placeholder={language === 'hi' ? 'यदि ज्ञात हो' : 'If known'}
                       value={formData.caste}
                       onChange={(e) => updateField('caste', e.target.value)}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="maritalStatus">वैवाहिक स्थिति / Marital Status</Label>
+                    <Label htmlFor="maritalStatus">{t.fields.maritalStatus} / Marital Status</Label>
                     <Select onValueChange={(value: MaritalStatus) => updateField('maritalStatus', value)} value={formData.maritalStatus}>
                       <SelectTrigger id="maritalStatus">
-                        <SelectValue placeholder="चुनें" />
+                        <SelectValue placeholder={t.fields.select} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="never-married">अविवाहित / Never Married</SelectItem>
-                        <SelectItem value="divorced">तलाकशुदा / Divorced</SelectItem>
-                        <SelectItem value="widowed">विधुर/विधवा / Widowed</SelectItem>
+                        <SelectItem value="never-married">{t.fields.neverMarried} / Never Married</SelectItem>
+                        <SelectItem value="divorced">{t.fields.divorced} / Divorced</SelectItem>
+                        <SelectItem value="widowed">{t.fields.widowed} / Widowed</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="height">ऊंचाई / Height (वैकल्पिक)</Label>
+                    <Label htmlFor="height">{t.fields.height} / Height ({t.fields.optional})</Label>
                     <Input
                       id="height"
-                      placeholder="उदाहरण: 5'8&quot; या 172 cm"
+                      placeholder={language === 'hi' ? 'उदाहरण: 5\'8" या 172 cm' : 'Example: 5\'8" or 172 cm'}
                       value={formData.height}
                       onChange={(e) => updateField('height', e.target.value)}
                     />
@@ -307,10 +383,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
             {step === 2 && (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="education">शिक्षा / Education *</Label>
+                  <Label htmlFor="education">{t.fields.education} / Education *</Label>
                   <Input
                     id="education"
-                    placeholder="उदाहरण: B.Tech, MBA, M.Com"
+                    placeholder={language === 'hi' ? 'उदाहरण: B.Tech, MBA, M.Com' : 'Example: B.Tech, MBA, M.Com'}
                     value={formData.education}
                     onChange={(e) => updateField('education', e.target.value)}
                     required
@@ -318,10 +394,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="occupation">व्यवसाय / Occupation *</Label>
+                  <Label htmlFor="occupation">{t.fields.occupation} / Occupation *</Label>
                   <Input
                     id="occupation"
-                    placeholder="उदाहरण: सॉफ्टवेयर इंजीनियर, डॉक्टर, व्यवसायी"
+                    placeholder={language === 'hi' ? 'उदाहरण: सॉफ्टवेयर इंजीनियर, डॉक्टर, व्यवसायी' : 'Example: Software Engineer, Doctor, Business'}
                     value={formData.occupation}
                     onChange={(e) => updateField('occupation', e.target.value)}
                     required
@@ -334,10 +410,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="location">शहर / City *</Label>
+                    <Label htmlFor="location">{t.fields.city} / City *</Label>
                     <Input
                       id="location"
-                      placeholder="उदाहरण: मुंबई, जयपुर"
+                      placeholder={language === 'hi' ? 'उदाहरण: मुंबई, जयपुर' : 'Example: Mumbai, Jaipur'}
                       value={formData.location}
                       onChange={(e) => updateField('location', e.target.value)}
                       required
@@ -345,10 +421,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="country">देश / Country *</Label>
+                    <Label htmlFor="country">{t.fields.country} / Country *</Label>
                     <Input
                       id="country"
-                      placeholder="उदाहरण: भारत, USA"
+                      placeholder={language === 'hi' ? 'उदाहरण: भारत, USA' : 'Example: India, USA'}
                       value={formData.country}
                       onChange={(e) => updateField('country', e.target.value)}
                       required
@@ -357,7 +433,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">ईमेल / Email *</Label>
+                  <Label htmlFor="email">{t.fields.email} / Email *</Label>
                   <Input
                     id="email"
                     type="email"
@@ -369,7 +445,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="mobile">मोबाइल / Mobile *</Label>
+                  <Label htmlFor="mobile">{t.fields.mobile} / Mobile *</Label>
                   <Input
                     id="mobile"
                     type="tel"
@@ -383,52 +459,143 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
             )}
 
             {step === 4 && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="photo">{t.uploadPhoto} / {t.uploadLivePhoto}</Label>
-                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
-                    {photoPreview ? (
-                      <div className="space-y-4">
-                        <img 
-                          src={photoPreview} 
-                          alt="Preview" 
-                          className="mx-auto w-48 h-48 object-cover rounded-lg"
-                        />
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          onClick={() => {
-                            setPhotoFile(null)
-                            setPhotoPreview(undefined)
-                          }}
-                        >
-                          {t.changePhoto}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <div className="text-muted-foreground">
-                          <p className="mb-2">{language === 'hi' ? 'फोटो या लाइव सेल्फी अपलोड करें' : 'Upload photo or live selfie'}</p>
-                          <p className="text-sm">{language === 'hi' ? 'JPG, PNG या JPEG (अधिकतम 5MB)' : 'JPG, PNG or JPEG (Max 5MB)'}</p>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="photo" className="flex items-center gap-2">
+                      <Image size={20} weight="bold" />
+                      {t.registration.uploadPhoto}
+                    </Label>
+                    <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
+                      {photoPreview ? (
+                        <div className="space-y-3">
+                          <img 
+                            src={photoPreview} 
+                            alt="Preview" 
+                            className="mx-auto w-full h-48 object-cover rounded-lg"
+                          />
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setPhotoFile(null)
+                              setPhotoPreview(undefined)
+                            }}
+                          >
+                            {t.registration.changePhoto}
+                          </Button>
                         </div>
-                        <Input
-                          id="photo"
-                          type="file"
-                          accept="image/*"
-                          capture="environment"
-                          onChange={handlePhotoChange}
-                          className="cursor-pointer"
-                        />
-                      </div>
-                    )}
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="text-muted-foreground">
+                            <Image size={48} weight="light" className="mx-auto mb-2 text-muted-foreground/50" />
+                            <p className="text-sm">{t.registration.uploadPhotoFile}</p>
+                            <p className="text-xs mt-1">{t.registration.photoFormat}</p>
+                          </div>
+                          <Input
+                            id="photo"
+                            type="file"
+                            accept="image/*"
+                            onChange={handlePhotoChange}
+                            className="cursor-pointer"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="selfie" className="flex items-center gap-2">
+                      <Camera size={20} weight="bold" />
+                      {t.registration.uploadSelfie}
+                    </Label>
+                    <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
+                      {selfiePreview ? (
+                        <div className="space-y-3">
+                          <img 
+                            src={selfiePreview} 
+                            alt="Selfie Preview" 
+                            className="mx-auto w-full h-48 object-cover rounded-lg"
+                          />
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelfieFile(null)
+                              setSelfiePreview(undefined)
+                            }}
+                          >
+                            {t.registration.retake}
+                          </Button>
+                        </div>
+                      ) : showCamera ? (
+                        <div className="space-y-3">
+                          <video 
+                            ref={videoRef} 
+                            autoPlay 
+                            playsInline
+                            className="mx-auto w-full h-48 object-cover rounded-lg bg-black"
+                          />
+                          <div className="flex gap-2 justify-center">
+                            <Button 
+                              type="button" 
+                              onClick={capturePhoto}
+                              size="sm"
+                              className="gap-2"
+                            >
+                              <Camera size={16} weight="bold" />
+                              {t.registration.capture}
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="outline"
+                              onClick={stopCamera}
+                              size="sm"
+                            >
+                              {t.registration.cancel}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="text-muted-foreground">
+                            <Camera size={48} weight="light" className="mx-auto mb-2 text-muted-foreground/50" />
+                            <p className="text-sm">{t.registration.takeLiveSelfie}</p>
+                            <p className="text-xs mt-1">{t.registration.orUploadFile}</p>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <Button 
+                              type="button" 
+                              onClick={startCamera}
+                              size="sm"
+                              className="gap-2"
+                            >
+                              <Camera size={16} weight="bold" />
+                              {t.registration.startCamera}
+                            </Button>
+                            <Input
+                              id="selfie"
+                              type="file"
+                              accept="image/*"
+                              capture="user"
+                              onChange={handleSelfieUpload}
+                              className="cursor-pointer text-xs"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <canvas ref={canvasRef} className="hidden" />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="bio">{language === 'hi' ? 'परिचय' : 'About Yourself'}</Label>
+                  <Label htmlFor="bio">{t.registration.aboutYourself}</Label>
                   <Textarea
                     id="bio"
-                    placeholder={language === 'hi' ? 'अपने बारे में कुछ शब्द लिखें...' : 'Write a few words about yourself...'}
+                    placeholder={t.registration.aboutPlaceholder}
                     value={formData.bio}
                     onChange={(e) => updateField('bio', e.target.value)}
                     rows={4}
@@ -436,10 +603,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="familyDetails">{language === 'hi' ? 'पारिवारिक विवरण' : 'Family Details'}</Label>
+                  <Label htmlFor="familyDetails">{t.registration.familyDetailsLabel}</Label>
                   <Textarea
                     id="familyDetails"
-                    placeholder={language === 'hi' ? 'परिवार के बारे में जानकारी...' : 'Information about family...'}
+                    placeholder={t.registration.familyPlaceholder}
                     value={formData.familyDetails}
                     onChange={(e) => updateField('familyDetails', e.target.value)}
                     rows={4}
@@ -451,8 +618,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
             {step === 5 && (
               <div className="space-y-6">
                 <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold mb-2">सदस्यता योजना चुनें</h3>
-                  <p className="text-muted-foreground">किफायती मूल्य पर पूर्ण सुविधाएं</p>
+                  <h3 className="text-2xl font-bold mb-2">{t.registration.choosePlan}</h3>
+                  <p className="text-muted-foreground">{t.registration.affordablePricing}</p>
                 </div>
 
                 <RadioGroup value={formData.membershipPlan} onValueChange={(value: MembershipPlan) => updateField('membershipPlan', value)}>
@@ -464,24 +631,24 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                             <div className="flex items-start gap-4 flex-1">
                               <RadioGroupItem value="6-month" id="6-month" />
                               <div className="flex-1">
-                                <h4 className="font-bold text-xl mb-2">6 महीने की योजना</h4>
+                                <h4 className="font-bold text-xl mb-2">{t.registration.plan6Month}</h4>
                                 <div className="flex items-baseline gap-2 mb-3">
                                   <CurrencyInr size={24} weight="bold" className="text-primary" />
                                   <span className="text-3xl font-bold text-primary">500</span>
-                                  <span className="text-muted-foreground">/ 6 महीने</span>
+                                  <span className="text-muted-foreground">{t.registration.perMonth}</span>
                                 </div>
                                 <ul className="space-y-2 text-sm text-muted-foreground">
                                   <li className="flex items-center gap-2">
                                     <CheckCircle size={16} weight="fill" className="text-teal" />
-                                    असीमित प्रोफाइल देखें
+                                    {t.registration.unlimitedProfiles}
                                   </li>
                                   <li className="flex items-center gap-2">
                                     <CheckCircle size={16} weight="fill" className="text-teal" />
-                                    संपर्क जानकारी का उपयोग
+                                    {t.registration.contactAccess}
                                   </li>
                                   <li className="flex items-center gap-2">
                                     <CheckCircle size={16} weight="fill" className="text-teal" />
-                                    स्वयंसेवक सहायता
+                                    {t.registration.volunteerSupport}
                                   </li>
                                 </ul>
                               </div>
@@ -495,35 +662,35 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                       <Card className={`border-2 transition-all ${formData.membershipPlan === '1-year' ? 'border-accent shadow-lg' : 'hover:border-accent/50'}`}>
                         <CardContent className="pt-6 relative">
                           <div className="absolute top-0 right-4 -translate-y-1/2">
-                            <span className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-xs font-bold">सबसे लोकप्रिय</span>
+                            <span className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-xs font-bold">{t.registration.mostPopular}</span>
                           </div>
                           <div className="flex items-start justify-between">
                             <div className="flex items-start gap-4 flex-1">
                               <RadioGroupItem value="1-year" id="1-year" />
                               <div className="flex-1">
-                                <h4 className="font-bold text-xl mb-2">1 साल की योजना</h4>
+                                <h4 className="font-bold text-xl mb-2">{t.registration.plan1Year}</h4>
                                 <div className="flex items-baseline gap-2 mb-3">
                                   <CurrencyInr size={24} weight="bold" className="text-accent" />
                                   <span className="text-3xl font-bold text-accent">900</span>
-                                  <span className="text-muted-foreground">/ 1 साल</span>
-                                  <span className="text-sm text-teal font-medium ml-2">₹300 की बचत!</span>
+                                  <span className="text-muted-foreground">{t.registration.perYear}</span>
+                                  <span className="text-sm text-teal font-medium ml-2">{t.registration.savings}</span>
                                 </div>
                                 <ul className="space-y-2 text-sm text-muted-foreground">
                                   <li className="flex items-center gap-2">
                                     <CheckCircle size={16} weight="fill" className="text-teal" />
-                                    असीमित प्रोफाइल देखें
+                                    {t.registration.unlimitedProfiles}
                                   </li>
                                   <li className="flex items-center gap-2">
                                     <CheckCircle size={16} weight="fill" className="text-teal" />
-                                    संपर्क जानकारी का उपयोग
+                                    {t.registration.contactAccess}
                                   </li>
                                   <li className="flex items-center gap-2">
                                     <CheckCircle size={16} weight="fill" className="text-teal" />
-                                    प्राथमिकता स्वयंसेवक सहायता
+                                    {t.registration.prioritySupport}
                                   </li>
                                   <li className="flex items-center gap-2">
                                     <CheckCircle size={16} weight="fill" className="text-teal" />
-                                    प्रोफाइल हाइलाइट सुविधा
+                                    {t.registration.profileHighlight}
                                   </li>
                                 </ul>
                               </div>
@@ -538,7 +705,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                 <Alert>
                   <Info size={18} />
                   <AlertDescription>
-                    आपकी प्रोफाइल स्वयंसेवकों द्वारा सत्यापित की जाएगी। OTP सत्यापन के बाद आपको भुगतान लिंक भेजा जाएगा।
+                    {t.registration.verificationNote}
                   </AlertDescription>
                 </Alert>
               </div>
@@ -549,16 +716,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
         <div className="flex justify-between gap-4 mt-6">
           {step > 1 && (
             <Button variant="outline" onClick={prevStep}>
-              {t.back}
+              {t.registration.back}
             </Button>
           )}
           {step < 5 ? (
             <Button onClick={nextStep} className="ml-auto">
-              {t.next}
+              {t.registration.next}
             </Button>
           ) : (
             <Button onClick={handleSubmit} className="ml-auto bg-accent hover:bg-accent/90 text-accent-foreground">
-              {t.submit}
+              {t.registration.submit}
             </Button>
           )}
         </div>
