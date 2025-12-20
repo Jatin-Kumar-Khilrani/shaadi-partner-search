@@ -1,13 +1,11 @@
 export interface ChatMessage {
-  id: string
+  fromProfil
   fromProfileId: string
-  fromUserId?: string
   toProfileId: string
-  toUserId?: string
-  message: string
-  timestamp: string
-  type: 'user' | 'admin' | 'admin-broadcast' | 'admin-to-user' | 'user-to-user'
-  read: boolean
+  type: 'user' | 
+  createdAt: string
+}
+export interfac
   createdAt: string
   updatedAt?: string
 }
@@ -15,9 +13,8 @@ export interface ChatMessage {
 export interface ChatConversation {
   id: string
   participants: string[]
-  lastMessage: string | ChatMessage
-  timestamp: string
+  lastMessage: string
+
   unreadCount: number
-  createdAt: string
-  updatedAt?: string
+
 }
