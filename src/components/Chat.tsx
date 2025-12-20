@@ -61,8 +61,8 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
           })
         } else {
           const conv = convMap.get(convId)!
-          const lastMsg = typeof conv.lastMessage === 'string' ? { timestamp: conv.lastMessage } : conv.lastMessage
-          if (new Date(msg.timestamp) > new Date(lastMsg.timestamp)) {
+          const lastMsg = conv.lastMessage
+          if (lastMsg && new Date(msg.timestamp) > new Date(lastMsg.timestamp)) {
             conv.lastMessage = msg
             conv.timestamp = msg.timestamp
             conv.updatedAt = msg.timestamp
@@ -84,8 +84,8 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
             })
           } else {
             const conv = convMap.get(convId)!
-            const lastMsg = typeof conv.lastMessage === 'string' ? { timestamp: conv.lastMessage } : conv.lastMessage
-            if (new Date(msg.timestamp) > new Date(lastMsg.timestamp)) {
+            const lastMsg = conv.lastMessage
+            if (lastMsg && new Date(msg.timestamp) > new Date(lastMsg.timestamp)) {
               conv.lastMessage = msg
               conv.timestamp = msg.timestamp
               conv.updatedAt = msg.timestamp
@@ -110,8 +110,8 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
             })
           } else {
             const conv = convMap.get(convId)!
-            const lastMsg = typeof conv.lastMessage === 'string' ? { timestamp: conv.lastMessage } : conv.lastMessage
-            if (new Date(msg.timestamp) > new Date(lastMsg.timestamp)) {
+            const lastMsg = conv.lastMessage
+            if (lastMsg && new Date(msg.timestamp) > new Date(lastMsg.timestamp)) {
               conv.lastMessage = msg
               conv.timestamp = msg.timestamp
               conv.updatedAt = msg.timestamp
@@ -123,7 +123,7 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
     })
 
     const sortedConversations = Array.from(convMap.values()).sort(
-      (a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime()
+      (a, b) => new Date(b.updatedAt || b.createdAt || '').getTime() - new Date(a.updatedAt || a.createdAt || '').getTime()
     )
 
     setConversations(sortedConversations)
@@ -215,7 +215,7 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
       return t.admin
     }
 
-    const otherProfileId = conv.participants.find(id => id !== currentUserProfile?.profileId)
+    const otherProfileId = conv.participants?.find(id => id !== currentUserProfile?.profileId)
     const profile = profiles.find(p => p.profileId === otherProfileId)
     return profile?.fullName || otherProfileId || ''
   }
@@ -273,10 +273,10 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
                             )}
                           </div>
                           <p className="text-xs truncate opacity-70">
-                            {typeof conv.lastMessage === 'string' ? conv.lastMessage : conv.lastMessage.message}
+                            {conv.lastMessage?.message || ''}
                           </p>
                           <p className="text-xs opacity-50">
-                            {formatDate(typeof conv.lastMessage === 'string' ? (conv.timestamp || conv.createdAt) : conv.lastMessage.timestamp)} {formatTime(typeof conv.lastMessage === 'string' ? (conv.timestamp || conv.createdAt) : conv.lastMessage.timestamp)}
+                            {formatDate((conv.lastMessage?.timestamp || conv.timestamp || conv.createdAt) || '')} {formatTime((conv.lastMessage?.timestamp || conv.timestamp || conv.createdAt) || '')}
                           </p>
                         </div>
                       </div>

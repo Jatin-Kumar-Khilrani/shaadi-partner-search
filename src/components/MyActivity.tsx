@@ -41,7 +41,7 @@ export function MyActivity({ loggedInUserId, profiles, language }: MyActivityPro
   const receivedInterests = interests?.filter(i => i.toProfileId === currentUserProfile?.profileId) || []
   const myContactRequests = contactRequests?.filter(r => r.fromUserId === loggedInUserId) || []
   const myChats = messages?.filter(
-    m => m.fromUserId === loggedInUserId || m.toProfileId === currentUserProfile?.profileId
+    m => m.fromUserId === loggedInUserId || m.fromProfileId === currentUserProfile?.profileId || m.toProfileId === currentUserProfile?.profileId
   ).slice(-10) || []
 
   const getProfileByProfileId = (profileId: string) => {
@@ -201,7 +201,7 @@ export function MyActivity({ loggedInUserId, profiles, language }: MyActivityPro
                   ) : (
                     <div className="space-y-4">
                       {myChats.map((msg) => {
-                        const isMyMessage = msg.fromUserId === loggedInUserId
+                        const isMyMessage = msg.fromProfileId === currentUserProfile?.profileId
                         const otherProfileId = isMyMessage ? msg.toProfileId : msg.fromProfileId
                         const otherProfile = profiles.find(p => p.profileId === otherProfileId)
                         
@@ -213,10 +213,10 @@ export function MyActivity({ loggedInUserId, profiles, language }: MyActivityPro
                                 <div className="flex-1">
                                   <div className="flex items-center justify-between mb-2">
                                     <p className="font-semibold">
-                                      {isMyMessage ? t.to : t.from}: {otherProfile?.profileId || msg.type === 'admin-broadcast' ? 'Admin' : 'Unknown'}
+                                      {isMyMessage ? t.to : t.from}: {msg.type === 'admin-broadcast' || msg.type === 'admin-to-user' || msg.type === 'admin' ? 'Admin' : (otherProfile?.profileId || 'Unknown')}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
-                                      {new Date(msg.timestamp).toLocaleString(language === 'hi' ? 'hi-IN' : 'en-IN')}
+                                      {new Date(msg.timestamp || msg.createdAt).toLocaleString(language === 'hi' ? 'hi-IN' : 'en-IN')}
                                     </p>
                                   </div>
                                   <p className="text-sm text-muted-foreground">{msg.message}</p>
