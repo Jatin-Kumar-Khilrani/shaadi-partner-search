@@ -60,6 +60,13 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
       return
     }
 
+    if (currentUserProfile.id === profile.id) {
+      toast.error(
+        language === 'hi' ? 'आप अपने आप को रुचि नहीं भेज सकते' : 'You cannot send interest to yourself'
+      )
+      return
+    }
+
     if (existingInterest) {
       toast.info(
         language === 'hi' ? 'आपने पहले ही रुचि दर्ज की है' : 'You have already expressed interest'
@@ -91,6 +98,13 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     if (!currentUserProfile) {
       toast.error(
         language === 'hi' ? 'कृपया पहले लॉगिन करें' : 'Please login first'
+      )
+      return
+    }
+
+    if (currentUserProfile.id === profile.id) {
+      toast.error(
+        language === 'hi' ? 'आप अपने आप को संपर्क अनुरोध नहीं भेज सकते' : 'You cannot send contact request to yourself'
       )
       return
     }
@@ -236,33 +250,35 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
 
           <Separator />
 
-          <section className="bg-muted/30 p-4 rounded-lg">
-            <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
-              <Phone size={22} weight="fill" />
-              {t.contactInfo}
-            </h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              {t.privacyNotice}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button 
-                onClick={handleExpressInterest} 
-                className="flex-1 bg-primary hover:bg-primary/90"
-                disabled={!!existingInterest}
-                variant={existingInterest ? "secondary" : "default"}
-              >
-                <Heart size={20} weight="fill" className="mr-2" />
-                {existingInterest 
-                  ? (language === 'hi' ? 'रुचि भेजी गई' : 'Interest Sent')
-                  : t.expressInterest
-                }
-              </Button>
-              <Button onClick={handleRequestContact} variant="outline" className="flex-1">
-                <Phone size={20} className="mr-2" />
-                {t.requestContact}
-              </Button>
-            </div>
-          </section>
+          {currentUserProfile && currentUserProfile.id !== profile.id && (
+            <section className="bg-muted/30 p-4 rounded-lg">
+              <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                <Phone size={22} weight="fill" />
+                {t.contactInfo}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {t.privacyNotice}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button 
+                  onClick={handleExpressInterest} 
+                  className="flex-1 bg-primary hover:bg-primary/90"
+                  disabled={!!existingInterest}
+                  variant={existingInterest ? "secondary" : "default"}
+                >
+                  <Heart size={20} weight="fill" className="mr-2" />
+                  {existingInterest 
+                    ? (language === 'hi' ? 'रुचि भेजी गई' : 'Interest Sent')
+                    : t.expressInterest
+                  }
+                </Button>
+                <Button onClick={handleRequestContact} variant="outline" className="flex-1">
+                  <Phone size={20} className="mr-2" />
+                  {t.requestContact}
+                </Button>
+              </div>
+            </section>
+          )}
 
           <div className="text-xs text-muted-foreground text-center pt-2">
             {t.profileId}: {profile.id} | {t.createdOn}: {new Date(profile.createdAt).toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-US')}

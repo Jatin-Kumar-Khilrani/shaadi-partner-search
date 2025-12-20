@@ -639,6 +639,7 @@ function App() {
             loggedInUserId={currentUserProfile?.id || null}
             profiles={profiles || []}
             language={language}
+            onViewProfile={setSelectedProfile}
           />
         )}
 

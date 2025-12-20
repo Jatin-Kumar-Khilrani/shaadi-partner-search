@@ -26,6 +26,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
   const [filters, setFilters] = useState<SearchFilters>({})
   const [showFilters, setShowFilters] = useState(false)
 
+  const currentUserProfile = profiles.find(p => p.id === loggedInUserId)
+
   const t = {
     title: language === 'hi' ? 'मेरे मैच' : 'My Matches',
     search: language === 'hi' ? 'खोजें' : 'Search',
@@ -51,10 +53,15 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
   }
 
   const filteredProfiles = useMemo(() => {
-    if (!profiles) return []
+    if (!profiles || !currentUserProfile) return []
     
     return profiles.filter(profile => {
+      if (profile.id === currentUserProfile.id) return false
+      
       if (profile.status !== 'verified') return false
+      
+      if (currentUserProfile.gender === 'male' && profile.gender !== 'female') return false
+      if (currentUserProfile.gender === 'female' && profile.gender !== 'male') return false
       
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
@@ -75,7 +82,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
       
       return true
     })
-  }, [profiles, searchQuery, filters])
+  }, [profiles, currentUserProfile, searchQuery, filters])
 
   const FilterPanel = () => (
     <div className="space-y-6">

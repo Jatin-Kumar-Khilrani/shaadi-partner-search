@@ -1,21 +1,24 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useKV } from '@github/spark/hooks'
-import { Eye, Heart, ChatCircle, Clock } from '@phosphor-icons/react'
+import { Eye, Heart, ChatCircle, Clock, Check, X } from '@phosphor-icons/react'
 import type { Interest, ContactRequest, Profile } from '@/types/profile'
 import type { ChatMessage } from '@/types/chat'
 import type { Language } from '@/lib/translations'
+import { toast } from 'sonner'
 
 interface MyActivityProps {
   loggedInUserId: string | null
   profiles: Profile[]
   language: Language
+  onViewProfile?: (profile: Profile) => void
 }
 
-export function MyActivity({ loggedInUserId, profiles, language }: MyActivityProps) {
-  const [interests] = useKV<Interest[]>('interests', [])
+export function MyActivity({ loggedInUserId, profiles, language, onViewProfile }: MyActivityProps) {
+  const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests] = useKV<ContactRequest[]>('contactRequests', [])
   const [messages] = useKV<ChatMessage[]>('chatMessages', [])
 
@@ -35,6 +38,9 @@ export function MyActivity({ loggedInUserId, profiles, language }: MyActivityPro
     to: language === 'hi' ? 'को' : 'To',
     from: language === 'hi' ? 'से' : 'From',
     noActivity: language === 'hi' ? 'कोई गतिविधि नहीं' : 'No activity',
+    viewProfile: language === 'hi' ? 'प्रोफाइल देखें' : 'View Profile',
+    accept: language === 'hi' ? 'स्वीकार करें' : 'Accept',
+    decline: language === 'hi' ? 'अस्वीकार करें' : 'Decline',
   }
 
   const sentInterests = interests?.filter(i => i.fromProfileId === currentUserProfile?.profileId) || []
@@ -61,6 +67,28 @@ export function MyActivity({ loggedInUserId, profiles, language }: MyActivityPro
     if (status === 'accepted' || status === 'approved') return <Badge variant="default" className="bg-teal">{t.accepted}</Badge>
     if (status === 'declined') return <Badge variant="destructive">{t.declined}</Badge>
     return <Badge>{status}</Badge>
+  }
+
+  const handleAcceptInterest = (interestId: string) => {
+    setInterests((current) => 
+      (current || []).map(interest => 
+        interest.id === interestId 
+          ? { ...interest, status: 'accepted' as const }
+          : interest
+      )
+    )
+    toast.success(language === 'hi' ? 'रुचि स्वीकार की गई' : 'Interest accepted')
+  }
+
+  const handleDeclineInterest = (interestId: string) => {
+    setInterests((current) => 
+      (current || []).map(interest => 
+        interest.id === interestId 
+          ? { ...interest, status: 'declined' as const }
+          : interest
+      )
+    )
+    toast.success(language === 'hi' ? 'रुचि अस्वीकार की गई' : 'Interest declined')
   }
 
   return (
@@ -131,15 +159,52 @@ export function MyActivity({ loggedInUserId, profiles, language }: MyActivityPro
                         return (
                           <Card key={interest.id}>
                             <CardContent className="pt-6">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                  <Heart size={24} weight="fill" className="text-accent" />
-                                  <div>
-                                    <p className="font-semibold">{t.from}: {profile?.profileId || 'Unknown'}</p>
-                                    <p className="text-sm text-muted-foreground">{formatDate(interest.createdAt)}</p>
+                              <div className="flex flex-col gap-4">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-4">
+                                    <Heart size={24} weight="fill" className="text-accent" />
+                                    <div>
+                                      <p className="font-semibold">{t.from}: {profile?.profileId || 'Unknown'}</p>
+                                      <p className="text-sm text-muted-foreground">{formatDate(interest.createdAt)}</p>
+                                    </div>
                                   </div>
+                                  {getStatusBadge(interest.status)}
                                 </div>
-                                {getStatusBadge(interest.status)}
+                                <div className="flex gap-2">
+                                  {profile && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => onViewProfile?.(profile)}
+                                      className="flex-1"
+                                    >
+                                      <Eye size={16} className="mr-2" />
+                                      {t.viewProfile}
+                                    </Button>
+                                  )}
+                                  {interest.status === 'pending' && (
+                                    <>
+                                      <Button 
+                                        variant="default" 
+                                        size="sm"
+                                        onClick={() => handleAcceptInterest(interest.id)}
+                                        className="flex-1 bg-teal hover:bg-teal/90"
+                                      >
+                                        <Check size={16} className="mr-2" />
+                                        {t.accept}
+                                      </Button>
+                                      <Button 
+                                        variant="destructive" 
+                                        size="sm"
+                                        onClick={() => handleDeclineInterest(interest.id)}
+                                        className="flex-1"
+                                      >
+                                        <X size={16} className="mr-2" />
+                                        {t.decline}
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
                               </div>
                             </CardContent>
                           </Card>
