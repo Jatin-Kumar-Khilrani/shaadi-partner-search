@@ -7,15 +7,15 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import type { Language } from '@/lib/translations'
 
-const ADMIN_PHONE_NUMBERS = ['+91-7
-interface AdminLoginDialogPro
+const ADMIN_USERNAME = 'rkkhilrani'
+const ADMIN_PASSWORD = '1234'
+const ADMIN_PHONE_NUMBERS = ['+91-7895601505', '+91-9828585300']
+
+interface AdminLoginDialogProps {
+  open: boolean
   onClose: () => void
-
-
-  const [userna
-  const [otp, setOtp]
-  const [step, setStep] = us
-  const t = {
+  onLoginSuccess: () => void
+  language: Language
 }
 
 export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: AdminLoginDialogProps) {
@@ -34,121 +34,108 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
     verify: language === 'hi' ? 'सत्यापित करें' : 'Verify',
     invalidCredentials: language === 'hi' ? 'अमान्य यूज़रनेम या पासवर्ड' : 'Invalid username or password',
     invalidOtp: language === 'hi' ? 'अमान्य OTP' : 'Invalid OTP',
-        {
-   
+    otpSent: language === 'hi' ? 'OTP दोनों नंबरों पर भेज दिया गया है' : 'OTP sent to both numbers',
+  }
 
-      )
-      setTimeout(() => {
-          language === 'hi' ? 'परीक्षण के लिए OTP' : 'OTP for Testing',
-            description: l
-              : `You
+  const handleCredentialsSubmit = () => {
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+      const newOtp = Math.floor(100000 + Math.random() * 900000).toString()
+      setGeneratedOtp(newOtp)
+      setStep('otp')
       
+      toast.success(t.otpSent)
+      
+      setTimeout(() => {
+        toast.info(
+          language === 'hi' ? 'परीक्षण के लिए OTP' : 'OTP for Testing',
+          {
+            description: language === 'hi' 
+              ? `आपका OTP है: ${newOtp}`
+              : `Your OTP is: ${newOtp}`,
+            duration: 10000
+          }
+        )
       }, 500)
+    } else {
       toast.error(t.invalidCredentials)
+    }
   }
+
   const handleOtpSubmit = () => {
+    if (otp === generatedOtp) {
       toast.success(language === 'hi' ? 'लॉगिन सफल!' : 'Login successful!')
-      onClose()
-      setPassword('')
-      set
-    } e
-
-
-    onClose()
-    setPassword('')
-    setGene
+      onLoginSuccess()
+      handleClose()
+    } else {
+      toast.error(t.invalidOtp)
+    }
   }
+
+  const handleClose = () => {
+    onClose()
+    setUsername('')
+    setPassword('')
+    setOtp('')
+    setGeneratedOtp('')
+    setStep('credentials')
+  }
+
   return (
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
-          <DialogTitle>{t.t
-        <Ca
-         
-             
-            
+        <DialogHeader>
+          <DialogTitle>{t.title}</DialogTitle>
+        </DialogHeader>
+        <Card>
+          <CardContent className="pt-6">
+            {step === 'credentials' ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-username">{t.username}</Label>
+                  <Input
+                    id="admin-username"
                     type="text"
-     
-   
-
-                  <Input
-                    type="passw
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCredentialsSubmit()}
                   />
-               
-                </But
-            ) : (
-                
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-password">{t.password}</Label>
                   <Input
-                    type="te
-            
-                    onKeyDown={
-     
-   
-
+                    id="admin-password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCredentialsSubmit()}
+                  />
+                </div>
+                <Button onClick={handleCredentialsSubmit} className="w-full">
+                  {t.submit}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-otp">{t.enterOtp}</Label>
+                  <Input
+                    id="admin-otp"
+                    type="text"
+                    maxLength={6}
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                    onKeyDown={(e) => e.key === 'Enter' && handleOtpSubmit()}
+                    placeholder="000000"
+                  />
+                </div>
+                <Button onClick={handleOtpSubmit} className="w-full">
+                  {t.verify}
+                </Button>
+              </div>
             )}
-        </Car
+          </CardContent>
+        </Card>
+      </DialogContent>
     </Dialog>
+  )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
