@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import type { Language } from '@/lib/translations'
 
@@ -23,7 +22,6 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [selectedPhone, setSelectedPhone] = useState('')
   const [otp, setOtp] = useState('')
   const [generatedOtp, setGeneratedOtp] = useState('')
 
@@ -32,20 +30,18 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
     subtitle: language === 'hi' ? 'सिस्टम तक पहुंचने के लिए अपनी साख दर्ज करें' : 'Enter your credentials to access the system',
     username: language === 'hi' ? 'उपयोगकर्ता नाम' : 'Username',
     password: language === 'hi' ? 'पासवर्ड' : 'Password',
-    selectPhone: language === 'hi' ? 'OTP के लिए फोन नंबर चुनें' : 'Select Phone for OTP',
-    selectPhoneNumber: language === 'hi' ? 'कृपया फोन नंबर चुनें' : 'Please select phone number',
     continue: language === 'hi' ? 'जारी रखें' : 'Continue',
     otpTitle: language === 'hi' ? 'OTP सत्यापन' : 'OTP Verification',
-    otpSentTo: language === 'hi' ? 'OTP भेजा गया' : 'OTP sent to',
+    otpSentTo: language === 'hi' ? 'OTP दोनों नंबरों पर भेजा गया' : 'OTP sent to both numbers',
     enterOtp: language === 'hi' ? '6 अंकों का OTP दर्ज करें' : 'Enter 6-digit OTP',
     verify: language === 'hi' ? 'सत्यापित करें' : 'Verify',
     back: language === 'hi' ? 'वापस' : 'Back',
     resend: language === 'hi' ? 'फिर से भेजें' : 'Resend OTP',
     invalidCredentials: language === 'hi' ? 'अमान्य उपयोगकर्ता नाम या पासवर्ड' : 'Invalid username or password',
-    selectPhoneError: language === 'hi' ? 'कृपया OTP के लिए एक फोन नंबर चुनें' : 'Please select a phone number for OTP',
     otpSent: language === 'hi' ? 'OTP भेजा गया। कृपया अपना फोन जांचें।' : 'OTP sent. Please check your phone.',
     invalidOtp: language === 'hi' ? 'अमान्य OTP। कृपया पुनः प्रयास करें।' : 'Invalid OTP. Please try again.',
-    loginSuccess: language === 'hi' ? 'लॉगिन सफल!' : 'Login successful!'
+    loginSuccess: language === 'hi' ? 'लॉगिन सफल!' : 'Login successful!',
+    bothNumbers: language === 'hi' ? 'दोनों नंबर' : 'Both Numbers'
   }
 
   const handleCredentialsSubmit = () => {
@@ -54,16 +50,11 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
       return
     }
 
-    if (!selectedPhone) {
-      toast.error(t.selectPhoneError)
-      return
-    }
-
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
     setGeneratedOtp(otp)
     setStep('otp')
     
-    toast.success(`${t.otpSent} ${otp}`)
+    toast.success(`${t.otpSent} ${ADMIN_PHONES.join(', ')}: ${otp}`)
   }
 
   const handleOtpSubmit = () => {
@@ -80,14 +71,13 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
   const handleResendOtp = () => {
     const newOtp = Math.floor(100000 + Math.random() * 900000).toString()
     setGeneratedOtp(newOtp)
-    toast.success(`${t.otpSent} ${newOtp}`)
+    toast.success(`${t.otpSent} ${ADMIN_PHONES.join(', ')}: ${newOtp}`)
   }
 
   const handleClose = () => {
     setStep('credentials')
     setUsername('')
     setPassword('')
-    setSelectedPhone('')
     setOtp('')
     setGeneratedOtp('')
     onClose()
@@ -133,22 +123,6 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>{t.selectPhone}</Label>
-                <Select value={selectedPhone} onValueChange={setSelectedPhone}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t.selectPhoneNumber} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ADMIN_PHONES.map((phone) => (
-                      <SelectItem key={phone} value={phone}>
-                        {phone}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <Button onClick={handleCredentialsSubmit} className="w-full">
                 {t.continue}
               </Button>
@@ -157,9 +131,16 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
         ) : (
           <Card>
             <CardContent className="pt-6 space-y-4">
-              <p className="text-sm text-muted-foreground text-center mb-4">
-                {t.otpSentTo}: <strong>{selectedPhone}</strong>
-              </p>
+              <div className="text-center mb-4">
+                <p className="text-sm text-muted-foreground mb-2">
+                  {t.otpSentTo}
+                </p>
+                <div className="flex flex-col gap-1">
+                  {ADMIN_PHONES.map((phone) => (
+                    <strong key={phone} className="text-sm">{phone}</strong>
+                  ))}
+                </div>
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="admin-otp">{t.enterOtp}</Label>
