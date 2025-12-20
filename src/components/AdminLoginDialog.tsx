@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
-const ADMIN_PASSWORD = '1234'
-
-  open: boolean
+import { Label } from '@/components/ui/label'
+import { Card, CardContent } from '@/components/ui/card'
+import { toast } from 'sonner'
+import type { Language } from '@/lib/translations'
 
 const ADMIN_USERNAME = 'rkkhilrani'
 const ADMIN_PASSWORD = '1234'
@@ -16,60 +16,61 @@ interface AdminLoginDialogProps {
   onClose: () => void
   onLoginSuccess: () => void
   language: Language
- 
+}
 
+export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: AdminLoginDialogProps) {
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
+  const [otp, setOtp] = useState('')
+  const [generatedOtp, setGeneratedOtp] = useState('')
+
+  const t = {
+    title: language === 'hi' ? 'एडमिन लॉगिन' : 'Admin Login',
+    subtitle: language === 'hi' ? 'एडमिन क्रेडेंशियल्स दर्ज करें' : 'Enter admin credentials',
+    username: language === 'hi' ? 'यूज़रनेम' : 'Username',
+    password: language === 'hi' ? 'पासवर्ड' : 'Password',
+    continue: language === 'hi' ? 'जारी रखें' : 'Continue',
+    otpTitle: language === 'hi' ? 'OTP सत्यापन' : 'OTP Verification',
+    otpSent: language === 'hi' ? 'OTP निम्नलिखित नंबरों पर भेजा गया:' : 'OTP sent to the following numbers:',
+    otpLabel: language === 'hi' ? '6-अंकीय OTP दर्ज करें' : 'Enter 6-digit OTP',
+    verify: language === 'hi' ? 'सत्यापित करें' : 'Verify',
+    invalidCredentials: language === 'hi' ? 'अमान्य यूज़रनेम या पासवर्ड' : 'Invalid username or password',
+    otpSentSuccess: language === 'hi' ? 'OTP भेजा गया' : 'OTP Sent',
+    invalidOtp: language === 'hi' ? 'अमान्य OTP' : 'Invalid OTP',
   }
+
   const handleCredentialsSubmit = () => {
-      const otp = Math.floor(100000 + Math.ran
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString()
+      setGeneratedOtp(otp)
       setStep('otp')
+      toast.success(
         t.otpSentSuccess,
-          description: `${language === 'hi' ? 'कंसोल म
-
+        {
+          description: `${language === 'hi' ? 'कंसोल में OTP देखें (डेमो के लिए):' : 'Check console for OTP (for demo):'} ${otp}`,
+          duration: 10000
+        }
+      )
+      console.log(`Admin OTP: ${otp}`)
     } else {
+      toast.error(t.invalidCredentials)
     }
-
-    if (otp === generatedOtp) {
-      handleClose()
-      toast.error(t.invalidOtp)
   }
+
+  const handleOtpSubmit = () => {
+    if (otp === generatedOtp) {
+      onLoginSuccess()
+      handleClose()
+    } else {
+      toast.error(t.invalidOtp)
+    }
+  }
+
   const handleClose = () => {
     setUsername('')
-    setOtp('')
-    onClose()
-
-    <Dialog open={open} onOpenChange={handleClose}>
-   
-
-        <Card>
-            {step === 'credentials' ? (
-                <p className="text-sm text-muted-foreground mb-4">{t.sub
-                  <Label h
-                    
-                    
-                  />
-         
-                  <Input
-         
-       
-                  />
-            
-                </Button>
-     
-   
-
-                      <li key={in
-                  </ul>
-                <div c
-                  <
-            
-                    onKeyDown={
-     
-   
-
-            )}
-        </Card>
-    </Dialog>
-}
+    setPassword('')
+    setStep('credentials')
     setOtp('')
     setGeneratedOtp('')
     onClose()
