@@ -28,7 +28,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile }
     title: language === 'hi' ? 'मेरी गतिविधि' : 'My Activity',
     sentInterests: language === 'hi' ? 'भेजी गई रुचि' : 'Sent Interests',
     receivedInterests: language === 'hi' ? 'प्राप्त रुचि' : 'Received Interests',
-    myContactRequests: language === 'hi' ? 'मेरे संपर्क अनुरोध' : 'My Contact Requests',
+    myContactRequests: language === 'hi' ? 'संपर्क अनुरोध' : 'Contact Requests',
     recentChats: language === 'hi' ? 'हालिया चैट' : 'Recent Chats',
     profileViews: language === 'hi' ? 'प्रोफाइल देखे गए' : 'Profile Views',
     pending: language === 'hi' ? 'लंबित' : 'Pending',
@@ -41,11 +41,14 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile }
     viewProfile: language === 'hi' ? 'प्रोफाइल देखें' : 'View Profile',
     accept: language === 'hi' ? 'स्वीकार करें' : 'Accept',
     decline: language === 'hi' ? 'अस्वीकार करें' : 'Decline',
+    sentRequests: language === 'hi' ? 'भेजे गए अनुरोध' : 'Sent Requests',
+    receivedRequests: language === 'hi' ? 'प्राप्त अनुरोध' : 'Received Requests',
   }
 
   const sentInterests = interests?.filter(i => i.fromProfileId === currentUserProfile?.profileId) || []
   const receivedInterests = interests?.filter(i => i.toProfileId === currentUserProfile?.profileId) || []
-  const myContactRequests = contactRequests?.filter(r => r.fromUserId === loggedInUserId) || []
+  const sentContactRequests = contactRequests?.filter(r => r.fromUserId === loggedInUserId) || []
+  const receivedContactRequests = contactRequests?.filter(r => r.toUserId === loggedInUserId) || []
   const myChats = messages?.filter(
     m => m.fromUserId === loggedInUserId || m.fromProfileId === currentUserProfile?.profileId || m.toProfileId === currentUserProfile?.profileId
   ).slice(-10) || []
@@ -224,33 +227,74 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile }
                 <CardTitle>{t.myContactRequests}</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[500px]">
-                  {myContactRequests.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">{t.noActivity}</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {myContactRequests.map((request) => {
-                        const profile = profiles.find(p => p.id === request.toUserId)
-                        return (
-                          <Card key={request.id}>
-                            <CardContent className="pt-6">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                  <Eye size={24} weight="fill" className="text-teal" />
-                                  <div>
-                                    <p className="font-semibold">{t.to}: {profile?.profileId || 'Unknown'}</p>
-                                    <p className="text-sm text-muted-foreground">{formatDate(request.createdAt)}</p>
+                <Tabs defaultValue="sent-requests">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="sent-requests">{t.sentRequests}</TabsTrigger>
+                    <TabsTrigger value="received-requests">{t.receivedRequests}</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="sent-requests">
+                    <ScrollArea className="h-[450px]">
+                      {sentContactRequests.length === 0 ? (
+                        <p className="text-muted-foreground text-center py-8">{t.noActivity}</p>
+                      ) : (
+                        <div className="space-y-4">
+                          {sentContactRequests.map((request) => {
+                            const profile = profiles.find(p => p.id === request.toUserId)
+                            return (
+                              <Card key={request.id}>
+                                <CardContent className="pt-6">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                      <Eye size={24} weight="fill" className="text-teal" />
+                                      <div>
+                                        <p className="font-semibold">{t.to}: {profile?.profileId || 'Unknown'}</p>
+                                        <p className="text-sm text-muted-foreground">{formatDate(request.createdAt)}</p>
+                                      </div>
+                                    </div>
+                                    {getStatusBadge(request.status)}
                                   </div>
-                                </div>
-                                {getStatusBadge(request.status)}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )
-                      })}
-                    </div>
-                  )}
-                </ScrollArea>
+                                </CardContent>
+                              </Card>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </TabsContent>
+
+                  <TabsContent value="received-requests">
+                    <ScrollArea className="h-[450px]">
+                      {receivedContactRequests.length === 0 ? (
+                        <p className="text-muted-foreground text-center py-8">{t.noActivity}</p>
+                      ) : (
+                        <div className="space-y-4">
+                          {receivedContactRequests.map((request) => {
+                            const profile = profiles.find(p => p.id === request.fromUserId)
+                            return (
+                              <Card key={request.id}>
+                                <CardContent className="pt-6">
+                                  <div className="flex flex-col gap-4">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-4">
+                                        <Eye size={24} weight="fill" className="text-accent" />
+                                        <div>
+                                          <p className="font-semibold">{t.from}: {profile?.profileId || 'Unknown'}</p>
+                                          <p className="text-sm text-muted-foreground">{formatDate(request.createdAt)}</p>
+                                        </div>
+                                      </div>
+                                      {getStatusBadge(request.status)}
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </TabsContent>
