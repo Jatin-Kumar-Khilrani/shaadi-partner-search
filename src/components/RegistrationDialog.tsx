@@ -986,14 +986,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
           {step < 5 && !showVerification ? (
             <Button onClick={nextStep} className="ml-auto">
               {t.registration.next}
-            </Button>
           ) : step === 5 ? (
-            <Button onClick={handleSubmit} className="ml-auto bg-accent hover:bg-accent/90 text-accent-foreground">
+          ) : step === 5 ? (
               {t.registration.submit}
             </Button>
-          ) : null}
         </div>
-      </DialogContent>
+          ) : null}
     </Dialog>
   )
 }
