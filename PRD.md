@@ -1,6 +1,6 @@
 # ShaadiPartnerSearch - Matrimony Service - Product Requirements Document
 
-A selfless community service platform connecting families for matrimonial alliances, built on traditional values with modern technology. Open to all communities and religions.
+A comprehensive matrimony platform connecting families for matrimonial alliances, built on traditional values with modern technology. Open to all communities and religions. Features unique profile ID system, multi-photo uploads, advanced filtering, chat system, and complete admin management.
 
 **Experience Qualities**: 
 1. **Trustworthy** - Every interaction should reinforce safety, authenticity, and community values through verification badges and volunteer presence
@@ -12,54 +12,110 @@ This platform requires profile management, search filters, verification workflow
 
 ## Essential Features
 
-### Profile Search & Discovery
-- **Functionality**: Advanced search with filters for gender, age range (male 21+, female 18+), location, religion, caste, education, and occupation
-- **Purpose**: Help families find compatible matches across all communities based on traditional and modern criteria
-- **Trigger**: User enters search criteria on home page or dedicated search interface
-- **Progression**: Select filters → View search criteria → Click search button → Browse paginated results → View profile cards with basic info → Click to see detailed profile
-- **Success criteria**: Results return within 2 seconds, filters work accurately, at least 5-10 relevant profiles shown when database has sufficient data
+### Unique Profile ID System
+- **Functionality**: Auto-generated profile ID format - First name initial + Last name initial + 4 random digits + last 2 digits of birth year (e.g., AB123499 for Amit Batra born in 1999)
+- **Purpose**: Create memorable, unique identifiers for each profile that include birth year validation
+- **Trigger**: Automatically generated during profile registration based on name and DOB
+- **Progression**: User enters name and DOB → System generates unique profile ID → ID displayed in profile → Used for all communications
+- **Success criteria**: No duplicate IDs, format validation works, birth year matches DOB
 
-### Profile Registration & Management
-- **Functionality**: Multi-step form capturing personal details, family background, education, profession, photos (including live photo/selfie upload option), and contact information with age restrictions (male 21+, female 18+)
-- **Purpose**: Create comprehensive, authentic profiles that help families make informed decisions while respecting privacy
-- **Trigger**: User clicks "Register Profile" from navigation or home page CTA
-- **Progression**: Fill personal details (with age validation) → Add family info → Education & career → Upload photo or live selfie → Additional details → Choose membership plan (₹500 for 6 months or ₹900 for 1 year) → Review & submit → OTP verification → Awaiting manual approval → Profile goes live with verification badge
-- **Success criteria**: Form validates all required fields including age restrictions, photo uploads successfully, OTP verification works, profile enters review queue, user receives confirmation with payment details
+### Multi-Photo Upload System
+- **Functionality**: Upload up to 5 photos plus mandatory live selfie/photo verification
+- **Purpose**: Provide comprehensive visual profile while ensuring authenticity
+- **Trigger**: During registration and profile editing
+- **Progression**: User uploads photos via file picker (up to 5) → Separate upload for live photo/selfie via camera or file → Preview all photos → Submit for verification
+- **Success criteria**: All 5 photo slots functional, live photo separate from gallery, camera access works, photo preview displays correctly
 
-### Trust & Verification System
-- **Functionality**: 5-level trust system with badges - Level 1 (mobile), Level 3 (ID + photo), Level 5 (video call verified by volunteers)
-- **Purpose**: Build confidence in profiles, reduce fraud, maintain community standards, protect vulnerable members
-- **Trigger**: User completes registration, volunteers review submissions, verification requests sent
-- **Progression**: Submit profile → Mobile OTP (Level 1) → Upload ID document → Volunteer reviews → Badge awarded → Optional video verification → Higher trust level displayed
-- **Success criteria**: Clear badge visibility on profiles, volunteer dashboard for reviews, secure document storage, verification status updates in real-time
+### Contact Privacy Controls
+- **Functionality**: Users can hide/unhide email and mobile number independently
+- **Purpose**: Give users control over contact information visibility based on comfort level
+- **Trigger**: During registration and in profile settings
+- **Progression**: User selects hide/unhide toggles for email and mobile → Settings save → Contact info shows/hides based on preference and approval status
+- **Success criteria**: Toggle switches work, hidden info shows as "XXX" or masked, revealed after mutual consent/admin approval
 
-### Admin Panel for Service Management
-- **Functionality**: Centralized admin interface for managing wedding services, volunteer directory, resources, and profile verification
-- **Purpose**: Streamline management of all wedding-related services with consultation fee structure (₹200), volunteer coordination, and content curation
-- **Trigger**: Admin user clicks "Admin" in navigation
-- **Progression**: View pending profiles → Approve/reject → OR → Browse wedding service providers (venue, caterer, photographer, decorator, mehandi, makeup, DJ, priest, card designer, choreographer, other) with addresses → Verify/manage → OR → Manage volunteer directory by city → OR → Update resources and guidance content
-- **Success criteria**: All wedding services display with addresses and contact info, consultation fee (₹200) is clearly stated, volunteer list is up-to-date, admin can efficiently approve/reject profiles
+### Profile Preview & Navigation
+- **Functionality**: Dedicated profile preview page with name, up to 5 photos, profile ID, edit option, bottom navigation (Home, My Activity, Inbox, Chat)
+- **Purpose**: Central hub for users to manage their presence and interactions
+- **Trigger**: User clicks on their profile or "My Profile" link
+- **Progression**: View profile with all photos → Click edit to modify → Use bottom nav to access different sections
+- **Success criteria**: All 5 photos display in gallery, profile ID visible, navigation works, edit button functional
 
-### Language Toggle Feature
-- **Functionality**: Switch between Hindi and English throughout the application
-- **Purpose**: Make the platform accessible to users comfortable with either language
-- **Trigger**: User clicks language toggle button in header
-- **Progression**: Click translate icon → Interface updates to selected language → All text (labels, buttons, messages, descriptions) switches language
-- **Success criteria**: Language toggle works instantly, all content translates correctly, user preference persists during session
+### Settings Menu with Multiple Sections
+- **Functionality**: 3-dot menu containing Partner Preferences, Contact Info, Help, T&C, Safe Online Use Tips
+- **Purpose**: Organize all profile management and help resources in one accessible location
+- **Trigger**: User clicks settings icon (3 dots) in header or profile page
+- **Progression**: Open settings menu → Select desired section → View/edit content → Save changes
+- **Success criteria**: All menu items accessible, partner preferences save correctly, T&C page loads, help resources display
 
-### Privacy & Security Controls
-- **Functionality**: Contact information hidden until mutual interest, report/block users, no data selling policy, encrypted storage
-- **Purpose**: Protect users (especially women) from harassment, maintain dignity, build trust in the platform
-- **Trigger**: User wants to report someone, view privacy settings, or request contact info
-- **Progression**: View profile → Request contact → Admin reviews → Both parties notified → Contact shared OR → Report issue → Admin investigates → Action taken
-- **Success criteria**: Report system works, contact info remains hidden appropriately, privacy policy is clear and accessible
+### Admin Approval with AI Chat Assistant
+- **Functionality**: Admin reviews profiles with AI chatbot assistance to identify errors, suggest improvements, approve/reject/hold profiles
+- **Purpose**: Maintain quality standards while providing feedback to applicants
+- **Trigger**: New profile submitted, admin opens review panel
+- **Progression**: Profile enters queue → Admin reviews with AI suggestions → Admin can chat with applicant → Approve/Reject/Hold/Request changes → User notified
+- **Success criteria**: AI provides helpful suggestions, chat system works, status updates correctly, users receive notifications
 
-### Donation & Volunteer Recruitment
-- **Functionality**: Information about volunteering opportunities, UPI/bank details for donations, impact transparency
-- **Purpose**: Sustain the platform through community support (₹500 for 6 months or ₹900 for 1 year membership fees), recruit volunteers, demonstrate non-profit nature
-- **Trigger**: User clicks "Support Us" or donation CTA
-- **Progression**: View volunteering options → Fill volunteer form → OR → View membership pricing and benefits → Choose plan → Make payment → Receive acknowledgment
-- **Success criteria**: Volunteer form submits successfully, membership fees are clearly stated, users understand the sustainable funding model
+### Advanced Search & Match Filters
+- **Functionality**: Comprehensive filters including caste, community, mother tongue, manglik/non-manglik, veg/non-veg, drinking, smoking habits
+- **Purpose**: Help users find highly compatible matches based on lifestyle and cultural preferences
+- **Trigger**: User accesses "My Matches" or search page
+- **Progression**: Select filters (caste, community, language, manglik status, diet, habits) → Apply filters → View filtered matches → Refine as needed
+- **Success criteria**: All filter options work correctly, results update in real-time, multiple filters can combine, clear filters option available
+
+### Inbox System (Interests & Contact Requests)
+- **Functionality**: Three sections - Received Interest, Accepted Interest, View Contact Permission (pending/approved/declined)
+- **Purpose**: Manage all incoming and outgoing connection requests in organized manner
+- **Trigger**: User receives interest, accepts interest, or requests contact info
+- **Progression**: Receive interest notification → View in inbox → Accept/Decline → If accepted, request contact info → Wait for approval → View contact details
+- **Success criteria**: All three inbox sections functional, status updates correctly, notifications work, contact info reveals after approval
+
+### Dual Chat System
+- **Functionality**: Type 1 - Admin-to-User (Admin-to-All broadcast, Admin-to-Specific Profile ID); Type 2 - User-to-User (mutual consent required)
+- **Purpose**: Enable communication for support and matchmaking while maintaining safety
+- **Trigger**: Admin sends message OR users mutually agree to chat
+- **Progression**: Admin broadcasts message to all → OR Admin chats with specific profile → OR User requests chat → Other user accepts → Chat activates
+- **Success criteria**: Both chat types work independently, mutual consent enforced for user chats, admin can broadcast, chat history persists
+
+### Chat Management Interface
+- **Functionality**: Chat list sorted by latest/serial with small photo, name, last message preview, timestamp (dd/mm time IST), search/sort options
+- **Purpose**: Easy navigation and management of multiple conversations
+- **Trigger**: User opens chat section
+- **Progression**: View chat list sorted by time → See preview of last message → Search for specific chat → Click to open full conversation
+- **Success criteria**: Sorting works, timestamps in IST, search functional, unread indicators show, photos load correctly
+
+### Email & Mobile Verification
+- **Functionality**: OTP verification for both email and mobile before admin can review profile
+- **Purpose**: Ensure contact information is valid and reduce fake profiles
+- **Trigger**: User submits registration form
+- **Progression**: Enter email and mobile → Receive OTP on both → Enter codes → Verification success → Profile moves to admin queue
+- **Success criteria**: OTP sent successfully, codes validate correctly, verification status updates, unverified profiles blocked from approval
+
+### Profile Blocking System
+- **Functionality**: Admin can block profiles; blocked email/mobile cannot create new profiles
+- **Purpose**: Prevent bad actors from re-registering after rejection
+- **Trigger**: Admin rejects profile and selects "block"
+- **Progression**: Admin blocks profile → Email and mobile added to blocklist → User attempts new registration → System detects blocked credentials → Registration prevented
+- **Success criteria**: Blocklist persists, both email AND mobile checked, clear error message shown, admin can view blocklist
+
+### Privacy-Protected Profile Details
+- **Functionality**: Before admin approval, surname, date of birth, and salary are hidden/masked (show as XXX)
+- **Purpose**: Prevent users from connecting outside platform before verification complete
+- **Trigger**: User views pending profiles (not yet admin-approved)
+- **Progression**: Browse profiles → See masked sensitive details → Cannot get full name or contact info → After admin approval, details reveal to authorized viewers
+- **Success criteria**: Surname shows as "XXX", DOB hidden, salary hidden, reveals correctly after approval
+
+### Single Profile Per Contact Rule
+- **Functionality**: One email and one mobile can only register ONE profile; duplicates prevented
+- **Purpose**: Maintain database integrity and prevent spam/duplicate profiles
+- **Trigger**: User attempts registration with already-used email or mobile
+- **Progression**: Enter email/mobile → System checks database → If exists, show error → User cannot proceed
+- **Success criteria**: Duplicate detection works for both email and mobile, clear error messages, existing users can login instead
+
+### Contact Approval System
+- **Functionality**: Contact details (email/mobile) only visible after the other party approves the request; surname remains "XXX" until approval
+- **Purpose**: Protect privacy and ensure mutual consent before sharing contact information
+- **Trigger**: User requests to view another profile's contact info
+- **Progression**: Click "Request Contact" → Request sent → Other user reviews → Approves/Declines → If approved, contact info and full surname reveal → Can then send chat message
+- **Success criteria**: Request/approval flow works, masked data reveals correctly, notifications sent, chat unlocks after approval
 
 ## Edge Case Handling
 

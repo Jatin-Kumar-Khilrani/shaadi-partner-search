@@ -1,137 +1,166 @@
 import { useState } from 'react'
+import { useKV } from '@github/spark/hooks'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-  Palette
+import { 
+  Buildings, 
   Camera, 
-  Phone,
+  Phone, 
+  Envelope,
   PaintBrush, 
-  Magnifyin
+  MagnifyingGlass, 
   UserSound, 
-
+  MapPin,
   ChefHat,
+  MusicNote,
+  Star,
+  CurrencyInr,
+  Confetti
+} from '@phosphor-icons/react'
+import type { WeddingService } from '@/types/profile'
+import type { Language } from '@/lib/translations'
 
-  venue: <Buil
-  photograph
-  mehandi
-  dj: <M
-  'card-des
-  other: <Conf
+interface WeddingServicesProps {
+  language: Language
+}
 
-  venue: 'विवाह स्
-  phot
-  mehandi: 'मेहँदी / Mehandi A
+const categoryIcons = {
+  venue: <Buildings size={24} weight="fill" />,
+  caterer: <ChefHat size={24} weight="fill" />,
+  photographer: <Camera size={24} weight="fill" />,
+  decorator: <PaintBrush size={24} weight="fill" />,
+  mehandi: <PaintBrush size={24} weight="fill" />,
+  makeup: <PaintBrush size={24} weight="fill" />,
+  dj: <MusicNote size={24} weight="fill" />,
+  priest: <UserSound size={24} weight="fill" />,
+  'card-designer': <Confetti size={24} weight="fill" />,
+  choreographer: <UserSound size={24} weight="fill" />,
+  other: <Confetti size={24} weight="fill" />
+}
+
+const categoryLabels = {
+  venue: 'विवाह स्थल / Venue',
+  caterer: 'कैटरिंग / Catering',
+  photographer: 'फोटोग्राफर / Photographer',
+  decorator: 'सजावट / Decorator',
+  mehandi: 'मेहँदी / Mehandi Artist',
+  makeup: 'मेकअप / Makeup Artist',
   dj: 'डीजे / DJ',
-
+  priest: 'पुजारी / Priest',
+  'card-designer': 'कार्ड डिजाइनर / Card Designer',
+  choreographer: 'कोरियोग्राफर / Choreographer',
   other: 'अन्य / Other'
+}
 
- 
+export function WeddingServices({ language }: WeddingServicesProps) {
+  const [services] = useKV<WeddingService[]>('wedding-services', [])
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [selectedCity, setSelectedCity] = useState<string>('')
+  const [showContactDialog, setShowContactDialog] = useState(false)
+  const [selectedService, setSelectedService] = useState<WeddingService | null>(null)
 
-
-
-    if (selectedCategory !== 'all' && service.cate
+  const filteredServices = (services || []).filter(service => {
+    if (service.verificationStatus !== 'verified') return false
+    if (selectedCategory !== 'all' && service.category !== selectedCategory) return false
+    if (selectedCity && !service.city.toLowerCase().includes(selectedCity.toLowerCase())) return false
     return true
+  })
 
-
+  const handleViewDetails = (service: WeddingService) => {
     setSelectedService(service)
-  }
-  return (
-      <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-bold mb
-          </h1>
- 
-
-            <AlertDescri
-            </AlertDescription
-        </div>
-        <Card className="mb-8">
-            <div className="grid 
-                <label className="tex
-                  <SelectTrigger>
-  dj: 'डीजे / DJ',
-                    <SelectI
-                      <SelectItem key={key} value={
-                  </SelectContent>
-  other: 'अन्य / Other'
- 
-
-                    placeholder="शहर खोजें / Search City"
-                    onChange={(e) => setSelectedCity(e.target.value)}
-                  <MagnifyingGlass 
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-f
-                </div>
-
-        </Card>
-
-            <Button
-              variant={selectedCategory === key ? 'default' : 'outline'}
-              className="h-auto py-3 flex flex-col items-center gap-2"
-    return true
-    
-
-        </div>
-
-            <AlertDescription className="text-center py-8"
-    setSelectedService(service)
-        ) : (
+    setShowContactDialog(true)
   }
 
+  const t = language === 'hi' ? {
+    title: 'विवाह सेवाएं',
+    subtitle: 'सत्यापित विवाह सेवा प्रदाताओं की डायरेक्टरी',
+    consultationInfo: 'प्रत्येक सेवा प्रदाता से संपर्क करने के लिए केवल ₹200 परामर्श शुल्क।',
+    category: 'श्रेणी',
+    allCategories: 'सभी श्रेणियां',
+    searchCity: 'शहर खोजें',
+    noServices: 'इस श्रेणी या शहर में कोई सेवा उपलब्ध नहीं है।',
+    contact: 'संपर्क करें',
+    reviews: 'समीक्षाएं',
+    consultationFee: 'परामर्श शुल्क',
+    contactDetails: 'संपर्क विवरण',
+    priceRange: 'मूल्य सीमा',
+    close: 'बंद करें',
+    call: 'कॉल करें',
+    consultationNote: 'प्रारंभिक परामर्श और आवश्यकताओं की विस्तृत चर्चा के लिए। अंतिम बुकिंग शुल्क सीधे सेवा प्रदाता से तय करें।'
+  } : {
+    title: 'Wedding Services',
+    subtitle: 'Directory of verified wedding service providers',
+    consultationInfo: 'Only ₹200 consultation fee to contact each service provider.',
+    category: 'Category',
+    allCategories: 'All Categories',
+    searchCity: 'Search City',
+    noServices: 'No services available in this category or city.',
+    contact: 'Contact',
+    reviews: 'reviews',
+    consultationFee: 'Consultation Fee',
+    contactDetails: 'Contact Details',
+    priceRange: 'Price Range',
+    close: 'Close',
+    call: 'Call Now',
+    consultationNote: 'For initial consultation and detailed discussion of requirements. Final booking charges to be decided directly with the service provider.'
+  }
+
   return (
-                    </div>
+    <section className="container mx-auto px-4 md:px-8 py-12">
       <div className="max-w-7xl mx-auto">
-                  </div>
-                  <CardDescription className="line-clamp-2">{s
-                <CardContent className="spa
-          </h1>
-                  </div>
-                  <div className="flex items-center gap-2 text-s
-              
+        <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
+          {t.title}
+        </h1>
+        <p className="text-lg text-muted-foreground text-center mb-8">
+          {t.subtitle}
+        </p>
 
-                    <div className="flex ite
-                        <Star size={16} weight="fill
-                      </div>
-                        ({servi
-                  
-
+        <Alert className="mb-8 bg-accent/10 border-accent">
+          <CurrencyInr size={20} weight="bold" />
+          <AlertDescription className="text-base">
+            {t.consultationInfo}
+          </AlertDescription>
+        </Alert>
 
         <Card className="mb-8">
-                      onClick={() => han
-                    >
-                    </Button>
-                </CardContent>
-            ))}
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">{t.category}</label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger>
-
-        <DialogContent className="
-            <>
-                <div className="flex items-center gap-3 mb-2">
-                    {categoryIcons[selectedService.category]}
-                  <div>
-                    <Ba
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t.allCategories}</SelectItem>
+                    {Object.entries(categoryLabels).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                    ))}
                   </SelectContent>
-                </div>
+                </Select>
               </div>
 
-              <div className="space-y-4">
-                  <CardHeader>
-                  </CardHeader>
-                    <div
-                    placeholder="शहर खोजें / Search City"
-                        <div className="
-                    onChange={(e) => setSelectedCity(e.target.value)}
-                    
-                  <MagnifyingGlass 
-                      <a href=
-                      </a>
-
-                </div>
-                    
-                  
-                    <div
+              <div className="relative">
+                <label className="text-sm font-medium mb-2 block">{t.searchCity}</label>
+                <Input
+                  placeholder={t.searchCity}
+                  value={selectedCity}
+                  onChange={(e) => setSelectedCity(e.target.value)}
+                  className="pr-10"
+                />
+                <MagnifyingGlass 
+                  size={18} 
+                  weight="bold"
+                  className="absolute right-3 top-1/2 text-muted-foreground pointer-events-none"
+                />
+              </div>
+            </div>
+          </CardContent>
         </Card>
 
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-8">
@@ -153,7 +182,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
         {filteredServices.length === 0 ? (
           <Alert>
             <AlertDescription className="text-center py-8">
-              इस श्रेणी या शहर में कोई सेवा उपलब्ध नहीं है।
+              {t.noServices}
             </AlertDescription>
           </Alert>
         ) : (
@@ -190,20 +219,20 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
                         <span className="font-medium">{service.rating.toFixed(1)}</span>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        ({service.reviewCount} समीक्षाएं)
+                        ({service.reviewCount} {t.reviews})
                       </span>
                     </div>
                   )}
 
                   <div className="pt-3 border-t">
                     <div className="text-xs text-center text-muted-foreground mb-2">
-                      परामर्श शुल्क: ₹{service.consultationFee}
+                      {t.consultationFee}: ₹{service.consultationFee}
                     </div>
                     <Button 
                       onClick={() => handleViewDetails(service)} 
                       className="w-full"
                     >
-                      संपर्क करें / Contact
+                      {t.contact}
                     </Button>
                   </div>
                 </CardContent>
@@ -237,7 +266,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
               <div className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">संपर्क विवरण / Contact Details</CardTitle>
+                    <CardTitle className="text-lg">{t.contactDetails}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex items-start gap-3">
@@ -267,30 +296,29 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
                     <div className="flex items-center gap-3">
                       <CurrencyInr size={20} weight="bold" className="text-primary" />
                       <div>
-                        <div className="font-medium">मूल्य सीमा: {selectedService.priceRange}</div>
+                        <div className="font-medium">{t.priceRange}: {selectedService.priceRange}</div>
                       </div>
                     </div>
-
+                  </CardContent>
                 </Card>
 
                 <Alert className="bg-accent/10 border-accent">
                   <CurrencyInr size={20} weight="bold" />
                   <AlertDescription>
-                    <strong>परामर्श शुल्क: ₹{selectedService.consultationFee}</strong>
+                    <strong>{t.consultationFee}: ₹{selectedService.consultationFee}</strong>
                     <p className="text-sm mt-1">
-                      प्रारंभिक परामर्श और आवश्यकताओं के विस्तृत चर्चा के लिए। 
-                      अंतिम बुकिंग शुल्क सीधे सेवा प्रदाता से तय करें।
-
+                      {t.consultationNote}
+                    </p>
                   </AlertDescription>
-
+                </Alert>
 
                 <div className="flex gap-3">
                   <Button 
-
+                    variant="outline"
                     onClick={() => setShowContactDialog(false)}
-
+                    className="flex-1"
                   >
-
+                    {t.close}
                   </Button>
                   <Button 
                     onClick={() => {
@@ -299,14 +327,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
                     className="flex-1"
                   >
                     <Phone size={18} weight="bold" className="mr-2" />
-                    कॉल करें
+                    {t.call}
                   </Button>
                 </div>
-
+              </div>
             </>
-
+          )}
         </DialogContent>
-
+      </Dialog>
     </section>
-
+  )
 }

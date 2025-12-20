@@ -16,7 +16,7 @@ import { useTranslation, type Language } from '@/lib/translations'
 interface RegistrationDialogProps {
   open: boolean
   onClose: () => void
-  onSubmit: (profile: Omit<Profile, 'id' | 'status' | 'trustLevel' | 'createdAt'>) => void
+  onSubmit: (profile: Partial<Profile>) => void
   language: Language
 }
 
@@ -146,10 +146,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
     const membershipExpiry = new Date()
     membershipExpiry.setMonth(membershipExpiry.getMonth() + (formData.membershipPlan === '6-month' ? 6 : 12))
 
-    const profile: Omit<Profile, 'id' | 'status' | 'trustLevel' | 'createdAt'> = {
+    const profile: Omit<Profile, 'id' | 'profileId' | 'status' | 'trustLevel' | 'createdAt' | 'emailVerified' | 'mobileVerified' | 'isBlocked'> = {
       ...formData,
+      firstName: formData.fullName.split(' ')[0],
+      lastName: formData.fullName.split(' ').slice(1).join(' ') || formData.fullName.split(' ')[0],
       age,
-      photoUrl: photoPreview,
+      relationToProfile: 'Self',
+      hideEmail: false,
+      hideMobile: false,
+      photos: photoPreview ? [photoPreview] : [],
       selfieUrl: selfiePreview,
       membershipExpiry: membershipExpiry.toISOString()
     }

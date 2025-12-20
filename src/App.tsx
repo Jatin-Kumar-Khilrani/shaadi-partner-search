@@ -56,23 +56,64 @@ function App() {
     })
   }, [profiles, searchFilters])
 
-  const handleRegisterProfile = (profileData: Omit<Profile, 'id' | 'status' | 'trustLevel' | 'createdAt'>) => {
-    const profileId = `profile-${Date.now()}`
+  const handleRegisterProfile = (profileData: Partial<Profile>) => {
+    const id = `profile-${Date.now()}`
     const userId = `USER${Math.random().toString(36).substr(2, 6).toUpperCase()}`
     const password = Math.random().toString(36).substr(2, 8)
     
+    const firstName = profileData.firstName || profileData.fullName?.split(' ')[0] || ''
+    const lastName = profileData.lastName || profileData.fullName?.split(' ').slice(1).join(' ') || firstName
+    const birthYear = profileData.dateOfBirth ? new Date(profileData.dateOfBirth).getFullYear().toString().slice(-2) : '00'
+    const randomDigits = Math.floor(Math.random() * 9000 + 1000)
+    const generatedProfileId = `${firstName.charAt(0).toUpperCase()}${lastName.charAt(0).toUpperCase()}${randomDigits}${birthYear}`
+    
     const newProfile: Profile = {
-      ...profileData,
-      id: profileId,
+      id,
+      profileId: generatedProfileId,
+      firstName,
+      lastName,
+      fullName: profileData.fullName || `${firstName} ${lastName}`,
+      dateOfBirth: profileData.dateOfBirth || '',
+      age: profileData.age || 0,
+      gender: profileData.gender || 'male',
+      religion: profileData.religion,
+      caste: profileData.caste,
+      community: profileData.community,
+      motherTongue: profileData.motherTongue,
+      education: profileData.education || '',
+      occupation: profileData.occupation || '',
+      salary: profileData.salary,
+      location: profileData.location || '',
+      country: profileData.country || '',
+      maritalStatus: profileData.maritalStatus || 'never-married',
+      email: profileData.email || '',
+      mobile: profileData.mobile || '',
+      relationToProfile: profileData.relationToProfile || 'Self',
+      hideEmail: profileData.hideEmail || false,
+      hideMobile: profileData.hideMobile || false,
+      photos: profileData.photos || [],
+      selfieUrl: profileData.selfieUrl,
+      bio: profileData.bio,
+      height: profileData.height,
+      familyDetails: profileData.familyDetails,
+      dietPreference: profileData.dietPreference,
+      manglik: profileData.manglik,
+      drinkingHabit: profileData.drinkingHabit,
+      smokingHabit: profileData.smokingHabit,
       status: 'pending',
       trustLevel: 1,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      membershipPlan: profileData.membershipPlan,
+      membershipExpiry: profileData.membershipExpiry,
+      emailVerified: false,
+      mobileVerified: false,
+      isBlocked: false
     }
     
     const newUser: User = {
       userId,
       password,
-      profileId,
+      profileId: id,
       createdAt: new Date().toISOString()
     }
     
@@ -83,7 +124,7 @@ function App() {
       toast.info(
         language === 'hi' ? 'लॉगिन क्रेडेंशियल्स' : 'Login Credentials',
         {
-          description: `User ID: ${userId} | Password: ${password}`,
+          description: `User ID: ${userId} | Password: ${password} | Profile ID: ${generatedProfileId}`,
           duration: 10000
         }
       )

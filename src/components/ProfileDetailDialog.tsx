@@ -106,7 +106,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language }: Profil
         <DialogHeader>
           <div className="flex items-start gap-4 mb-4">
             <Avatar className="w-24 h-24 border-4 border-background shadow-xl">
-              <AvatarImage src={profile.photoUrl} alt={profile.fullName} />
+              <AvatarImage src={profile.photos?.[0]} alt={profile.fullName} />
               <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
                 {initials}
               </AvatarFallback>

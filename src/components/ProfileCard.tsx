@@ -59,7 +59,7 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi' }: Profile
         <CardHeader className="pb-4">
           <div className="flex items-start gap-4">
             <Avatar className="w-20 h-20 border-4 border-background shadow-lg">
-              <AvatarImage src={profile.photoUrl} alt={profile.fullName} />
+              <AvatarImage src={profile.photos?.[0]} alt={profile.fullName} />
               <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
                 {initials}
               </AvatarFallback>
