@@ -318,7 +318,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
 
   return (
     <Dialog open={open} onOpenChange={onClose} modal>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto z-50" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-3xl flex items-center gap-2">
             <UserPlus size={32} weight="bold" />
@@ -387,7 +387,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                     <SelectTrigger id="profileCreatedFor" className="w-full">
                       <SelectValue placeholder={t.fields.select} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[100]" position="popper" sideOffset={4}>
                       <SelectItem value="Self">{language === 'hi' ? 'स्वयं' : 'Self'}</SelectItem>
                       <SelectItem value="Daughter">{language === 'hi' ? 'बेटी' : 'Daughter'}</SelectItem>
                       <SelectItem value="Son">{language === 'hi' ? 'बेटा' : 'Son'}</SelectItem>
@@ -420,7 +420,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                       <SelectTrigger id="gender" className="w-full">
                         <SelectValue placeholder={t.fields.select} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[100]" position="popper" sideOffset={4}>
                         <SelectItem value="male">{t.fields.male} / Male</SelectItem>
                         <SelectItem value="female">{t.fields.female} / Female</SelectItem>
                       </SelectContent>
@@ -479,7 +479,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                       <SelectTrigger id="maritalStatus" className="w-full">
                         <SelectValue placeholder={t.fields.select} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[100]" position="popper" sideOffset={4}>
                         <SelectItem value="never-married">{t.fields.neverMarried} / Never Married</SelectItem>
                         <SelectItem value="divorced">{t.fields.divorced} / Divorced</SelectItem>
                         <SelectItem value="widowed">{t.fields.widowed} / Widowed</SelectItem>
