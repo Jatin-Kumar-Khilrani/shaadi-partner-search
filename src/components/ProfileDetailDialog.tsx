@@ -4,17 +4,22 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { MapPin, Briefcase, GraduationCap, UserCircle, Phone, Envelope, Heart, ShieldCheck, Seal, Calendar } from '@phosphor-icons/react'
-import type { Profile } from '@/types/profile'
+import type { Profile, Interest, ContactRequest } from '@/types/profile'
 import { toast } from 'sonner'
+import { useKV } from '@github/spark/hooks'
 
 interface ProfileDetailDialogProps {
   profile: Profile | null
   open: boolean
   onClose: () => void
   language: 'hi' | 'en'
+  currentUserProfile?: Profile | null
 }
 
-export function ProfileDetailDialog({ profile, open, onClose, language }: ProfileDetailDialogProps) {
+export function ProfileDetailDialog({ profile, open, onClose, language, currentUserProfile }: ProfileDetailDialogProps) {
+  const [interests, setInterests] = useKV<Interest[]>('interests', [])
+  const [contactRequests, setContactRequests] = useKV<ContactRequest[]>('contactRequests', [])
+
   if (!profile) return null
 
   const initials = profile.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -43,23 +48,83 @@ export function ProfileDetailDialog({ profile, open, onClose, language }: Profil
   }
 
   const handleExpressInterest = () => {
+    if (!currentUserProfile) {
+      toast.error(
+        language === 'hi' ? 'कृपया पहले लॉगिन करें' : 'Please login first'
+      )
+      return
+    }
+
+    const existingInterest = interests?.find(
+      i => i.fromProfileId === currentUserProfile.profileId && 
+           i.toProfileId === profile.profileId
+    )
+
+    if (existingInterest) {
+      toast.info(
+        language === 'hi' ? 'आपने पहले ही रुचि दर्ज की है' : 'You have already expressed interest'
+      )
+      return
+    }
+
+    const newInterest: Interest = {
+      id: `interest-${Date.now()}`,
+      fromProfileId: currentUserProfile.profileId,
+      toProfileId: profile.profileId,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    }
+
+    setInterests(current => [...(current || []), newInterest])
+
     toast.success(
       language === 'hi' ? 'रुचि दर्ज की गई!' : 'Interest recorded!',
       {
         description: language === 'hi' 
-          ? 'हमारे स्वयंसेवक जल्द ही संपर्क करेंगे और दोनों परिवारों को सूचित करेंगे।'
-          : 'Our volunteers will contact you soon and inform both families.'
+          ? 'दूसरे व्यक्ति को आपकी रुचि की सूचना मिल गई है। वे इसे स्वीकार या अस्वीकार कर सकते हैं।'
+          : 'The other person has been notified of your interest. They can accept or decline it.'
       }
     )
   }
 
   const handleRequestContact = () => {
+    if (!currentUserProfile) {
+      toast.error(
+        language === 'hi' ? 'कृपया पहले लॉगिन करें' : 'Please login first'
+      )
+      return
+    }
+
+    const existingRequest = contactRequests?.find(
+      r => r.fromUserId === currentUserProfile.id && 
+           r.toUserId === profile.id
+    )
+
+    if (existingRequest) {
+      toast.info(
+        language === 'hi' ? 'आपने पहले ही संपर्क अनुरोध भेजा है' : 'You have already sent a contact request'
+      )
+      return
+    }
+
+    const newRequest: ContactRequest = {
+      id: `contact-req-${Date.now()}`,
+      fromUserId: currentUserProfile.id,
+      toUserId: profile.id,
+      fromProfileId: currentUserProfile.profileId,
+      toProfileId: profile.profileId,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    }
+
+    setContactRequests(current => [...(current || []), newRequest])
+
     toast.info(
       language === 'hi' ? 'संपर्क अनुरोध भेजा गया' : 'Contact request sent',
       {
         description: language === 'hi' 
-          ? 'स्वयंसेवक समीक्षा के बाद संपर्क जानकारी साझा की जाएगी।'
-          : 'Contact information will be shared after volunteer review.'
+          ? 'दूसरे व्यक्ति को आपके संपर्क अनुरोध की सूचना मिल गई है।'
+          : 'The other person has been notified of your contact request.'
       }
     )
   }

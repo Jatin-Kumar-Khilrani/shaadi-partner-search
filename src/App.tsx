@@ -643,6 +643,7 @@ function App() {
             loggedInUserId={loggedInUser}
             profiles={profiles || []}
             language={language}
+            onNavigateToChat={() => setCurrentView('chat')}
           />
         )}
 
@@ -731,6 +732,7 @@ function App() {
         open={!!selectedProfile}
         onClose={() => setSelectedProfile(null)}
         language={language}
+        currentUserProfile={currentUserProfile}
       />
 
       <RegistrationDialog

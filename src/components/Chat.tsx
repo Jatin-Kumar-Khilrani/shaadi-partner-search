@@ -7,10 +7,11 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
-import { ChatCircle, PaperPlaneTilt, MagnifyingGlass } from '@phosphor-icons/react'
+import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple } from '@phosphor-icons/react'
 import type { ChatMessage, ChatConversation } from '@/types/chat'
-import type { Profile } from '@/types/profile'
+import type { Profile, Interest } from '@/types/profile'
 import type { Language } from '@/lib/translations'
+import { toast } from 'sonner'
 
 interface ChatProps {
   loggedInUserId: string | null
@@ -21,6 +22,7 @@ interface ChatProps {
 
 export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: ChatProps) {
   const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
+  const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [conversations, setConversations] = useState<ChatConversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [messageInput, setMessageInput] = useState('')
@@ -39,6 +41,22 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
     you: language === 'hi' ? 'आप' : 'You',
     admin: language === 'hi' ? 'एडमिन' : 'Admin',
     broadcast: language === 'hi' ? 'सभी को' : 'Broadcast',
+    chatLocked: language === 'hi' ? 'चैट लॉक है' : 'Chat Locked',
+    acceptInterestFirst: language === 'hi' ? 'चैट करने के लिए पहले रुचि स्वीकार करें' : 'Accept interest first to chat',
+  }
+
+  const canChatWith = (otherProfileId: string): boolean => {
+    if (isAdmin) return true
+    if (!currentUserProfile) return false
+
+    const mutualInterest = interests?.find(
+      i => i.status === 'accepted' && (
+        (i.fromProfileId === currentUserProfile.profileId && i.toProfileId === otherProfileId) ||
+        (i.toProfileId === currentUserProfile.profileId && i.fromProfileId === otherProfileId)
+      )
+    )
+
+    return !!mutualInterest
   }
 
   useEffect(() => {
@@ -158,6 +176,14 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
 
   const sendMessage = () => {
     if (!messageInput.trim() || !selectedConversation || !currentUserProfile) return
+
+    if (!isAdmin && selectedConversation.includes('-') && !selectedConversation.startsWith('admin-')) {
+      const otherProfileId = selectedConversation.split('-').find(id => id !== currentUserProfile.profileId)
+      if (otherProfileId && !canChatWith(otherProfileId)) {
+        toast.error(t.acceptInterestFirst)
+        return
+      }
+    }
 
     const newMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
@@ -292,54 +318,80 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
               <div className="h-full flex items-center justify-center text-muted-foreground">
                 {t.selectConversation}
               </div>
-            ) : (
-              <>
-                <CardHeader>
-                  <CardTitle>
-                    {getConversationTitle(conversations.find(c => c.id === selectedConversation)!)}
-                  </CardTitle>
-                </CardHeader>
-                <Separator />
-                <ScrollArea className="h-[calc(600px-180px)] p-4">
-                  <div className="space-y-4">
-                    {getConversationMessages(selectedConversation).map(msg => (
-                      <div
-                        key={msg.id}
-                        className={`flex ${msg.fromProfileId === currentUserProfile?.profileId ? 'justify-end' : 'justify-start'}`}
-                      >
+            ) : (() => {
+              const conv = conversations.find(c => c.id === selectedConversation)
+              const otherProfileId = selectedConversation.split('-').find(id => id !== currentUserProfile?.profileId)
+              const isChatAllowed = isAdmin || 
+                                   selectedConversation.startsWith('admin-') || 
+                                   selectedConversation === 'admin-broadcast' ||
+                                   (otherProfileId && canChatWith(otherProfileId))
+
+              return (
+                <>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      {getConversationTitle(conv!)}
+                      {!isChatAllowed && (
+                        <Badge variant="secondary" className="gap-1">
+                          <LockSimple size={14} weight="fill" />
+                          {t.chatLocked}
+                        </Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <Separator />
+                  <ScrollArea className="h-[calc(600px-180px)] p-4">
+                    <div className="space-y-4">
+                      {getConversationMessages(selectedConversation).map(msg => (
                         <div
-                          className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                            msg.fromProfileId === currentUserProfile?.profileId
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
-                          }`}
+                          key={msg.id}
+                          className={`flex ${msg.fromProfileId === currentUserProfile?.profileId ? 'justify-end' : 'justify-start'}`}
                         >
-                          <p className="text-sm">{msg.message}</p>
-                          <p className="text-xs opacity-70 mt-1">
-                            {formatTime(msg.timestamp)}
-                          </p>
+                          <div
+                            className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                              msg.fromProfileId === currentUserProfile?.profileId
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted'
+                            }`}
+                          >
+                            <p className="text-sm">{msg.message}</p>
+                            <p className="text-xs opacity-70 mt-1">
+                              {formatTime(msg.timestamp)}
+                            </p>
+                          </div>
                         </div>
+                      ))}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  </ScrollArea>
+                  <Separator />
+                  {isChatAllowed ? (
+                    <div className="p-4">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder={t.typeMessage}
+                          value={messageInput}
+                          onChange={(e) => setMessageInput(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                        />
+                        <Button onClick={sendMessage} size="icon">
+                          <PaperPlaneTilt size={20} weight="fill" />
+                        </Button>
                       </div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </div>
-                </ScrollArea>
-                <Separator />
-                <div className="p-4">
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder={t.typeMessage}
-                      value={messageInput}
-                      onChange={(e) => setMessageInput(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                    />
-                    <Button onClick={sendMessage} size="icon">
-                      <PaperPlaneTilt size={20} weight="fill" />
-                    </Button>
-                  </div>
-                </div>
-              </>
-            )}
+                    </div>
+                  ) : (
+                    <div className="p-4">
+                      <div className="bg-muted rounded-lg p-4 text-center">
+                        <LockSimple size={32} className="mx-auto mb-2 text-muted-foreground" weight="fill" />
+                        <p className="text-sm text-muted-foreground">
+                          {t.acceptInterestFirst}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
           </Card>
         </div>
       </div>

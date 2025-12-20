@@ -5,20 +5,23 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Heart, Check, X, Eye, Clock } from '@phosphor-icons/react'
+import { Heart, Check, X, Eye, Clock, ChatCircle } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Interest, ContactRequest, Profile } from '@/types/profile'
+import type { ChatMessage } from '@/types/chat'
 import type { Language } from '@/lib/translations'
 
 interface InboxProps {
   loggedInUserId: string | null
   profiles: Profile[]
   language: Language
+  onNavigateToChat?: () => void
 }
 
-export function Inbox({ loggedInUserId, profiles, language }: InboxProps) {
+export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: InboxProps) {
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests, setContactRequests] = useKV<ContactRequest[]>('contactRequests', [])
+  const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
 
   const currentUserProfile = profiles.find(p => p.id === loggedInUserId)
 
@@ -42,6 +45,7 @@ export function Inbox({ loggedInUserId, profiles, language }: InboxProps) {
     interestDeclined: language === 'hi' ? 'रुचि अस्वीकार की गई' : 'Interest declined',
     contactApproved: language === 'hi' ? 'संपर्क स्वीकृत किया गया' : 'Contact approved',
     contactDeclined: language === 'hi' ? 'संपर्क अस्वीकृत किया गया' : 'Contact declined',
+    startChat: language === 'hi' ? 'चैट शुरू करें' : 'Start Chat',
   }
 
   const receivedInterests = interests?.filter(
@@ -58,12 +62,53 @@ export function Inbox({ loggedInUserId, profiles, language }: InboxProps) {
   ) || []
 
   const handleAcceptInterest = (interestId: string) => {
+    const interest = interests?.find(i => i.id === interestId)
+    if (!interest || !currentUserProfile) return
+
     setInterests(current => 
       (current || []).map(i => 
         i.id === interestId ? { ...i, status: 'accepted' as const } : i
       )
     )
-    toast.success(t.interestAccepted)
+
+    const senderProfile = getProfileByProfileId(interest.fromProfileId)
+    if (senderProfile) {
+      const welcomeMessage: ChatMessage = {
+        id: `msg-${Date.now()}`,
+        fromUserId: 'system',
+        fromProfileId: currentUserProfile.profileId,
+        toProfileId: interest.fromProfileId,
+        message: language === 'hi' 
+          ? `${currentUserProfile.fullName} ने आपकी रुचि स्वीकार कर ली है! अब आप उनसे बात कर सकते हैं।`
+          : `${currentUserProfile.fullName} has accepted your interest! You can now chat with them.`,
+        timestamp: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        read: false,
+        type: 'user-to-user',
+      }
+
+      const responseMessage: ChatMessage = {
+        id: `msg-${Date.now() + 1}`,
+        fromUserId: 'system',
+        fromProfileId: interest.fromProfileId,
+        toProfileId: currentUserProfile.profileId,
+        message: language === 'hi' 
+          ? `आपने ${senderProfile.fullName} की रुचि स्वीकार कर ली है। अब आप उनसे बात कर सकते हैं।`
+          : `You have accepted ${senderProfile.fullName}'s interest. You can now chat with them.`,
+        timestamp: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        read: false,
+        type: 'user-to-user',
+      }
+
+      setMessages(current => [...(current || []), welcomeMessage, responseMessage])
+    }
+
+    toast.success(t.interestAccepted, {
+      description: language === 'hi' 
+        ? 'आप अब चैट सेक्शन में जाकर बातचीत शुरू कर सकते हैं।'
+        : 'You can now start chatting in the Chat section.'
+    })
   }
 
   const handleDeclineInterest = (interestId: string) => {
@@ -210,6 +255,13 @@ export function Inbox({ loggedInUserId, profiles, language }: InboxProps) {
                             </Badge>
                           </div>
                         </div>
+                        <Button 
+                          onClick={() => onNavigateToChat && onNavigateToChat()}
+                          className="gap-2"
+                        >
+                          <ChatCircle size={18} weight="fill" />
+                          {t.startChat}
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
