@@ -1,26 +1,26 @@
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/butto
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
+const ADMIN_USERNAME = 'rkkhil
 import type { Language } from '@/lib/translations'
 
 const ADMIN_USERNAME = 'rkkhilrani'
-const ADMIN_PASSWORD = '1234'
+  onClose: () => void
 const ADMIN_PHONE_NUMBERS = ['+91-7895601505', '+91-9828585300']
 
 interface AdminLoginDialogProps {
-  open: boolean
+  const [userna
   onClose: () => void
   onLoginSuccess: () => void
   language: Language
-}
+ 
 
 export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: AdminLoginDialogProps) {
   const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+    verify: language === 'hi' ? 'सत्यापित करें
   const [otp, setOtp] = useState('')
   const [generatedOtp, setGeneratedOtp] = useState('')
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
@@ -34,42 +34,42 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
     verify: language === 'hi' ? 'सत्यापित करें' : 'Verify',
     invalidCredentials: language === 'hi' ? 'अमान्य यूज़रनेम या पासवर्ड' : 'Invalid username or password',
     invalidOtp: language === 'hi' ? 'अमान्य OTP' : 'Invalid OTP',
-    otpSent: language === 'hi' ? 'OTP भेजा गया' : 'OTP Sent',
-    otpMessage: language === 'hi' ? 'OTP दोनों नंबरों पर भेजा गया है' : 'OTP sent to both numbers'
-  }
 
-  const handleCredentialsSubmit = () => {
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      const otp = Math.floor(100000 + Math.random() * 900000).toString()
-      setGeneratedOtp(otp)
-      setStep('otp')
+    <Dialog open={open} onOpenChange={handleClose}>
+   
+
+          <CardContent className="pt-6">
+              <div className="space-y-4">
+                  <Label htmlFor="admin-username">{t.username}</Label>
+                    id="ad
+                    
       
-      toast.info(t.otpSent, {
-        description: `${t.otpMessage}: ${otp}`,
-        duration: 10000
-      })
-    } else {
-      toast.error(t.invalidCredentials)
-    }
-  }
+                </div>
+                  <Label htmlFor="admin-passwor
+                    id=
+        
+            
+                </div>
+     
+   
 
-  const handleOtpSubmit = () => {
-    if (otp === generatedOtp) {
-      onLoginSuccess()
-      handleClose()
-    } else {
-      toast.error(t.invalidOtp)
-    }
-  }
+                  <Label htmlFor=
+                    id="admin-o
+                    ma
+                   
+            
+                </div>
+     
+   
 
-  const handleClose = () => {
-    onClose()
-    setUsername('')
-    setPassword('')
-    setOtp('')
-    setGeneratedOtp('')
-    setStep('credentials')
-  }
+      </DialogContent>
+  )
+
+
+
+
+
+
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
