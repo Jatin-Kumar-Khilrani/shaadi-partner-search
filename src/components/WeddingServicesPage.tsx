@@ -17,7 +17,7 @@ interface WeddingServicesProps {
 }
 
 export function WeddingServices({ language }: WeddingServicesProps) {
-  const [services, setServices] = useKV<WeddingService[]>('weddingServices', [])
+  const [services] = useKV<WeddingService[]>('weddingServices', [])
   const [selectedService, setSelectedService] = useState<WeddingService | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('')

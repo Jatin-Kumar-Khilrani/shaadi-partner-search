@@ -54,14 +54,17 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
             id: convId,
             participants: ['admin'],
             lastMessage: msg,
+            timestamp: msg.timestamp,
             unreadCount: msg.read ? 0 : 1,
             createdAt: msg.timestamp,
             updatedAt: msg.timestamp,
           })
         } else {
           const conv = convMap.get(convId)!
-          if (new Date(msg.timestamp) > new Date(conv.lastMessage.timestamp)) {
+          const lastMsg = typeof conv.lastMessage === 'string' ? { timestamp: conv.lastMessage } : conv.lastMessage
+          if (new Date(msg.timestamp) > new Date(lastMsg.timestamp)) {
             conv.lastMessage = msg
+            conv.timestamp = msg.timestamp
             conv.updatedAt = msg.timestamp
           }
           if (!msg.read) conv.unreadCount++
@@ -74,14 +77,17 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
               id: convId,
               participants: ['admin', msg.toProfileId!],
               lastMessage: msg,
+              timestamp: msg.timestamp,
               unreadCount: msg.read ? 0 : 1,
               createdAt: msg.timestamp,
               updatedAt: msg.timestamp,
             })
           } else {
             const conv = convMap.get(convId)!
-            if (new Date(msg.timestamp) > new Date(conv.lastMessage.timestamp)) {
+            const lastMsg = typeof conv.lastMessage === 'string' ? { timestamp: conv.lastMessage } : conv.lastMessage
+            if (new Date(msg.timestamp) > new Date(lastMsg.timestamp)) {
               conv.lastMessage = msg
+              conv.timestamp = msg.timestamp
               conv.updatedAt = msg.timestamp
             }
             if (!msg.read) conv.unreadCount++
@@ -97,14 +103,17 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
               id: convId,
               participants: [currentUserProfile.profileId, otherProfileId],
               lastMessage: msg,
+              timestamp: msg.timestamp,
               unreadCount: msg.read || msg.fromProfileId === currentUserProfile.profileId ? 0 : 1,
               createdAt: msg.timestamp,
               updatedAt: msg.timestamp,
             })
           } else {
             const conv = convMap.get(convId)!
-            if (new Date(msg.timestamp) > new Date(conv.lastMessage.timestamp)) {
+            const lastMsg = typeof conv.lastMessage === 'string' ? { timestamp: conv.lastMessage } : conv.lastMessage
+            if (new Date(msg.timestamp) > new Date(lastMsg.timestamp)) {
               conv.lastMessage = msg
+              conv.timestamp = msg.timestamp
               conv.updatedAt = msg.timestamp
             }
             if (!msg.read && msg.fromProfileId !== currentUserProfile.profileId) conv.unreadCount++
@@ -154,20 +163,23 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
       id: `msg-${Date.now()}`,
       fromUserId: loggedInUserId!,
       fromProfileId: currentUserProfile.profileId,
+      toProfileId: '',
       message: messageInput,
       timestamp: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
       read: false,
       type: isAdmin ? 'admin-to-user' : 'user-to-user',
     }
 
     if (selectedConversation === 'admin-broadcast') {
       newMessage.type = 'admin-broadcast'
+      newMessage.toProfileId = 'all'
     } else if (selectedConversation.startsWith('admin-')) {
       newMessage.type = 'admin-to-user'
       newMessage.toProfileId = selectedConversation.replace('admin-', '')
     } else {
       newMessage.type = 'user-to-user'
-      const otherProfileId = selectedConversation.split('-').find(id => id !== currentUserProfile.profileId)
+      const otherProfileId = selectedConversation.split('-').find(id => id !== currentUserProfile.profileId) || ''
       newMessage.toProfileId = otherProfileId
     }
 
@@ -261,10 +273,10 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
                             )}
                           </div>
                           <p className="text-xs truncate opacity-70">
-                            {conv.lastMessage.message}
+                            {typeof conv.lastMessage === 'string' ? conv.lastMessage : conv.lastMessage.message}
                           </p>
                           <p className="text-xs opacity-50">
-                            {formatDate(conv.lastMessage.timestamp)} {formatTime(conv.lastMessage.timestamp)}
+                            {formatDate(typeof conv.lastMessage === 'string' ? conv.timestamp : conv.lastMessage.timestamp)} {formatTime(typeof conv.lastMessage === 'string' ? conv.timestamp : conv.lastMessage.timestamp)}
                           </p>
                         </div>
                       </div>
