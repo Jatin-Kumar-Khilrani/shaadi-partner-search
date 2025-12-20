@@ -360,7 +360,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="fullName">
-                    {language === 'hi' ? 'नाम (प्रोफाइल किसके लिए बनाई जा रही है)' : 'Name (profile created for)'} *
+                    {language === 'hi' ? 'नाम' : 'Name'} *
                   </Label>
                   <Input
                     id="fullName"
@@ -373,7 +373,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
 
                 <div className="space-y-2">
                   <Label htmlFor="profileCreatedFor">
-                    {language === 'hi' ? 'रिश्ता' : 'Relation'} *
+                    {language === 'hi' ? 'यह प्रोफाइल किसके लिए बनाई जा रही है?' : 'Profile created for'} *
                   </Label>
                   <Select 
                     onValueChange={(value) => {
