@@ -35,20 +35,20 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
   const [formData, setFormData] = useState({
     fullName: '',
     dateOfBirth: '',
-    gender: '' as Gender,
+    gender: undefined as Gender | undefined,
     religion: '',
     caste: '',
     education: '',
     occupation: '',
     location: '',
     country: '',
-    maritalStatus: '' as MaritalStatus,
+    maritalStatus: undefined as MaritalStatus | undefined,
     email: '',
     mobile: '',
     height: '',
     bio: '',
     familyDetails: '',
-    membershipPlan: '' as MembershipPlan
+    membershipPlan: undefined as MembershipPlan | undefined
   })
 
   const updateField = (field: string, value: string) => {
@@ -57,7 +57,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
 
   const getMaxDate = () => {
     const today = new Date()
-    const minAge = formData.gender === 'male' ? 21 : formData.gender === 'female' ? 18 : 18
+    const minAge = formData.gender === 'male' ? 21 : formData.gender === 'female' ? 18 : 21
     const maxDate = new Date(today.getFullYear() - minAge, today.getMonth(), today.getDate())
     return maxDate.toISOString().split('T')[0]
   }
@@ -151,6 +151,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
       firstName: formData.fullName.split(' ')[0],
       lastName: formData.fullName.split(' ').slice(1).join(' ') || formData.fullName.split(' ')[0],
       age,
+      gender: formData.gender!,
+      maritalStatus: formData.maritalStatus || 'never-married',
+      membershipPlan: formData.membershipPlan!,
       relationToProfile: 'Self',
       hideEmail: false,
       hideMobile: false,
@@ -179,20 +182,20 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
     setFormData({
       fullName: '',
       dateOfBirth: '',
-      gender: '' as Gender,
+      gender: undefined,
       religion: '',
       caste: '',
       education: '',
       occupation: '',
       location: '',
       country: '',
-      maritalStatus: '' as MaritalStatus,
+      maritalStatus: undefined,
       email: '',
       mobile: '',
       height: '',
       bio: '',
       familyDetails: '',
-      membershipPlan: '' as MembershipPlan
+      membershipPlan: undefined
     })
     setPhotoFile(null)
     setPhotoPreview(undefined)

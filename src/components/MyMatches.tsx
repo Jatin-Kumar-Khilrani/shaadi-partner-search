@@ -109,7 +109,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
       <div className="space-y-2">
         <Label>{t.manglik}</Label>
         <Select 
-          value={filters.manglik !== undefined ? (filters.manglik ? 'yes' : 'no') : ''} 
+          value={filters.manglik !== undefined ? (filters.manglik ? 'yes' : 'no') : undefined} 
           onValueChange={(val) => setFilters({ ...filters, manglik: val === 'yes' })}
         >
           <SelectTrigger>
@@ -125,7 +125,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
       <div className="space-y-2">
         <Label>{t.diet}</Label>
         <Select 
-          value={filters.dietPreference || ''} 
+          value={filters.dietPreference || undefined} 
           onValueChange={(val: any) => setFilters({ ...filters, dietPreference: val })}
         >
           <SelectTrigger>
@@ -141,7 +141,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
       <div className="space-y-2">
         <Label>{t.drinking}</Label>
         <Select 
-          value={filters.drinkingHabit || ''} 
+          value={filters.drinkingHabit || undefined} 
           onValueChange={(val: any) => setFilters({ ...filters, drinkingHabit: val })}
         >
           <SelectTrigger>
@@ -157,7 +157,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
       <div className="space-y-2">
         <Label>{t.smoking}</Label>
         <Select 
-          value={filters.smokingHabit || ''} 
+          value={filters.smokingHabit || undefined} 
           onValueChange={(val: any) => setFilters({ ...filters, smokingHabit: val })}
         >
           <SelectTrigger>

@@ -114,7 +114,7 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
     })
 
     const sortedConversations = Array.from(convMap.values()).sort(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      (a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime()
     )
 
     setConversations(sortedConversations)
