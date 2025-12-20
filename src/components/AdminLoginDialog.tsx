@@ -2,74 +2,74 @@ import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent } from '@/components/ui/card'
-import { toast } from 'sonner'
+import { Card, CardContent } from '@/componen
 import type { Language } from '@/lib/translations'
+const ADMIN_USERNAME = 'rkkhil
+const ADMIN_PHONE_NUMBERS = ['+91-7895601505', '+9
 
-const ADMIN_USERNAME = 'rkkhilrani'
-const ADMIN_PASSWORD = '1234'
-const ADMIN_PHONE_NUMBERS = ['+91-7895601505', '+91-9828585300']
-
-interface AdminLoginDialogProps {
-  open: boolean
   onClose: () => void
-  onLoginSuccess: () => void
   language: Language
-}
 
-export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: AdminLoginDialogProps) {
-  const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [otp, setOtp] = useState('')
-  const [generatedOtp, setGeneratedOtp] = useState('')
 
+  const [password, setPassword] =
+  const [genera
   const t = {
-    title: language === 'hi' ? 'एडमिन लॉगिन' : 'Admin Login',
-    subtitle: language === 'hi' ? 'कृपया अपनी क्रेडेंशियल्स दर्ज करें' : 'Please enter your credentials',
-    username: language === 'hi' ? 'उपयोगकर्ता नाम' : 'Username',
-    password: language === 'hi' ? 'पासवर्ड' : 'Password',
-    continue: language === 'hi' ? 'जारी रखें' : 'Continue',
-    otpTitle: language === 'hi' ? 'OTP सत्यापन' : 'OTP Verification',
-    otpLabel: language === 'hi' ? '6 अंकों का OTP दर्ज करें' : 'Enter 6-digit OTP',
-    otpSent: language === 'hi' ? 'OTP भेजा गया:' : 'OTP sent to:',
-    verify: language === 'hi' ? 'सत्यापित करें' : 'Verify',
-    invalidCredentials: language === 'hi' ? 'अमान्य उपयोगकर्ता नाम या पासवर्ड' : 'Invalid username or password',
-    invalidOtp: language === 'hi' ? 'अमान्य OTP' : 'Invalid OTP',
-  }
+    subtitle: language === '
+    password: langua
+ 
 
+    invalidCredentials: language === 'hi' ? 'अमान्य उपयोगकर्ता नाम या पासवर्ड' : 'Invalid username or 
+  }
   const handleCredentialsSubmit = () => {
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      const otp = Math.floor(100000 + Math.random() * 900000).toString()
-      setGeneratedOtp(otp)
+      const otp = Math.floor(100000 + Math.ran
       
-      toast.success(
-        language === 'hi' ? 'OTP भेजा गया' : 'OTP Sent',
-        {
-          description: `${t.otpSent} ${ADMIN_PHONE_NUMBERS.join(', ')} | OTP: ${otp}`,
-          duration: 10000
+        language === 'hi' ? 'OTP भेजा गया' : 'OTP Sent
+
         }
-      )
       
-      setStep('otp')
     } else {
-      toast.error(t.invalidCredentials)
     }
-  }
 
-  const handleOtpSubmit = () => {
     if (otp === generatedOtp) {
-      toast.success(language === 'hi' ? 'लॉगिन सफल!' : 'Login successful!')
       onLoginSuccess()
-      handleClose()
     } else {
-      toast.error(t.invalidOtp)
     }
-  }
 
-  const handleClose = () => {
     setStep('credentials')
+    setPassword('')
+   
+
+  return (
+      <DialogContent>
+          <DialogTitle>
+          </DialogTitle>
+
+          <Card>
+              <p className="text-sm text-muted-foregroun
+         
+              <div className="space-y-2">
+                <Input
+         
+       
+      
+              <div c
+            
+                  type="password"
+     
+   
+
+                {t.continue}
+            </CardContent>
+        ) : (
+            <CardConte
+                {t.
+            
+                  <div key={idx
+     
+   
+
+                  type="text"
+                  value={o
     setUsername('')
     setPassword('')
     setOtp('')
@@ -143,13 +143,13 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
                 />
               </div>
 
-              <Button onClick={handleOtpSubmit} className="w-full">
-                {t.verify}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-      </DialogContent>
-    </Dialog>
-  )
-}
+
+
+
+
+
+
+
+
+
+
