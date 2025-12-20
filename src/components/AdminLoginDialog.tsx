@@ -1,26 +1,26 @@
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
+const ADMIN_USERNAME = 'rkkhil
 import type { Language } from '@/lib/translations'
 
 const ADMIN_USERNAME = 'rkkhilrani'
-const ADMIN_PASSWORD = '1234'
+  onClose: () => void
 const ADMIN_PHONE_NUMBERS = ['+91-7895601505', '+91-9828585300']
 
 interface AdminLoginDialogProps {
-  open: boolean
+  const [userna
   onClose: () => void
   onLoginSuccess: () => void
   language: Language
-}
+ 
 
 export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: AdminLoginDialogProps) {
   const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+    verify: language === 'hi' ? 'सत्यापित करें
   const [otp, setOtp] = useState('')
   const [generatedOtp, setGeneratedOtp] = useState('')
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
@@ -34,42 +34,42 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
     verify: language === 'hi' ? 'सत्यापित करें' : 'Verify',
     invalidCredentials: language === 'hi' ? 'अमान्य यूज़रनेम या पासवर्ड' : 'Invalid username or password',
     invalidOtp: language === 'hi' ? 'अमान्य OTP' : 'Invalid OTP',
-    otpSent: language === 'hi' ? 'OTP दोनों नंबरों पर भेज दिया गया है' : 'OTP sent to both numbers',
-  }
 
-  const handleCredentialsSubmit = () => {
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      const newOtp = Math.floor(100000 + Math.random() * 900000).toString()
-      setGeneratedOtp(newOtp)
-      setStep('otp')
-      
-      toast.success(t.otpSent)
-      
-      setTimeout(() => {
-        toast.info(
-          language === 'hi' ? 'परीक्षण के लिए OTP' : 'OTP for Testing',
-          {
-            description: language === 'hi' 
-              ? `आपका OTP है: ${newOtp}`
-              : `Your OTP is: ${newOtp}`,
-            duration: 10000
-          }
-        )
-      }, 500)
-    } else {
-      toast.error(t.invalidCredentials)
-    }
-  }
+   
 
-  const handleOtpSubmit = () => {
-    if (otp === generatedOtp) {
-      toast.success(language === 'hi' ? 'लॉगिन सफल!' : 'Login successful!')
-      onLoginSuccess()
-      handleClose()
-    } else {
-      toast.error(t.invalidOtp)
-    }
+    setGeneratedOtp('')
   }
+  return (
+      <DialogContent classNam
+          <DialogTit
+      
+            {step === 'credent
+      
+                  <Input
+                   
+                    onChange={(e) => setUsername(e.target.value)}
+           
+                <div className="space-y-2">
+                  <Input
+                    type="password"
+                    onChang
+           
+         
+             
+            
+                <div className="space-y
+     
+   
+
+                    onKeyDown={(e
+                  />
+                <Button onClick={handleOtpSubmit} className="w-full">
+                </Butt
+            )}
+        </Ca
+    </Dialog>
+}
+
 
   const handleClose = () => {
     onClose()
