@@ -2,34 +2,33 @@ import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/componen
-import { Select, SelectContent, SelectItem, SelectTrigge
+import { Card, CardContent } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { ShieldCheck, CheckCircle } from '@phosphor-icons/react'
 import { toast } from 'sonner'
+
 const ADMIN_USERNAME = 'rkkhilrani'
+const ADMIN_PASSWORD = '1234'
 const ADMIN_PHONES = ['+91-7895601505', '+91-9828585300']
-interface AdminLoginDialogProp
 
+interface AdminLoginDialogProps {
+  open: boolean
+  onClose: () => void
+  onLoginSuccess: () => void
   language: 'hi' | 'en'
+}
 
-  const [step, setStep] = useState<'credentials' | 'phone
+export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: AdminLoginDialogProps) {
+  const [step, setStep] = useState<'credentials' | 'phone' | 'otp'>('credentials')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [selectedPhone, setSelectedPhone] = useState('')
+  const [otp, setOtp] = useState('')
+  const [generatedOtp, setGeneratedOtp] = useState('')
 
-  const [otp, setOtp] = useState(
-
-    title: language =
-    username: language === '
-    selectPhone: langua
- 
-
-    loginSuccess: language === 'hi' ? 'लॉगिन सफल!' : 'Login successful!',
-    verify: language === 'hi' ? 'सत्यापित करें' : 'Verify',
-    selectPhoneNumber: language === 'hi' ? 'कृ
-  }
-  const handleCredentialsSubmit = () => {
-      toast.error(t.invalidCredentia
-    }
-
-  const handl
-      toast.error(t.selectPhoneNumber)
+  const t = {
+    title: language === 'hi' ? 'एडमिन लॉगिन' : 'Admin Login',
     subtitle: language === 'hi' ? 'सुरक्षित पहुंच के लिए प्रमाणीकरण आवश्यक है' : 'Authentication required for secure access',
     username: language === 'hi' ? 'उपयोगकर्ता नाम' : 'Username',
     password: language === 'hi' ? 'पासवर्ड' : 'Password',
@@ -126,125 +125,106 @@ interface AdminLoginDialogProp
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   autoComplete="username"
-              <div className="space-y-2">
-                <S
-                    
-
-                      <SelectItem key={ph
-                      </SelectItem>
-                  </Se
+                />
               </div>
-              <div className="fle
-                  onClick={() => setStep('
-                  className="flex-
-                  {t.back}
+              <div className="space-y-2">
+                <Label htmlFor="admin-password">{t.password}</Label>
+                <Input
+                  id="admin-password"
+                  type="password"
+                  placeholder={t.password}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+              </div>
+              <Button onClick={handleCredentialsSubmit} className="w-full">
+                {t.next}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : step === 'phone' ? (
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin-phone">{t.selectPhone}</Label>
+                <Select value={selectedPhone} onValueChange={setSelectedPhone}>
+                  <SelectTrigger id="admin-phone">
+                    <SelectValue placeholder={t.selectPhone} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ADMIN_PHONES.map((phone) => (
+                      <SelectItem key={phone} value={phone}>
+                        {phone}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2">
                 <Button 
+                  variant="outline"
+                  onClick={() => setStep('credentials')} 
                   className="flex-1"
                 >
-                </Bu
-
+                  {t.back}
+                </Button>
+                <Button 
+                  onClick={handlePhoneSubmit}
+                  className="flex-1"
+                >
+                  {t.next}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
-            <CardContent className="pt-6 space-y-4
-                <CheckCircle size=
-                  {t.otpSentTo} <span className="
-              <
-              <div class
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CheckCircle size={20} weight="fill" className="text-green-600" />
+                {t.otpSentTo} <span className="font-medium text-foreground">{selectedPhone}</span>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-otp">{t.enterOtp}</Label>
                 <Input
-                  type="te
-                 
+                  id="admin-otp"
+                  type="text"
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                   maxLength={6}
-                
+                />
               </div>
               <Button
                 variant="ghost"
+                onClick={handleResendOtp}
                 className="w-full"
+              >
                 {t.resendOtp}
-
+              </Button>
+              <div className="flex gap-2">
                 <Button 
-                    setStep('phon
+                  variant="outline"
+                  onClick={() => {
+                    setStep('phone')
+                    setOtp('')
                   }} 
                   className="flex-1"
-                  {t.back}
-                <Button 
-                  class
                 >
+                  {t.back}
                 </Button>
-            </CardCo
-
+                <Button 
+                  onClick={handleOtpSubmit}
+                  className="flex-1"
+                >
+                  {t.verify}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </DialogContent>
     </Dialog>
+  )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
