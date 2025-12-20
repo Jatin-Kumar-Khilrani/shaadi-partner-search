@@ -46,7 +46,16 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
       setGeneratedOtp(otp)
       setStep('otp')
       console.log(`OTP for admin login: ${otp}`)
-      toast.success(t.otpSentSuccess)
+      
+      toast.success(
+        language === 'hi' ? 'OTP सत्यापन' : 'OTP Verification',
+        {
+          description: language === 'hi' 
+            ? `OTP निम्नलिखित नंबरों पर भेजा गया:\n\n${ADMIN_PHONE_NUMBERS.join('\n')}\n\n6-अंकीय OTP दर्ज करें`
+            : `OTP sent to the following numbers:\n\n${ADMIN_PHONE_NUMBERS.join('\n')}\n\nEnter 6-digit OTP`,
+          duration: 8000
+        }
+      )
     } else {
       toast.error(t.invalidCredentials)
     }
