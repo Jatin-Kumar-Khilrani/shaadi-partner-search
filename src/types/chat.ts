@@ -1,21 +1,20 @@
 export interface ChatMessage {
   id: string
-  fromUserId: string
   fromProfileId: string
-  toProfileId?: string
+  toProfileId: string
   message: string
-  timestamp: string
-  type: 'user' | 'admin' | 'admin-broadcast' | 'admin-to-user' | 'user-to-user'
-  read: boolean
+  type: 'user' | 'a
+}
+export interfac
 }
 
 export interface ChatConversation {
   id: string
   participants: string[]
-  lastMessage: ChatMessage
+  lastMessage: string
+  timestamp: string
   unreadCount: number
   createdAt: string
-  updatedAt: string
 }
 
 export interface ContactRequest {
