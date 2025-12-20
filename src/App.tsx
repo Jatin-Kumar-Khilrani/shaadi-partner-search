@@ -695,7 +695,7 @@ function App() {
               size="sm"
             >
               <Envelope size={20} weight={currentView === 'inbox' ? 'fill' : 'regular'} />
-              <span className="text-xs mt-1">{language === 'hi' ? 'इनबॉक्स' : 'Inbox'}</span>
+              <span className="text-xs mt-1">{language === 'hi' ? '���नबॉक्स' : 'Inbox'}</span>
             </Button>
             <Button
               variant={currentView === 'chat' ? 'default' : 'ghost'}
