@@ -1,125 +1,125 @@
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import type { Language } from '@/lib/translations'
 
-const ADMIN_USERNAME = 'rkkhilrani'
-const ADMIN_PASSWORD = 'Ruchi@2025'
-
-interface AdminLoginDialogProps {
-  open: boolean
-  onClose: () => void
-  onLoginSuccess: () => void
-  language: Language
 }
+export function AdminLoginDialog({ 
 
-export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: AdminLoginDialogProps) {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [otp, setOtp] = useState('')
-  const [generatedOtp, setGeneratedOtp] = useState('')
-  const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
+  const [generatedOtp, setGenerat
 
-  const t = {
-    title: language === 'hi' ? 'एडमिन लॉगिन' : 'Admin Login',
-    username: language === 'hi' ? 'उपयोगकर्ता नाम' : 'Username',
-    password: language === 'hi' ? 'पासवर्ड' : 'Password',
-    enterOtp: language === 'hi' ? 'OTP दर्ज करें' : 'Enter OTP',
-    login: language === 'hi' ? 'लॉगिन करें' : 'Login',
-    verify: language === 'hi' ? 'सत्यापित करें' : 'Verify',
-    cancel: language === 'hi' ? 'रद्द करें' : 'Cancel',
-    invalidCredentials: language === 'hi' ? 'अमान्य उपयोगकर्ता नाम या पासवर्ड' : 'Invalid username or password',
-    invalidOtp: language === 'hi' ? 'अमान्य OTP' : 'Invalid OTP',
-    otpSent: language === 'hi' ? 'OTP भेजा गया' : 'OTP Sent'
+    title: language =
+    password: language === '
+    login: language 
+ 
+
   }
-
   const handleClose = () => {
-    onClose()
     setUsername('')
-    setPassword('')
     setOtp('')
-    setGeneratedOtp('')
     setStep('credentials')
-  }
 
-  const handleCredentialsSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      const otp = Math.floor(100000 + Math.random() * 900000).toString()
+
+    if (usern
       setGeneratedOtp(otp)
-      setStep('otp')
       
-      toast.success(t.otpSent, {
         description: `OTP: ${otp}`,
-        duration: 10000
       })
-    } else {
       toast.error(t.invalidCredentials)
-    }
   }
-
   const handleOtpSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
     
-    if (otp === generatedOtp) {
       onLoginSuccess()
-      handleClose()
     } else {
-      toast.error(t.invalidOtp)
-    }
-  }
+   
 
-  return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t.title}</DialogTitle>
-        </DialogHeader>
-
-        {step === 'credentials' ? (
-          <form onSubmit={handleCredentialsSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="admin-username">{t.username}</Label>
+    <Dialog open={open} onOpe
+        <Dial
+        </DialogHea
+        {step === '
+            <d
               <Input
-                id="admin-username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            </div>
+                type="text
+   
 
-            <div className="space-y-2">
-              <Label htmlFor="admin-password">{t.password}</Label>
-              <Input
-                id="admin-password"
-                type="password"
+
+              <Label h
+    
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 required
-              />
             </div>
-
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={handleClose}>
-                {t.cancel}
+            <div cla
+      
+              <Button type="subm
               </Button>
-              <Button type="submit">
-                {t.login}
-              </Button>
-            </div>
           </form>
-        ) : (
-          <form onSubmit={handleOtpSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="admin-otp">{t.enterOtp}</Label>
-              <Input
+        
+            
                 id="admin-otp"
-                type="text"
+     
+   
+
+            </div>
+            <div class
+    
+              <Button type="sub
+              </Button
+          </form>
+      </Dial
+  )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 placeholder="000000"
