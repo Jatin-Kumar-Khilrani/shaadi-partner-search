@@ -42,6 +42,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
   
   const [formData, setFormData] = useState({
     fullName: '',
+    profileCreatedFor: 'Self' as 'Self' | 'Daughter' | 'Son' | 'Brother' | 'Sister' | 'Other',
+    otherRelation: '',
     dateOfBirth: '',
     gender: undefined as Gender | undefined,
     religion: '',
@@ -162,7 +164,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
       gender: formData.gender!,
       maritalStatus: formData.maritalStatus || 'never-married',
       membershipPlan: formData.membershipPlan!,
-      relationToProfile: 'Self',
+      relationToProfile: formData.profileCreatedFor === 'Other' ? formData.otherRelation : formData.profileCreatedFor,
       hideEmail: false,
       hideMobile: false,
       photos: photoPreview ? [photoPreview] : [],
@@ -189,6 +191,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
 
     setFormData({
       fullName: '',
+      profileCreatedFor: 'Self',
+      otherRelation: '',
       dateOfBirth: '',
       gender: undefined,
       religion: '',
@@ -291,6 +295,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
       toast.error(t.registration.fillAllFields)
       return
     }
+    if (step === 1 && formData.profileCreatedFor === 'Other' && !formData.otherRelation.trim()) {
+      toast.error(language === 'hi' ? 'कृपया रिश्ता बताएं' : 'Please specify the relation')
+      return
+    }
     if (step === 2 && (!formData.education || !formData.occupation)) {
       toast.error(t.registration.fillEducation)
       return
@@ -360,6 +368,48 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                     required
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="profileCreatedFor">
+                    {language === 'hi' ? 'व्यक्तिगत जानकारी दर्ज करें' : 'Profile Created For'} *
+                  </Label>
+                  <Select 
+                    onValueChange={(value) => {
+                      updateField('profileCreatedFor', value)
+                      if (value !== 'Other') {
+                        updateField('otherRelation', '')
+                      }
+                    }} 
+                    value={formData.profileCreatedFor}
+                  >
+                    <SelectTrigger id="profileCreatedFor">
+                      <SelectValue placeholder={t.fields.select} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Self">{language === 'hi' ? 'स्वयं' : 'Self'}</SelectItem>
+                      <SelectItem value="Daughter">{language === 'hi' ? 'बेटी' : 'Daughter'}</SelectItem>
+                      <SelectItem value="Son">{language === 'hi' ? 'बेटा' : 'Son'}</SelectItem>
+                      <SelectItem value="Brother">{language === 'hi' ? 'भाई' : 'Brother'}</SelectItem>
+                      <SelectItem value="Sister">{language === 'hi' ? 'बहन' : 'Sister'}</SelectItem>
+                      <SelectItem value="Other">{language === 'hi' ? 'अन्य' : 'Other'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.profileCreatedFor === 'Other' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="otherRelation">
+                      {language === 'hi' ? 'रिश्ता बताएं' : 'Specify Relation'} *
+                    </Label>
+                    <Input
+                      id="otherRelation"
+                      placeholder={language === 'hi' ? 'उदाहरण: मामा, चाची, दोस्त' : 'Example: Uncle, Aunt, Friend'}
+                      value={formData.otherRelation}
+                      onChange={(e) => updateField('otherRelation', e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
