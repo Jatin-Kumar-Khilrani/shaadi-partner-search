@@ -57,10 +57,13 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
     if (!otherProfileId) return false
     if (!interests || interests.length === 0) return false
 
+    const currentProfileId = currentUserProfile.profileId
+    if (!currentProfileId) return false
+
     const hasAcceptedInterest = interests.some(
       i => i.status === 'accepted' && (
-        (i.fromProfileId === currentUserProfile.profileId && i.toProfileId === otherProfileId) ||
-        (i.toProfileId === currentUserProfile.profileId && i.fromProfileId === otherProfileId)
+        (i.fromProfileId === currentProfileId && i.toProfileId === otherProfileId) ||
+        (i.fromProfileId === otherProfileId && i.toProfileId === currentProfileId)
       )
     )
 
