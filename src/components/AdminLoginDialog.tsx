@@ -1,22 +1,22 @@
 import { useState } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/componen
-import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { ShieldCheck, CheckCircle } from '@phosphor-icons/react'
-const ADMIN_PASSWORD = '1234'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ShieldCheck } from '@phosphor-icons/react'
+import { toast } from 'sonner'
 import type { Language } from '@/lib/translations'
 
 const ADMIN_USERNAME = 'rkkhilrani'
-  onLoginSuccess: () => void
+const ADMIN_PASSWORD = '1234'
 const ADMIN_PHONES = ['+91-7895601505', '+91-9828585300']
 
 interface AdminLoginDialogProps {
-  const [userna
+  open: boolean
   onClose: () => void
-  const [otp, setOtp] = useS
+  onLoginSuccess: () => void
   language: Language
 }
 
@@ -24,11 +24,11 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-    otpSentTo: language === 'hi' ? 'OTP भेजा गया' : 'OTP
+  const [selectedPhone, setSelectedPhone] = useState('')
   const [otp, setOtp] = useState('')
   const [generatedOtp, setGeneratedOtp] = useState('')
 
-    selectPho
+  const t = {
     title: language === 'hi' ? 'एडमिन लॉगिन' : 'Admin Login',
     subtitle: language === 'hi' ? 'सिस्टम तक पहुंचने के लिए अपनी साख दर्ज करें' : 'Enter your credentials to access the system',
     username: language === 'hi' ? 'उपयोगकर्ता नाम' : 'Username',
@@ -52,8 +52,8 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
   const handleCredentialsSubmit = () => {
     if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
       toast.error(t.invalidCredentials)
-
-    s
+      return
+    }
 
     if (!selectedPhone) {
       toast.error(t.selectPhoneError)
@@ -62,47 +62,47 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
     setGeneratedOtp(otp)
-    setSelectedPho
+    setStep('otp')
     toast.success(t.otpSent, {
-    onClose()
+      description: `OTP: ${otp}`,
       duration: 10000
-  retu
+    })
   }
 
   const handleOtpSubmit = () => {
-            <DialogTitle classN
+    if (otp !== generatedOtp) {
       toast.error(t.invalidOtp)
-            
+      return
     }
 
     toast.success(t.loginSuccess)
-            <CardCon
+    onLoginSuccess()
     handleClose()
-   
+  }
 
-                  value={username
+  const handleResendOtp = () => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
-                />
+    setGeneratedOtp(otp)
     setOtp('')
-              <div className="
+    toast.success(t.otpSent, {
       description: `OTP: ${otp}`,
-                  id=
+      duration: 10000
     })
-   
+  }
 
-                />
+  const handleClose = () => {
     setStep('credentials')
-              <div 
+    setUsername('')
     setPassword('')
-                  <Selec
+    setSelectedPhone('')
     setOtp('')
     setGeneratedOtp('')
     onClose()
   }
 
-          
+  return (
     <Dialog open={open} onOpenChange={handleClose}>
-
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-2">
             <ShieldCheck size={32} weight="fill" className="text-primary" />
@@ -114,7 +114,7 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
         </DialogHeader>
 
         {step === 'credentials' ? (
-                
+          <Card>
             <CardContent className="pt-6 space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="admin-username">{t.username}</Label>
@@ -122,93 +122,76 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
                   id="admin-username"
                   placeholder={t.username}
                   value={username}
-                  }}
+                  onChange={(e) => setUsername(e.target.value)}
                   autoComplete="username"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="admin-password">{t.password}</Label>
+                <Input
+                  id="admin-password"
+                  type="password"
+                  placeholder={t.password}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t.selectPhone}</Label>
+                <Select value={selectedPhone} onValueChange={setSelectedPhone}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t.selectPhoneNumber} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ADMIN_PHONES.map((phone) => (
+                      <SelectItem key={phone} value={phone}>
+                        {phone}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button onClick={handleCredentialsSubmit} className="w-full">
+                {t.continue}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin-otp">{t.enterOtp}</Label>
+                <Input
+                  id="admin-otp"
+                  type="text"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                  className="text-center text-2xl tracking-widest"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button onClick={() => setStep('credentials')} variant="outline" className="flex-1">
+                  {t.back}
+                </Button>
+                <Button onClick={handleOtpSubmit} className="flex-1">
+                  {t.verify}
+                </Button>
+              </div>
+
+              <Button onClick={handleResendOtp} variant="ghost" className="w-full">
+                {t.resend}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
