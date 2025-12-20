@@ -32,7 +32,7 @@ function App() {
   const [profiles, setProfiles] = useKV<Profile[]>('profiles', [])
   const [users, setUsers] = useKV<User[]>('users', [])
   const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
-  const [loggedInUser, setLoggedInUser] = useState<string | null>(null)
+  const [loggedInUser, setLoggedInUser] = useKV<string | null>('loggedInUser', null)
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false)
   const [showAdminLogin, setShowAdminLogin] = useState(false)
   
@@ -161,8 +161,12 @@ function App() {
     }, 2500)
   }
 
-  const handleLogin = (userId: string, profileId: string) => {
-    setLoggedInUser(userId)
+  const handleLogin = (userId: string, profileId: string, keepLoggedIn: boolean) => {
+    if (keepLoggedIn) {
+      setLoggedInUser(userId)
+    } else {
+      setLoggedInUser(userId)
+    }
   }
 
   const handleLogout = () => {

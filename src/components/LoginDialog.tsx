@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Checkbox } from '@/components/ui/checkbox'
 import { SignIn, Info } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { LoginCredentials, User } from '@/types/user'
@@ -11,7 +12,7 @@ import type { LoginCredentials, User } from '@/types/user'
 interface LoginDialogProps {
   open: boolean
   onClose: () => void
-  onLogin: (userId: string, profileId: string) => void
+  onLogin: (userId: string, profileId: string, keepLoggedIn: boolean) => void
   users: User[]
   language: 'hi' | 'en'
 }
@@ -21,6 +22,7 @@ export function LoginDialog({ open, onClose, onLogin, users, language }: LoginDi
     userId: '',
     password: ''
   })
+  const [keepLoggedIn, setKeepLoggedIn] = useState(false)
 
   const t = {
     title: language === 'hi' ? 'लॉगिन करें' : 'Login',
@@ -32,7 +34,8 @@ export function LoginDialog({ open, onClose, onLogin, users, language }: LoginDi
     loginSuccess: language === 'hi' ? 'लॉगिन सफल!' : 'Login successful!',
     loginError: language === 'hi' ? 'गलत यूजर ID या पासवर्ड' : 'Invalid User ID or Password',
     fillFields: language === 'hi' ? 'कृपया सभी फील्ड भरें' : 'Please fill all fields',
-    info: language === 'hi' ? 'पंजीकरण के बाद आपको यूजर ID और पासवर्ड ईमेल और SMS द्वारा भेजा जाता है।' : 'After registration, you receive User ID and Password via email and SMS.'
+    info: language === 'hi' ? 'पंजीकरण के बाद आपको यूजर ID और पासवर्ड ईमेल और SMS द्वारा भेजा जाता है।' : 'After registration, you receive User ID and Password via email and SMS.',
+    keepLoggedIn: language === 'hi' ? 'मुझे लॉगिन रखें' : 'Keep me logged in'
   }
 
   const handleLogin = () => {
@@ -46,9 +49,10 @@ export function LoginDialog({ open, onClose, onLogin, users, language }: LoginDi
     )
 
     if (user) {
-      onLogin(user.userId, user.profileId)
+      onLogin(user.userId, user.profileId, keepLoggedIn)
       toast.success(t.loginSuccess)
       setCredentials({ userId: '', password: '' })
+      setKeepLoggedIn(false)
       onClose()
     } else {
       toast.error(t.loginError)
@@ -105,6 +109,20 @@ export function LoginDialog({ open, onClose, onLogin, users, language }: LoginDi
               onKeyPress={handleKeyPress}
               autoComplete="current-password"
             />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="keep-logged-in"
+              checked={keepLoggedIn}
+              onCheckedChange={(checked) => setKeepLoggedIn(checked === true)}
+            />
+            <Label 
+              htmlFor="keep-logged-in" 
+              className="text-sm font-normal cursor-pointer"
+            >
+              {t.keepLoggedIn}
+            </Label>
           </div>
         </div>
 
