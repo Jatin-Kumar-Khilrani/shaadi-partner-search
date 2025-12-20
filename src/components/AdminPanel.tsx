@@ -84,6 +84,7 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
     email: language === 'hi' ? 'ईमेल' : 'Email',
     mobile: language === 'hi' ? 'मोबाइल' : 'Mobile',
     name: language === 'hi' ? 'नाम' : 'Name',
+    relation: language === 'hi' ? 'रिश्ता' : 'Relation',
     status: language === 'hi' ? 'स्थिति' : 'Status',
     actions: language === 'hi' ? 'कार्रवाई' : 'Actions',
     approveSuccess: language === 'hi' ? 'प्रोफाइल स्वीकृत की गई!' : 'Profile approved!',
@@ -457,6 +458,7 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
                         <TableRow>
                           <TableHead>{t.profileId}</TableHead>
                           <TableHead>{t.name}</TableHead>
+                          <TableHead>{t.relation}</TableHead>
                           <TableHead>{t.userId}</TableHead>
                           <TableHead>{t.password}</TableHead>
                           <TableHead>{t.email}</TableHead>
@@ -472,6 +474,11 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
                             <TableRow key={profile.id}>
                               <TableCell className="font-mono font-semibold">{profile.profileId}</TableCell>
                               <TableCell className="font-medium">{profile.fullName}</TableCell>
+                              <TableCell className="text-sm">
+                                {profile.relationToProfile && profile.relationToProfile !== 'Self' 
+                                  ? profile.relationToProfile 
+                                  : '-'}
+                              </TableCell>
                               <TableCell className="font-mono text-primary">{userCred?.userId || '-'}</TableCell>
                               <TableCell className="font-mono text-accent">{userCred?.password || '-'}</TableCell>
                               <TableCell className="text-sm">{profile.email}</TableCell>
@@ -528,6 +535,7 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
                         <TableRow>
                           <TableHead>{t.profileId}</TableHead>
                           <TableHead>{t.name}</TableHead>
+                          <TableHead>{t.relation}</TableHead>
                           <TableHead>{t.age}</TableHead>
                           <TableHead>{t.location}</TableHead>
                           <TableHead>{t.status}</TableHead>
@@ -542,6 +550,11 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
                           <TableRow key={profile.id}>
                             <TableCell className="font-mono font-semibold">{profile.profileId}</TableCell>
                             <TableCell className="font-medium">{profile.fullName}</TableCell>
+                            <TableCell className="text-sm">
+                              {profile.relationToProfile && profile.relationToProfile !== 'Self' 
+                                ? profile.relationToProfile 
+                                : '-'}
+                            </TableCell>
                             <TableCell>{profile.age}</TableCell>
                             <TableCell className="text-sm">{profile.location}</TableCell>
                             <TableCell>
