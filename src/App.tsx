@@ -626,7 +626,7 @@ function App() {
 
         {currentView === 'my-matches' && (
           <MyMatches 
-            loggedInUserId={loggedInUser}
+            loggedInUserId={currentUserProfile?.id || null}
             profiles={profiles || []}
             onViewProfile={setSelectedProfile}
             language={language}
@@ -635,7 +635,7 @@ function App() {
 
         {currentView === 'my-activity' && (
           <MyActivity 
-            loggedInUserId={loggedInUser}
+            loggedInUserId={currentUserProfile?.id || null}
             profiles={profiles || []}
             language={language}
           />
@@ -643,7 +643,7 @@ function App() {
 
         {currentView === 'inbox' && (
           <Inbox 
-            loggedInUserId={loggedInUser}
+            loggedInUserId={currentUserProfile?.id || null}
             profiles={profiles || []}
             language={language}
             onNavigateToChat={() => setCurrentView('chat')}
@@ -652,7 +652,7 @@ function App() {
 
         {currentView === 'chat' && (
           <Chat 
-            loggedInUserId={loggedInUser}
+            currentUserProfile={currentUserProfile}
             profiles={profiles || []}
             language={language}
           />

@@ -14,13 +14,13 @@ import type { Language } from '@/lib/translations'
 import { toast } from 'sonner'
 
 interface ChatProps {
-  loggedInUserId: string | null
+  currentUserProfile: Profile | null
   profiles: Profile[]
   language: Language
   isAdmin?: boolean
 }
 
-export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: ChatProps) {
+export function Chat({ currentUserProfile, profiles, language, isAdmin = false }: ChatProps) {
   const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [conversations, setConversations] = useState<ChatConversation[]>([])
@@ -28,8 +28,6 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
   const [messageInput, setMessageInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-
-  const currentUserProfile = profiles.find(p => p.id === loggedInUserId)
 
   const t = {
     title: language === 'hi' ? 'चैट' : 'Chat',
@@ -187,7 +185,7 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
 
     const newMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
-      fromUserId: loggedInUserId!,
+      fromUserId: currentUserProfile.id,
       fromProfileId: currentUserProfile.profileId,
       toProfileId: '',
       message: messageInput,
