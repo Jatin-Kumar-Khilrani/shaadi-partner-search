@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator'
 import { MapPin, Briefcase, GraduationCap, UserCircle, Phone, Envelope, Heart, ShieldCheck, Seal, Calendar } from '@phosphor-icons/react'
 import type { Profile, Interest, ContactRequest } from '@/types/profile'
 import { toast } from 'sonner'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '@/hooks/useKV'
 
 interface ProfileDetailDialogProps {
   profile: Profile | null

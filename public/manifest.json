@@ -1,0 +1,21 @@
+{
+  "name": "Shaadi Partner Search",
+  "short_name": "ShaadiSearch",
+  "description": "Find your perfect life partner - मॅट्रिमोनी सेवा",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff5f8",
+  "theme_color": "#ff6b9d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "social"],
+  "lang": "hi-IN",
+  "dir": "ltr"
+}

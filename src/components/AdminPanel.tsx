@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '@/hooks/useKV'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -168,19 +168,45 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
     setIsLoadingAI(true)
     setSelectedProfile(profile)
     try {
-      const profileText = `Name: ${profile.fullName}, Age: ${profile.age}, Gender: ${profile.gender}, Education: ${profile.education}, Occupation: ${profile.occupation}, Location: ${profile.location}, Bio: ${profile.bio || 'Not provided'}, Family Details: ${profile.familyDetails || 'Not provided'}`
-      
-      const prompt = `You are a matrimony profile reviewer. Review this profile and provide 3-5 specific suggestions for improvements or issues to address:\n\nProfile Details:\n${profileText}\n\nProvide suggestions in a numbered list format. Focus on:\n1. Missing information\n2. Suspicious or incomplete details\n3. Photo verification\n4. Profile completeness\n\nKeep suggestions brief.`
-
-      const response = await window.spark.llm(prompt, 'gpt-4o-mini')
-      const suggestions = response.split('\n').filter(line => line.trim().length > 0 && /^\d/.test(line.trim()))
-      setAiSuggestions(suggestions.length > 0 ? suggestions : [response])
+      // Generate local AI suggestions (can be replaced with Azure AI Foundry in production)
+      const suggestions = generateProfileSuggestions(profile)
+      setAiSuggestions(suggestions)
     } catch (error) {
       toast.error('Failed to get AI suggestions')
       setAiSuggestions([])
     } finally {
       setIsLoadingAI(false)
     }
+  }
+
+  // Local suggestion generator - can be replaced with Azure AI Foundry API call
+  const generateProfileSuggestions = (profile: Profile): string[] => {
+    const suggestions: string[] = []
+    
+    if (!profile.bio || profile.bio.length < 50) {
+      suggestions.push('1. Bio is missing or too short. Encourage user to add more details about themselves.')
+    }
+    if (!profile.photos || profile.photos.length === 0) {
+      suggestions.push('2. No photos uploaded. Request user to add profile photos for better visibility.')
+    }
+    if (!profile.familyDetails) {
+      suggestions.push('3. Family details are missing. This is important for matrimonial profiles.')
+    }
+    if (!profile.height) {
+      suggestions.push('4. Height information is not provided.')
+    }
+    if (!profile.selfieUrl) {
+      suggestions.push('5. Selfie verification pending. Request user to upload a selfie for trust verification.')
+    }
+    if (!profile.occupation || profile.occupation.length < 5) {
+      suggestions.push('6. Occupation details seem incomplete.')
+    }
+    
+    if (suggestions.length === 0) {
+      suggestions.push('Profile looks complete. Consider approving after photo verification.')
+    }
+    
+    return suggestions
   }
 
   const handleSendMessage = () => {

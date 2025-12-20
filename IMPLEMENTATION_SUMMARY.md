@@ -194,7 +194,7 @@
 - shadcn/ui v4 components
 - Phosphor Icons
 - Framer Motion for animations
-- Spark Runtime SDK for AI and persistence
+- Custom localStorage persistence with Azure-ready architecture
 - Sonner for toast notifications
 
 ### Key Components Created/Enhanced
