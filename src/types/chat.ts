@@ -1,29 +1,26 @@
 export interface ChatMessage {
-  id: string
+  fromProfil
   fromProfileId: string
   toProfileId?: string
-  message: string
+  type?: 'user' |
   timestamp: string
-  type?: 'user' | 'admin' | 'admin-broadcast' | 'admin-to-user' | 'user-to-user'
+  type?: 'user' | 'admin'
   read?: boolean
-  fromUserId?: string
-}
+ 
 
 export interface ChatConversation {
   id: string
-  profileId?: string
-  participants: string[]
-  lastMessage: ChatMessage
-  timestamp?: string
+  createdAt: string
+  lastMessage: string
+  timestamp: string
   unreadCount: number
   createdAt: string
-  updatedAt?: string
 }
 
 export interface ContactRequest {
-  id: string
+
   fromUserId: string
   toUserId: string
   status: 'pending' | 'accepted' | 'declined'
-  timestamp: string
+
 }
