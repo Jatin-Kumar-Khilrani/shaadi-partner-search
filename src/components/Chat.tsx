@@ -1,0 +1,338 @@
+import { useState, useEffect, useRef } from 'react'
+import { useKV } from '@github/spark/hooks'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
+import { Badge } from '@/components/ui/badge'
+import { Avatar } from '@/components/ui/avatar'
+import { ChatCircle, PaperPlaneTilt, MagnifyingGlass } from '@phosphor-icons/react'
+import type { ChatMessage, ChatConversation } from '@/types/chat'
+import type { Profile } from '@/types/profile'
+import type { Language } from '@/lib/translations'
+
+interface ChatProps {
+  loggedInUserId: string | null
+  profiles: Profile[]
+  language: Language
+  isAdmin?: boolean
+}
+
+export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: ChatProps) {
+  const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
+  const [conversations, setConversations] = useState<ChatConversation[]>([])
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
+  const [messageInput, setMessageInput] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const currentUserProfile = profiles.find(p => p.id === loggedInUserId)
+
+  const t = {
+    title: language === 'hi' ? 'चैट' : 'Chat',
+    search: language === 'hi' ? 'खोजें' : 'Search',
+    noConversations: language === 'hi' ? 'कोई बातचीत नहीं' : 'No conversations',
+    selectConversation: language === 'hi' ? 'बातचीत चुनें' : 'Select a conversation',
+    typeMessage: language === 'hi' ? 'संदेश लिखें...' : 'Type a message...',
+    send: language === 'hi' ? 'भेजें' : 'Send',
+    you: language === 'hi' ? 'आप' : 'You',
+    admin: language === 'hi' ? 'एडमिन' : 'Admin',
+    broadcast: language === 'hi' ? 'सभी को' : 'Broadcast',
+  }
+
+  useEffect(() => {
+    if (!messages || !currentUserProfile) return
+
+    const convMap = new Map<string, ChatConversation>()
+
+    messages.forEach(msg => {
+      if (msg.type === 'admin-broadcast') {
+        const convId = 'admin-broadcast'
+        if (!convMap.has(convId)) {
+          convMap.set(convId, {
+            id: convId,
+            participants: ['admin'],
+            lastMessage: msg,
+            unreadCount: msg.read ? 0 : 1,
+            createdAt: msg.timestamp,
+            updatedAt: msg.timestamp,
+          })
+        } else {
+          const conv = convMap.get(convId)!
+          if (new Date(msg.timestamp) > new Date(conv.lastMessage.timestamp)) {
+            conv.lastMessage = msg
+            conv.updatedAt = msg.timestamp
+          }
+          if (!msg.read) conv.unreadCount++
+        }
+      } else if (msg.type === 'admin-to-user') {
+        if (msg.toProfileId === currentUserProfile.profileId || isAdmin) {
+          const convId = `admin-${msg.toProfileId}`
+          if (!convMap.has(convId)) {
+            convMap.set(convId, {
+              id: convId,
+              participants: ['admin', msg.toProfileId!],
+              lastMessage: msg,
+              unreadCount: msg.read ? 0 : 1,
+              createdAt: msg.timestamp,
+              updatedAt: msg.timestamp,
+            })
+          } else {
+            const conv = convMap.get(convId)!
+            if (new Date(msg.timestamp) > new Date(conv.lastMessage.timestamp)) {
+              conv.lastMessage = msg
+              conv.updatedAt = msg.timestamp
+            }
+            if (!msg.read) conv.unreadCount++
+          }
+        }
+      } else if (msg.type === 'user-to-user') {
+        if (msg.fromProfileId === currentUserProfile.profileId || msg.toProfileId === currentUserProfile.profileId) {
+          const otherProfileId = msg.fromProfileId === currentUserProfile.profileId ? msg.toProfileId! : msg.fromProfileId
+          const convId = [currentUserProfile.profileId, otherProfileId].sort().join('-')
+          
+          if (!convMap.has(convId)) {
+            convMap.set(convId, {
+              id: convId,
+              participants: [currentUserProfile.profileId, otherProfileId],
+              lastMessage: msg,
+              unreadCount: msg.read || msg.fromProfileId === currentUserProfile.profileId ? 0 : 1,
+              createdAt: msg.timestamp,
+              updatedAt: msg.timestamp,
+            })
+          } else {
+            const conv = convMap.get(convId)!
+            if (new Date(msg.timestamp) > new Date(conv.lastMessage.timestamp)) {
+              conv.lastMessage = msg
+              conv.updatedAt = msg.timestamp
+            }
+            if (!msg.read && msg.fromProfileId !== currentUserProfile.profileId) conv.unreadCount++
+          }
+        }
+      }
+    })
+
+    const sortedConversations = Array.from(convMap.values()).sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    )
+
+    setConversations(sortedConversations)
+  }, [messages, currentUserProfile, isAdmin])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [selectedConversation, messages])
+
+  const getConversationMessages = (convId: string) => {
+    if (!messages || !currentUserProfile) return []
+
+    if (convId === 'admin-broadcast') {
+      return messages.filter(m => m.type === 'admin-broadcast')
+    }
+
+    if (convId.startsWith('admin-')) {
+      const profileId = convId.replace('admin-', '')
+      return messages.filter(m => 
+        m.type === 'admin-to-user' && 
+        (m.toProfileId === profileId || m.fromProfileId === profileId)
+      )
+    }
+
+    const [profileId1, profileId2] = convId.split('-')
+    return messages.filter(m => 
+      m.type === 'user-to-user' &&
+      ((m.fromProfileId === profileId1 && m.toProfileId === profileId2) ||
+       (m.fromProfileId === profileId2 && m.toProfileId === profileId1))
+    )
+  }
+
+  const sendMessage = () => {
+    if (!messageInput.trim() || !selectedConversation || !currentUserProfile) return
+
+    const newMessage: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      fromUserId: loggedInUserId!,
+      fromProfileId: currentUserProfile.profileId,
+      message: messageInput,
+      timestamp: new Date().toISOString(),
+      read: false,
+      type: isAdmin ? 'admin-to-user' : 'user-to-user',
+    }
+
+    if (selectedConversation === 'admin-broadcast') {
+      newMessage.type = 'admin-broadcast'
+    } else if (selectedConversation.startsWith('admin-')) {
+      newMessage.type = 'admin-to-user'
+      newMessage.toProfileId = selectedConversation.replace('admin-', '')
+    } else {
+      newMessage.type = 'user-to-user'
+      const otherProfileId = selectedConversation.split('-').find(id => id !== currentUserProfile.profileId)
+      newMessage.toProfileId = otherProfileId
+      const otherProfile = profiles.find(p => p.profileId === otherProfileId)
+      newMessage.toUserId = otherProfile?.id
+    }
+
+    setMessages(current => [...(current || []), newMessage])
+    setMessageInput('')
+  }
+
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp)
+    return date.toLocaleTimeString(language === 'hi' ? 'hi-IN' : 'en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    })
+  }
+
+  const formatDate = (timestamp: string) => {
+    const date = new Date(timestamp)
+    return date.toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-IN', {
+      day: '2-digit',
+      month: '2-digit',
+    })
+  }
+
+  const getConversationTitle = (conv: ChatConversation) => {
+    if (conv.id === 'admin-broadcast') return t.broadcast
+    if (conv.id.startsWith('admin-')) {
+      if (isAdmin) {
+        const profileId = conv.id.replace('admin-', '')
+        const profile = profiles.find(p => p.profileId === profileId)
+        return profile?.fullName || profileId
+      }
+      return t.admin
+    }
+
+    const otherProfileId = conv.participants.find(id => id !== currentUserProfile?.profileId)
+    const profile = profiles.find(p => p.profileId === otherProfileId)
+    return profile?.fullName || otherProfileId || ''
+  }
+
+  const filteredConversations = conversations.filter(conv => {
+    if (!searchQuery) return true
+    const title = getConversationTitle(conv).toLowerCase()
+    return title.includes(searchQuery.toLowerCase())
+  })
+
+  return (
+    <div className="container mx-auto px-4 md:px-8 py-8">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6">{t.title}</h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[600px]">
+          <Card className="md:col-span-1">
+            <CardHeader>
+              <div className="relative">
+                <MagnifyingGlass size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder={t.search}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </CardHeader>
+            <ScrollArea className="h-[calc(600px-80px)]">
+              <CardContent className="space-y-2">
+                {filteredConversations.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    {t.noConversations}
+                  </p>
+                ) : (
+                  filteredConversations.map(conv => (
+                    <div
+                      key={conv.id}
+                      onClick={() => setSelectedConversation(conv.id)}
+                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                        selectedConversation === conv.id
+                          ? 'bg-primary text-primary-foreground'
+                          : 'hover:bg-muted'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-sm font-bold">
+                          <ChatCircle size={20} weight="fill" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-semibold truncate">{getConversationTitle(conv)}</p>
+                            {conv.unreadCount > 0 && (
+                              <Badge variant="destructive" className="ml-2">{conv.unreadCount}</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs truncate opacity-70">
+                            {conv.lastMessage.message}
+                          </p>
+                          <p className="text-xs opacity-50">
+                            {formatDate(conv.lastMessage.timestamp)} {formatTime(conv.lastMessage.timestamp)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </ScrollArea>
+          </Card>
+
+          <Card className="md:col-span-2">
+            {!selectedConversation ? (
+              <div className="h-full flex items-center justify-center text-muted-foreground">
+                {t.selectConversation}
+              </div>
+            ) : (
+              <>
+                <CardHeader>
+                  <CardTitle>
+                    {getConversationTitle(conversations.find(c => c.id === selectedConversation)!)}
+                  </CardTitle>
+                </CardHeader>
+                <Separator />
+                <ScrollArea className="h-[calc(600px-180px)] p-4">
+                  <div className="space-y-4">
+                    {getConversationMessages(selectedConversation).map(msg => (
+                      <div
+                        key={msg.id}
+                        className={`flex ${msg.fromProfileId === currentUserProfile?.profileId ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                            msg.fromProfileId === currentUserProfile?.profileId
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted'
+                          }`}
+                        >
+                          <p className="text-sm">{msg.message}</p>
+                          <p className="text-xs opacity-70 mt-1">
+                            {formatTime(msg.timestamp)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+                <Separator />
+                <div className="p-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder={t.typeMessage}
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                    />
+                    <Button onClick={sendMessage} size="icon">
+                      <PaperPlaneTilt size={20} weight="fill" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}

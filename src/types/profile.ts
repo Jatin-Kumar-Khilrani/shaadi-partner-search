@@ -1,12 +1,11 @@
 export type Gender = 'male' | 'female'
 export type MaritalStatus = 'never-married' | 'divorced' | 'widowed'
-export type ProfileStatus = 'pending' | 'v
+export type ProfileStatus = 'pending' | 'verified' | 'rejected'
 export type DietPreference = 'veg' | 'non-veg' | 'eggetarian'
-export type DrinkingHabit = 'never' | 'occasional
-
-  id: string
-  firstName: string
+export type DrinkingHabit = 'never' | 'occasionally' | 'regularly'
 export type SmokingHabit = 'never' | 'occasionally' | 'regularly'
+export type MembershipPlan = '6-month' | '1-year'
+export type Manglik = boolean
 
 export interface Profile {
   id: string
@@ -14,92 +13,96 @@ export interface Profile {
   firstName: string
   lastName: string
   fullName: string
+  dateOfBirth: string
+  age: number
+  gender: Gender
+  religion?: string
+  caste?: string
+  community?: string
+  motherTongue?: string
   education: string
-  salary?: st
-  country: strin
+  occupation: string
+  salary?: string
+  location: string
+  country: string
+  maritalStatus: MaritalStatus
   email: string
-  relationToProf
-  hideMobile: boolea
+  mobile: string
+  relationToProfile?: string
+  hideEmail: boolean
+  hideMobile: boolean
+  photos: string[]
   selfieUrl?: string
+  bio?: string
   height?: string
-  dietPreference?: D
-  drinkingHabit?:
-  status: ProfileS
-  createdAt: stri
-  membershipPlan?: MembershipP
-  emailVerified
-  isBlocked: boo
-  adminNotes?: string
-
-  gender?: Gender
-  ageMax?: number
-  country?: string
-  caste?: stri
-  motherTongue?: 
+  familyDetails?: string
+  dietPreference?: DietPreference
   manglik?: Manglik
   drinkingHabit?: DrinkingHabit
+  smokingHabit?: SmokingHabit
+  status: ProfileStatus
+  trustLevel: number
+  createdAt: string
+  verifiedAt?: string
+  membershipPlan?: MembershipPlan
+  membershipExpiry?: string
+  emailVerified: boolean
+  mobileVerified: boolean
+  isBlocked: boolean
+  adminNotes?: string
 }
-export interface Interest {
-  fromProfileId: string
-  status: 'pending' | '
-  message?: string
 
+export interface SearchFilters {
+  gender?: Gender
+  ageMin?: number
+  ageMax?: number
+  location?: string
+  country?: string
+  religion?: string
+  caste?: string
+  community?: string
+  motherTongue?: string
+  education?: string
+  occupation?: string
+  manglik?: Manglik
+  dietPreference?: DietPreference
+  drinkingHabit?: DrinkingHabit
+  smokingHabit?: SmokingHabit
+}
+
+export interface Interest {
   id: string
+  fromProfileId: string
   toProfileId: string
+  status: 'pending' | 'accepted' | 'declined'
+  message?: string
   createdAt: string
   approvedBy?: string
+}
 
+export interface ContactRequest {
   id: string
+  fromUserId: string
   toUserId: string
-  toProfileId?: strin
- 
-
-
-  profileId: stri
-  ageMax?: number
-  heightMax?: str
-  caste?: string[]
-  motherTongue?: s
-  occupation?: stri
-  manglik?: Mang
-  education?: string
-}
-
-export interface Volunteer {
-  id: string
-  name: string
-  city: string
-  mobile: string
-  role: string
-}
-
-export interface Resource {
-  id: string
-  title: string
-  description: string
-  category: 'traditions' | 'gotra' | 'advice' | 'safety'
-  content: string
-}
-
-export interface WeddingService {
-  id: string
-  category: 'venue' | 'caterer' | 'photographer' | 'decorator' | 'mehandi' | 'makeup' | 'dj' | 'priest' | 'card-designer' | 'choreographer' | 'other'
-  businessName: string
-  contactPerson: string
-  mobile: string
-  email: string
-  address: string
-  city: string
-  state: string
-  description: string
-  priceRange: string
-  photos?: string[]
-  rating?: number
-  reviewCount?: number
-  verificationStatus: 'pending' | 'verified' | 'rejected'
+  fromProfileId: string
+  toProfileId?: string
+  status: 'pending' | 'approved' | 'declined'
   createdAt: string
-  consultationFee: number
 }
+
+export interface PartnerPreferenceData {
+  profileId: string
+  gender?: Gender
+  ageMin?: number
+  ageMax?: number
+  heightMin?: string
+  heightMax?: string
+  caste?: string[]
+  community?: string[]
+  motherTongue?: string[]
+  education?: string
+  occupation?: string
+  manglik?: Manglik
   dietPreference?: DietPreference[]
   drinkingHabit?: DrinkingHabit[]
   smokingHabit?: SmokingHabit[]

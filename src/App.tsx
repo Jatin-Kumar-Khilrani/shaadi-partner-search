@@ -1,27 +1,35 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, Translate, SignIn, SignOut } from '@phosphor-icons/react'
+import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, Translate, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront } from '@phosphor-icons/react'
 import { HeroSearch } from '@/components/HeroSearch'
 import { ProfileCard } from '@/components/ProfileCard'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
 import { RegistrationDialog } from '@/components/RegistrationDialog'
 import { LoginDialog } from '@/components/LoginDialog'
-import type { Profile, SearchFilters } from '@/types/profile'
+import { MyMatches } from '@/components/MyMatches'
+import { Inbox } from '@/components/Inbox'
+import { Chat } from '@/components/Chat'
+import { MyProfile } from '@/components/MyProfile'
+import { Settings } from '@/components/Settings'
+import { WeddingServices } from '@/components/WeddingServicesPage'
+import type { Profile, SearchFilters, WeddingService } from '@/types/profile'
 import type { User } from '@/types/user'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
 import { AdminPanel } from '@/components/AdminPanel'
 import { useTranslation, type Language } from '@/lib/translations'
 import { toast } from 'sonner'
+import { sampleWeddingServices, sampleProfiles, sampleUsers } from '@/lib/sampleData'
 
-type View = 'home' | 'search-results' | 'admin'
+type View = 'home' | 'search-results' | 'admin' | 'my-matches' | 'inbox' | 'chat' | 'my-profile' | 'wedding-services'
 
 function App() {
   const [profiles, setProfiles] = useKV<Profile[]>('profiles', [])
   const [users, setUsers] = useKV<User[]>('users', [])
+  const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
   const [loggedInUser, setLoggedInUser] = useState<string | null>(null)
   
   const [currentView, setCurrentView] = useState<View>('home')
@@ -29,8 +37,23 @@ function App() {
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [showRegistration, setShowRegistration] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [language, setLanguage] = useState<Language>('hi')
+
+  const currentUserProfile = profiles?.find(p => p.id === loggedInUser) || null
+
+  useEffect(() => {
+    if ((!profiles || profiles.length === 0) && sampleProfiles.length > 0) {
+      setProfiles(sampleProfiles)
+    }
+    if ((!users || users.length === 0) && sampleUsers.length > 0) {
+      setUsers(sampleUsers)
+    }
+    if ((!weddingServices || weddingServices.length === 0) && sampleWeddingServices.length > 0) {
+      setWeddingServices(sampleWeddingServices)
+    }
+  }, [])
 
   const handleSearch = (filters: SearchFilters) => {
     setSearchFilters(filters)
@@ -146,6 +169,12 @@ function App() {
     login: language === 'hi' ? 'लॉगिन करें' : 'Login',
     logout: language === 'hi' ? 'लॉगआउट' : 'Logout',
     adminButton: language === 'hi' ? 'एडमिन' : 'Admin',
+    myMatches: language === 'hi' ? 'मेरे मैच' : 'My Matches',
+    inbox: language === 'hi' ? 'इनबॉक्स' : 'Inbox',
+    chat: language === 'hi' ? 'चैट' : 'Chat',
+    myProfile: language === 'hi' ? 'मेरी प्रोफाइल' : 'My Profile',
+    settings: language === 'hi' ? 'सेटिंग्स' : 'Settings',
+    weddingServices: language === 'hi' ? 'विवाह सेवाएं' : 'Wedding Services',
     searchResults: language === 'hi' ? 'खोज परिणाम' : 'Search Results',
     profilesFound: language === 'hi' ? 'प्रोफाइल मिली' : 'profiles found',
     newSearch: language === 'hi' ? 'नई खोज' : 'New Search',
@@ -178,6 +207,50 @@ function App() {
               <Heart size={20} weight="fill" />
               {t.homeButton}
             </Button>
+            {loggedInUser && (
+              <>
+                <Button
+                  variant={currentView === 'my-matches' ? 'default' : 'ghost'}
+                  onClick={() => setCurrentView('my-matches')}
+                  className="gap-2"
+                >
+                  <MagnifyingGlass size={20} />
+                  {t.myMatches}
+                </Button>
+                <Button
+                  variant={currentView === 'inbox' ? 'default' : 'ghost'}
+                  onClick={() => setCurrentView('inbox')}
+                  className="gap-2"
+                >
+                  <Envelope size={20} />
+                  {t.inbox}
+                </Button>
+                <Button
+                  variant={currentView === 'chat' ? 'default' : 'ghost'}
+                  onClick={() => setCurrentView('chat')}
+                  className="gap-2"
+                >
+                  <ChatCircle size={20} />
+                  {t.chat}
+                </Button>
+                <Button
+                  variant={currentView === 'my-profile' ? 'default' : 'ghost'}
+                  onClick={() => setCurrentView('my-profile')}
+                  className="gap-2"
+                >
+                  <UserCircle size={20} />
+                  {t.myProfile}
+                </Button>
+              </>
+            )}
+            <Button
+              variant={currentView === 'wedding-services' ? 'default' : 'ghost'}
+              onClick={() => setCurrentView('wedding-services')}
+              className="gap-2"
+            >
+              <Storefront size={20} />
+              {t.weddingServices}
+            </Button>
             <Button
               variant={currentView === 'admin' ? 'default' : 'ghost'}
               onClick={() => setCurrentView('admin')}
@@ -194,6 +267,16 @@ function App() {
             >
               <Translate size={20} weight="bold" />
             </Button>
+            {loggedInUser && (
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setShowSettings(true)}
+                title={t.settings}
+              >
+                <Gear size={20} weight="bold" />
+              </Button>
+            )}
             {!loggedInUser ? (
               <>
                 <Button onClick={() => setShowLogin(true)} variant="ghost" className="gap-2">
@@ -231,6 +314,76 @@ function App() {
                 >
                   <Heart size={20} weight="fill" />
                   {t.homeButton}
+                </Button>
+                {loggedInUser && (
+                  <>
+                    <Button
+                      variant={currentView === 'my-matches' ? 'default' : 'ghost'}
+                      onClick={() => {
+                        setCurrentView('my-matches')
+                        setMobileMenuOpen(false)
+                      }}
+                      className="justify-start gap-2"
+                    >
+                      <MagnifyingGlass size={20} />
+                      {t.myMatches}
+                    </Button>
+                    <Button
+                      variant={currentView === 'inbox' ? 'default' : 'ghost'}
+                      onClick={() => {
+                        setCurrentView('inbox')
+                        setMobileMenuOpen(false)
+                      }}
+                      className="justify-start gap-2"
+                    >
+                      <Envelope size={20} />
+                      {t.inbox}
+                    </Button>
+                    <Button
+                      variant={currentView === 'chat' ? 'default' : 'ghost'}
+                      onClick={() => {
+                        setCurrentView('chat')
+                        setMobileMenuOpen(false)
+                      }}
+                      className="justify-start gap-2"
+                    >
+                      <ChatCircle size={20} />
+                      {t.chat}
+                    </Button>
+                    <Button
+                      variant={currentView === 'my-profile' ? 'default' : 'ghost'}
+                      onClick={() => {
+                        setCurrentView('my-profile')
+                        setMobileMenuOpen(false)
+                      }}
+                      className="justify-start gap-2"
+                    >
+                      <UserCircle size={20} />
+                      {t.myProfile}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setShowSettings(true)
+                        setMobileMenuOpen(false)
+                      }}
+                      className="justify-start gap-2"
+                    >
+                      <Gear size={20} />
+                      {t.settings}
+                    </Button>
+                  </>
+                )}
+                <Button
+                  variant={currentView === 'wedding-services' ? 'default' : 'ghost'}
+                  onClick={() => {
+                    setCurrentView('wedding-services')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="justify-start gap-2"
+                >
+                  <Storefront size={20} />
+                  {t.weddingServices}
                 </Button>
                 <Button
                   variant={currentView === 'admin' ? 'default' : 'ghost'}
@@ -298,7 +451,6 @@ function App() {
         {currentView === 'home' && (
           <>
             <HeroSearch onSearch={handleSearch} language={language} />
-            
             <section className="container mx-auto px-4 md:px-8 py-16">
               <div className="max-w-5xl mx-auto">
                 <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">
@@ -433,6 +585,42 @@ function App() {
         )}
 
         {currentView === 'admin' && <AdminPanel profiles={profiles} setProfiles={setProfiles} language={language} />}
+
+        {currentView === 'my-matches' && (
+          <MyMatches 
+            loggedInUserId={loggedInUser}
+            profiles={profiles || []}
+            onViewProfile={setSelectedProfile}
+            language={language}
+          />
+        )}
+
+        {currentView === 'inbox' && (
+          <Inbox 
+            loggedInUserId={loggedInUser}
+            profiles={profiles || []}
+            language={language}
+          />
+        )}
+
+        {currentView === 'chat' && (
+          <Chat 
+            loggedInUserId={loggedInUser}
+            profiles={profiles || []}
+            language={language}
+          />
+        )}
+
+        {currentView === 'my-profile' && (
+          <MyProfile 
+            profile={currentUserProfile}
+            language={language}
+          />
+        )}
+
+        {currentView === 'wedding-services' && (
+          <WeddingServices language={language} />
+        )}
       </main>
 
       <footer className="border-t bg-muted/30 py-8">
@@ -473,6 +661,15 @@ function App() {
         users={users || []}
         language={language}
       />
+
+      {loggedInUser && currentUserProfile && (
+        <Settings
+          open={showSettings}
+          onClose={() => setShowSettings(false)}
+          profileId={currentUserProfile.profileId}
+          language={language}
+        />
+      )}
 
       <Toaster position="top-right" />
     </div>
