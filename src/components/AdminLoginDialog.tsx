@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/butto
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent } from '@/components/ui/card'
-import { toast } from 'sonner'
-import type { Language } from '@/lib/translations'
+
+const ADMIN_PASSWORD = '1234'
+
+  open: boolean
 
 const ADMIN_USERNAME = 'rkkhilrani'
 const ADMIN_PASSWORD = '1234'
@@ -16,11 +16,11 @@ interface AdminLoginDialogProps {
   onClose: () => void
   onLoginSuccess: () => void
   language: Language
-}
+ 
 
 export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: AdminLoginDialogProps) {
   const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+    otpTitle: language === 'hi' ? 'OTP सत्यापन
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
   const [otp, setOtp] = useState('')
   const [generatedOtp, setGeneratedOtp] = useState('')
@@ -38,17 +38,17 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
     invalidCredentials: language === 'hi' ? 'अमान्य यूज़रनेम या पासवर्ड' : 'Invalid username or password',
     invalidOtp: language === 'hi' ? 'अमान्य OTP' : 'Invalid OTP',
     otpSentSuccess: language === 'hi' ? 'OTP दोनों नंबरों पर भेजा गया' : 'OTP sent to both numbers'
-  }
+   
 
-  const handleCredentialsSubmit = () => {
+
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       const otp = Math.floor(100000 + Math.random() * 900000).toString()
       setGeneratedOtp(otp)
-      setStep('otp')
+    setGeneratedOtp(
       console.log(`OTP for admin login: ${otp}`)
       toast.success(t.otpSentSuccess)
     } else {
-      toast.error(t.invalidCredentials)
+      <DialogContent className="sm:max-
     }
   }
 
@@ -56,27 +56,27 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
     if (otp === generatedOtp) {
       toast.success(language === 'hi' ? 'लॉगिन सफल' : 'Login successful')
       onLoginSuccess()
-      handleClose()
+                  <
     } else {
-      toast.error(t.invalidOtp)
+                    value={user
     }
-  }
+   
 
-  const handleClose = () => {
+                  <Label html
     setUsername('')
-    setPassword('')
+                   
     setStep('credentials')
-    setOtp('')
+              
     setGeneratedOtp('')
-    onClose()
+             
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+                <p className="text-sm text-muted-fo
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+                    <p
           <DialogTitle>{step === 'credentials' ? t.title : t.otpTitle}</DialogTitle>
-        </DialogHeader>
+                  ))}
 
         <Card>
           <CardContent className="pt-6">
@@ -86,19 +86,19 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
                 <div className="space-y-2">
                   <Label htmlFor="admin-username">{t.username}</Label>
                   <Input
-                    id="admin-username"
+                  {t.verify}
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleCredentialsSubmit()}
                   />
-                </div>
+}
                 <div className="space-y-2">
                   <Label htmlFor="admin-password">{t.password}</Label>
                   <Input
                     id="admin-password"
                     type="password"
-                    value={password}
+
                     onChange={(e) => setPassword(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleCredentialsSubmit()}
                   />
@@ -106,11 +106,11 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
                 <Button onClick={handleCredentialsSubmit} className="w-full">
                   {t.continue}
                 </Button>
-              </div>
+
             ) : (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground mb-2">{t.otpSent}</p>
-                <div className="space-y-1 mb-4">
+
                   {ADMIN_PHONE_NUMBERS.map((number) => (
                     <p key={number} className="text-sm font-medium">
                       {number}
@@ -132,11 +132,11 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
                 <Button onClick={handleOtpSubmit} className="w-full" disabled={otp.length !== 6}>
                   {t.verify}
                 </Button>
-              </div>
+
             )}
           </CardContent>
         </Card>
-      </DialogContent>
+
     </Dialog>
-  )
+
 }
