@@ -275,10 +275,11 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
 
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp)
-    return date.toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-IN', {
-      day: '2-digit',
-      month: '2-digit',
-    })
+    if (isNaN(date.getTime())) return ''
+    const day = date.getDate().toString().padStart(2, '0')
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const year = date.getFullYear()
+    return `${day}/${month}/${year}`
   }
 
   const getConversationTitle = (conv: ChatConversation) => {

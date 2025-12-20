@@ -55,8 +55,18 @@ export default defineConfig({
           'forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
           // Utilities
           'utils': ['date-fns', 'clsx', 'tailwind-merge', 'class-variance-authority'],
+          // Azure Core
+          'azure-core': ['@azure/core-rest-pipeline', '@azure/core-auth', '@azure/core-util', '@azure/core-client'],
+          // Azure Individual Services (split for better caching)
+          'azure-cosmos': ['@azure/cosmos'],
+          'azure-identity': ['@azure/identity'],
+          'azure-keyvault': ['@azure/keyvault-secrets'],
+          'azure-storage': ['@azure/storage-blob'],
+          // React day picker for calendar
+          'calendar': ['react-day-picker'],
         },
       },
     },
+    chunkSizeWarningLimit: 700,
   },
 });

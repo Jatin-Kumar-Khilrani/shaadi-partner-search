@@ -7,6 +7,7 @@ import { MapPin, Briefcase, GraduationCap, UserCircle, Phone, Envelope, Heart, S
 import type { Profile, Interest, ContactRequest } from '@/types/profile'
 import { toast } from 'sonner'
 import { useKV } from '@/hooks/useKV'
+import { formatDateDDMMYYYY } from '@/lib/utils'
 
 interface ProfileDetailDialogProps {
   profile: Profile | null
@@ -225,7 +226,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InfoItem icon={<MapPin size={18} />} label={t.location} value={`${profile.location}, ${profile.country}`} />
-              <InfoItem icon={<Calendar size={18} />} label={t.dateOfBirth} value={new Date(profile.dateOfBirth).toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-US')} />
+              <InfoItem icon={<Calendar size={18} />} label={t.dateOfBirth} value={formatDateDDMMYYYY(profile.dateOfBirth)} />
               <InfoItem icon={<GraduationCap size={18} />} label={t.education} value={profile.education} />
               <InfoItem icon={<Briefcase size={18} />} label={t.occupation} value={profile.occupation} />
               {profile.religion && (
@@ -295,7 +296,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
           )}
 
           <div className="text-xs text-muted-foreground text-center pt-2">
-            {t.profileId}: {profile.id} | {t.createdOn}: {new Date(profile.createdAt).toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-US')}
+            {t.profileId}: {profile.id} | {t.createdOn}: {formatDateDDMMYYYY(profile.createdAt)}
           </div>
         </div>
       </DialogContent>

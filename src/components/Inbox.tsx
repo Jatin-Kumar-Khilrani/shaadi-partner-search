@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import type { Interest, ContactRequest, Profile, BlockedProfile } from '@/types/profile'
 import type { ChatMessage } from '@/types/chat'
 import type { Language } from '@/lib/translations'
+import { formatDateDDMMYYYY } from '@/lib/utils'
 
 interface InboxProps {
   loggedInUserId: string | null
@@ -187,7 +188,7 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
   }
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-IN')
+    return formatDateDDMMYYYY(date)
   }
 
   return (

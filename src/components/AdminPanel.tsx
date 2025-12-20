@@ -12,13 +12,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ShieldCheck, X, Check, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil } from '@phosphor-icons/react'
+import { ShieldCheck, X, Check, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner } from '@phosphor-icons/react'
 import type { Profile, WeddingService } from '@/types/profile'
 import type { User } from '@/types/user'
 import type { ChatMessage } from '@/types/chat'
 import { Chat } from '@/components/Chat'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
 import { toast } from 'sonner'
+import { formatDateDDMMYYYY } from '@/lib/utils'
+import { verifyFaceIdentity, type FaceVerificationResult } from '@/lib/faceVerification'
 
 interface AdminPanelProps {
   profiles: Profile[] | undefined
@@ -47,6 +49,9 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
   const [showServiceDialog, setShowServiceDialog] = useState(false)
   const [editingService, setEditingService] = useState<WeddingService | null>(null)
   const [viewProfileDialog, setViewProfileDialog] = useState<Profile | null>(null)
+  const [faceVerificationDialog, setFaceVerificationDialog] = useState<Profile | null>(null)
+  const [faceVerificationResult, setFaceVerificationResult] = useState<FaceVerificationResult | null>(null)
+  const [isVerifyingFace, setIsVerifyingFace] = useState(false)
   const [serviceFormData, setServiceFormData] = useState<Partial<WeddingService>>({
     category: 'venue',
     verificationStatus: 'verified',
@@ -115,6 +120,14 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
     serviceDescription: language === 'hi' ? 'विवरण' : 'Description',
     priceRange: language === 'hi' ? 'मूल्य सीमा' : 'Price Range',
     consultationFee: language === 'hi' ? 'परामर्श शुल्क' : 'Consultation Fee',
+    verifyFace: language === 'hi' ? 'चेहरा सत्यापित करें' : 'Verify Face',
+    faceVerification: language === 'hi' ? 'चेहरा सत्यापन' : 'Face Verification',
+    selfieImage: language === 'hi' ? 'सेल्फी छवि' : 'Selfie Image',
+    uploadedPhotos: language === 'hi' ? 'अपलोड की गई तस्वीरें' : 'Uploaded Photos',
+    verifying: language === 'hi' ? 'सत्यापित हो रहा है...' : 'Verifying...',
+    verifyWithAI: language === 'hi' ? 'AI से सत्यापित करें' : 'Verify with AI',
+    noSelfie: language === 'hi' ? 'कोई सेल्फी नहीं' : 'No Selfie',
+    noPhotos: language === 'hi' ? 'कोई फोटो नहीं' : 'No Photos',
   }
 
   const pendingProfiles = profiles?.filter(p => p.status === 'pending') || []
@@ -165,6 +178,37 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
     
     toast.success(t.blockSuccess)
     setSelectedProfile(null)
+  }
+
+  const handleFaceVerification = async (profile: Profile) => {
+    if (!profile.selfieUrl || !profile.photos || profile.photos.length === 0) {
+      toast.error(language === 'hi' ? 'सेल्फी और फोटो दोनों आवश्यक हैं' : 'Both selfie and photos are required for verification')
+      return
+    }
+
+    setFaceVerificationDialog(profile)
+    setFaceVerificationResult(null)
+    setIsVerifyingFace(true)
+
+    try {
+      const result = await verifyFaceIdentity(profile.selfieUrl, profile.photos)
+      setFaceVerificationResult(result)
+      
+      if (result.isMatch) {
+        toast.success(language === 'hi' ? 'चेहरा सत्यापित!' : 'Face verified!')
+      } else {
+        toast.warning(language === 'hi' ? 'चेहरा मेल नहीं खाता' : 'Face mismatch detected')
+      }
+    } catch (error) {
+      toast.error(language === 'hi' ? 'सत्यापन विफल' : 'Verification failed')
+      setFaceVerificationResult({
+        isMatch: false,
+        confidence: 0,
+        message: 'Verification service error'
+      })
+    } finally {
+      setIsVerifyingFace(false)
+    }
   }
 
   const handleGetAISuggestions = async (profile: Profile) => {
@@ -416,6 +460,16 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
                                 {t.viewProfile}
                               </Button>
                               <Button 
+                                onClick={() => handleFaceVerification(profile)}
+                                variant="outline"
+                                size="sm"
+                                disabled={!profile.selfieUrl || !profile.photos?.length}
+                                className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                              >
+                                <ScanSmiley size={16} className="mr-1" />
+                                {t.verifyFace}
+                              </Button>
+                              <Button 
                                 onClick={() => handleGetAISuggestions(profile)}
                                 variant="outline"
                                 size="sm"
@@ -521,7 +575,7 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
                               <TableCell className="text-sm">{profile.email}</TableCell>
                               <TableCell className="font-mono text-sm">{profile.mobile}</TableCell>
                               <TableCell className="text-xs text-muted-foreground">
-                                {profile.verifiedAt ? new Date(profile.verifiedAt).toLocaleDateString() : '-'}
+                                {profile.verifiedAt ? formatDateDDMMYYYY(profile.verifiedAt) : '-'}
                               </TableCell>
                               <TableCell>
                                 <Button 
@@ -608,7 +662,7 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
                             <TableCell className="text-sm">{profile.email}</TableCell>
                             <TableCell className="font-mono text-sm">{profile.mobile}</TableCell>
                             <TableCell className="text-xs text-muted-foreground">
-                              {new Date(profile.createdAt).toLocaleDateString()}
+                              {formatDateDDMMYYYY(profile.createdAt)}
                             </TableCell>
                             <TableCell>
                               <div className="flex gap-1">
@@ -963,6 +1017,114 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
         language={language}
         currentUserProfile={null}
       />
+
+      {/* Face Verification Dialog */}
+      <Dialog open={!!faceVerificationDialog} onOpenChange={() => setFaceVerificationDialog(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ScanSmiley size={24} weight="bold" />
+              {t.faceVerification}
+            </DialogTitle>
+            <DialogDescription>
+              {faceVerificationDialog?.fullName} - {faceVerificationDialog?.profileId}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+            {/* Selfie Section */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm">{t.selfieImage}</h4>
+              <div className="aspect-square rounded-lg overflow-hidden bg-muted border-2 border-dashed">
+                {faceVerificationDialog?.selfieUrl ? (
+                  <img 
+                    src={faceVerificationDialog.selfieUrl} 
+                    alt="Selfie" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                    {t.noSelfie}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Uploaded Photos Section */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm">{t.uploadedPhotos}</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {faceVerificationDialog?.photos && faceVerificationDialog.photos.length > 0 ? (
+                  faceVerificationDialog.photos.map((photo, idx) => (
+                    <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-muted border">
+                      <img 
+                        src={photo} 
+                        alt={`Photo ${idx + 1}`} 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-2 aspect-video flex items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg">
+                    {t.noPhotos}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Verification Result */}
+          {isVerifyingFace ? (
+            <div className="flex items-center justify-center py-6 gap-3">
+              <Spinner size={24} className="animate-spin" />
+              <span>{t.verifying}</span>
+            </div>
+          ) : faceVerificationResult ? (
+            <Alert className={faceVerificationResult.isMatch 
+              ? 'bg-green-50 border-green-300 dark:bg-green-950/30 dark:border-green-800' 
+              : 'bg-red-50 border-red-300 dark:bg-red-950/30 dark:border-red-800'
+            }>
+              {faceVerificationResult.isMatch ? (
+                <CheckCircle size={20} weight="fill" className="text-green-600" />
+              ) : (
+                <XCircle size={20} weight="fill" className="text-red-600" />
+              )}
+              <AlertDescription className="ml-2">
+                <div className="font-semibold">
+                  {faceVerificationResult.isMatch 
+                    ? (language === 'hi' ? 'चेहरा सत्यापित ✓' : 'Face Verified ✓')
+                    : (language === 'hi' ? 'चेहरा मेल नहीं खाता ✗' : 'Face Mismatch ✗')
+                  }
+                </div>
+                <div className="text-sm mt-1">
+                  {faceVerificationResult.message}
+                </div>
+                {faceVerificationResult.details && (
+                  <div className="text-xs mt-2 space-y-1 opacity-80">
+                    <div>{language === 'hi' ? 'समानता स्कोर' : 'Similarity Score'}: {faceVerificationResult.confidence}%</div>
+                  </div>
+                )}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setFaceVerificationDialog(null)}>
+              {t.close}
+            </Button>
+            {faceVerificationDialog && (
+              <Button 
+                onClick={() => handleFaceVerification(faceVerificationDialog)}
+                disabled={isVerifyingFace}
+                className="gap-2"
+              >
+                <ScanSmiley size={16} />
+                {isVerifyingFace ? t.verifying : t.verifyWithAI}
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }

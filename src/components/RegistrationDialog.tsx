@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image } from '@phosphor-icons/react'
+import { DatePicker } from '@/components/ui/date-picker'
+import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, ArrowDown } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Gender, MaritalStatus, Profile, MembershipPlan } from '@/types/profile'
 import { useTranslation, type Language } from '@/lib/translations'
@@ -18,16 +19,17 @@ interface RegistrationDialogProps {
   onClose: () => void
   onSubmit: (profile: Partial<Profile>) => void
   language: Language
+  existingProfiles?: Profile[]
 }
 
-export function RegistrationDialog({ open, onClose, onSubmit, language }: RegistrationDialogProps) {
+export function RegistrationDialog({ open, onClose, onSubmit, language, existingProfiles = [] }: RegistrationDialogProps) {
   const t = useTranslation(language)
   const [step, setStep] = useState(1)
-  const [photoFile, setPhotoFile] = useState<File | null>(null)
-  const [photoPreview, setPhotoPreview] = useState<string | undefined>(undefined)
+  const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([])
   const [selfieFile, setSelfieFile] = useState<File | null>(null)
   const [selfiePreview, setSelfiePreview] = useState<string | undefined>(undefined)
   const [showCamera, setShowCamera] = useState(false)
+  const [isCameraReady, setIsCameraReady] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -54,6 +56,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
     country: '',
     maritalStatus: undefined as MaritalStatus | undefined,
     email: '',
+    countryCode: '+91',
     mobile: '',
     height: '',
     bio: '',
@@ -98,6 +101,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
       })
       if (videoRef.current) {
         videoRef.current.srcObject = stream
+        videoRef.current.onloadedmetadata = () => {
+          setIsCameraReady(true)
+        }
         streamRef.current = stream
         setShowCamera(true)
       }
@@ -112,6 +118,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
       streamRef.current = null
     }
     setShowCamera(false)
+    setIsCameraReady(false)
   }
 
   const capturePhoto = () => {
@@ -136,9 +143,54 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
     }
   }
 
+  // Check for duplicate email or mobile
+  const isDuplicateEmail = (email: string) => {
+    return existingProfiles.some(p => p.email?.toLowerCase() === email.toLowerCase())
+  }
+
+  const isDuplicateMobile = (mobile: string) => {
+    const fullMobile = `${formData.countryCode} ${mobile}`
+    return existingProfiles.some(p => {
+      // Check both with and without country code
+      const existingMobile = p.mobile?.replace(/\s+/g, '') || ''
+      const newMobile = fullMobile.replace(/\s+/g, '')
+      return existingMobile === newMobile || existingMobile.endsWith(mobile)
+    })
+  }
+
   const handleSubmit = () => {
-    if (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.email || !formData.mobile || !formData.membershipPlan) {
+    if (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.religion || !formData.maritalStatus || !formData.email || !formData.mobile || !formData.membershipPlan) {
       toast.error(t.registration.fillAllFields)
+      return
+    }
+
+    // Check for duplicate email
+    if (isDuplicateEmail(formData.email)) {
+      toast.error(
+        language === 'hi' 
+          ? 'यह ईमेल पहले से पंजीकृत है। कृपया दूसरा ईमेल उपयोग करें।' 
+          : 'This email is already registered. Please use a different email.'
+      )
+      return
+    }
+
+    // Check for duplicate mobile
+    if (isDuplicateMobile(formData.mobile)) {
+      toast.error(
+        language === 'hi' 
+          ? 'यह मोबाइल नंबर पहले से पंजीकृत है। कृपया दूसरा नंबर उपयोग करें।' 
+          : 'This mobile number is already registered. Please use a different number.'
+      )
+      return
+    }
+
+    // Validate mobile is 10 digits
+    if (formData.mobile.length !== 10) {
+      toast.error(
+        language === 'hi' 
+          ? 'कृपया 10 अंक का मोबाइल नंबर दर्ज करें' 
+          : 'Please enter a 10 digit mobile number'
+      )
       return
     }
 
@@ -162,12 +214,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
       lastName: formData.fullName.split(' ').slice(1).join(' ') || formData.fullName.split(' ')[0],
       age,
       gender: formData.gender!,
-      maritalStatus: formData.maritalStatus || 'never-married',
+      maritalStatus: formData.maritalStatus!,
+      mobile: `${formData.countryCode} ${formData.mobile}`,
       membershipPlan: formData.membershipPlan!,
       relationToProfile: formData.profileCreatedFor === 'Other' ? formData.otherRelation : formData.profileCreatedFor!,
       hideEmail: false,
       hideMobile: false,
-      photos: photoPreview ? [photoPreview] : [],
+      photos: photos.map(p => p.preview),
       selfieUrl: selfiePreview,
       membershipExpiry: membershipExpiry.toISOString()
     }
@@ -203,14 +256,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
       country: '',
       maritalStatus: undefined,
       email: '',
+      countryCode: '+91',
       mobile: '',
       height: '',
       bio: '',
       familyDetails: '',
       membershipPlan: undefined
     })
-    setPhotoFile(null)
-    setPhotoPreview(undefined)
+    setPhotos([])
     setSelfieFile(null)
     setSelfiePreview(undefined)
     stopCamera()
@@ -219,15 +272,44 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
   }
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setPhotoFile(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
+    const files = e.target.files
+    if (files && files.length > 0) {
+      const remainingSlots = 3 - photos.length
+      const filesToAdd = Array.from(files).slice(0, remainingSlots)
+      
+      filesToAdd.forEach(file => {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setPhotos(prev => {
+            if (prev.length >= 3) return prev
+            return [...prev, { file, preview: reader.result as string }]
+          })
+        }
+        reader.readAsDataURL(file)
+      })
     }
+    // Reset input to allow re-selecting same file
+    e.target.value = ''
+  }
+
+  const removePhoto = (index: number) => {
+    if (photos.length > 1) {
+      setPhotos(prev => prev.filter((_, i) => i !== index))
+    } else {
+      toast.error(language === 'hi' ? 'कम से कम एक फोटो आवश्यक है' : 'At least one photo is required')
+    }
+  }
+
+  const movePhoto = (index: number, direction: 'up' | 'down') => {
+    if ((direction === 'up' && index === 0) || (direction === 'down' && index === photos.length - 1)) {
+      return
+    }
+    setPhotos(prev => {
+      const newPhotos = [...prev]
+      const swapIndex = direction === 'up' ? index - 1 : index + 1
+      ;[newPhotos[index], newPhotos[swapIndex]] = [newPhotos[swapIndex], newPhotos[index]]
+      return newPhotos
+    })
   }
 
   const handleSelfieUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -292,7 +374,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
   }
 
   const nextStep = () => {
-    if (step === 1 && (!formData.fullName || !formData.dateOfBirth || !formData.gender)) {
+    if (step === 1 && (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.religion || !formData.maritalStatus)) {
       toast.error(t.registration.fillAllFields)
       return
     }
@@ -314,6 +396,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
     }
     if (step === 3) {
       sendOtps()
+      return
+    }
+    if (step === 4 && photos.length === 0) {
+      toast.error(language === 'hi' ? 'कृपया कम से कम एक फोटो अपलोड करें' : 'Please upload at least one photo')
+      return
+    }
+    if (step === 4 && !selfiePreview) {
+      toast.error(language === 'hi' ? 'कृपया लाइव सेल्फी लें' : 'Please capture a live selfie')
       return
     }
     setStep(step + 1)
@@ -431,16 +521,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="dateOfBirth">{language === 'hi' ? 'जन्म तिथि' : 'Date of Birth'} *</Label>
-                    <Input
-                      id="dateOfBirth"
-                      type="date"
+                    <Label htmlFor="dateOfBirth">{language === 'hi' ? 'जन्म तिथि' : 'Date of Birth'} * <span className="text-xs font-normal text-muted-foreground">(DD/MM/YYYY)</span></Label>
+                    <DatePicker
                       value={formData.dateOfBirth}
-                      onChange={(e) => updateField('dateOfBirth', e.target.value)}
-                      max={getMaxDate()}
-                      min={getMinDate()}
-                      required
+                      onChange={(value) => updateField('dateOfBirth', value)}
+                      maxDate={new Date(getMaxDate())}
+                      minDate={new Date(getMinDate())}
                       disabled={!formData.gender}
+                      placeholder="DD/MM/YYYY"
                     />
                     {!formData.gender && (
                       <p className="text-xs text-muted-foreground">
@@ -457,12 +545,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="religion">{language === 'hi' ? 'धर्म' : 'Religion'}</Label>
+                    <Label htmlFor="religion">{language === 'hi' ? 'धर्म' : 'Religion'} *</Label>
                     <Input
                       id="religion"
                       placeholder={language === 'hi' ? 'उदाहरण: हिंदू, मुस्लिम, सिख, ईसाई' : 'Example: Hindu, Muslim, Sikh, Christian'}
                       value={formData.religion}
                       onChange={(e) => updateField('religion', e.target.value)}
+                      required
                     />
                   </div>
 
@@ -477,7 +566,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="maritalStatus">{language === 'hi' ? 'वैवाहिक स्थिति' : 'Marital Status'}</Label>
+                    <Label htmlFor="maritalStatus">{language === 'hi' ? 'वैवाहिक स्थिति' : 'Marital Status'} *</Label>
                     <Select onValueChange={(value: MaritalStatus) => updateField('maritalStatus', value)} value={formData.maritalStatus}>
                       <SelectTrigger id="maritalStatus" className="w-full">
                         <SelectValue placeholder={t.fields.select} />
@@ -569,14 +658,43 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
 
                 <div className="space-y-2">
                   <Label htmlFor="mobile">{language === 'hi' ? 'मोबाइल' : 'Mobile'} *</Label>
-                  <Input
-                    id="mobile"
-                    type="tel"
-                    placeholder="+91 98XXXXXXXX"
-                    value={formData.mobile}
-                    onChange={(e) => updateField('mobile', e.target.value)}
-                    required
-                  />
+                  <div className="flex gap-2">
+                    <Select onValueChange={(value) => updateField('countryCode', value)} value={formData.countryCode}>
+                      <SelectTrigger className="w-[100px]">
+                        <SelectValue placeholder="+91" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
+                        <SelectItem value="+91">+91 🇮🇳</SelectItem>
+                        <SelectItem value="+1">+1 🇺🇸</SelectItem>
+                        <SelectItem value="+44">+44 🇬🇧</SelectItem>
+                        <SelectItem value="+971">+971 🇦🇪</SelectItem>
+                        <SelectItem value="+65">+65 🇸🇬</SelectItem>
+                        <SelectItem value="+61">+61 🇦🇺</SelectItem>
+                        <SelectItem value="+49">+49 🇩🇪</SelectItem>
+                        <SelectItem value="+33">+33 🇫🇷</SelectItem>
+                        <SelectItem value="+81">+81 🇯🇵</SelectItem>
+                        <SelectItem value="+86">+86 🇨🇳</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      id="mobile"
+                      type="tel"
+                      placeholder={language === 'hi' ? '10 अंक का मोबाइल नंबर' : '10 digit mobile number'}
+                      value={formData.mobile}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 10)
+                        updateField('mobile', value)
+                      }}
+                      maxLength={10}
+                      required
+                      className="flex-1"
+                    />
+                  </div>
+                  {formData.mobile && formData.mobile.length !== 10 && (
+                    <p className="text-xs text-destructive">
+                      {language === 'hi' ? 'कृपया 10 अंक का मोबाइल नंबर दर्ज करें' : 'Please enter a 10 digit mobile number'}
+                    </p>
+                  )}
                 </div>
               </div>
             )}
@@ -710,135 +828,179 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
 
             {step === 4 && (
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="photo" className="flex items-center gap-2">
-                      <Image size={20} weight="bold" />
-                      {t.registration.uploadPhoto}
-                    </Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
-                      {photoPreview ? (
-                        <div className="space-y-3">
-                          <img 
-                            src={photoPreview} 
-                            alt="Preview" 
-                            className="mx-auto w-full h-48 object-cover rounded-lg"
-                          />
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              setPhotoFile(null)
-                              setPhotoPreview(undefined)
-                            }}
+                {/* Multiple Photos Upload Section */}
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Image size={20} weight="bold" />
+                    {language === 'hi' ? 'फोटो अपलोड करें (1-3 फोटो अनिवार्य)' : 'Upload Photos (1-3 photos required)'} *
+                  </Label>
+                  
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Existing Photos */}
+                    {photos.map((photo, index) => (
+                      <div key={index} className="relative border-2 border-border rounded-lg p-1 aspect-square">
+                        <img 
+                          src={photo.preview} 
+                          alt={`Photo ${index + 1}`} 
+                          className="w-full h-full object-cover rounded-md"
+                        />
+                        <div className="absolute top-1 right-1 flex gap-1">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="icon"
+                            className="h-6 w-6 bg-background/80 hover:bg-background"
+                            onClick={() => removePhoto(index)}
+                            disabled={photos.length <= 1}
+                            title={language === 'hi' ? 'हटाएं' : 'Delete'}
                           >
-                            {t.registration.changePhoto}
+                            <X size={14} weight="bold" />
                           </Button>
                         </div>
+                        <div className="absolute bottom-1 left-1 flex gap-1">
+                          {index > 0 && (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="icon"
+                              className="h-6 w-6 bg-background/80 hover:bg-background"
+                              onClick={() => movePhoto(index, 'up')}
+                              title={language === 'hi' ? 'ऊपर ले जाएं' : 'Move up'}
+                            >
+                              <ArrowUp size={14} weight="bold" />
+                            </Button>
+                          )}
+                          {index < photos.length - 1 && (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="icon"
+                              className="h-6 w-6 bg-background/80 hover:bg-background"
+                              onClick={() => movePhoto(index, 'down')}
+                              title={language === 'hi' ? 'नीचे ले जाएं' : 'Move down'}
+                            >
+                              <ArrowDown size={14} weight="bold" />
+                            </Button>
+                          )}
+                        </div>
+                        <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded">
+                          {index + 1}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Add Photo Slot */}
+                    {photos.length < 3 && (
+                      <label className="border-2 border-dashed border-border rounded-lg aspect-square flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors">
+                        <Image size={32} weight="light" className="text-muted-foreground/50 mb-2" />
+                        <span className="text-xs text-muted-foreground">
+                          {language === 'hi' ? 'फोटो जोड़ें' : 'Add Photo'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          ({photos.length}/3)
+                        </span>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoChange}
+                          className="hidden"
+                          multiple
+                        />
+                      </label>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {language === 'hi' 
+                      ? 'पहली फोटो मुख्य प्रोफाइल फोटो होगी। तीर बटन से क्रम बदलें।' 
+                      : 'First photo will be the main profile photo. Use arrow buttons to reorder.'}
+                  </p>
+                </div>
+
+                {/* Live Selfie Capture Section */}
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Camera size={20} weight="bold" />
+                    {language === 'hi' ? 'लाइव सेल्फी लें (पहचान सत्यापन के लिए)' : 'Capture Live Selfie (for identity verification)'} *
+                  </Label>
+                  
+                  <div className="border-2 border-dashed border-primary/30 rounded-lg p-4 bg-muted/20">
+                    <div className="relative aspect-video max-w-md mx-auto rounded-lg overflow-hidden bg-black">
+                      {selfiePreview ? (
+                        <img 
+                          src={selfiePreview} 
+                          alt="Captured Selfie" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : showCamera ? (
+                        <video 
+                          ref={videoRef} 
+                          autoPlay 
+                          playsInline
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
-                        <div className="space-y-3">
-                          <div className="text-muted-foreground">
-                            <Image size={48} weight="light" className="mx-auto mb-2 text-muted-foreground/50" />
-                            <p className="text-sm">{t.registration.uploadPhotoFile}</p>
-                            <p className="text-xs mt-1">{t.registration.photoFormat}</p>
-                          </div>
-                          <Input
-                            id="photo"
-                            type="file"
-                            accept="image/*"
-                            onChange={handlePhotoChange}
-                            className="cursor-pointer"
-                          />
+                        <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
+                          <Camera size={64} weight="light" className="opacity-30 mb-2" />
+                          <p className="text-sm">{language === 'hi' ? 'कैमरा प्रीव्यू यहां दिखेगा' : 'Camera preview will appear here'}</p>
                         </div>
                       )}
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="selfie" className="flex items-center gap-2">
-                      <Camera size={20} weight="bold" />
-                      {t.registration.uploadSelfie}
-                    </Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
+                    
+                    <div className="flex justify-center gap-3 mt-4">
                       {selfiePreview ? (
-                        <div className="space-y-3">
-                          <img 
-                            src={selfiePreview} 
-                            alt="Selfie Preview" 
-                            className="mx-auto w-full h-48 object-cover rounded-lg"
-                          />
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={() => {
+                            setSelfieFile(null)
+                            setSelfiePreview(undefined)
+                          }}
+                          className="gap-2"
+                        >
+                          <Camera size={16} />
+                          {language === 'hi' ? 'दोबारा लें' : 'Retake'}
+                        </Button>
+                      ) : showCamera ? (
+                        <>
                           <Button 
                             type="button" 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              setSelfieFile(null)
-                              setSelfiePreview(undefined)
-                            }}
+                            onClick={capturePhoto}
+                            disabled={!isCameraReady}
+                            className="gap-2 bg-green-600 hover:bg-green-700"
                           >
-                            {t.registration.retake}
+                            <Camera size={16} weight="bold" />
+                            {language === 'hi' ? 'कैप्चर करें' : 'Capture'}
                           </Button>
-                        </div>
-                      ) : showCamera ? (
-                        <div className="space-y-3">
-                          <video 
-                            ref={videoRef} 
-                            autoPlay 
-                            playsInline
-                            className="mx-auto w-full h-48 object-cover rounded-lg bg-black"
-                          />
-                          <div className="flex gap-2 justify-center">
-                            <Button 
-                              type="button" 
-                              onClick={capturePhoto}
-                              size="sm"
-                              className="gap-2"
-                            >
-                              <Camera size={16} weight="bold" />
-                              {t.registration.capture}
-                            </Button>
-                            <Button 
-                              type="button" 
-                              variant="outline"
-                              onClick={stopCamera}
-                              size="sm"
-                            >
-                              {t.registration.cancel}
-                            </Button>
-                          </div>
-                        </div>
+                          <Button 
+                            type="button" 
+                            variant="outline"
+                            onClick={stopCamera}
+                          >
+                            {language === 'hi' ? 'रद्द करें' : 'Cancel'}
+                          </Button>
+                        </>
                       ) : (
-                        <div className="space-y-3">
-                          <div className="text-muted-foreground">
-                            <Camera size={48} weight="light" className="mx-auto mb-2 text-muted-foreground/50" />
-                            <p className="text-sm">{t.registration.takeLiveSelfie}</p>
-                            <p className="text-xs mt-1">{t.registration.orUploadFile}</p>
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            <Button 
-                              type="button" 
-                              onClick={startCamera}
-                              size="sm"
-                              className="gap-2"
-                            >
-                              <Camera size={16} weight="bold" />
-                              {t.registration.startCamera}
-                            </Button>
-                            <Input
-                              id="selfie"
-                              type="file"
-                              accept="image/*"
-                              capture="user"
-                              onChange={handleSelfieUpload}
-                              className="cursor-pointer text-xs"
-                            />
-                          </div>
-                        </div>
+                        <Button 
+                          type="button" 
+                          onClick={startCamera}
+                          className="gap-2"
+                        >
+                          <Camera size={16} weight="bold" />
+                          {language === 'hi' ? 'कैमरा शुरू करें' : 'Start Camera'}
+                        </Button>
                       )}
                     </div>
                     <canvas ref={canvasRef} className="hidden" />
                   </div>
+                  
+                  <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800">
+                    <Info size={16} />
+                    <AlertDescription className="text-xs">
+                      {language === 'hi' 
+                        ? 'सेल्फी का उपयोग AI द्वारा आपकी अपलोड की गई तस्वीरों से मिलान करके पहचान सत्यापित करने के लिए किया जाएगा।' 
+                        : 'Selfie will be used to verify your identity by matching with your uploaded photos using AI.'}
+                    </AlertDescription>
+                  </Alert>
                 </div>
 
                 <div className="space-y-2">

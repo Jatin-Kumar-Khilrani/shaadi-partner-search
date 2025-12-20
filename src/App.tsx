@@ -759,6 +759,7 @@ function App() {
         onClose={() => setShowRegistration(false)}
         onSubmit={handleRegisterProfile}
         language={language}
+        existingProfiles={profiles}
       />
 
       <LoginDialog
