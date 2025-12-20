@@ -384,7 +384,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                     }} 
                     value={formData.profileCreatedFor}
                   >
-                    <SelectTrigger id="profileCreatedFor">
+                    <SelectTrigger id="profileCreatedFor" className="w-full">
                       <SelectValue placeholder={t.fields.select} />
                     </SelectTrigger>
                     <SelectContent>
@@ -417,7 +417,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                   <div className="space-y-2">
                     <Label htmlFor="gender">{t.fields.gender} / Gender *</Label>
                     <Select onValueChange={(value: Gender) => updateField('gender', value)} value={formData.gender}>
-                      <SelectTrigger id="gender">
+                      <SelectTrigger id="gender" className="w-full">
                         <SelectValue placeholder={t.fields.select} />
                       </SelectTrigger>
                       <SelectContent>
@@ -476,7 +476,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                   <div className="space-y-2">
                     <Label htmlFor="maritalStatus">{t.fields.maritalStatus} / Marital Status</Label>
                     <Select onValueChange={(value: MaritalStatus) => updateField('maritalStatus', value)} value={formData.maritalStatus}>
-                      <SelectTrigger id="maritalStatus">
+                      <SelectTrigger id="maritalStatus" className="w-full">
                         <SelectValue placeholder={t.fields.select} />
                       </SelectTrigger>
                       <SelectContent>
