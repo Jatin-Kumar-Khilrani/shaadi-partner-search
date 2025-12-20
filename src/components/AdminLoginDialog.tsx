@@ -1,26 +1,26 @@
 import { useState } from 'react'
-import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-const ADMIN_USERNAME = 'rkkhil
+import { toast } from 'sonner'
 import type { Language } from '@/lib/translations'
 
 const ADMIN_USERNAME = 'rkkhilrani'
-  onClose: () => void
+const ADMIN_PASSWORD = '1234'
 const ADMIN_PHONE_NUMBERS = ['+91-7895601505', '+91-9828585300']
 
 interface AdminLoginDialogProps {
-  const [userna
+  open: boolean
   onClose: () => void
   onLoginSuccess: () => void
   language: Language
- 
+}
 
 export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: AdminLoginDialogProps) {
   const [username, setUsername] = useState('')
-    verify: language === 'hi' ? 'सत्यापित करें
+  const [password, setPassword] = useState('')
   const [otp, setOtp] = useState('')
   const [generatedOtp, setGeneratedOtp] = useState('')
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
@@ -34,42 +34,33 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
     verify: language === 'hi' ? 'सत्यापित करें' : 'Verify',
     invalidCredentials: language === 'hi' ? 'अमान्य यूज़रनेम या पासवर्ड' : 'Invalid username or password',
     invalidOtp: language === 'hi' ? 'अमान्य OTP' : 'Invalid OTP',
-
-   
-
-    setGeneratedOtp('')
+    otpSent: language === 'hi' ? 'OTP भेजा गया' : 'OTP Sent',
+    otpMessage: language === 'hi' ? 'OTP दोनों नंबरों पर भेजा गया है' : 'OTP sent to both numbers'
   }
-  return (
-      <DialogContent classNam
-          <DialogTit
-      
-            {step === 'credent
-      
-                  <Input
-                   
-                    onChange={(e) => setUsername(e.target.value)}
-           
-                <div className="space-y-2">
-                  <Input
-                    type="password"
-                    onChang
-           
-         
-             
-            
-                <div className="space-y
-     
-   
 
-                    onKeyDown={(e
-                  />
-                <Button onClick={handleOtpSubmit} className="w-full">
-                </Butt
-            )}
-        </Ca
-    </Dialog>
-}
+  const handleCredentialsSubmit = () => {
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString()
+      setGeneratedOtp(otp)
+      setStep('otp')
+      
+      toast.info(t.otpSent, {
+        description: `${t.otpMessage}: ${otp}`,
+        duration: 10000
+      })
+    } else {
+      toast.error(t.invalidCredentials)
+    }
+  }
 
+  const handleOtpSubmit = () => {
+    if (otp === generatedOtp) {
+      onLoginSuccess()
+      handleClose()
+    } else {
+      toast.error(t.invalidOtp)
+    }
+  }
 
   const handleClose = () => {
     onClose()
