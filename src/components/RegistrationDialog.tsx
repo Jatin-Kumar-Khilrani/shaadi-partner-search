@@ -382,10 +382,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                   </Label>
                   <Select 
                     onValueChange={(value: 'Self' | 'Daughter' | 'Son' | 'Brother' | 'Sister' | 'Other') => {
-                      updateField('profileCreatedFor', value)
-                      if (value !== 'Other') {
-                        updateField('otherRelation', '')
-                      }
+                      setFormData({ ...formData, profileCreatedFor: value, otherRelation: value !== 'Other' ? '' : formData.otherRelation })
                     }} 
                     value={formData.profileCreatedFor}
                   >
