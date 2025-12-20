@@ -47,6 +47,11 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     return null
   }
 
+  const existingInterest = currentUserProfile && interests?.find(
+    i => i.fromProfileId === currentUserProfile.profileId && 
+         i.toProfileId === profile.profileId
+  )
+
   const handleExpressInterest = () => {
     if (!currentUserProfile) {
       toast.error(
@@ -54,11 +59,6 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
       )
       return
     }
-
-    const existingInterest = interests?.find(
-      i => i.fromProfileId === currentUserProfile.profileId && 
-           i.toProfileId === profile.profileId
-    )
 
     if (existingInterest) {
       toast.info(
@@ -245,9 +245,17 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
               {t.privacyNotice}
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={handleExpressInterest} className="flex-1 bg-primary hover:bg-primary/90">
+              <Button 
+                onClick={handleExpressInterest} 
+                className="flex-1 bg-primary hover:bg-primary/90"
+                disabled={!!existingInterest}
+                variant={existingInterest ? "secondary" : "default"}
+              >
                 <Heart size={20} weight="fill" className="mr-2" />
-                {t.expressInterest}
+                {existingInterest 
+                  ? (language === 'hi' ? 'रुचि भेजी गई' : 'Interest Sent')
+                  : t.expressInterest
+                }
               </Button>
               <Button onClick={handleRequestContact} variant="outline" className="flex-1">
                 <Phone size={20} className="mr-2" />
