@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ShieldCheck, X, Check, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key } from '@phosphor-icons/react'
 import type { Profile } from '@/types/profile'
 import type { User } from '@/types/user'
+import type { ChatMessage } from '@/types/chat'
 import { toast } from 'sonner'
 
 interface AdminPanelProps {
@@ -31,6 +32,7 @@ interface BlockedContact {
 
 export function AdminPanel({ profiles, setProfiles, users, language }: AdminPanelProps) {
   const [blockedContacts, setBlockedContacts] = useKV<BlockedContact[]>('blockedContacts', [])
+  const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [chatMessage, setChatMessage] = useState('')
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([])
@@ -155,8 +157,21 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
   }
 
   const handleSendMessage = () => {
-    if (!chatMessage.trim()) return
+    if (!chatMessage.trim() || !selectedProfile) return
     
+    const newMessage: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      fromUserId: 'admin',
+      fromProfileId: 'admin',
+      toProfileId: selectedProfile.profileId,
+      message: chatMessage,
+      timestamp: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      read: false,
+      type: 'admin-to-user',
+    }
+
+    setMessages((current) => [...(current || []), newMessage])
     toast.success(t.messageSent)
     setChatMessage('')
     setShowChatDialog(false)
