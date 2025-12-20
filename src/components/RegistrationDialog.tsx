@@ -42,7 +42,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
   
   const [formData, setFormData] = useState({
     fullName: '',
-    profileCreatedFor: 'Self' as 'Self' | 'Daughter' | 'Son' | 'Brother' | 'Sister' | 'Other',
+    profileCreatedFor: undefined as 'Self' | 'Daughter' | 'Son' | 'Brother' | 'Sister' | 'Other' | undefined,
     otherRelation: '',
     dateOfBirth: '',
     gender: undefined as Gender | undefined,
@@ -164,7 +164,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
       gender: formData.gender!,
       maritalStatus: formData.maritalStatus || 'never-married',
       membershipPlan: formData.membershipPlan!,
-      relationToProfile: formData.profileCreatedFor === 'Other' ? formData.otherRelation : formData.profileCreatedFor,
+      relationToProfile: formData.profileCreatedFor === 'Other' ? formData.otherRelation : formData.profileCreatedFor!,
       hideEmail: false,
       hideMobile: false,
       photos: photoPreview ? [photoPreview] : [],
@@ -191,7 +191,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
 
     setFormData({
       fullName: '',
-      profileCreatedFor: 'Self',
+      profileCreatedFor: undefined,
       otherRelation: '',
       dateOfBirth: '',
       gender: undefined,
@@ -295,6 +295,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
       toast.error(t.registration.fillAllFields)
       return
     }
+    if (step === 1 && !formData.profileCreatedFor) {
+      toast.error(language === 'hi' ? 'कृपया प्रोफाइल किसके लिए बनाई जा रही है चुनें' : 'Please select who this profile is for')
+      return
+    }
     if (step === 1 && formData.profileCreatedFor === 'Other' && !formData.otherRelation.trim()) {
       toast.error(language === 'hi' ? 'कृपया रिश्ता बताएं' : 'Please specify the relation')
       return
@@ -377,7 +381,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                     {language === 'hi' ? 'यह प्रोफाइल किसके लिए बनाई जा रही है?' : 'Profile created for'} *
                   </Label>
                   <Select 
-                    onValueChange={(value) => {
+                    onValueChange={(value: 'Self' | 'Daughter' | 'Son' | 'Brother' | 'Sister' | 'Other') => {
                       updateField('profileCreatedFor', value)
                       if (value !== 'Other') {
                         updateField('otherRelation', '')
