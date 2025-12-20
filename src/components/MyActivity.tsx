@@ -66,6 +66,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile }
     if (status === 'pending') return <Badge variant="secondary">{t.pending}</Badge>
     if (status === 'accepted' || status === 'approved') return <Badge variant="default" className="bg-teal">{t.accepted}</Badge>
     if (status === 'declined') return <Badge variant="destructive">{t.declined}</Badge>
+    if (status === 'blocked') return <Badge variant="destructive">{language === 'hi' ? 'ब्लॉक' : 'Blocked'}</Badge>
     return <Badge>{status}</Badge>
   }
 

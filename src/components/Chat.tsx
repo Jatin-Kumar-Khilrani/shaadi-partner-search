@@ -55,15 +55,16 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
     if (isAdmin) return true
     if (!currentUserProfile) return false
     if (!otherProfileId) return false
+    if (!interests || interests.length === 0) return false
 
-    const hasAcceptedInterest = interests?.some(
+    const hasAcceptedInterest = interests.some(
       i => i.status === 'accepted' && (
         (i.fromProfileId === currentUserProfile.profileId && i.toProfileId === otherProfileId) ||
         (i.toProfileId === currentUserProfile.profileId && i.fromProfileId === otherProfileId)
       )
     )
 
-    return hasAcceptedInterest || false
+    return hasAcceptedInterest
   }
 
   useEffect(() => {

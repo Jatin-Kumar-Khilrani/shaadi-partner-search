@@ -74,10 +74,20 @@ export interface Interest {
   id: string
   fromProfileId: string
   toProfileId: string
-  status: 'pending' | 'accepted' | 'declined'
+  status: 'pending' | 'accepted' | 'declined' | 'blocked'
   message?: string
   createdAt: string
   approvedBy?: string
+  declinedAt?: string
+  blockedAt?: string
+}
+
+export interface BlockedProfile {
+  id: string
+  blockerProfileId: string
+  blockedProfileId: string
+  createdAt: string
+  reason?: string
 }
 
 export interface ContactRequest {

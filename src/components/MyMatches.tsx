@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { ProfileCard } from './ProfileCard'
 import { MagnifyingGlass, Funnel, X } from '@phosphor-icons/react'
-import type { Profile, SearchFilters } from '@/types/profile'
+import type { Profile, SearchFilters, BlockedProfile } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 
 interface MyMatchesProps {
@@ -25,6 +25,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState<SearchFilters>({})
   const [showFilters, setShowFilters] = useState(false)
+  const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
 
   const currentUserProfile = profiles.find(p => p.id === loggedInUserId)
 
@@ -60,6 +61,12 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
       
       if (profile.status !== 'verified') return false
       
+      const isBlocked = blockedProfiles?.some(
+        b => (b.blockerProfileId === currentUserProfile.profileId && b.blockedProfileId === profile.profileId) ||
+             (b.blockedProfileId === currentUserProfile.profileId && b.blockerProfileId === profile.profileId)
+      )
+      if (isBlocked) return false
+      
       if (currentUserProfile.gender === 'male' && profile.gender !== 'female') return false
       if (currentUserProfile.gender === 'female' && profile.gender !== 'male') return false
       
@@ -82,7 +89,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
       
       return true
     })
-  }, [profiles, currentUserProfile, searchQuery, filters])
+  }, [profiles, currentUserProfile, searchQuery, filters, blockedProfiles])
 
   const FilterPanel = () => (
     <div className="space-y-6">

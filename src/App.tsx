@@ -16,7 +16,7 @@ import { Chat } from '@/components/Chat'
 import { MyProfile } from '@/components/MyProfile'
 import { Settings } from '@/components/Settings'
 import { WeddingServices } from '@/components/WeddingServicesPage'
-import type { Profile, SearchFilters, WeddingService } from '@/types/profile'
+import type { Profile, SearchFilters, WeddingService, BlockedProfile } from '@/types/profile'
 import type { User } from '@/types/user'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
@@ -33,6 +33,7 @@ function App() {
   const [users, setUsers] = useKV<User[]>('users', [])
   const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
   const [loggedInUser, setLoggedInUser] = useKV<string | null>('loggedInUser', null)
+  const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false)
   const [showAdminLogin, setShowAdminLogin] = useState(false)
   
@@ -73,6 +74,14 @@ function App() {
     return profiles.filter(profile => {
       if (profile.status !== 'verified') return false
       
+      if (currentUserProfile && blockedProfiles) {
+        const isBlocked = blockedProfiles.some(
+          b => (b.blockerProfileId === currentUserProfile.profileId && b.blockedProfileId === profile.profileId) ||
+               (b.blockedProfileId === currentUserProfile.profileId && b.blockerProfileId === profile.profileId)
+        )
+        if (isBlocked) return false
+      }
+      
       if (searchFilters.gender && profile.gender !== searchFilters.gender) return false
       if (searchFilters.ageMin && profile.age < searchFilters.ageMin) return false
       if (searchFilters.ageMax && profile.age > searchFilters.ageMax) return false
@@ -84,7 +93,7 @@ function App() {
       
       return true
     })
-  }, [profiles, searchFilters])
+  }, [profiles, searchFilters, currentUserProfile, blockedProfiles])
 
   const handleRegisterProfile = (profileData: Partial<Profile>) => {
     const id = `profile-${Date.now()}`
