@@ -51,11 +51,23 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
         language === 'hi' ? 'OTP सत्यापन' : 'OTP Verification',
         {
           description: language === 'hi' 
-            ? `OTP निम्नलिखित नंबरों पर भेजा गया:\n\n${ADMIN_PHONE_NUMBERS.join('\n')}\n\n6-अंकीय OTP दर्ज करें`
-            : `OTP sent to the following numbers:\n\n${ADMIN_PHONE_NUMBERS.join('\n')}\n\nEnter 6-digit OTP`,
+            ? `OTP निम्नलिखित नंबरों पर भेजा गया: ${ADMIN_PHONE_NUMBERS.join(' ')} 6-अंकीय OTP दर्ज करें`
+            : `OTP sent to the following numbers: ${ADMIN_PHONE_NUMBERS.join(' ')} Enter 6-digit OTP`,
           duration: 8000
         }
       )
+
+      setTimeout(() => {
+        toast.info(
+          language === 'hi' ? 'परीक्षण के लिए OTP' : 'OTP for Testing',
+          {
+            description: language === 'hi' 
+              ? `आपका 6-अंकीय OTP है: ${otp}`
+              : `Your 6-digit OTP is: ${otp}`,
+            duration: 15000
+          }
+        )
+      }, 500)
     } else {
       toast.error(t.invalidCredentials)
     }
@@ -117,14 +129,11 @@ export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: Ad
               </div>
             ) : (
               <div className="space-y-4">
-                <p className="text-sm text-muted-foreground mb-2">{t.otpSent}</p>
-                <div className="mb-4">
-                  {ADMIN_PHONE_NUMBERS.map((number) => (
-                    <p key={number} className="text-sm font-medium">
-                      {number}
-                    </p>
-                  ))}
-                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {language === 'hi' 
+                    ? 'OTP पंजीकृत मोबाइल नंबरों पर भेजा गया है। कृपया 6-अंकीय OTP दर्ज करें।'
+                    : 'OTP has been sent to registered mobile numbers. Please enter the 6-digit OTP.'}
+                </p>
                 <div className="space-y-2">
                   <Label htmlFor="admin-otp">{t.otpLabel}</Label>
                   <Input
