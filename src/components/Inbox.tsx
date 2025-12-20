@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { Heart, Check, X, Eye, Clock, ChatCircle, ProhibitInset } from '@phosphor-icons/react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Heart, Check, X, Eye, Clock, ChatCircle, ProhibitInset, Phone, Envelope as EnvelopeIcon } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Interest, ContactRequest, Profile, BlockedProfile } from '@/types/profile'
 import type { ChatMessage } from '@/types/chat'
@@ -26,6 +27,7 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
   const [blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [interestToDecline, setInterestToDecline] = useState<string | null>(null)
   const [interestToBlock, setInterestToBlock] = useState<{ interestId: string, profileId: string } | null>(null)
+  const [viewContactProfile, setViewContactProfile] = useState<Profile | null>(null)
 
   const currentUserProfile = profiles.find(p => p.id === loggedInUserId)
 
@@ -57,6 +59,11 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
     cancel: language === 'hi' ? 'रद्द करें' : 'Cancel',
     confirm: language === 'hi' ? 'पुष्टि करें' : 'Confirm',
     profileBlocked: language === 'hi' ? 'प्रोफाइल ब्लॉक की गई' : 'Profile blocked',
+    contactInformation: language === 'hi' ? 'संपर्क जानकारी' : 'Contact Information',
+    mobile: language === 'hi' ? 'मोबाइल' : 'Mobile',
+    email: language === 'hi' ? 'ईमेल' : 'Email',
+    notProvided: language === 'hi' ? 'उपलब्ध नहीं' : 'Not Provided',
+    close: language === 'hi' ? 'बंद करें' : 'Close',
   }
 
   const receivedInterests = interests?.filter(
@@ -384,7 +391,12 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
                           </div>
                         )}
                         {request.status === 'approved' && (
-                          <Button size="sm" variant="outline" className="gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="gap-2"
+                            onClick={() => setViewContactProfile(profile)}
+                          >
                             <Eye size={16} />
                             {t.viewContact}
                           </Button>
@@ -436,6 +448,58 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog open={!!viewContactProfile} onOpenChange={(open) => !open && setViewContactProfile(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t.contactInformation}</DialogTitle>
+            </DialogHeader>
+            {viewContactProfile && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center text-3xl font-bold">
+                    {viewContactProfile.firstName[0]}{viewContactProfile.lastName[0]}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-xl">{viewContactProfile.fullName}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {viewContactProfile.age} {language === 'hi' ? 'वर्ष' : 'years'} • {viewContactProfile.location}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-4 border rounded-lg">
+                    <Phone size={24} weight="bold" className="text-primary mt-1" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-muted-foreground mb-1">{t.mobile}</p>
+                      <p className="text-lg font-semibold">
+                        {viewContactProfile.hideMobile ? t.notProvided : viewContactProfile.mobile}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-4 border rounded-lg">
+                    <EnvelopeIcon size={24} weight="bold" className="text-primary mt-1" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-muted-foreground mb-1">{t.email}</p>
+                      <p className="text-lg font-semibold break-all">
+                        {viewContactProfile.hideEmail ? t.notProvided : viewContactProfile.email}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={() => setViewContactProfile(null)} 
+                  className="w-full"
+                >
+                  {t.close}
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
