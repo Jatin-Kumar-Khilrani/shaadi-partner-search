@@ -253,7 +253,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
     toast.success(
       language === 'hi' ? 'OTP भेजा गया!' : 'OTPs Sent!',
       {
-        description: `Email: ${emailOtpCode} | Mobile: ${mobileOtpCode}`
+        description: `Email: ${emailOtpCode} | Mobile: ${mobileOtpCode}`,
+        duration: 30000
       }
     )
   }
