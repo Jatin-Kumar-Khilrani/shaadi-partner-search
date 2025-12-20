@@ -318,7 +318,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
 
   return (
     <Dialog open={open} onOpenChange={onClose} modal>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto z-50" onOpenAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col z-50" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-3xl flex items-center gap-2">
             <UserPlus size={32} weight="bold" />
@@ -329,33 +329,34 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center justify-center gap-2 mb-6">
-          {[1, 2, 3, 4, 5].map((s) => (
-            <div key={s} className="flex items-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
-                s === step ? 'bg-primary text-primary-foreground scale-110' :
-                s < step ? 'bg-teal text-teal-foreground' : 'bg-muted text-muted-foreground'
-              }`}>
-                {s < step ? <CheckCircle size={20} weight="fill" /> : s}
+        <div className="overflow-y-auto flex-1 px-1">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <div key={s} className="flex items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+                  s === step ? 'bg-primary text-primary-foreground scale-110' :
+                  s < step ? 'bg-teal text-teal-foreground' : 'bg-muted text-muted-foreground'
+                }`}>
+                  {s < step ? <CheckCircle size={20} weight="fill" /> : s}
+                </div>
+                {s < 5 && <div className={`w-12 h-1 ${s < step ? 'bg-teal' : 'bg-muted'}`} />}
               </div>
-              {s < 5 && <div className={`w-12 h-1 ${s < step ? 'bg-teal' : 'bg-muted'}`} />}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <Alert className="mb-4">
-          <Info size={18} />
-          <AlertDescription>
-            {step === 1 && t.registration.step1}
-            {step === 2 && t.registration.step2}
-            {step === 3 && t.registration.step3}
-            {step === 4 && t.registration.step4}
-            {step === 5 && t.registration.step5}
-          </AlertDescription>
-        </Alert>
+          <Alert className="mb-4">
+            <Info size={18} />
+            <AlertDescription>
+              {step === 1 && t.registration.step1}
+              {step === 2 && t.registration.step2}
+              {step === 3 && t.registration.step3}
+              {step === 4 && t.registration.step4}
+              {step === 5 && t.registration.step5}
+            </AlertDescription>
+          </Alert>
 
-        <Card>
-          <CardContent className="pt-6">
+          <Card>
+            <CardContent className="pt-6">
             {step === 1 && (
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -387,7 +388,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                     <SelectTrigger id="profileCreatedFor" className="w-full">
                       <SelectValue placeholder={t.fields.select} />
                     </SelectTrigger>
-                    <SelectContent className="z-[100]" position="popper" sideOffset={4}>
+                    <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
                       <SelectItem value="Self">{language === 'hi' ? 'स्वयं' : 'Self'}</SelectItem>
                       <SelectItem value="Daughter">{language === 'hi' ? 'बेटी' : 'Daughter'}</SelectItem>
                       <SelectItem value="Son">{language === 'hi' ? 'बेटा' : 'Son'}</SelectItem>
@@ -420,7 +421,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                       <SelectTrigger id="gender" className="w-full">
                         <SelectValue placeholder={t.fields.select} />
                       </SelectTrigger>
-                      <SelectContent className="z-[100]" position="popper" sideOffset={4}>
+                      <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
                         <SelectItem value="male">{t.fields.male} / Male</SelectItem>
                         <SelectItem value="female">{t.fields.female} / Female</SelectItem>
                       </SelectContent>
@@ -479,7 +480,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                       <SelectTrigger id="maritalStatus" className="w-full">
                         <SelectValue placeholder={t.fields.select} />
                       </SelectTrigger>
-                      <SelectContent className="z-[100]" position="popper" sideOffset={4}>
+                      <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
                         <SelectItem value="never-married">{t.fields.neverMarried} / Never Married</SelectItem>
                         <SelectItem value="divorced">{t.fields.divorced} / Divorced</SelectItem>
                         <SelectItem value="widowed">{t.fields.widowed} / Widowed</SelectItem>
@@ -832,8 +833,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
             )}
           </CardContent>
         </Card>
+        </div>
 
-        <div className="flex justify-between gap-4 mt-6">
+        <div className="flex justify-between gap-4 mt-6 px-1">
           {step > 1 && (
             <Button variant="outline" onClick={prevStep}>
               {t.registration.back}
