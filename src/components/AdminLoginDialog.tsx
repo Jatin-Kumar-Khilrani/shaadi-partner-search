@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import type { Language } from '@/lib/translations'
 
 const ADMIN_USERNAME = 'rkkhilrani'
-const ADMIN_PASSWORD = 'admin123'
+const ADMIN_PASSWORD = '1234'
 
 interface AdminLoginDialogProps {
   open: boolean
