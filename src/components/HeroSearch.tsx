@@ -21,7 +21,7 @@ export function HeroSearch({ onSearch, language = 'hi' }: HeroSearchProps) {
 
   const t = {
     title: language === 'hi' ? 'अपना जीवनसाथी खोजें' : 'Find Your Life Partner',
-    subtitle1: language === 'hi' ? 'विवाह एक पवित्र बंधन है, व्यापार नहीं।' : 'Marriage is a sacred bond, not a business.',
+    subtitle1: language === 'hi' ? 'विवाह एक पवित्र बंधन है।' : 'Marriage is a sacred bond.',
     subtitle2: language === 'hi' ? 'ShaadiPartnerSearch — मॅट्रिमोनी प्लेटफॉर्म' : 'ShaadiPartnerSearch — Matrimony Platform',
     searchTitle: language === 'hi' ? 'जीवनसाथी खोजें' : 'Find Life Partner',
     searchDesc: language === 'hi' ? 'सरल और सटीक खोज — अपने मानदंड भरें' : 'Simple and accurate search — fill your criteria',

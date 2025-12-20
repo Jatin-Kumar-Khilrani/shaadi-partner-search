@@ -17,6 +17,7 @@ import type { Profile, WeddingService } from '@/types/profile'
 import type { User } from '@/types/user'
 import type { ChatMessage } from '@/types/chat'
 import { Chat } from '@/components/Chat'
+import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
 import { toast } from 'sonner'
 
 interface AdminPanelProps {
@@ -45,6 +46,7 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
   const [activeTab, setActiveTab] = useState('pending')
   const [showServiceDialog, setShowServiceDialog] = useState(false)
   const [editingService, setEditingService] = useState<WeddingService | null>(null)
+  const [viewProfileDialog, setViewProfileDialog] = useState<Profile | null>(null)
   const [serviceFormData, setServiceFormData] = useState<Partial<WeddingService>>({
     category: 'venue',
     verificationStatus: 'verified',
@@ -70,6 +72,7 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
     chat: language === 'hi' ? 'चैट करें' : 'Chat',
     aiReview: language === 'hi' ? 'AI समीक्षा' : 'AI Review',
     viewDetails: language === 'hi' ? 'विवरण देखें' : 'View Details',
+    viewProfile: language === 'hi' ? 'प्रोफाइल देखें' : 'View Profile',
     pending: language === 'hi' ? 'लंबित' : 'Pending',
     verified: language === 'hi' ? 'सत्यापित' : 'Verified',
     rejected: language === 'hi' ? 'अस्वीकृत' : 'Rejected',
@@ -405,6 +408,14 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
 
                             <div className="flex flex-wrap gap-2">
                               <Button 
+                                onClick={() => setViewProfileDialog(profile)}
+                                variant="outline"
+                                size="sm"
+                              >
+                                <Eye size={16} className="mr-1" />
+                                {t.viewProfile}
+                              </Button>
+                              <Button 
                                 onClick={() => handleGetAISuggestions(profile)}
                                 variant="outline"
                                 size="sm"
@@ -604,12 +615,21 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
+                                  onClick={() => setViewProfileDialog(profile)}
+                                  title={t.viewProfile}
+                                >
+                                  <Eye size={16} />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
                                   onClick={() => {
                                     setSelectedProfile(profile)
                                     setShowChatDialog(true)
                                   }}
+                                  title={t.chat}
                                 >
-                                  <Eye size={16} />
+                                  <ChatCircle size={16} />
                                 </Button>
                                 {profile.status !== 'verified' && (
                                   <Button 
@@ -617,6 +637,7 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
                                     size="sm"
                                     onClick={() => handleApprove(profile.id)}
                                     className="text-teal hover:text-teal"
+                                    title={t.approve}
                                   >
                                     <Check size={16} />
                                   </Button>
@@ -934,6 +955,14 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
           </div>
         </DialogContent>
       </Dialog>
+
+      <ProfileDetailDialog
+        profile={viewProfileDialog}
+        open={!!viewProfileDialog}
+        onClose={() => setViewProfileDialog(null)}
+        language={language}
+        currentUserProfile={null}
+      />
     </section>
   )
 }

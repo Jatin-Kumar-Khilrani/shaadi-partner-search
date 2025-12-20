@@ -12,12 +12,12 @@ export const translations = {
     newSearch: 'नई खोज',
     noProfiles: 'कोई प्रोफाइल नहीं मिली। कृपया अपने खोज मानदंड बदलें या बाद में पुनः प्रयास करें।',
     subtitle: 'मॅट्रिमोनी सेवा',
-    footerText: 'सभी समुदायों के लिए — विवाह एक पवित्र बंधन है, व्यापार नहीं।',
+    footerText: 'सभी समुदायों के लिए — विवाह एक पवित्र बंधन है।',
     footerCopyright: '© 2024 ShaadiPartnerSearch. एक निःस्वार्थ समुदाय सेवा।',
     
     hero: {
       title: 'अपना जीवनसाथी खोजें',
-      subtitle1: 'विवाह एक पवित्र बंधन है, व्यापार नहीं।',
+      subtitle1: 'विवाह एक पवित्र बंधन है।',
       subtitle2: 'ShaadiPartnerSearch — मॅट्रिमोनी प्लेटफॉर्म',
       searchTitle: 'जीवनसाथी खोजें',
       searchDescription: 'सरल और सटीक खोज — अपने मानदंड भरें',
@@ -177,12 +177,12 @@ export const translations = {
     newSearch: 'New Search',
     noProfiles: 'No profiles found. Please change your search criteria or try again later.',
     subtitle: 'Matrimony Service',
-    footerText: 'For all communities — Marriage is a sacred bond, not a business.',
+    footerText: 'For all communities — Marriage is a sacred bond.',
     footerCopyright: '© 2024 ShaadiPartnerSearch. A selfless community service.',
     
     hero: {
       title: 'Find Your Life Partner',
-      subtitle1: 'Marriage is a sacred bond, not a business.',
+      subtitle1: 'Marriage is a sacred bond.',
       subtitle2: 'ShaadiPartnerSearch — Matrimony Platform',
       searchTitle: 'Find Life Partner',
       searchDescription: 'Simple and accurate search — fill your criteria',

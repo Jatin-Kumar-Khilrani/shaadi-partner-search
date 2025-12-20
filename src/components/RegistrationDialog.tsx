@@ -418,20 +418,20 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="gender">{t.fields.gender} / Gender *</Label>
+                    <Label htmlFor="gender">{language === 'hi' ? 'लिंग' : 'Gender'} *</Label>
                     <Select onValueChange={(value: Gender) => updateField('gender', value)} value={formData.gender}>
                       <SelectTrigger id="gender" className="w-full">
                         <SelectValue placeholder={t.fields.select} />
                       </SelectTrigger>
                       <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
-                        <SelectItem value="male">{t.fields.male} / Male</SelectItem>
-                        <SelectItem value="female">{t.fields.female} / Female</SelectItem>
+                        <SelectItem value="male">{language === 'hi' ? 'पुरुष' : 'Male'}</SelectItem>
+                        <SelectItem value="female">{language === 'hi' ? 'महिला' : 'Female'}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="dateOfBirth">{t.fields.dateOfBirth} / Date of Birth *</Label>
+                    <Label htmlFor="dateOfBirth">{language === 'hi' ? 'जन्म तिथि' : 'Date of Birth'} *</Label>
                     <Input
                       id="dateOfBirth"
                       type="date"
@@ -457,7 +457,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="religion">{t.fields.religion} / Religion</Label>
+                    <Label htmlFor="religion">{language === 'hi' ? 'धर्म' : 'Religion'}</Label>
                     <Input
                       id="religion"
                       placeholder={language === 'hi' ? 'उदाहरण: हिंदू, मुस्लिम, सिख, ईसाई' : 'Example: Hindu, Muslim, Sikh, Christian'}
@@ -467,7 +467,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="caste">{t.fields.caste} / Caste ({t.fields.optional})</Label>
+                    <Label htmlFor="caste">{language === 'hi' ? 'जाति (वैकल्पिक)' : 'Caste (Optional)'}</Label>
                     <Input
                       id="caste"
                       placeholder={language === 'hi' ? 'यदि ज्ञात हो' : 'If known'}
@@ -477,21 +477,21 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="maritalStatus">{t.fields.maritalStatus} / Marital Status</Label>
+                    <Label htmlFor="maritalStatus">{language === 'hi' ? 'वैवाहिक स्थिति' : 'Marital Status'}</Label>
                     <Select onValueChange={(value: MaritalStatus) => updateField('maritalStatus', value)} value={formData.maritalStatus}>
                       <SelectTrigger id="maritalStatus" className="w-full">
                         <SelectValue placeholder={t.fields.select} />
                       </SelectTrigger>
                       <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
-                        <SelectItem value="never-married">{t.fields.neverMarried} / Never Married</SelectItem>
-                        <SelectItem value="divorced">{t.fields.divorced} / Divorced</SelectItem>
-                        <SelectItem value="widowed">{t.fields.widowed} / Widowed</SelectItem>
+                        <SelectItem value="never-married">{language === 'hi' ? 'अविवाहित' : 'Never Married'}</SelectItem>
+                        <SelectItem value="divorced">{language === 'hi' ? 'तलाकशुदा' : 'Divorced'}</SelectItem>
+                        <SelectItem value="widowed">{language === 'hi' ? 'विधुर/विधवा' : 'Widowed'}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="height">{t.fields.height} / Height ({t.fields.optional})</Label>
+                    <Label htmlFor="height">{language === 'hi' ? 'ऊंचाई (वैकल्पिक)' : 'Height (Optional)'}</Label>
                     <Input
                       id="height"
                       placeholder={language === 'hi' ? 'उदाहरण: 5\'8" या 172 cm' : 'Example: 5\'8" or 172 cm'}
@@ -506,7 +506,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
             {step === 2 && (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="education">{t.fields.education} / Education *</Label>
+                  <Label htmlFor="education">{language === 'hi' ? 'शिक्षा' : 'Education'} *</Label>
                   <Input
                     id="education"
                     placeholder={language === 'hi' ? 'उदाहरण: B.Tech, MBA, M.Com' : 'Example: B.Tech, MBA, M.Com'}
@@ -517,7 +517,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="occupation">{t.fields.occupation} / Occupation *</Label>
+                  <Label htmlFor="occupation">{language === 'hi' ? 'व्यवसाय' : 'Occupation'} *</Label>
                   <Input
                     id="occupation"
                     placeholder={language === 'hi' ? 'उदाहरण: सॉफ्टवेयर इंजीनियर, डॉक्टर, व्यवसायी' : 'Example: Software Engineer, Doctor, Business'}
@@ -533,7 +533,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="location">{t.fields.city} / City *</Label>
+                    <Label htmlFor="location">{language === 'hi' ? 'शहर' : 'City'} *</Label>
                     <Input
                       id="location"
                       placeholder={language === 'hi' ? 'उदाहरण: मुंबई, जयपुर' : 'Example: Mumbai, Jaipur'}
@@ -544,7 +544,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="country">{t.fields.country} / Country *</Label>
+                    <Label htmlFor="country">{language === 'hi' ? 'देश' : 'Country'} *</Label>
                     <Input
                       id="country"
                       placeholder={language === 'hi' ? 'उदाहरण: भारत, USA' : 'Example: India, USA'}
@@ -556,7 +556,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">{t.fields.email} / Email *</Label>
+                  <Label htmlFor="email">{language === 'hi' ? 'ईमेल' : 'Email'} *</Label>
                   <Input
                     id="email"
                     type="email"
@@ -568,7 +568,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="mobile">{t.fields.mobile} / Mobile *</Label>
+                  <Label htmlFor="mobile">{language === 'hi' ? 'मोबाइल' : 'Mobile'} *</Label>
                   <Input
                     id="mobile"
                     type="tel"

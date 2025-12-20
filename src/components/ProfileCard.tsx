@@ -10,10 +10,10 @@ interface ProfileCardProps {
   profile: Profile
   onViewProfile: (profile: Profile) => void
   language?: 'hi' | 'en'
+  isLoggedIn?: boolean
 }
 
-export function ProfileCard({ profile, onViewProfile, language = 'hi' }: ProfileCardProps) {
-  const initials = profile.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedIn = false }: ProfileCardProps) {
   
   const getTrustBadge = () => {
     if (profile.trustLevel >= 5) {
@@ -40,6 +40,12 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi' }: Profile
 
   const badge = getTrustBadge()
   
+  // Get first name only (hide surname for non-logged in users)
+  const displayName = isLoggedIn ? profile.fullName : profile.fullName.split(' ')[0]
+  const initials = isLoggedIn 
+    ? profile.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : profile.fullName.split(' ')[0][0].toUpperCase()
+  
   const t = {
     years: language === 'hi' ? 'वर्ष' : 'years',
     male: language === 'hi' ? 'पुरुष' : 'Male',
@@ -58,15 +64,20 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi' }: Profile
       <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 hover:border-teal/30">
         <CardHeader className="pb-4">
           <div className="flex items-start gap-4">
-            <Avatar className="w-20 h-20 border-4 border-background shadow-lg">
-              <AvatarImage src={profile.photos?.[0]} alt={profile.fullName} />
+            <Avatar className={`w-20 h-20 border-4 border-background shadow-lg ${!isLoggedIn ? 'blur-sm' : ''}`}>
+              {isLoggedIn ? (
+                <AvatarImage src={profile.photos?.[0]} alt={displayName} />
+              ) : null}
               <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
-                <h3 className="font-bold text-xl leading-tight">{profile.fullName}</h3>
+                <h3 className="font-bold text-xl leading-tight">
+                  {displayName}
+                  {!isLoggedIn && <span className="text-muted-foreground"> ...</span>}
+                </h3>
                 {profile.status === 'verified' && badge && (
                   <Badge className={`${badge.color} gap-1 whitespace-nowrap shrink-0`}>
                     <span className="text-xs">{badge.icon}</span>

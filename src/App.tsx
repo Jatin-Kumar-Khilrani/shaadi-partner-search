@@ -201,7 +201,7 @@ function App() {
     newSearch: language === 'hi' ? 'नई खोज' : 'New Search',
     noProfiles: language === 'hi' ? 'कोई प्रोफाइल नहीं मिली। कृपया अपने खोज मानदंड बदलें या बाद में पुनः प्रयास करें।' : 'No profiles found. Please change your search criteria or try again later.',
     subtitle: language === 'hi' ? 'मॅट्रिमोनी सेवा' : 'Matrimony Service',
-    footerText: language === 'hi' ? 'सभी समुदायों के लिए — विवाह एक पवित्र बंधन है, व्यापार नहीं।' : 'For all communities — Marriage is a sacred bond, not a business.',
+    footerText: language === 'hi' ? 'सभी समुदायों के लिए — विवाह एक पवित्र बंधन है।' : 'For all communities — Marriage is a sacred bond.',
     footerCopyright: language === 'hi' ? '© 2024 ShaadiPartnerSearch. एक निःस्वार्थ समुदाय सेवा।' : '© 2024 ShaadiPartnerSearch. A selfless community service.'
   }
 
@@ -628,6 +628,7 @@ function App() {
                       profile={profile}
                       onViewProfile={setSelectedProfile}
                       language={language}
+                      isLoggedIn={!!loggedInUser}
                     />
                   ))}
                 </div>

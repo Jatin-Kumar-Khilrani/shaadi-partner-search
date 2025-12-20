@@ -256,6 +256,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
                 profile={profile}
                 onViewProfile={onViewProfile}
                 language={language}
+                isLoggedIn={true}
               />
             ))}
           </div>
