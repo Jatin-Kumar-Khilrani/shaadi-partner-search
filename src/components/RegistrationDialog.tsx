@@ -359,6 +359,19 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
             {step === 1 && (
               <div className="space-y-4">
                 <div className="space-y-2">
+                  <Label htmlFor="fullName">
+                    {language === 'hi' ? 'नाम (प्रोफाइल किसके लिए बनाई जा रही है)' : 'Name (profile created for)'} *
+                  </Label>
+                  <Input
+                    id="fullName"
+                    placeholder={language === 'hi' ? 'उदाहरण: राज आहूजा' : 'Example: Raj Ahuja'}
+                    value={formData.fullName}
+                    onChange={(e) => updateField('fullName', e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="profileCreatedFor">
                     {language === 'hi' ? 'रिश्ता' : 'Relation'} *
                   </Label>
@@ -399,19 +412,6 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                     />
                   </div>
                 )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">
-                    {language === 'hi' ? 'नाम (प्रोफाइल किसके लिए बनाई जा रही है)' : 'Name (profile created for)'} *
-                  </Label>
-                  <Input
-                    id="fullName"
-                    placeholder={language === 'hi' ? 'उदाहरण: राज आहूजा' : 'Example: Raj Ahuja'}
-                    value={formData.fullName}
-                    onChange={(e) => updateField('fullName', e.target.value)}
-                    required
-                  />
-                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
