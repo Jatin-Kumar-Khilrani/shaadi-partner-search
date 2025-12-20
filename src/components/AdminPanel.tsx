@@ -8,13 +8,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { ShieldCheck, X, Check, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt } from '@phosphor-icons/react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { ShieldCheck, X, Check, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key } from '@phosphor-icons/react'
 import type { Profile } from '@/types/profile'
+import type { User } from '@/types/user'
 import { toast } from 'sonner'
 
 interface AdminPanelProps {
   profiles: Profile[] | undefined
   setProfiles: (newValue: Profile[] | ((oldValue?: Profile[] | undefined) => Profile[])) => void
+  users: User[] | undefined
   language: 'hi' | 'en'
 }
 
@@ -25,19 +29,24 @@ interface BlockedContact {
   reason: string
 }
 
-export function AdminPanel({ profiles, setProfiles, language }: AdminPanelProps) {
+export function AdminPanel({ profiles, setProfiles, users, language }: AdminPanelProps) {
   const [blockedContacts, setBlockedContacts] = useKV<BlockedContact[]>('blockedContacts', [])
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [chatMessage, setChatMessage] = useState('')
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([])
   const [isLoadingAI, setIsLoadingAI] = useState(false)
   const [showChatDialog, setShowChatDialog] = useState(false)
+  const [activeTab, setActiveTab] = useState('pending')
   
   const t = {
     title: language === 'hi' ? 'प्रशासन पैनल' : 'Admin Panel',
     description: language === 'hi' ? 'प्रोफाइल सत्यापन और प्रबंधन' : 'Profile verification and management',
     pendingProfiles: language === 'hi' ? 'लंबित प्रोफाइल' : 'Pending Profiles',
+    approvedProfiles: language === 'hi' ? 'स्वीकृत प्रोफाइल' : 'Approved Profiles',
+    allDatabase: language === 'hi' ? 'पूरा डेटाबेस' : 'All Database',
+    loginCredentials: language === 'hi' ? 'लॉगिन विवरण' : 'Login Credentials',
     noPending: language === 'hi' ? 'कोई लंबित प्रोफाइल नहीं।' : 'No pending profiles.',
+    noApproved: language === 'hi' ? 'कोई स्वीकृत प्रोफाइल नहीं।' : 'No approved profiles.',
     approve: language === 'hi' ? 'स्वीकृत करें' : 'Approve',
     reject: language === 'hi' ? 'अस्वीकृत करें' : 'Reject',
     block: language === 'hi' ? 'ब्लॉक करें' : 'Block',
@@ -45,6 +54,7 @@ export function AdminPanel({ profiles, setProfiles, language }: AdminPanelProps)
     hold: language === 'hi' ? 'होल्ड पर रखें' : 'Hold',
     chat: language === 'hi' ? 'चैट करें' : 'Chat',
     aiReview: language === 'hi' ? 'AI समीक्षा' : 'AI Review',
+    viewDetails: language === 'hi' ? 'विवरण देखें' : 'View Details',
     pending: language === 'hi' ? 'लंबित' : 'Pending',
     verified: language === 'hi' ? 'सत्यापित' : 'Verified',
     rejected: language === 'hi' ? 'अस्वीकृत' : 'Rejected',
@@ -53,6 +63,14 @@ export function AdminPanel({ profiles, setProfiles, language }: AdminPanelProps)
     location: language === 'hi' ? 'स्थान' : 'Location',
     education: language === 'hi' ? 'शिक्षा' : 'Education',
     occupation: language === 'hi' ? 'व्यवसाय' : 'Occupation',
+    profileId: language === 'hi' ? 'प्रोफाइल ID' : 'Profile ID',
+    userId: language === 'hi' ? 'यूज़र ID' : 'User ID',
+    password: language === 'hi' ? 'पासवर्ड' : 'Password',
+    email: language === 'hi' ? 'ईमेल' : 'Email',
+    mobile: language === 'hi' ? 'मोबाइल' : 'Mobile',
+    name: language === 'hi' ? 'नाम' : 'Name',
+    status: language === 'hi' ? 'स्थिति' : 'Status',
+    actions: language === 'hi' ? 'कार्रवाई' : 'Actions',
     approveSuccess: language === 'hi' ? 'प्रोफाइल स्वीकृत की गई!' : 'Profile approved!',
     rejectSuccess: language === 'hi' ? 'प्रोफाइल अस्वीकृत की गई!' : 'Profile rejected!',
     blockSuccess: language === 'hi' ? 'प्रोफाइल ब्लॉक की गई!' : 'Profile blocked!',
@@ -63,9 +81,12 @@ export function AdminPanel({ profiles, setProfiles, language }: AdminPanelProps)
     getAISuggestions: language === 'hi' ? 'AI सुझाव प्राप्त करें' : 'Get AI Suggestions',
     close: language === 'hi' ? 'बंद करें' : 'Close',
     loading: language === 'hi' ? 'लोड हो रहा है...' : 'Loading...',
+    createdAt: language === 'hi' ? 'बनाया गया' : 'Created At',
+    verifiedAt: language === 'hi' ? 'सत्यापित' : 'Verified At',
   }
 
   const pendingProfiles = profiles?.filter(p => p.status === 'pending') || []
+  const approvedProfiles = profiles?.filter(p => p.status === 'verified') || []
 
   const handleApprove = (profileId: string) => {
     setProfiles((current) => 
@@ -143,7 +164,7 @@ export function AdminPanel({ profiles, setProfiles, language }: AdminPanelProps)
 
   return (
     <section className="container mx-auto px-4 md:px-8 py-12">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h2 className="text-3xl font-bold mb-2 flex items-center gap-2">
             <ShieldCheck size={32} weight="fill" />
@@ -152,111 +173,297 @@ export function AdminPanel({ profiles, setProfiles, language }: AdminPanelProps)
           <p className="text-muted-foreground">{t.description}</p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.pendingProfiles}</CardTitle>
-            <CardDescription>
-              {pendingProfiles.length} {t.pending.toLowerCase()}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {pendingProfiles.length === 0 ? (
-              <Alert>
-                <Info size={18} />
-                <AlertDescription>{t.noPending}</AlertDescription>
-              </Alert>
-            ) : (
-              <div className="space-y-4">
-                {pendingProfiles.map((profile) => (
-                  <Card key={profile.id} className="border-2">
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col gap-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-bold text-lg">{profile.fullName}</h3>
-                              <Badge variant="secondary">{t.pending}</Badge>
-                              {profile.isBlocked && <Badge variant="destructive">{t.blocked}</Badge>}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 max-w-2xl">
+            <TabsTrigger value="pending" className="gap-2">
+              <Info size={18} />
+              {t.pendingProfiles}
+              {pendingProfiles.length > 0 && (
+                <Badge variant="destructive" className="ml-2">{pendingProfiles.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="approved" className="gap-2">
+              <Check size={18} />
+              {t.approvedProfiles}
+              <Badge variant="secondary" className="ml-2">{approvedProfiles.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="database" className="gap-2">
+              <Database size={18} />
+              {t.allDatabase}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="pending">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t.pendingProfiles}</CardTitle>
+                <CardDescription>
+                  {pendingProfiles.length} {t.pending.toLowerCase()}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {pendingProfiles.length === 0 ? (
+                  <Alert>
+                    <Info size={18} />
+                    <AlertDescription>{t.noPending}</AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="space-y-4">
+                    {pendingProfiles.map((profile) => (
+                      <Card key={profile.id} className="border-2">
+                        <CardContent className="pt-6">
+                          <div className="flex flex-col gap-4">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h3 className="font-bold text-lg">{profile.fullName}</h3>
+                                  <Badge variant="secondary">{t.pending}</Badge>
+                                  {profile.isBlocked && <Badge variant="destructive">{t.blocked}</Badge>}
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                                  <div>{t.age}: {profile.age}</div>
+                                  <div>{profile.gender === 'male' ? (language === 'hi' ? 'पुरुष' : 'Male') : (language === 'hi' ? 'महिला' : 'Female')}</div>
+                                  <div>{t.location}: {profile.location}</div>
+                                  <div>{t.education}: {profile.education}</div>
+                                  <div className="col-span-2">{t.occupation}: {profile.occupation}</div>
+                                  <div className="col-span-2">{t.email}: {profile.email}</div>
+                                  <div className="col-span-2">{t.mobile}: {profile.mobile}</div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
-                              <div>{t.age}: {profile.age}</div>
-                              <div>{profile.gender === 'male' ? (language === 'hi' ? 'पुरुष' : 'Male') : (language === 'hi' ? 'महिला' : 'Female')}</div>
-                              <div>{t.location}: {profile.location}</div>
-                              <div>{t.education}: {profile.education}</div>
-                              <div className="col-span-2">{t.occupation}: {profile.occupation}</div>
+
+                            {selectedProfile?.id === profile.id && aiSuggestions.length > 0 && (
+                              <Alert className="bg-primary/5">
+                                <Robot size={18} />
+                                <AlertDescription>
+                                  <div className="font-semibold mb-2">{t.aiSuggestions}:</div>
+                                  <ul className="space-y-1 text-sm">
+                                    {aiSuggestions.map((suggestion, idx) => (
+                                      <li key={idx}>{suggestion}</li>
+                                    ))}
+                                  </ul>
+                                </AlertDescription>
+                              </Alert>
+                            )}
+
+                            <div className="flex flex-wrap gap-2">
+                              <Button 
+                                onClick={() => handleGetAISuggestions(profile)}
+                                variant="outline"
+                                size="sm"
+                                disabled={isLoadingAI}
+                              >
+                                <Robot size={16} className="mr-1" />
+                                {isLoadingAI ? t.loading : t.aiReview}
+                              </Button>
+                              <Button 
+                                onClick={() => {
+                                  setSelectedProfile(profile)
+                                  setShowChatDialog(true)
+                                }}
+                                variant="outline"
+                                size="sm"
+                              >
+                                <ChatCircle size={16} className="mr-1" />
+                                {t.chat}
+                              </Button>
+                              <Button 
+                                onClick={() => handleApprove(profile.id)} 
+                                variant="default"
+                                size="sm"
+                                className="bg-teal hover:bg-teal/90"
+                              >
+                                <Check size={16} className="mr-1" />
+                                {t.approve}
+                              </Button>
+                              <Button 
+                                onClick={() => handleReject(profile.id)} 
+                                variant="outline"
+                                size="sm"
+                              >
+                                <X size={16} className="mr-1" />
+                                {t.reject}
+                              </Button>
+                              <Button 
+                                onClick={() => handleBlock(profile)} 
+                                variant="destructive"
+                                size="sm"
+                              >
+                                <ProhibitInset size={16} className="mr-1" />
+                                {t.block}
+                              </Button>
                             </div>
                           </div>
-                        </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                        {selectedProfile?.id === profile.id && aiSuggestions.length > 0 && (
-                          <Alert className="bg-primary/5">
-                            <Robot size={18} />
-                            <AlertDescription>
-                              <div className="font-semibold mb-2">{t.aiSuggestions}:</div>
-                              <ul className="space-y-1 text-sm">
-                                {aiSuggestions.map((suggestion, idx) => (
-                                  <li key={idx}>{suggestion}</li>
-                                ))}
-                              </ul>
-                            </AlertDescription>
-                          </Alert>
-                        )}
+          <TabsContent value="approved">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Key size={24} weight="fill" />
+                  {t.approvedProfiles} - {t.loginCredentials}
+                </CardTitle>
+                <CardDescription>
+                  {approvedProfiles.length} {language === 'hi' ? 'स्वीकृत प्रोफाइल और उनके लॉगिन विवरण' : 'approved profiles with login credentials'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {approvedProfiles.length === 0 ? (
+                  <Alert>
+                    <Info size={18} />
+                    <AlertDescription>{t.noApproved}</AlertDescription>
+                  </Alert>
+                ) : (
+                  <ScrollArea className="h-[600px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t.profileId}</TableHead>
+                          <TableHead>{t.name}</TableHead>
+                          <TableHead>{t.userId}</TableHead>
+                          <TableHead>{t.password}</TableHead>
+                          <TableHead>{t.email}</TableHead>
+                          <TableHead>{t.mobile}</TableHead>
+                          <TableHead>{t.verifiedAt}</TableHead>
+                          <TableHead>{t.actions}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {approvedProfiles.map((profile) => {
+                          const userCred = users?.find(u => u.profileId === profile.id)
+                          return (
+                            <TableRow key={profile.id}>
+                              <TableCell className="font-mono font-semibold">{profile.profileId}</TableCell>
+                              <TableCell className="font-medium">{profile.fullName}</TableCell>
+                              <TableCell className="font-mono text-primary">{userCred?.userId || '-'}</TableCell>
+                              <TableCell className="font-mono text-accent">{userCred?.password || '-'}</TableCell>
+                              <TableCell className="text-sm">{profile.email}</TableCell>
+                              <TableCell className="font-mono text-sm">{profile.mobile}</TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {profile.verifiedAt ? new Date(profile.verifiedAt).toLocaleDateString() : '-'}
+                              </TableCell>
+                              <TableCell>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedProfile(profile)
+                                    setShowChatDialog(true)
+                                  }}
+                                >
+                                  <ChatCircle size={16} />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                        <div className="flex flex-wrap gap-2">
-                          <Button 
-                            onClick={() => handleGetAISuggestions(profile)}
-                            variant="outline"
-                            size="sm"
-                            disabled={isLoadingAI}
-                          >
-                            <Robot size={16} className="mr-1" />
-                            {isLoadingAI ? t.loading : t.aiReview}
-                          </Button>
-                          <Button 
-                            onClick={() => {
-                              setSelectedProfile(profile)
-                              setShowChatDialog(true)
-                            }}
-                            variant="outline"
-                            size="sm"
-                          >
-                            <ChatCircle size={16} className="mr-1" />
-                            {t.chat}
-                          </Button>
-                          <Button 
-                            onClick={() => handleApprove(profile.id)} 
-                            variant="default"
-                            size="sm"
-                            className="bg-teal hover:bg-teal/90"
-                          >
-                            <Check size={16} className="mr-1" />
-                            {t.approve}
-                          </Button>
-                          <Button 
-                            onClick={() => handleReject(profile.id)} 
-                            variant="outline"
-                            size="sm"
-                          >
-                            <X size={16} className="mr-1" />
-                            {t.reject}
-                          </Button>
-                          <Button 
-                            onClick={() => handleBlock(profile)} 
-                            variant="destructive"
-                            size="sm"
-                          >
-                            <ProhibitInset size={16} className="mr-1" />
-                            {t.block}
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          <TabsContent value="database">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database size={24} weight="fill" />
+                  {t.allDatabase}
+                </CardTitle>
+                <CardDescription>
+                  {profiles?.length || 0} {language === 'hi' ? 'कुल प्रोफाइल' : 'total profiles'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!profiles || profiles.length === 0 ? (
+                  <Alert>
+                    <Info size={18} />
+                    <AlertDescription>
+                      {language === 'hi' ? 'कोई प्रोफाइल नहीं मिली।' : 'No profiles found.'}
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <ScrollArea className="h-[600px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t.profileId}</TableHead>
+                          <TableHead>{t.name}</TableHead>
+                          <TableHead>{t.age}</TableHead>
+                          <TableHead>{t.location}</TableHead>
+                          <TableHead>{t.status}</TableHead>
+                          <TableHead>{t.email}</TableHead>
+                          <TableHead>{t.mobile}</TableHead>
+                          <TableHead>{t.createdAt}</TableHead>
+                          <TableHead>{t.actions}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {profiles.map((profile) => (
+                          <TableRow key={profile.id}>
+                            <TableCell className="font-mono font-semibold">{profile.profileId}</TableCell>
+                            <TableCell className="font-medium">{profile.fullName}</TableCell>
+                            <TableCell>{profile.age}</TableCell>
+                            <TableCell className="text-sm">{profile.location}</TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                profile.status === 'verified' ? 'default' :
+                                profile.status === 'pending' ? 'secondary' :
+                                'destructive'
+                              }>
+                                {profile.status === 'verified' ? t.verified :
+                                 profile.status === 'pending' ? t.pending :
+                                 t.rejected}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm">{profile.email}</TableCell>
+                            <TableCell className="font-mono text-sm">{profile.mobile}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {new Date(profile.createdAt).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedProfile(profile)
+                                    setShowChatDialog(true)
+                                  }}
+                                >
+                                  <Eye size={16} />
+                                </Button>
+                                {profile.status !== 'verified' && (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleApprove(profile.id)}
+                                    className="text-teal hover:text-teal"
+                                  >
+                                    <Check size={16} />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Dialog open={showChatDialog} onOpenChange={setShowChatDialog}>

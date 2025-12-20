@@ -1,24 +1,17 @@
 export interface ChatMessage {
-  fromProfil
+  id: string
+  fromProfileId: string
   toProfileId: string
-  type: 'user' | 'adm
-  message: string
   type: 'user' | 'admin'
+  message: string
   createdAt: string
   readAt?: string
-
-
-  createdAt: string
-  timestamp?
-
-  id: string
-  lastMessage: ChatM
- 
-
 }
 
-
-
-
-
-
+export interface ChatConversation {
+  id: string
+  profileId: string
+  lastMessage?: ChatMessage
+  unreadCount: number
+  updatedAt: string
+}

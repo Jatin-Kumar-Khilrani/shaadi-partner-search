@@ -21,6 +21,7 @@ import type { User } from '@/types/user'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
 import { AdminPanel } from '@/components/AdminPanel'
+import { AdminLoginDialog } from '@/components/AdminLoginDialog'
 import { useTranslation, type Language } from '@/lib/translations'
 import { toast } from 'sonner'
 import { sampleWeddingServices, sampleProfiles, sampleUsers } from '@/lib/sampleData'
@@ -32,6 +33,8 @@ function App() {
   const [users, setUsers] = useKV<User[]>('users', [])
   const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
   const [loggedInUser, setLoggedInUser] = useState<string | null>(null)
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false)
+  const [showAdminLogin, setShowAdminLogin] = useState(false)
   
   const [currentView, setCurrentView] = useState<View>('home')
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({})
@@ -263,7 +266,13 @@ function App() {
             </Button>
             <Button
               variant={currentView === 'admin' ? 'default' : 'ghost'}
-              onClick={() => setCurrentView('admin')}
+              onClick={() => {
+                if (!isAdminLoggedIn) {
+                  setShowAdminLogin(true)
+                } else {
+                  setCurrentView('admin')
+                }
+              }}
               className="gap-2"
             >
               <ShieldCheck size={20} weight="fill" />
@@ -409,8 +418,13 @@ function App() {
                 <Button
                   variant={currentView === 'admin' ? 'default' : 'ghost'}
                   onClick={() => {
-                    setCurrentView('admin')
-                    setMobileMenuOpen(false)
+                    if (!isAdminLoggedIn) {
+                      setShowAdminLogin(true)
+                      setMobileMenuOpen(false)
+                    } else {
+                      setCurrentView('admin')
+                      setMobileMenuOpen(false)
+                    }
                   }}
                   className="justify-start gap-2"
                 >
@@ -605,7 +619,7 @@ function App() {
           </section>
         )}
 
-        {currentView === 'admin' && <AdminPanel profiles={profiles} setProfiles={setProfiles} language={language} />}
+        {currentView === 'admin' && <AdminPanel profiles={profiles} setProfiles={setProfiles} users={users} language={language} />}
 
         {currentView === 'my-matches' && (
           <MyMatches 
@@ -742,6 +756,17 @@ function App() {
           language={language}
         />
       )}
+
+      <AdminLoginDialog
+        open={showAdminLogin}
+        onClose={() => setShowAdminLogin(false)}
+        onLoginSuccess={() => {
+          setIsAdminLoggedIn(true)
+          setCurrentView('admin')
+          toast.success(language === 'hi' ? 'एडमिन पैनल में आपका स्वागत है!' : 'Welcome to Admin Panel!')
+        }}
+        language={language}
+      />
 
       <Toaster position="top-right" />
     </div>

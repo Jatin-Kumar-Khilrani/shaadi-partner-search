@@ -32,6 +32,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   
+  const [emailOtp, setEmailOtp] = useState('')
+  const [mobileOtp, setMobileOtp] = useState('')
+  const [generatedEmailOtp, setGeneratedEmailOtp] = useState('')
+  const [generatedMobileOtp, setGeneratedMobileOtp] = useState('')
+  const [emailVerified, setEmailVerified] = useState(false)
+  const [mobileVerified, setMobileVerified] = useState(false)
+  const [showVerification, setShowVerification] = useState(false)
+  
   const [formData, setFormData] = useState({
     fullName: '',
     dateOfBirth: '',
@@ -230,6 +238,54 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
     }
   }
 
+  const sendOtps = () => {
+    const emailOtpCode = Math.floor(100000 + Math.random() * 900000).toString()
+    const mobileOtpCode = Math.floor(100000 + Math.random() * 900000).toString()
+    
+    setGeneratedEmailOtp(emailOtpCode)
+    setGeneratedMobileOtp(mobileOtpCode)
+    setShowVerification(true)
+    
+    toast.success(
+      language === 'hi' ? 'OTP भेजा गया!' : 'OTPs Sent!',
+      {
+        description: `Email: ${emailOtpCode} | Mobile: ${mobileOtpCode}`
+      }
+    )
+  }
+
+  const verifyEmailOtp = () => {
+    if (emailOtp === generatedEmailOtp) {
+      setEmailVerified(true)
+      toast.success(language === 'hi' ? 'ईमेल सत्यापित!' : 'Email Verified!')
+      return true
+    } else {
+      toast.error(language === 'hi' ? 'गलत ईमेल OTP' : 'Invalid Email OTP')
+      return false
+    }
+  }
+
+  const verifyMobileOtp = () => {
+    if (mobileOtp === generatedMobileOtp) {
+      setMobileVerified(true)
+      toast.success(language === 'hi' ? 'मोबाइल सत्यापित!' : 'Mobile Verified!')
+      return true
+    } else {
+      toast.error(language === 'hi' ? 'गलत मोबाइल OTP' : 'Invalid Mobile OTP')
+      return false
+    }
+  }
+
+  const handleVerificationComplete = () => {
+    const emailValid = verifyEmailOtp()
+    const mobileValid = verifyMobileOtp()
+    
+    if (emailValid && mobileValid) {
+      setShowVerification(false)
+      setStep(4)
+    }
+  }
+
   const nextStep = () => {
     if (step === 1 && (!formData.fullName || !formData.dateOfBirth || !formData.gender)) {
       toast.error(t.registration.fillAllFields)
@@ -241,6 +297,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
     }
     if (step === 3 && (!formData.location || !formData.country || !formData.email || !formData.mobile)) {
       toast.error(t.registration.fillContact)
+      return
+    }
+    if (step === 3) {
+      sendOtps()
       return
     }
     setStep(step + 1)
