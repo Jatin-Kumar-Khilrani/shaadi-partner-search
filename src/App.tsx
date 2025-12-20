@@ -45,7 +45,10 @@ function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [language, setLanguage] = useState<Language>('hi')
 
-  const currentUserProfile = profiles?.find(p => p.id === loggedInUser) || null
+  const currentUser = users?.find(u => u.userId === loggedInUser)
+  const currentUserProfile = currentUser 
+    ? profiles?.find(p => p.id === currentUser.profileId) || null
+    : null
 
   useEffect(() => {
     if ((!profiles || profiles.length === 0) && sampleProfiles.length > 0) {
