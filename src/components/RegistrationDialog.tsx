@@ -339,11 +339,11 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
               <div key={s} className="flex items-center">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
                   s === step ? 'bg-primary text-primary-foreground scale-110' :
-                  s < step ? 'bg-teal text-teal-foreground' : 'bg-muted text-muted-foreground'
+                  s < step || (s === 3 && showVerification) || (s === 4 && emailVerified && mobileVerified) ? 'bg-teal text-teal-foreground' : 'bg-muted text-muted-foreground'
                 }`}>
-                  {s < step ? <CheckCircle size={20} weight="fill" /> : s}
+                  {(s < step || (s === 3 && emailVerified && mobileVerified)) ? <CheckCircle size={20} weight="fill" /> : s}
                 </div>
-                {s < 5 && <div className={`w-12 h-1 ${s < step ? 'bg-teal' : 'bg-muted'}`} />}
+                {s < 5 && <div className={`w-12 h-1 ${s < step || (s === 3 && emailVerified && mobileVerified) ? 'bg-teal' : 'bg-muted'}`} />}
               </div>
             ))}
           </div>
@@ -353,7 +353,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
             <AlertDescription>
               {step === 1 && t.registration.step1}
               {step === 2 && t.registration.step2}
-              {step === 3 && t.registration.step3}
+              {step === 3 && !showVerification && t.registration.step3}
+              {step === 3 && showVerification && (language === 'hi' ? 'कृपया अपने ईमेल और मोबाइल पर भेजे गए OTP को सत्यापित करें।' : 'Please verify the OTPs sent to your email and mobile.')}
               {step === 4 && t.registration.step4}
               {step === 5 && t.registration.step5}
             </AlertDescription>
@@ -527,7 +528,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
               </div>
             )}
 
-            {step === 3 && (
+            {step === 3 && !showVerification && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -575,6 +576,133 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                     onChange={(e) => updateField('mobile', e.target.value)}
                     required
                   />
+                </div>
+              </div>
+            )}
+
+            {step === 3 && showVerification && (
+              <div className="space-y-6">
+                <div className="text-center mb-4">
+                  <CheckCircle size={48} weight="fill" className="text-teal mx-auto mb-2" />
+                  <h3 className="text-xl font-bold mb-1">
+                    {language === 'hi' ? 'OTP सत्यापन' : 'OTP Verification'}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {language === 'hi' 
+                      ? 'आपके ईमेल और मोबाइल पर OTP भेजा गया है' 
+                      : 'OTPs have been sent to your email and mobile'}
+                  </p>
+                </div>
+
+                <Alert className="bg-primary/5 border-primary/20">
+                  <Info size={18} />
+                  <AlertDescription className="text-sm">
+                    <strong>{language === 'hi' ? 'डेमो के लिए:' : 'For Demo:'}</strong>{' '}
+                    {language === 'hi' 
+                      ? 'OTP ऊपर toast सूचना में दिखाए गए हैं' 
+                      : 'OTPs are shown in the toast notification above'}
+                  </AlertDescription>
+                </Alert>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="emailOtp" className="text-base font-semibold">
+                      {language === 'hi' ? 'ईमेल OTP' : 'Email OTP'}
+                    </Label>
+                    <div className="space-y-2">
+                      <Input
+                        id="emailOtp"
+                        placeholder="000000"
+                        value={emailOtp}
+                        onChange={(e) => setEmailOtp(e.target.value)}
+                        maxLength={6}
+                        className="text-center text-lg tracking-widest font-mono"
+                        disabled={emailVerified}
+                      />
+                      {emailVerified && (
+                        <div className="flex items-center gap-2 text-sm text-teal">
+                          <CheckCircle size={16} weight="fill" />
+                          {language === 'hi' ? 'ईमेल सत्यापित' : 'Email Verified'}
+                        </div>
+                      )}
+                      {!emailVerified && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={verifyEmailOtp}
+                          disabled={emailOtp.length !== 6}
+                          className="w-full"
+                        >
+                          {language === 'hi' ? 'ईमेल OTP सत्यापित करें' : 'Verify Email OTP'}
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'hi' ? 'भेजा गया:' : 'Sent to:'} {formData.email}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="mobileOtp" className="text-base font-semibold">
+                      {language === 'hi' ? 'मोबाइल OTP' : 'Mobile OTP'}
+                    </Label>
+                    <div className="space-y-2">
+                      <Input
+                        id="mobileOtp"
+                        placeholder="000000"
+                        value={mobileOtp}
+                        onChange={(e) => setMobileOtp(e.target.value)}
+                        maxLength={6}
+                        className="text-center text-lg tracking-widest font-mono"
+                        disabled={mobileVerified}
+                      />
+                      {mobileVerified && (
+                        <div className="flex items-center gap-2 text-sm text-teal">
+                          <CheckCircle size={16} weight="fill" />
+                          {language === 'hi' ? 'मोबाइल सत्यापित' : 'Mobile Verified'}
+                        </div>
+                      )}
+                      {!mobileVerified && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={verifyMobileOtp}
+                          disabled={mobileOtp.length !== 6}
+                          className="w-full"
+                        >
+                          {language === 'hi' ? 'मोबाइल OTP सत्यापित करें' : 'Verify Mobile OTP'}
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'hi' ? 'भेजा गया:' : 'Sent to:'} {formData.mobile}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <Button
+                    type="button"
+                    onClick={handleVerificationComplete}
+                    disabled={!emailVerified || !mobileVerified}
+                    className="w-full"
+                  >
+                    {language === 'hi' ? 'सत्यापन पूर्ण करें और जारी रखें' : 'Complete Verification & Continue'}
+                  </Button>
+                </div>
+
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    onClick={sendOtps}
+                    className="text-sm"
+                  >
+                    {language === 'hi' ? 'OTP पुनः भेजें' : 'Resend OTPs'}
+                  </Button>
                 </div>
               </div>
             )}
@@ -836,20 +964,34 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
         </div>
 
         <div className="flex justify-between gap-4 mt-6 px-1">
-          {step > 1 && (
+          {step > 1 && !showVerification && (
             <Button variant="outline" onClick={prevStep}>
               {t.registration.back}
             </Button>
           )}
-          {step < 5 ? (
+          {showVerification && (
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowVerification(false)
+                setEmailOtp('')
+                setMobileOtp('')
+                setEmailVerified(false)
+                setMobileVerified(false)
+              }}
+            >
+              {t.registration.back}
+            </Button>
+          )}
+          {step < 5 && !showVerification ? (
             <Button onClick={nextStep} className="ml-auto">
               {t.registration.next}
             </Button>
-          ) : (
+          ) : step === 5 ? (
             <Button onClick={handleSubmit} className="ml-auto bg-accent hover:bg-accent/90 text-accent-foreground">
               {t.registration.submit}
             </Button>
-          )}
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>
