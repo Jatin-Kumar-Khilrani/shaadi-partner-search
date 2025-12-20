@@ -1,74 +1,71 @@
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Card, CardContent } from '@/componen
-import type { Language } from '@/lib/translatio
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import type { Language } from '@/lib/translations'
 import { toast } from 'sonner'
 
+const ADMIN_USERNAME = 'rkkhilrani'
+const ADMIN_PASSWORD = 'admin123'
+
+interface AdminLoginDialogProps {
+  open: boolean
+  onClose: () => void
+  onLoginSuccess: () => void
+  language: Language
 }
-export function AdminLoginDia
+
+export function AdminLoginDialog({ open, onClose, onLoginSuccess, language }: AdminLoginDialogProps) {
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [otp, setOtp] = useState('')
+  const [generatedOtp, setGeneratedOtp] = useState('')
+  const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
 
-
-    title: lang
-    password: languag
-    otpTitle: language === '
-    otpSent: languag
- 
+  const t = {
+    title: language === 'hi' ? 'एडमिन लॉगिन' : 'Admin Login',
+    username: language === 'hi' ? 'उपयोगकर्ता नाम' : 'Username',
+    password: language === 'hi' ? 'पासवर्ड' : 'Password',
+    submit: language === 'hi' ? 'जमा करें' : 'Submit',
+    invalidCredentials: language === 'hi' ? 'अमान्य क्रेडेंशियल्स' : 'Invalid credentials',
+    otpTitle: language === 'hi' ? 'OTP दर्ज करें' : 'Enter OTP',
+    otpLabel: language === 'hi' ? 'OTP' : 'OTP',
+    otpSent: language === 'hi' ? 'OTP भेजा गया' : 'OTP sent',
+    invalidOtp: language === 'hi' ? 'अमान्य OTP' : 'Invalid OTP',
+    back: language === 'hi' ? 'वापस' : 'Back'
+  }
 
   const handleCredentialsSubmit = (e: React.FormEvent) => {
-    if (username !== ADMIN_USERNAME || passwor
-      return
-
-    setGeneratedOtp(newOtp)
-    
-
-    })
-
     e.preventDefault()
-      toast.error(t.invalidOtp)
-    }
-    onLoginSuccess()
-    setPassword('')
-    setGeneratedOtp('')
-  }
-  const handleClose = () => {
-    setPassword('')
-   
-
-
-    <Dialog open={open
-        <DialogHeader>
-        </DialogHeader>
-        <Car
-     
-
-                  <Input
-                    type="t
-                  
     
+    if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+      toast.error(t.invalidCredentials)
+      return
+    }
 
-                  <Label htmlFor="ad
-                    i
-      
-   
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString()
+    setGeneratedOtp(newOtp)
+    setStep('otp')
+    
+    toast.info(t.otpSent, {
+      description: `OTP: ${newOtp}`,
+      duration: 10000
+    })
+  }
 
-                <Button type="submit" className="w-
-                </Butt
-            ) : (
-                <div className=
-            
-     
+  const handleOtpSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (otp !== generatedOtp) {
+      toast.error(t.invalidOtp)
+      return
+    }
 
-                    
-                  /
-
-              
-                  </But
-                    {t.sub
-   
+    onLoginSuccess()
+    handleClose()
+  }
 
   const handleClose = () => {
     setUsername('')
@@ -142,8 +139,8 @@ export function AdminLoginDia
               </form>
             )}
           </CardContent>
-
+        </Card>
       </DialogContent>
-
+    </Dialog>
   )
-
+}
