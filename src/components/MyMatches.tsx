@@ -109,9 +109,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
       <div className="space-y-2">
         <Label>{t.manglik}</Label>
         <Select 
-          value={filters.manglik !== undefined ? (filters.manglik ? 'yes' : 'no') : 'placeholder'} 
+          value={filters.manglik !== undefined ? (filters.manglik ? 'yes' : 'no') : undefined} 
           onValueChange={(val) => {
-            if (val === 'placeholder') return
             setFilters({ ...filters, manglik: val === 'yes' })
           }}
         >
@@ -119,7 +118,6 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
             <SelectValue placeholder={t.manglik} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="placeholder" disabled className="hidden">{t.manglik}</SelectItem>
             <SelectItem value="yes">{t.yes}</SelectItem>
             <SelectItem value="no">{t.no}</SelectItem>
           </SelectContent>
@@ -129,9 +127,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
       <div className="space-y-2">
         <Label>{t.diet}</Label>
         <Select 
-          value={filters.dietPreference || 'placeholder'} 
+          value={filters.dietPreference || undefined} 
           onValueChange={(val: any) => {
-            if (val === 'placeholder') return
             setFilters({ ...filters, dietPreference: val })
           }}
         >
@@ -139,7 +136,6 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
             <SelectValue placeholder={t.diet} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="placeholder" disabled className="hidden">{t.diet}</SelectItem>
             <SelectItem value="veg">{t.veg}</SelectItem>
             <SelectItem value="non-veg">{t.nonVeg}</SelectItem>
           </SelectContent>
@@ -149,9 +145,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
       <div className="space-y-2">
         <Label>{t.drinking}</Label>
         <Select 
-          value={filters.drinkingHabit || 'placeholder'} 
+          value={filters.drinkingHabit || undefined} 
           onValueChange={(val: any) => {
-            if (val === 'placeholder') return
             setFilters({ ...filters, drinkingHabit: val })
           }}
         >
@@ -159,7 +154,6 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
             <SelectValue placeholder={t.drinking} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="placeholder" disabled className="hidden">{t.drinking}</SelectItem>
             <SelectItem value="never">{t.never}</SelectItem>
             <SelectItem value="occasionally">{t.occasionally}</SelectItem>
           </SelectContent>
@@ -169,9 +163,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
       <div className="space-y-2">
         <Label>{t.smoking}</Label>
         <Select 
-          value={filters.smokingHabit || 'placeholder'} 
+          value={filters.smokingHabit || undefined} 
           onValueChange={(val: any) => {
-            if (val === 'placeholder') return
             setFilters({ ...filters, smokingHabit: val })
           }}
         >
@@ -179,7 +172,6 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
             <SelectValue placeholder={t.smoking} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="placeholder" disabled className="hidden">{t.smoking}</SelectItem>
             <SelectItem value="never">{t.never}</SelectItem>
             <SelectItem value="occasionally">{t.occasionally}</SelectItem>
           </SelectContent>
