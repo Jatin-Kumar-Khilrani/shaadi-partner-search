@@ -536,7 +536,7 @@ function App() {
                         </div>
                         <div>
                           <h3 className="font-bold text-xl mb-2">
-                            {language === 'hi' ? 'सभी समुदाय स्���ागत हैं' : 'All Communities Welcome'}
+                            {language === 'hi' ? 'सभी समुदाय स्वागत हैं' : 'All Communities Welcome'}
                           </h3>
                           <p className="text-muted-foreground">
                             {language === 'hi' ? 'सभी धर्मों, जातियों और समुदायों के लिए।' : 'For all religions, castes and communities.'}
