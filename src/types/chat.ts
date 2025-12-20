@@ -2,11 +2,11 @@ export interface ChatMessage {
   id: string
   fromUserId: string
   fromProfileId: string
+  toProfileId?: string
+  message: string
+  timestamp: string
   read: boolean
-
-  id: string
-  lastMessage: ChatMessage
-  read: boolean
+  type?: 'user' | 'admin' | 'admin-broadcast' | 'admin-to-user' | 'user-to-user'
 }
 
 export interface ChatConversation {
@@ -20,11 +20,10 @@ export interface ChatConversation {
 
 export interface ChatRequest {
   id: string
-
+  fromUserId: string
   fromProfileId: string
   toUserId: string
   toProfileId: string
   status: 'pending' | 'accepted' | 'declined'
   createdAt: string
-
 }
