@@ -43,18 +43,27 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
     acceptInterestFirst: language === 'hi' ? 'चैट करने के लिए पहले रुचि स्वीकार करें' : 'Accept interest first to chat',
   }
 
+  const getOtherProfileIdFromConversation = (conversationId: string): string | null => {
+    if (!conversationId || !currentUserProfile) return null
+    if (conversationId.startsWith('admin-') || conversationId === 'admin-broadcast') return null
+    
+    const parts = conversationId.split('-')
+    return parts.find(id => id !== currentUserProfile.profileId) || null
+  }
+
   const canChatWith = (otherProfileId: string): boolean => {
     if (isAdmin) return true
     if (!currentUserProfile) return false
+    if (!otherProfileId) return false
 
-    const mutualInterest = interests?.find(
+    const hasAcceptedInterest = interests?.some(
       i => i.status === 'accepted' && (
         (i.fromProfileId === currentUserProfile.profileId && i.toProfileId === otherProfileId) ||
         (i.toProfileId === currentUserProfile.profileId && i.fromProfileId === otherProfileId)
       )
     )
 
-    return !!mutualInterest
+    return hasAcceptedInterest || false
   }
 
   useEffect(() => {
@@ -203,7 +212,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
     if (!isAdmin && !currentUserProfile) return
 
     if (!isAdmin && selectedConversation.includes('-') && !selectedConversation.startsWith('admin-')) {
-      const otherProfileId = selectedConversation.split('-').find(id => id !== currentUserProfile?.profileId)
+      const otherProfileId = getOtherProfileIdFromConversation(selectedConversation)
       if (otherProfileId && !canChatWith(otherProfileId)) {
         toast.error(t.acceptInterestFirst)
         return
@@ -365,7 +374,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
               </div>
             ) : (() => {
               const conv = conversations.find(c => c.id === selectedConversation)
-              const otherProfileId = selectedConversation.split('-').find(id => id !== currentUserProfile?.profileId)
+              const otherProfileId = getOtherProfileIdFromConversation(selectedConversation)
               const isChatAllowed = isAdmin || 
                                    selectedConversation.startsWith('admin-') || 
                                    selectedConversation === 'admin-broadcast' ||
