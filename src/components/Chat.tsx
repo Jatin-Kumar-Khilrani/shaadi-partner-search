@@ -58,7 +58,8 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
   }
 
   useEffect(() => {
-    if (!messages || !currentUserProfile) return
+    if (!messages) return
+    if (!isAdmin && !currentUserProfile) return
 
     const convMap = new Map<string, ChatConversation>()
 
@@ -86,7 +87,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
           if (!msg.read) conv.unreadCount++
         }
       } else if (msg.type === 'admin-to-user') {
-        if (msg.toProfileId === currentUserProfile.profileId || isAdmin) {
+        if (isAdmin || msg.toProfileId === currentUserProfile?.profileId) {
           const convId = `admin-${msg.toProfileId}`
           if (!convMap.has(convId)) {
             convMap.set(convId, {
@@ -106,21 +107,28 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
               conv.timestamp = msg.timestamp
               conv.updatedAt = msg.timestamp
             }
-            if (!msg.read) conv.unreadCount++
+            if (!msg.read && (isAdmin ? msg.fromProfileId !== 'admin' : msg.fromProfileId === 'admin')) {
+              conv.unreadCount++
+            }
           }
         }
       } else if (msg.type === 'user-to-user') {
-        if (msg.fromProfileId === currentUserProfile.profileId || msg.toProfileId === currentUserProfile.profileId) {
-          const otherProfileId = msg.fromProfileId === currentUserProfile.profileId ? msg.toProfileId! : msg.fromProfileId
-          const convId = [currentUserProfile.profileId, otherProfileId].sort().join('-')
+        if (isAdmin || msg.fromProfileId === currentUserProfile?.profileId || msg.toProfileId === currentUserProfile?.profileId) {
+          const otherProfileId = isAdmin 
+            ? (msg.fromProfileId < msg.toProfileId! ? `${msg.fromProfileId}-${msg.toProfileId}` : `${msg.toProfileId}-${msg.fromProfileId}`)
+            : msg.fromProfileId === currentUserProfile?.profileId ? msg.toProfileId! : msg.fromProfileId
+          
+          const convId = isAdmin 
+            ? otherProfileId
+            : [currentUserProfile!.profileId, otherProfileId].sort().join('-')
           
           if (!convMap.has(convId)) {
             convMap.set(convId, {
               id: convId,
-              participants: [currentUserProfile.profileId, otherProfileId],
+              participants: isAdmin ? [msg.fromProfileId, msg.toProfileId!] : [currentUserProfile!.profileId, otherProfileId],
               lastMessage: msg,
               timestamp: msg.timestamp,
-              unreadCount: msg.read || msg.fromProfileId === currentUserProfile.profileId ? 0 : 1,
+              unreadCount: msg.read || (isAdmin ? false : msg.fromProfileId === currentUserProfile?.profileId) ? 0 : 1,
               createdAt: msg.timestamp,
               updatedAt: msg.timestamp,
             })
@@ -132,7 +140,9 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
               conv.timestamp = msg.timestamp
               conv.updatedAt = msg.timestamp
             }
-            if (!msg.read && msg.fromProfileId !== currentUserProfile.profileId) conv.unreadCount++
+            if (!msg.read && !isAdmin && msg.fromProfileId !== currentUserProfile?.profileId) {
+              conv.unreadCount++
+            }
           }
         }
       }
@@ -150,7 +160,8 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
   }, [selectedConversation, messages])
 
   const getConversationMessages = (convId: string) => {
-    if (!messages || !currentUserProfile) return []
+    if (!messages) return []
+    if (!isAdmin && !currentUserProfile) return []
 
     if (convId === 'admin-broadcast') {
       return messages.filter(m => m.type === 'admin-broadcast')
@@ -158,9 +169,24 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
 
     if (convId.startsWith('admin-')) {
       const profileId = convId.replace('admin-', '')
+      return messages.filter(m => {
+        if (m.type === 'admin-to-user') {
+          if (isAdmin) {
+            return m.toProfileId === profileId || m.fromProfileId === profileId
+          } else {
+            return m.toProfileId === profileId || m.fromProfileId === 'admin'
+          }
+        }
+        return false
+      })
+    }
+
+    if (isAdmin) {
+      const [profileId1, profileId2] = convId.split('-')
       return messages.filter(m => 
-        m.type === 'admin-to-user' && 
-        (m.toProfileId === profileId || m.fromProfileId === profileId)
+        m.type === 'user-to-user' &&
+        ((m.fromProfileId === profileId1 && m.toProfileId === profileId2) ||
+         (m.fromProfileId === profileId2 && m.toProfileId === profileId1))
       )
     }
 
@@ -173,10 +199,11 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
   }
 
   const sendMessage = () => {
-    if (!messageInput.trim() || !selectedConversation || !currentUserProfile) return
+    if (!messageInput.trim() || !selectedConversation) return
+    if (!isAdmin && !currentUserProfile) return
 
     if (!isAdmin && selectedConversation.includes('-') && !selectedConversation.startsWith('admin-')) {
-      const otherProfileId = selectedConversation.split('-').find(id => id !== currentUserProfile.profileId)
+      const otherProfileId = selectedConversation.split('-').find(id => id !== currentUserProfile?.profileId)
       if (otherProfileId && !canChatWith(otherProfileId)) {
         toast.error(t.acceptInterestFirst)
         return
@@ -185,14 +212,14 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
 
     const newMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
-      fromUserId: currentUserProfile.id,
-      fromProfileId: currentUserProfile.profileId,
+      fromUserId: isAdmin ? 'admin' : currentUserProfile!.id,
+      fromProfileId: isAdmin ? 'admin' : currentUserProfile!.profileId,
       toProfileId: '',
       message: messageInput,
       timestamp: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       read: false,
-      type: isAdmin ? 'admin-to-user' : 'user-to-user',
+      type: 'user-to-user',
     }
 
     if (selectedConversation === 'admin-broadcast') {
@@ -200,11 +227,24 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
       newMessage.toProfileId = 'all'
     } else if (selectedConversation.startsWith('admin-')) {
       newMessage.type = 'admin-to-user'
-      newMessage.toProfileId = selectedConversation.replace('admin-', '')
+      const targetProfileId = selectedConversation.replace('admin-', '')
+      if (isAdmin) {
+        newMessage.fromProfileId = 'admin'
+        newMessage.toProfileId = targetProfileId
+      } else {
+        newMessage.fromProfileId = currentUserProfile!.profileId
+        newMessage.toProfileId = targetProfileId
+      }
     } else {
       newMessage.type = 'user-to-user'
-      const otherProfileId = selectedConversation.split('-').find(id => id !== currentUserProfile.profileId) || ''
-      newMessage.toProfileId = otherProfileId
+      if (isAdmin) {
+        const [profileId1, profileId2] = selectedConversation.split('-')
+        newMessage.fromProfileId = profileId1
+        newMessage.toProfileId = profileId2
+      } else {
+        const otherProfileId = selectedConversation.split('-').find(id => id !== currentUserProfile!.profileId) || ''
+        newMessage.toProfileId = otherProfileId
+      }
     }
 
     setMessages(current => [...(current || []), newMessage])
@@ -231,12 +271,19 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
   const getConversationTitle = (conv: ChatConversation) => {
     if (conv.id === 'admin-broadcast') return t.broadcast
     if (conv.id.startsWith('admin-')) {
+      const profileId = conv.id.replace('admin-', '')
       if (isAdmin) {
-        const profileId = conv.id.replace('admin-', '')
         const profile = profiles.find(p => p.profileId === profileId)
         return profile?.fullName || profileId
       }
       return t.admin
+    }
+
+    if (isAdmin) {
+      const [profileId1, profileId2] = conv.id.split('-')
+      const profile1 = profiles.find(p => p.profileId === profileId1)
+      const profile2 = profiles.find(p => p.profileId === profileId2)
+      return `${profile1?.fullName || profileId1} ↔ ${profile2?.fullName || profileId2}`
     }
 
     const otherProfileId = conv.participants?.find(id => id !== currentUserProfile?.profileId)
@@ -329,7 +376,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       {getConversationTitle(conv!)}
-                      {!isChatAllowed && (
+                      {!isChatAllowed && !isAdmin && (
                         <Badge variant="secondary" className="gap-1">
                           <LockSimple size={14} weight="fill" />
                           {t.chatLocked}
@@ -340,30 +387,47 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
                   <Separator />
                   <ScrollArea className="h-[calc(600px-180px)] p-4">
                     <div className="space-y-4">
-                      {getConversationMessages(selectedConversation).map(msg => (
-                        <div
-                          key={msg.id}
-                          className={`flex ${msg.fromProfileId === currentUserProfile?.profileId ? 'justify-end' : 'justify-start'}`}
-                        >
+                      {getConversationMessages(selectedConversation).map(msg => {
+                        const isFromCurrentUser = isAdmin 
+                          ? msg.fromProfileId === 'admin'
+                          : msg.fromProfileId === currentUserProfile?.profileId
+                        
+                        const senderProfile = isAdmin && msg.fromProfileId !== 'admin'
+                          ? profiles.find(p => p.profileId === msg.fromProfileId)
+                          : null
+
+                        return (
                           <div
-                            className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                              msg.fromProfileId === currentUserProfile?.profileId
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted'
-                            }`}
+                            key={msg.id}
+                            className={`flex ${isFromCurrentUser ? 'justify-end' : 'justify-start'}`}
                           >
-                            <p className="text-sm">{msg.message}</p>
-                            <p className="text-xs opacity-70 mt-1">
-                              {formatTime(msg.timestamp)}
-                            </p>
+                            <div className="max-w-[70%]">
+                              {isAdmin && !isFromCurrentUser && senderProfile && (
+                                <p className="text-xs text-muted-foreground mb-1 px-1">
+                                  {senderProfile.fullName} ({senderProfile.profileId})
+                                </p>
+                              )}
+                              <div
+                                className={`rounded-lg px-4 py-2 ${
+                                  isFromCurrentUser
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted'
+                                }`}
+                              >
+                                <p className="text-sm">{msg.message}</p>
+                                <p className="text-xs opacity-70 mt-1">
+                                  {formatTime(msg.timestamp)}
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                       <div ref={messagesEndRef} />
                     </div>
                   </ScrollArea>
                   <Separator />
-                  {isChatAllowed ? (
+                  {isChatAllowed || isAdmin ? (
                     <div className="p-4">
                       <div className="flex gap-2">
                         <Input

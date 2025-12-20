@@ -10,10 +10,13 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { ShieldCheck, X, Check, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key } from '@phosphor-icons/react'
-import type { Profile } from '@/types/profile'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ShieldCheck, X, Check, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil } from '@phosphor-icons/react'
+import type { Profile, WeddingService } from '@/types/profile'
 import type { User } from '@/types/user'
 import type { ChatMessage } from '@/types/chat'
+import { Chat } from '@/components/Chat'
 import { toast } from 'sonner'
 
 interface AdminPanelProps {
@@ -33,12 +36,20 @@ interface BlockedContact {
 export function AdminPanel({ profiles, setProfiles, users, language }: AdminPanelProps) {
   const [blockedContacts, setBlockedContacts] = useKV<BlockedContact[]>('blockedContacts', [])
   const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
+  const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [chatMessage, setChatMessage] = useState('')
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([])
   const [isLoadingAI, setIsLoadingAI] = useState(false)
   const [showChatDialog, setShowChatDialog] = useState(false)
   const [activeTab, setActiveTab] = useState('pending')
+  const [showServiceDialog, setShowServiceDialog] = useState(false)
+  const [editingService, setEditingService] = useState<WeddingService | null>(null)
+  const [serviceFormData, setServiceFormData] = useState<Partial<WeddingService>>({
+    category: 'venue',
+    verificationStatus: 'verified',
+    consultationFee: 200
+  })
   
   const t = {
     title: language === 'hi' ? 'प्रशासन पैनल' : 'Admin Panel',
@@ -47,6 +58,8 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
     approvedProfiles: language === 'hi' ? 'स्वीकृत प्रोफाइल' : 'Approved Profiles',
     allDatabase: language === 'hi' ? 'पूरा डेटाबेस' : 'All Database',
     loginCredentials: language === 'hi' ? 'लॉगिन विवरण' : 'Login Credentials',
+    adminChat: language === 'hi' ? 'एडमिन चैट' : 'Admin Chat',
+    weddingServices: language === 'hi' ? 'विवाह सेवाएं' : 'Wedding Services',
     noPending: language === 'hi' ? 'कोई लंबित प्रोफाइल नहीं।' : 'No pending profiles.',
     noApproved: language === 'hi' ? 'कोई स्वीकृत प्रोफाइल नहीं।' : 'No approved profiles.',
     approve: language === 'hi' ? 'स्वीकृत करें' : 'Approve',
@@ -85,6 +98,19 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
     loading: language === 'hi' ? 'लोड हो रहा है...' : 'Loading...',
     createdAt: language === 'hi' ? 'बनाया गया' : 'Created At',
     verifiedAt: language === 'hi' ? 'सत्यापित' : 'Verified At',
+    addService: language === 'hi' ? 'सेवा जोड़ें' : 'Add Service',
+    editService: language === 'hi' ? 'सेवा संपादित करें' : 'Edit Service',
+    deleteService: language === 'hi' ? 'सेवा हटाएं' : 'Delete Service',
+    save: language === 'hi' ? 'सहेजें' : 'Save',
+    businessName: language === 'hi' ? 'व्यवसाय का नाम' : 'Business Name',
+    contactPerson: language === 'hi' ? 'संपर्क व्यक्ति' : 'Contact Person',
+    category: language === 'hi' ? 'श्रेणी' : 'Category',
+    address: language === 'hi' ? 'पता' : 'Address',
+    city: language === 'hi' ? 'शहर' : 'City',
+    state: language === 'hi' ? 'राज्य' : 'State',
+    serviceDescription: language === 'hi' ? 'विवरण' : 'Description',
+    priceRange: language === 'hi' ? 'मूल्य सीमा' : 'Price Range',
+    consultationFee: language === 'hi' ? 'परामर्श शुल्क' : 'Consultation Fee',
   }
 
   const pendingProfiles = profiles?.filter(p => p.status === 'pending') || []
@@ -177,6 +203,87 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
     setShowChatDialog(false)
   }
 
+  const handleAddService = () => {
+    setEditingService(null)
+    setServiceFormData({
+      category: 'venue',
+      verificationStatus: 'verified',
+      consultationFee: 200
+    })
+    setShowServiceDialog(true)
+  }
+
+  const handleEditService = (service: WeddingService) => {
+    setEditingService(service)
+    setServiceFormData(service)
+    setShowServiceDialog(true)
+  }
+
+  const handleSaveService = () => {
+    if (!serviceFormData.businessName || !serviceFormData.contactPerson || !serviceFormData.mobile || !serviceFormData.city) {
+      toast.error(language === 'hi' ? 'कृपया सभी आवश्यक फ़ील्ड भरें' : 'Please fill all required fields')
+      return
+    }
+
+    if (editingService) {
+      setWeddingServices((current) => 
+        (current || []).map(s => s.id === editingService.id ? { ...serviceFormData, id: editingService.id } as WeddingService : s)
+      )
+      toast.success(language === 'hi' ? 'सेवा अपडेट हो गई!' : 'Service updated!')
+    } else {
+      const newService: WeddingService = {
+        ...serviceFormData,
+        id: `service-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      } as WeddingService
+
+      setWeddingServices((current) => [...(current || []), newService])
+      toast.success(language === 'hi' ? 'सेवा जोड़ी गई!' : 'Service added!')
+    }
+
+    setShowServiceDialog(false)
+    setEditingService(null)
+    setServiceFormData({
+      category: 'venue',
+      verificationStatus: 'verified',
+      consultationFee: 200
+    })
+  }
+
+  const handleDeleteService = (serviceId: string) => {
+    if (confirm(language === 'hi' ? 'क्या आप इस सेवा को हटाना चाहते हैं?' : 'Are you sure you want to delete this service?')) {
+      setWeddingServices((current) => (current || []).filter(s => s.id !== serviceId))
+      toast.success(language === 'hi' ? 'सेवा हटा दी गई!' : 'Service deleted!')
+    }
+  }
+
+  const adminProfile: Profile = {
+    id: 'admin',
+    profileId: 'admin',
+    fullName: 'Admin',
+    firstName: 'Admin',
+    lastName: '',
+    dateOfBirth: '',
+    age: 0,
+    gender: 'male',
+    education: '',
+    occupation: 'Administrator',
+    location: '',
+    country: '',
+    maritalStatus: 'never-married',
+    email: '',
+    mobile: '',
+    hideEmail: false,
+    hideMobile: false,
+    photos: [],
+    status: 'verified',
+    trustLevel: 5,
+    createdAt: new Date().toISOString(),
+    emailVerified: true,
+    mobileVerified: true,
+    isBlocked: false
+  }
+
   return (
     <section className="container mx-auto px-4 md:px-8 py-12">
       <div className="max-w-7xl mx-auto">
@@ -189,7 +296,7 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-2xl">
+          <TabsList className="grid w-full grid-cols-5 max-w-4xl">
             <TabsTrigger value="pending" className="gap-2">
               <Info size={18} />
               {t.pendingProfiles}
@@ -205,6 +312,14 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
             <TabsTrigger value="database" className="gap-2">
               <Database size={18} />
               {t.allDatabase}
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="gap-2">
+              <ChatCircle size={18} weight="fill" />
+              {t.adminChat}
+            </TabsTrigger>
+            <TabsTrigger value="services" className="gap-2">
+              <Storefront size={18} weight="fill" />
+              {t.weddingServices}
             </TabsTrigger>
           </TabsList>
 
@@ -478,6 +593,115 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="chat">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ChatCircle size={24} weight="fill" />
+                  {t.adminChat}
+                </CardTitle>
+                <CardDescription>
+                  {language === 'hi' ? 'सभी उपयोगकर्ताओं के साथ चैट करें' : 'Chat with all users'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Chat 
+                  currentUserProfile={adminProfile}
+                  profiles={profiles || []}
+                  language={language}
+                  isAdmin={true}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="services">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Storefront size={24} weight="fill" />
+                      {t.weddingServices}
+                    </CardTitle>
+                    <CardDescription>
+                      {weddingServices?.length || 0} {language === 'hi' ? 'कुल सेवाएं' : 'total services'}
+                    </CardDescription>
+                  </div>
+                  <Button onClick={handleAddService} className="gap-2">
+                    <Plus size={18} weight="bold" />
+                    {t.addService}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {!weddingServices || weddingServices.length === 0 ? (
+                  <Alert>
+                    <Info size={18} />
+                    <AlertDescription>
+                      {language === 'hi' ? 'कोई सेवा नहीं मिली।' : 'No services found.'}
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <ScrollArea className="h-[600px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t.businessName}</TableHead>
+                          <TableHead>{t.category}</TableHead>
+                          <TableHead>{t.contactPerson}</TableHead>
+                          <TableHead>{t.mobile}</TableHead>
+                          <TableHead>{t.city}</TableHead>
+                          <TableHead>{t.status}</TableHead>
+                          <TableHead>{t.actions}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {weddingServices.map((service) => (
+                          <TableRow key={service.id}>
+                            <TableCell className="font-medium">{service.businessName}</TableCell>
+                            <TableCell>{service.category}</TableCell>
+                            <TableCell>{service.contactPerson}</TableCell>
+                            <TableCell className="font-mono text-sm">{service.mobile}</TableCell>
+                            <TableCell>{service.city}</TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                service.verificationStatus === 'verified' ? 'default' :
+                                service.verificationStatus === 'pending' ? 'secondary' :
+                                'destructive'
+                              }>
+                                {service.verificationStatus}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleEditService(service)}
+                                >
+                                  <Pencil size={16} />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleDeleteService(service.id)}
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash size={16} />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -510,6 +734,164 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
                 {t.sendMessage}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showServiceDialog} onOpenChange={setShowServiceDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingService ? t.editService : t.addService}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'hi' ? 'विवाह सेवा विवरण दर्ज करें' : 'Enter wedding service details'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t.businessName} *</label>
+              <Input
+                placeholder={t.businessName}
+                value={serviceFormData.businessName || ''}
+                onChange={(e) => setServiceFormData(prev => ({ ...prev, businessName: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t.category} *</label>
+              <Select
+                value={serviceFormData.category || 'venue'}
+                onValueChange={(value) => setServiceFormData(prev => ({ ...prev, category: value as any }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="venue">Venue</SelectItem>
+                  <SelectItem value="caterer">Caterer</SelectItem>
+                  <SelectItem value="photographer">Photographer</SelectItem>
+                  <SelectItem value="decorator">Decorator</SelectItem>
+                  <SelectItem value="mehandi">Mehandi Artist</SelectItem>
+                  <SelectItem value="makeup">Makeup Artist</SelectItem>
+                  <SelectItem value="dj">DJ / Music</SelectItem>
+                  <SelectItem value="priest">Priest</SelectItem>
+                  <SelectItem value="card-designer">Card Designer</SelectItem>
+                  <SelectItem value="choreographer">Choreographer</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t.contactPerson} *</label>
+              <Input
+                placeholder={t.contactPerson}
+                value={serviceFormData.contactPerson || ''}
+                onChange={(e) => setServiceFormData(prev => ({ ...prev, contactPerson: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t.mobile} *</label>
+              <Input
+                placeholder={t.mobile}
+                value={serviceFormData.mobile || ''}
+                onChange={(e) => setServiceFormData(prev => ({ ...prev, mobile: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t.email}</label>
+              <Input
+                placeholder={t.email}
+                value={serviceFormData.email || ''}
+                onChange={(e) => setServiceFormData(prev => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t.city} *</label>
+              <Input
+                placeholder={t.city}
+                value={serviceFormData.city || ''}
+                onChange={(e) => setServiceFormData(prev => ({ ...prev, city: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t.state}</label>
+              <Input
+                placeholder={t.state}
+                value={serviceFormData.state || ''}
+                onChange={(e) => setServiceFormData(prev => ({ ...prev, state: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t.priceRange}</label>
+              <Input
+                placeholder="e.g., ₹10,000 - ₹50,000"
+                value={serviceFormData.priceRange || ''}
+                onChange={(e) => setServiceFormData(prev => ({ ...prev, priceRange: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t.consultationFee}</label>
+              <Input
+                type="number"
+                placeholder="200"
+                value={serviceFormData.consultationFee || 200}
+                onChange={(e) => setServiceFormData(prev => ({ ...prev, consultationFee: parseInt(e.target.value) || 200 }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t.status}</label>
+              <Select
+                value={serviceFormData.verificationStatus || 'verified'}
+                onValueChange={(value) => setServiceFormData(prev => ({ ...prev, verificationStatus: value as any }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="verified">Verified</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium">{t.address}</label>
+              <Input
+                placeholder={t.address}
+                value={serviceFormData.address || ''}
+                onChange={(e) => setServiceFormData(prev => ({ ...prev, address: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium">{t.serviceDescription}</label>
+              <Textarea
+                placeholder={t.serviceDescription}
+                value={serviceFormData.description || ''}
+                onChange={(e) => setServiceFormData(prev => ({ ...prev, description: e.target.value }))}
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowServiceDialog(false)}>
+              {t.close}
+            </Button>
+            <Button onClick={handleSaveService}>
+              {t.save}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
