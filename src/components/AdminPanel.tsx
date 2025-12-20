@@ -474,18 +474,17 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
                             <TableRow key={profile.id}>
                               <TableCell className="font-mono font-semibold">{profile.profileId}</TableCell>
                               <TableCell className="font-medium">{profile.fullName}</TableCell>
-                              <TableCell className="text-sm">
                                 {profile.relationToProfile && profile.relationToProfile !== 'Self' 
                                   ? profile.relationToProfile 
                                   : '-'}
                               </TableCell>
+                              <TableCell className="font-mono text-primary">{userCred?.userId || '-'}</TableCell>
                               <TableCell className="font-mono text-primary">{userCred?.userId || '-'}</TableCell>
                               <TableCell className="font-mono text-accent">{userCred?.password || '-'}</TableCell>
                               <TableCell className="text-sm">{profile.email}</TableCell>
                               <TableCell className="font-mono text-sm">{profile.mobile}</TableCell>
                               <TableCell className="text-xs text-muted-foreground">
                                 {profile.verifiedAt ? new Date(profile.verifiedAt).toLocaleDateString() : '-'}
-                              </TableCell>
                               <TableCell>
                                 <Button 
                                   variant="ghost" 
