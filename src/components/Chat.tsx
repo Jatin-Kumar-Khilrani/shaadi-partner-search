@@ -276,7 +276,7 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
                             {typeof conv.lastMessage === 'string' ? conv.lastMessage : conv.lastMessage.message}
                           </p>
                           <p className="text-xs opacity-50">
-                            {formatDate(typeof conv.lastMessage === 'string' ? conv.timestamp : conv.lastMessage.timestamp)} {formatTime(typeof conv.lastMessage === 'string' ? conv.timestamp : conv.lastMessage.timestamp)}
+                            {formatDate(typeof conv.lastMessage === 'string' ? (conv.timestamp || conv.createdAt) : conv.lastMessage.timestamp)} {formatTime(typeof conv.lastMessage === 'string' ? (conv.timestamp || conv.createdAt) : conv.lastMessage.timestamp)}
                           </p>
                         </div>
                       </div>

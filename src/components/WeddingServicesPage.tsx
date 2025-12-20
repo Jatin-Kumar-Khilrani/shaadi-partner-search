@@ -83,10 +83,19 @@ export function WeddingServices({ language }: WeddingServicesProps) {
   return (
     <div className="container mx-auto px-4 md:px-8 py-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{t.title}</h1>
-          <p className="text-muted-foreground">{t.subtitle}</p>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-3xl font-bold">{t.title}</h1>
+          {(categoryFilter || cityFilter || searchQuery) && (
+            <Button variant="outline" onClick={() => {
+              setCategoryFilter('')
+              setCityFilter('')
+              setSearchQuery('')
+            }}>
+              {language === 'hi' ? 'फ़िल्टर साफ़ करें' : 'Clear Filters'}
+            </Button>
+          )}
         </div>
+        <p className="text-muted-foreground mb-8">{t.subtitle}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="relative">
@@ -99,12 +108,11 @@ export function WeddingServices({ language }: WeddingServicesProps) {
             />
           </div>
 
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <Select value={categoryFilter || undefined} onValueChange={(value) => setCategoryFilter(value)}>
             <SelectTrigger>
               <SelectValue placeholder={t.allCategories} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t.allCategories}</SelectItem>
               {Object.keys(t.categories).map(cat => (
                 <SelectItem key={cat} value={cat}>
                   {getCategoryName(cat)}
