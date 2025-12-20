@@ -2,29 +2,29 @@ export interface ChatMessage {
   id: string
   fromUserId: string
   fromProfileId: string
-  toUserId?: string
-  toProfileId?: string
-  message: string
+  toProfileId?: str
   timestamp: string
-  read: boolean
-  type: 'user-to-user' | 'admin-to-user' | 'admin-broadcast'
-}
+  type: 'user-to-
 
-export interface ChatConversation {
   id: string
-  participants: string[]
   lastMessage: ChatMessage
-  unreadCount: number
-  createdAt: string
-  updatedAt: string
-}
+ 
 
 export interface ChatRequest {
-  id: string
-  fromUserId: string
-  fromProfileId: string
+  fromUserId
   toUserId: string
-  toProfileId: string
-  status: 'pending' | 'accepted' | 'declined'
-  createdAt: string
+  status: 'pending' | 'acc
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
