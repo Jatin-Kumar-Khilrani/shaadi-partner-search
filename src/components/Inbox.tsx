@@ -69,6 +69,10 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
   ) || []
 
   const pendingContactRequests = contactRequests?.filter(
+    r => r.toUserId === loggedInUserId && r.status === 'pending'
+  ) || []
+
+  const allContactRequests = contactRequests?.filter(
     r => r.toUserId === loggedInUserId
   ) || []
 
@@ -324,12 +328,12 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
           </TabsContent>
 
           <TabsContent value="contact" className="space-y-4">
-            {pendingContactRequests.length === 0 ? (
+            {allContactRequests.length === 0 ? (
               <Alert>
                 <AlertDescription>{t.noContactRequests}</AlertDescription>
               </Alert>
             ) : (
-              pendingContactRequests.map(request => {
+              allContactRequests.map(request => {
                 const profile = profiles.find(p => p.id === request.fromUserId)
                 if (!profile) return null
                 

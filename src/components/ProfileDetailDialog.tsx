@@ -52,6 +52,11 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
          i.toProfileId === profile.profileId
   )
 
+  const hasReceivedInterestFromProfile = currentUserProfile && interests?.find(
+    i => i.fromProfileId === profile.profileId && 
+         i.toProfileId === currentUserProfile.profileId
+  )
+
   const handleExpressInterest = () => {
     if (!currentUserProfile) {
       toast.error(
@@ -70,6 +75,13 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     if (existingInterest) {
       toast.info(
         language === 'hi' ? 'आपने पहले ही रुचि दर्ज की है' : 'You have already expressed interest'
+      )
+      return
+    }
+
+    if (hasReceivedInterestFromProfile) {
+      toast.info(
+        language === 'hi' ? 'इस प्रोफाइल ने आपको पहले ही रुचि भेजी है' : 'This profile has already sent you interest'
       )
       return
     }
@@ -263,12 +275,14 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                 <Button 
                   onClick={handleExpressInterest} 
                   className="flex-1 bg-primary hover:bg-primary/90"
-                  disabled={!!existingInterest}
-                  variant={existingInterest ? "secondary" : "default"}
+                  disabled={!!existingInterest || !!hasReceivedInterestFromProfile}
+                  variant={(existingInterest || hasReceivedInterestFromProfile) ? "secondary" : "default"}
                 >
                   <Heart size={20} weight="fill" className="mr-2" />
                   {existingInterest 
                     ? (language === 'hi' ? 'रुचि भेजी गई' : 'Interest Sent')
+                    : hasReceivedInterestFromProfile
+                    ? (language === 'hi' ? 'रुचि प्राप्त' : 'Interest Received')
                     : t.expressInterest
                   }
                 </Button>
