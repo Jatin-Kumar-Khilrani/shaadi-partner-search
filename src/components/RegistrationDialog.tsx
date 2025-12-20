@@ -317,8 +317,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
   const prevStep = () => setStep(step - 1)
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onClose} modal>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-3xl flex items-center gap-2">
             <UserPlus size={32} weight="bold" />
