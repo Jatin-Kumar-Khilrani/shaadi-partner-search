@@ -3,7 +3,7 @@ import { useKV } from '@github/spark/hooks'
 import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, Translate, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise } from '@phosphor-icons/react'
+import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise } from '@phosphor-icons/react'
 import { HeroSearch } from '@/components/HeroSearch'
 import { ProfileCard } from '@/components/ProfileCard'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
@@ -286,8 +286,9 @@ function App() {
               size="icon"
               onClick={() => setLanguage(language === 'hi' ? 'en' : 'hi')}
               title={language === 'hi' ? 'Switch to English' : 'हिंदी में बदलें'}
+              className="text-xl font-bold"
             >
-              <Translate size={20} weight="bold" />
+              {language === 'hi' ? 'A' : 'अ'}
             </Button>
             {loggedInUser && (
               <Button 
@@ -439,7 +440,7 @@ function App() {
                   onClick={() => setLanguage(language === 'hi' ? 'en' : 'hi')}
                   className="justify-start gap-2"
                 >
-                  <Translate size={20} weight="bold" />
+                  <span className="text-xl font-bold w-5 text-center">{language === 'hi' ? 'A' : 'अ'}</span>
                   {language === 'hi' ? 'English' : 'हिंदी'}
                 </Button>
                 {!loggedInUser ? (
