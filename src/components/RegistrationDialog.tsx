@@ -382,7 +382,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
                   </Label>
                   <Select 
                     onValueChange={(value: 'Self' | 'Daughter' | 'Son' | 'Brother' | 'Sister' | 'Other') => {
-                      setFormData({ ...formData, profileCreatedFor: value, otherRelation: value !== 'Other' ? '' : formData.otherRelation })
+                      setFormData({ ...formData, profileCreatedFor: value, otherRelation: value !== 'Other' ? '' : formData.otherRelation });
+                    }}
+                  >
                     <SelectTrigger id="profileCreatedFor" className="w-full">
                       <SelectValue placeholder={t.fields.select} />
                     </SelectTrigger>
