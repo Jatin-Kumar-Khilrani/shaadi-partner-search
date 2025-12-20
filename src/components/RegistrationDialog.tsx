@@ -963,12 +963,11 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
         </Card>
         </div>
 
-        <div className="flex justify-between gap-4 mt-6 px-1">
+          {step > 1 && !showVerification && (
           {step > 1 && !showVerification && (
             <Button variant="outline" onClick={prevStep}>
               {t.registration.back}
             </Button>
-          )}
           {showVerification && (
             <Button 
               variant="outline" 
@@ -984,13 +983,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language }: Regist
             </Button>
           )}
           {step < 5 && !showVerification ? (
+          {step < 5 && !showVerification ? (
             <Button onClick={nextStep} className="ml-auto">
               {t.registration.next}
-            </Button>
+          ) : step === 5 ? (
           ) : step === 5 ? (
             <Button onClick={handleSubmit} className="ml-auto bg-accent hover:bg-accent/90 text-accent-foreground">
               {t.registration.submit}
-            </Button>
+          ) : null}
           ) : null}
         </div>
       </DialogContent>
