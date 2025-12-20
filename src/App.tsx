@@ -3,13 +3,14 @@ import { useKV } from '@github/spark/hooks'
 import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, Translate, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront } from '@phosphor-icons/react'
+import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, Translate, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise } from '@phosphor-icons/react'
 import { HeroSearch } from '@/components/HeroSearch'
 import { ProfileCard } from '@/components/ProfileCard'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
 import { RegistrationDialog } from '@/components/RegistrationDialog'
 import { LoginDialog } from '@/components/LoginDialog'
 import { MyMatches } from '@/components/MyMatches'
+import { MyActivity } from '@/components/MyActivity'
 import { Inbox } from '@/components/Inbox'
 import { Chat } from '@/components/Chat'
 import { MyProfile } from '@/components/MyProfile'
@@ -24,7 +25,7 @@ import { useTranslation, type Language } from '@/lib/translations'
 import { toast } from 'sonner'
 import { sampleWeddingServices, sampleProfiles, sampleUsers } from '@/lib/sampleData'
 
-type View = 'home' | 'search-results' | 'admin' | 'my-matches' | 'inbox' | 'chat' | 'my-profile' | 'wedding-services'
+type View = 'home' | 'search-results' | 'admin' | 'my-matches' | 'my-activity' | 'inbox' | 'chat' | 'my-profile' | 'wedding-services'
 
 function App() {
   const [profiles, setProfiles] = useKV<Profile[]>('profiles', [])
@@ -170,6 +171,7 @@ function App() {
     logout: language === 'hi' ? 'लॉगआउट' : 'Logout',
     adminButton: language === 'hi' ? 'एडमिन' : 'Admin',
     myMatches: language === 'hi' ? 'मेरे मैच' : 'My Matches',
+    myActivity: language === 'hi' ? 'मेरी गतिविधि' : 'My Activity',
     inbox: language === 'hi' ? 'इनबॉक्स' : 'Inbox',
     chat: language === 'hi' ? 'चैट' : 'Chat',
     myProfile: language === 'hi' ? 'मेरी प्रोफाइल' : 'My Profile',
@@ -216,6 +218,14 @@ function App() {
                 >
                   <MagnifyingGlass size={20} />
                   {t.myMatches}
+                </Button>
+                <Button
+                  variant={currentView === 'my-activity' ? 'default' : 'ghost'}
+                  onClick={() => setCurrentView('my-activity')}
+                  className="gap-2"
+                >
+                  <ClockCounterClockwise size={20} />
+                  {t.myActivity}
                 </Button>
                 <Button
                   variant={currentView === 'inbox' ? 'default' : 'ghost'}
@@ -327,6 +337,17 @@ function App() {
                     >
                       <MagnifyingGlass size={20} />
                       {t.myMatches}
+                    </Button>
+                    <Button
+                      variant={currentView === 'my-activity' ? 'default' : 'ghost'}
+                      onClick={() => {
+                        setCurrentView('my-activity')
+                        setMobileMenuOpen(false)
+                      }}
+                      className="justify-start gap-2"
+                    >
+                      <ClockCounterClockwise size={20} />
+                      {t.myActivity}
                     </Button>
                     <Button
                       variant={currentView === 'inbox' ? 'default' : 'ghost'}
@@ -595,6 +616,14 @@ function App() {
           />
         )}
 
+        {currentView === 'my-activity' && (
+          <MyActivity 
+            loggedInUserId={loggedInUser}
+            profiles={profiles || []}
+            language={language}
+          />
+        )}
+
         {currentView === 'inbox' && (
           <Inbox 
             loggedInUserId={loggedInUser}
@@ -623,7 +652,50 @@ function App() {
         )}
       </main>
 
-      <footer className="border-t bg-muted/30 py-8">
+      {loggedInUser && (
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t z-40">
+          <div className="grid grid-cols-4 gap-1 p-2">
+            <Button
+              variant={currentView === 'home' ? 'default' : 'ghost'}
+              onClick={() => setCurrentView('home')}
+              className="flex-col h-auto py-2 px-1"
+              size="sm"
+            >
+              <Heart size={20} weight={currentView === 'home' ? 'fill' : 'regular'} />
+              <span className="text-xs mt-1">{language === 'hi' ? 'होम' : 'Home'}</span>
+            </Button>
+            <Button
+              variant={currentView === 'my-activity' ? 'default' : 'ghost'}
+              onClick={() => setCurrentView('my-activity')}
+              className="flex-col h-auto py-2 px-1"
+              size="sm"
+            >
+              <ClockCounterClockwise size={20} weight={currentView === 'my-activity' ? 'fill' : 'regular'} />
+              <span className="text-xs mt-1">{language === 'hi' ? 'गतिविधि' : 'Activity'}</span>
+            </Button>
+            <Button
+              variant={currentView === 'inbox' ? 'default' : 'ghost'}
+              onClick={() => setCurrentView('inbox')}
+              className="flex-col h-auto py-2 px-1"
+              size="sm"
+            >
+              <Envelope size={20} weight={currentView === 'inbox' ? 'fill' : 'regular'} />
+              <span className="text-xs mt-1">{language === 'hi' ? 'इनबॉक्स' : 'Inbox'}</span>
+            </Button>
+            <Button
+              variant={currentView === 'chat' ? 'default' : 'ghost'}
+              onClick={() => setCurrentView('chat')}
+              className="flex-col h-auto py-2 px-1"
+              size="sm"
+            >
+              <ChatCircle size={20} weight={currentView === 'chat' ? 'fill' : 'regular'} />
+              <span className="text-xs mt-1">{language === 'hi' ? 'चैट' : 'Chat'}</span>
+            </Button>
+          </div>
+        </nav>
+      )}
+
+      <footer className="border-t bg-muted/30 py-8" style={{ marginBottom: loggedInUser ? '64px' : '0' }}>
         <div className="container mx-auto px-4 md:px-8">
           <div className="max-w-5xl mx-auto text-center">
             <div className="flex items-center justify-center gap-2 mb-4">

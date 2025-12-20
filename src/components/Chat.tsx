@@ -169,8 +169,6 @@ export function Chat({ loggedInUserId, profiles, language, isAdmin = false }: Ch
       newMessage.type = 'user-to-user'
       const otherProfileId = selectedConversation.split('-').find(id => id !== currentUserProfile.profileId)
       newMessage.toProfileId = otherProfileId
-      const otherProfile = profiles.find(p => p.profileId === otherProfileId)
-      newMessage.toUserId = otherProfile?.id
     }
 
     setMessages(current => [...(current || []), newMessage])
