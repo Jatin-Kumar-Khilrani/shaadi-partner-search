@@ -45,6 +45,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const [selectedCameraId, setSelectedCameraId] = useState<string>('')
   const [faceCoverageValid, setFaceCoverageValid] = useState(false)
   const [faceCoveragePercent, setFaceCoveragePercent] = useState(0)
+  const [selfieZoom, setSelfieZoom] = useState(1) // Zoom level for selfie (1 = 100%)
+  const [liveZoom, setLiveZoom] = useState(1) // Live zoom for camera preview
+  const [isZoomMode, setIsZoomMode] = useState(false) // Whether in zoom/crop mode
   const [isGeneratingBio, setIsGeneratingBio] = useState(false)
   const [registrationGeoLocation, setRegistrationGeoLocation] = useState<{
     latitude: number
@@ -394,21 +397,38 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     }
     setShowCamera(false)
     setIsCameraReady(false)
+    setLiveZoom(1) // Reset live zoom
   }
 
   const capturePhoto = async () => {
     if (videoRef.current && canvasRef.current) {
       const canvas = canvasRef.current
       const video = videoRef.current
+      
+      // Apply live zoom by cropping the center portion
+      const zoom = liveZoom
+      const sourceWidth = video.videoWidth / zoom
+      const sourceHeight = video.videoHeight / zoom
+      const sourceX = (video.videoWidth - sourceWidth) / 2
+      const sourceY = (video.videoHeight - sourceHeight) / 2
+      
+      // Output at original resolution for quality
       canvas.width = video.videoWidth
       canvas.height = video.videoHeight
+      
       const ctx = canvas.getContext('2d')
       if (ctx) {
         // Flip the canvas horizontally to un-mirror the captured image
-        // This ensures the saved selfie is not mirrored (natural view)
         ctx.translate(canvas.width, 0)
         ctx.scale(-1, 1)
-        ctx.drawImage(video, 0, 0)
+        
+        // Draw zoomed portion (center crop scaled to full canvas)
+        ctx.drawImage(
+          video,
+          sourceX, sourceY, sourceWidth, sourceHeight, // Source rectangle (center crop)
+          0, 0, canvas.width, canvas.height // Destination (full canvas)
+        )
+        
         // Reset transformation for any future drawings
         ctx.setTransform(1, 0, 0, 1, 0, 0)
         
@@ -417,8 +437,17 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         const coverage = await analyzeFaceCoverageFromCanvas(canvas)
         setFaceCoveragePercent(coverage)
         
-        // If coverage is less than 80%, face detection/validation failed (toast already shown)
-        if (coverage < 80) {
+        // If coverage is less than 80%, allow user to zoom in more
+        if (coverage < 80 && coverage > 0) {
+          setFaceCoverageValid(false)
+          // Save preview for additional zoom mode if needed
+          setSelfiePreview(canvas.toDataURL('image/jpeg'))
+          setIsZoomMode(true)
+          setSelfieZoom(1)
+          stopCamera()
+          return
+        } else if (coverage === 0) {
+          // No face detected at all
           setFaceCoverageValid(false)
           return
         }
@@ -445,6 +474,51 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           stopCamera()
         }
       }, 'image/jpeg')
+    }
+  }
+
+  // Apply zoom to captured selfie and re-analyze
+  const applyZoomToSelfie = async () => {
+    if (!selfiePreview || selfieZoom <= 1) return
+    
+    const img = new Image()
+    img.src = selfiePreview
+    await new Promise(resolve => { img.onload = resolve })
+    
+    // Calculate cropped dimensions (center crop based on zoom)
+    const cropWidth = img.width / selfieZoom
+    const cropHeight = img.height / selfieZoom
+    const cropX = (img.width - cropWidth) / 2
+    const cropY = (img.height - cropHeight) / 2
+    
+    // Create new canvas with cropped/zoomed image
+    const canvas = document.createElement('canvas')
+    canvas.width = img.width
+    canvas.height = img.height
+    const ctx = canvas.getContext('2d')
+    
+    if (ctx) {
+      // Draw cropped portion scaled to full canvas
+      ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height)
+      
+      // Re-analyze face coverage
+      const coverage = await analyzeFaceCoverageFromCanvas(canvas)
+      setFaceCoveragePercent(coverage)
+      
+      if (coverage >= 80) {
+        setFaceCoverageValid(true)
+        setIsZoomMode(false)
+        
+        // Save the zoomed/cropped image
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], 'selfie.jpg', { type: 'image/jpeg' })
+            setSelfieFile(file)
+            setSelfiePreview(canvas.toDataURL('image/jpeg'))
+            setSelfieZoom(1) // Reset zoom for next capture
+          }
+        }, 'image/jpeg')
+      }
     }
   }
 
@@ -1872,19 +1946,32 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   <div className="border-2 border-dashed border-primary/30 rounded-lg p-4 bg-muted/20">
                     <div className="relative aspect-video max-w-md mx-auto rounded-lg overflow-hidden bg-black">
                       {selfiePreview ? (
-                        <img 
-                          src={selfiePreview} 
-                          alt="Captured Selfie" 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : showCamera ? (
                         <div className="relative w-full h-full">
+                          <img 
+                            src={selfiePreview} 
+                            alt="Captured Selfie" 
+                            className="w-full h-full object-cover transition-transform duration-200"
+                            style={{ transform: `scale(${selfieZoom})` }}
+                          />
+                          {/* Zoom mode overlay */}
+                          {isZoomMode && (
+                            <div className="absolute inset-0 border-4 border-amber-400 pointer-events-none">
+                              <div className="absolute top-2 left-2 right-2 bg-amber-500/90 text-white text-xs px-2 py-1 rounded text-center">
+                                {language === 'hi' 
+                                  ? `ज़ूम करें जब तक चेहरा 80% न हो (वर्तमान: ${faceCoveragePercent}%)`
+                                  : `Zoom in until face is 80% (Current: ${faceCoveragePercent}%)`}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : showCamera ? (
+                        <div className="relative w-full h-full overflow-hidden">
                           <video 
                             ref={videoRef} 
                             autoPlay 
                             playsInline
-                            className="w-full h-full object-cover"
-                            style={{ transform: 'scaleX(-1)' }}
+                            className="w-full h-full object-cover transition-transform"
+                            style={{ transform: `scaleX(-1) scale(${liveZoom})` }}
                           />
                           {/* Face guide overlay - shows oval for face positioning */}
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -1894,9 +1981,26 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                               </div>
                             </div>
                           </div>
-                          {/* Coverage indicator */}
-                          <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                            {language === 'hi' ? 'चेहरा 80% तक दिखना चाहिए' : 'Face must cover 80% of frame'}
+                          {/* Live Zoom Slider */}
+                          <div className="absolute bottom-2 left-2 right-2 bg-black/70 rounded-lg px-3 py-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white text-xs whitespace-nowrap">
+                                {language === 'hi' ? 'ज़ूम:' : 'Zoom:'}
+                              </span>
+                              <input
+                                type="range"
+                                min="1"
+                                max="3"
+                                step="0.1"
+                                value={liveZoom}
+                                onChange={(e) => setLiveZoom(parseFloat(e.target.value))}
+                                className="flex-1 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-white"
+                              />
+                              <span className="text-white text-xs font-medium w-10">{Math.round(liveZoom * 100)}%</span>
+                            </div>
+                            <p className="text-white/80 text-xs mt-1 text-center">
+                              {language === 'hi' ? 'चेहरा 80% तक दिखने के लिए ज़ूम करें' : 'Zoom until face covers 80% of frame'}
+                            </p>
                           </div>
                         </div>
                       ) : (
@@ -1908,13 +2012,58 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     </div>
                     
                     <div className="flex justify-center gap-3 mt-4">
-                      {selfiePreview ? (
+                      {selfiePreview && isZoomMode ? (
+                        /* Zoom mode controls */
+                        <div className="flex flex-col items-center gap-3 w-full max-w-md">
+                          <div className="flex items-center gap-4 w-full">
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">
+                              {language === 'hi' ? 'ज़ूम:' : 'Zoom:'}
+                            </span>
+                            <input
+                              type="range"
+                              min="1"
+                              max="3"
+                              step="0.1"
+                              value={selfieZoom}
+                              onChange={(e) => setSelfieZoom(parseFloat(e.target.value))}
+                              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                            />
+                            <span className="text-sm font-medium w-12">{Math.round(selfieZoom * 100)}%</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              type="button" 
+                              onClick={applyZoomToSelfie}
+                              disabled={selfieZoom <= 1}
+                              className="gap-2 bg-green-600 hover:bg-green-700"
+                            >
+                              {language === 'hi' ? 'ज़ूम लागू करें' : 'Apply Zoom'}
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="outline"
+                              onClick={() => {
+                                setSelfieFile(null)
+                                setSelfiePreview(undefined)
+                                setIsZoomMode(false)
+                                setSelfieZoom(1)
+                              }}
+                              className="gap-2"
+                            >
+                              <Camera size={16} />
+                              {language === 'hi' ? 'दोबारा लें' : 'Retake'}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : selfiePreview ? (
                         <Button 
                           type="button" 
                           variant="outline"
                           onClick={() => {
                             setSelfieFile(null)
                             setSelfiePreview(undefined)
+                            setIsZoomMode(false)
+                            setSelfieZoom(1)
                           }}
                           className="gap-2"
                         >
