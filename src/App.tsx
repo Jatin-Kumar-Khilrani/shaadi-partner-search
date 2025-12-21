@@ -271,7 +271,8 @@ function App() {
       userId,
       password,
       profileId: id,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      firstLogin: true // User will be prompted to change password on first login
     }
     
     setProfiles(current => [...(current || []), newProfile])
@@ -1018,7 +1019,18 @@ function App() {
         open={showLogin}
         onClose={() => setShowLogin(false)}
         onLogin={handleLogin}
+        onUpdatePassword={(targetUserId, newPassword) => {
+          setUsers(current => {
+            if (!current) return []
+            return current.map(u => 
+              u.userId === targetUserId 
+                ? { ...u, password: newPassword, firstLogin: false, passwordChangedAt: new Date().toISOString() }
+                : u
+            )
+          })
+        }}
         users={users || []}
+        profiles={profiles || []}
         language={language}
       />
 
