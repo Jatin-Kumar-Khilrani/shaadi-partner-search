@@ -1077,17 +1077,36 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
         <div className="overflow-y-auto flex-1 px-1">
           <div className="flex items-center justify-center gap-2 mb-6">
-            {[1, 2, 3, 4, 5, 6].map((s) => (
-              <div key={s} className="flex items-center">
-                <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold transition-all text-sm ${
-                  s === step ? 'bg-primary text-primary-foreground scale-110' :
-                  s < step || (s === 3 && showVerification) || (s === 4 && emailVerified && mobileVerified) ? 'bg-teal text-teal-foreground' : 'bg-muted text-muted-foreground'
-                }`}>
-                  {(s < step || (s === 3 && emailVerified && mobileVerified)) ? <CheckCircle size={18} weight="fill" /> : s}
+            {[1, 2, 3, 4, 5, 6].map((s) => {
+              const isCompleted = s < step || (s === 3 && emailVerified && mobileVerified)
+              const isCurrent = s === step
+              const canClick = isCompleted && !showVerification // Can click on completed steps
+              
+              return (
+                <div key={s} className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => canClick && setStep(s)}
+                    disabled={!canClick}
+                    className={`relative w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold transition-all text-sm border-0 ${
+                      isCurrent ? 'bg-primary text-primary-foreground scale-110' :
+                      isCompleted ? 'bg-teal text-teal-foreground cursor-pointer hover:scale-110 hover:ring-2 hover:ring-teal/50' : 'bg-muted text-muted-foreground cursor-default'
+                    }`}
+                    title={canClick ? (language === 'hi' ? `चरण ${s} पर जाएं` : `Go to step ${s}`) : ''}
+                  >
+                    {s}
+                    {isCompleted && (
+                      <CheckCircle 
+                        size={14} 
+                        weight="fill" 
+                        className="absolute -top-1 -right-1 text-white bg-green-600 rounded-full"
+                      />
+                    )}
+                  </button>
+                  {s < 6 && <div className={`w-6 md:w-10 h-1 ${isCompleted ? 'bg-teal' : 'bg-muted'}`} />}
                 </div>
-                {s < 6 && <div className={`w-6 md:w-10 h-1 ${s < step || (s === 3 && emailVerified && mobileVerified) ? 'bg-teal' : 'bg-muted'}`} />}
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           <Alert className="mb-4">
@@ -2396,16 +2415,18 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         </Card>
         </div>
 
-        <div className="flex items-center justify-between gap-4 pt-4 border-t">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t min-h-[60px]">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {step > 1 && !showVerification && (
-              <Button variant="outline" onClick={prevStep}>
+              <Button variant="outline" onClick={prevStep} size="sm" className="text-sm">
                 {t.registration.back}
               </Button>
             )}
             {showVerification && (
               <Button 
-                variant="outline" 
+                variant="outline"
+                size="sm"
+                className="text-sm"
                 onClick={() => {
                   setShowVerification(false)
                   setEmailOtp('')
@@ -2419,27 +2440,30 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             )}
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 justify-end flex-1 min-w-0">
             <Button 
-              variant="ghost" 
+              variant="ghost"
+              size="sm"
               onClick={resetDraft}
-              className="gap-2 text-muted-foreground hover:text-destructive"
+              className="gap-1 text-muted-foreground hover:text-destructive px-2"
               title={language === 'hi' ? 'ड्राफ्ट रीसेट करें' : 'Reset Draft'}
             >
-              <ArrowCounterClockwise size={18} />
-              <span className="hidden sm:inline">{language === 'hi' ? 'रीसेट' : 'Reset'}</span>
+              <ArrowCounterClockwise size={16} />
+              <span className="hidden md:inline text-sm">{language === 'hi' ? 'रीसेट' : 'Reset'}</span>
             </Button>
             <Button 
-              variant="ghost" 
+              variant="ghost"
+              size="sm"
               onClick={saveDraft}
-              className="gap-2 text-muted-foreground hover:text-primary"
+              className="gap-1 text-muted-foreground hover:text-primary px-2"
             >
-              <FloppyDisk size={18} />
-              {language === 'hi' ? 'ड्राफ्ट सेव करें' : 'Save Draft'}
+              <FloppyDisk size={16} />
+              <span className="hidden sm:inline text-sm">{language === 'hi' ? 'सेव' : 'Save'}</span>
             </Button>
             
             {step < 6 && !showVerification ? (
               <Button 
+                size="sm"
                 onClick={nextStep}
                 disabled={
                   (step === 1 && (
@@ -2461,7 +2485,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 {t.registration.next}
               </Button>
             ) : step === 6 ? (
-              <Button onClick={handleSubmit} disabled={!termsAccepted || !formData.membershipPlan || isSubmitting}>
+              <Button size="sm" onClick={handleSubmit} disabled={!termsAccepted || !formData.membershipPlan || isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />
