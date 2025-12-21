@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "Azure Functions API backend for ShaadiPartnerSearch",
   "type": "module",
-  "main": "dist/src/functions/*.js",
+  "main": "dist/src/index.js",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -w -p tsconfig.json",
     "clean": "rimraf dist",
     "prestart": "npm run clean && npm run build",
     "start": "func start",

@@ -9,10 +9,6 @@
 .git*
 .vscode
 local.settings.json
-tsconfig.json
-
-# Node modules (installed during deployment)
-node_modules
 
 # Test files
 *.test.ts

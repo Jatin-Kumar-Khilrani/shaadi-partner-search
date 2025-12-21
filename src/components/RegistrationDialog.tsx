@@ -1002,17 +1002,17 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       toast.error(language === 'hi' ? 'कृपया रिश्ता बताएं' : 'Please specify the relation')
       return
     }
-    if (step === 2 && (!formData.education || !formData.occupation)) {
-      toast.error(t.registration.fillEducation)
-      return
-    }
-    // Horoscope matching mandatory requires birth time and place
-    if (step === 2 && formData.horoscopeMatching === 'mandatory' && (!formData.birthTime || !formData.birthPlace)) {
+    // Horoscope matching mandatory requires birth time and place (step 1)
+    if (step === 1 && formData.horoscopeMatching === 'mandatory' && (!formData.birthTime || !formData.birthPlace)) {
       toast.error(
         language === 'hi' 
           ? 'कुंडली मिलान अनिवार्य है, कृपया जन्म समय और जन्म स्थान दर्ज करें' 
           : 'Horoscope matching is mandatory, please provide birth time and birth place'
       )
+      return
+    }
+    if (step === 2 && (!formData.education || !formData.occupation)) {
+      toast.error(t.registration.fillEducation)
       return
     }
     if (step === 3 && (!formData.location || !formData.country || !formData.email || !formData.mobile)) {
@@ -1190,6 +1190,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     {language === 'hi' ? 'यह प्रोफाइल किसके लिए बनाई जा रही है?' : 'Profile created for'} *
                   </Label>
                   <Select 
+                    value={formData.profileCreatedFor || ''}
                     onValueChange={(value: 'Self' | 'Daughter' | 'Son' | 'Brother' | 'Sister' | 'Other') => {
                       setFormData({ ...formData, profileCreatedFor: value, otherRelation: value !== 'Other' ? '' : formData.otherRelation });
                     }}
@@ -2395,7 +2396,25 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             </Button>
             
             {step < 6 && !showVerification ? (
-              <Button onClick={nextStep}>
+              <Button 
+                onClick={nextStep}
+                disabled={
+                  (step === 1 && (
+                    !formData.fullName.trim() || 
+                    !formData.dateOfBirth || 
+                    !formData.gender || 
+                    !formData.religion.trim() || 
+                    !formData.maritalStatus ||
+                    !formData.profileCreatedFor ||
+                    (formData.profileCreatedFor === 'Other' && !formData.otherRelation.trim()) ||
+                    (formData.horoscopeMatching === 'mandatory' && (!formData.birthTime || !formData.birthPlace))
+                  )) ||
+                  (step === 2 && (!formData.education || !formData.occupation)) ||
+                  (step === 3 && (!formData.location || !formData.country || !formData.email || !formData.mobile)) ||
+                  (step === 4 && (photos.length === 0 || !selfiePreview || (!isEditMode && !idProofPreview))) ||
+                  (step === 5 && !formData.bio.trim())
+                }
+              >
                 {t.registration.next}
               </Button>
             ) : step === 6 ? (
