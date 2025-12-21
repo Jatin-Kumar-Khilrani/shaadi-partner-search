@@ -425,8 +425,10 @@ async function getImageDimensions(imageData: string): Promise<{ width: number; h
  */
 async function getFaceApiKey(): Promise<string | null> {
   try {
-    // Try to get from runtime config
-    const response = await fetch('/runtime.config.json')
+    // Try to get from runtime config - use import.meta.env.BASE_URL for correct path
+    const basePath = import.meta.env.BASE_URL || '/'
+    const configUrl = `${basePath}runtime.config.json`
+    const response = await fetch(configUrl)
     if (response.ok) {
       const config = await response.json()
       // Check for key in azure.faceApi.key (new structure)
@@ -451,7 +453,9 @@ async function getFaceApiKey(): Promise<string | null> {
  */
 async function getFaceApiEndpoint(): Promise<string> {
   try {
-    const response = await fetch('/runtime.config.json')
+    const basePath = import.meta.env.BASE_URL || '/'
+    const configUrl = `${basePath}runtime.config.json`
+    const response = await fetch(configUrl)
     if (response.ok) {
       const config = await response.json()
       if (config.azure?.faceApi?.endpoint) {
