@@ -741,6 +741,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       toast.error(t.registration.fillEducation)
       return
     }
+    // Horoscope matching mandatory requires birth time and place
+    if (step === 2 && formData.horoscopeMatching === 'mandatory' && (!formData.birthTime || !formData.birthPlace)) {
+      toast.error(
+        language === 'hi' 
+          ? 'कुंडली मिलान अनिवार्य है, कृपया जन्म समय और जन्म स्थान दर्ज करें' 
+          : 'Horoscope matching is mandatory, please provide birth time and birth place'
+      )
+      return
+    }
     if (step === 3 && (!formData.location || !formData.country || !formData.email || !formData.mobile)) {
       toast.error(t.registration.fillContact)
       return

@@ -39,7 +39,7 @@ export function HeroSearch({ onSearch, language = 'hi' }: HeroSearchProps) {
     feature1: language === 'hi' ? 'किफायती सदस्यता' : 'Affordable Membership',
     feature1Desc: language === 'hi' ? '6 महीने ₹500 या 1 साल ₹900 — कोई छुपी लागत नहीं' : '6 months ₹500 or 1 year ₹900 — no hidden costs',
     feature2: language === 'hi' ? 'सुरक्षित और सत्यापित' : 'Secure and Verified',
-    feature2Desc: language === 'hi' ? 'हर प्रोफ़ाइल की मैन्युअल जांच स्वयंसेवकों द्वारा' : 'Every profile manually checked by volunteers',
+    feature2Desc: language === 'hi' ? 'हर प्रोफ़ाइल AI और अनुभवी पेशेवरों द्वारा सत्यापित' : 'Every profile verified by AI and experienced professionals',
     feature3: language === 'hi' ? 'सभी समुदायों के लिए' : 'For All Communities',
     feature3Desc: language === 'hi' ? 'सभी धर्मों और समुदायों का स्वागत' : 'All religions and communities welcome',
     locationPlaceholder: language === 'hi' ? 'शहर या देश' : 'City or Country',
