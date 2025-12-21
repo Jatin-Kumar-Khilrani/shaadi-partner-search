@@ -1372,35 +1372,6 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="birthTime">
-                      {language === 'hi' ? 'जन्म समय' : 'Birth Time'}
-                      {formData.horoscopeMatching === 'mandatory' ? ' *' : ` (${language === 'hi' ? 'वैकल्पिक' : 'Optional'})`}
-                    </Label>
-                    <Input
-                      id="birthTime"
-                      type="time"
-                      placeholder={language === 'hi' ? 'उदाहरण: 10:30 AM' : 'Example: 10:30 AM'}
-                      value={formData.birthTime}
-                      onChange={(e) => updateField('birthTime', e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="birthPlace">
-                      {language === 'hi' ? 'जन्म स्थान' : 'Birth Place'}
-                      {formData.horoscopeMatching === 'mandatory' ? ' *' : ` (${language === 'hi' ? 'वैकल्पिक' : 'Optional'})`}
-                    </Label>
-                    <Input
-                      id="birthPlace"
-                      placeholder={language === 'hi' ? 'उदाहरण: दिल्ली, जयपुर' : 'Example: Delhi, Jaipur'}
-                      value={formData.birthPlace}
-                      onChange={(e) => updateField('birthPlace', e.target.value)}
-                    />
-                  </div>
-                </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="horoscopeMatching">{language === 'hi' ? 'कुंडली मिलान' : 'Horoscope Matching'} *</Label>
                   <Select 
@@ -1416,6 +1387,44 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       <SelectItem value="decide-later">{language === 'hi' ? 'बाद में तय करेंगे' : 'Decide Later'}</SelectItem>
                     </SelectContent>
                   </Select>
+                  {formData.horoscopeMatching === 'mandatory' && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                      {language === 'hi' 
+                        ? '⚠️ कुंडली मिलान अनिवार्य है - जन्म समय और जन्म स्थान आवश्यक है'
+                        : '⚠️ Horoscope matching is mandatory - Birth Time and Birth Place are required'}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="birthTime">
+                      {language === 'hi' ? 'जन्म समय' : 'Birth Time'}
+                      {formData.horoscopeMatching === 'mandatory' ? ' *' : ` (${language === 'hi' ? 'वैकल्पिक' : 'Optional'})`}
+                    </Label>
+                    <Input
+                      id="birthTime"
+                      type="time"
+                      placeholder={language === 'hi' ? 'उदाहरण: 10:30 AM' : 'Example: 10:30 AM'}
+                      value={formData.birthTime}
+                      onChange={(e) => updateField('birthTime', e.target.value)}
+                      className={formData.horoscopeMatching === 'mandatory' && !formData.birthTime ? 'border-amber-500' : ''}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="birthPlace">
+                      {language === 'hi' ? 'जन्म स्थान' : 'Birth Place'}
+                      {formData.horoscopeMatching === 'mandatory' ? ' *' : ` (${language === 'hi' ? 'वैकल्पिक' : 'Optional'})`}
+                    </Label>
+                    <Input
+                      id="birthPlace"
+                      placeholder={language === 'hi' ? 'उदाहरण: दिल्ली, जयपुर' : 'Example: Delhi, Jaipur'}
+                      value={formData.birthPlace}
+                      onChange={(e) => updateField('birthPlace', e.target.value)}
+                      className={formData.horoscopeMatching === 'mandatory' && !formData.birthPlace ? 'border-amber-500' : ''}
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
