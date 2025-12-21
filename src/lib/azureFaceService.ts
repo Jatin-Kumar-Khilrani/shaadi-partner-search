@@ -55,9 +55,12 @@ export async function detectFace(imageData: string): Promise<FaceDetectionResult
       return await browserFaceDetection(imageData)
     }
 
+    // Get endpoint from runtime config
+    const endpoint = await getFaceApiEndpoint()
+
     // Call Azure Face API
     const response = await fetch(
-      `${AZURE_FACE_CONFIG.endpoint}face/v1.0/detect?returnFaceId=false&returnFaceLandmarks=true&returnFaceAttributes=headPose,occlusion,blur,exposure,noise&detectionModel=detection_03&recognitionModel=recognition_04`,
+      `${endpoint}face/v1.0/detect?returnFaceId=false&returnFaceLandmarks=true&returnFaceAttributes=headPose,occlusion,blur,exposure,noise&detectionModel=detection_03&recognitionModel=recognition_04`,
       {
         method: 'POST',
         headers: {
@@ -250,7 +253,7 @@ async function browserFaceDetection(imageData: string): Promise<FaceDetectionRes
 /**
  * Simulated face detection for browsers without FaceDetector API
  * Uses basic image analysis to detect if there's likely a face present
- * This is a best-effort fallback - more lenient to avoid blocking users
+ * Calculates actual skin-tone region coverage for realistic estimates
  */
 function simulatedFaceDetection(img: HTMLImageElement): FaceDetectionResult {
   // Create canvas to analyze the image
@@ -260,13 +263,13 @@ function simulatedFaceDetection(img: HTMLImageElement): FaceDetectionResult {
   const ctx = canvas.getContext('2d')
   
   if (!ctx) {
-    // If we can't analyze, allow the capture with a warning
+    // If we can't analyze, return low coverage to encourage proper positioning
     console.warn('Could not create canvas context for face detection')
     return {
       success: true,
       faceDetected: true,
       faceCount: 1,
-      coverage: 85, // Assume valid to not block user
+      coverage: 30, // Low coverage to encourage close-up
       isCentered: true,
       isHumanFace: true,
     }
@@ -274,84 +277,105 @@ function simulatedFaceDetection(img: HTMLImageElement): FaceDetectionResult {
   
   ctx.drawImage(img, 0, 0)
   
-  // Analyze the center portion of the image for skin-tone colors
-  // This is a basic heuristic to detect if there's likely a face
+  // Analyze the FULL image to find skin-tone regions
   const centerX = img.width / 2
   const centerY = img.height / 2
-  const sampleSize = Math.min(img.width, img.height) * 0.5 // Increased sample size
+  const sampleSize = Math.min(img.width, img.height) * 0.5
   
   try {
-    const imageData = ctx.getImageData(
-      Math.max(0, centerX - sampleSize / 2),
-      Math.max(0, centerY - sampleSize / 2),
-      Math.min(sampleSize, img.width),
-      Math.min(sampleSize, img.height)
-    )
+    // Analyze FULL image to find skin-tone bounding box
+    const fullImageData = ctx.getImageData(0, 0, img.width, img.height)
+    const fullData = fullImageData.data
     
-    const data = imageData.data
+    let minX = img.width, maxX = 0, minY = img.height, maxY = 0
     let skinTonePixels = 0
     let nonBlackPixels = 0
-    const totalPixels = data.length / 4
+    const totalPixels = fullData.length / 4
     
-    // Check for skin-tone colors (more lenient detection for all skin tones)
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i]
-      const g = data[i + 1]
-      const b = data[i + 2]
-      
-      // Count non-black pixels (image has content)
-      if (r > 20 || g > 20 || b > 20) {
-        nonBlackPixels++
-      }
-      
-      // More lenient skin tone detection
-      // Covers light to dark skin tones
-      const isLightSkin = r > 180 && g > 140 && b > 100 && r > g && g > b
-      const isMediumSkin = r > 120 && r < 220 && g > 80 && g < 180 && b > 50 && b < 150
-      const isDarkSkin = r > 60 && r < 160 && g > 40 && g < 120 && b > 20 && b < 100
-      
-      // Check if pixel is in skin-tone range
-      if (isLightSkin || isMediumSkin || isDarkSkin) {
-        skinTonePixels++
+    // Find skin-tone region bounds
+    for (let y = 0; y < img.height; y++) {
+      for (let x = 0; x < img.width; x++) {
+        const i = (y * img.width + x) * 4
+        const r = fullData[i]
+        const g = fullData[i + 1]
+        const b = fullData[i + 2]
+        
+        // Count non-black pixels
+        if (r > 20 || g > 20 || b > 20) {
+          nonBlackPixels++
+        }
+        
+        // Detect skin tones (all skin colors)
+        const isLightSkin = r > 180 && g > 140 && b > 100 && r > g && g > b
+        const isMediumSkin = r > 120 && r < 220 && g > 80 && g < 180 && b > 50 && b < 150
+        const isDarkSkin = r > 60 && r < 160 && g > 40 && g < 120 && b > 20 && b < 100
+        
+        if (isLightSkin || isMediumSkin || isDarkSkin) {
+          skinTonePixels++
+          // Track bounding box of skin-tone region
+          minX = Math.min(minX, x)
+          maxX = Math.max(maxX, x)
+          minY = Math.min(minY, y)
+          maxY = Math.max(maxY, y)
+        }
       }
     }
     
     const skinToneRatio = skinTonePixels / totalPixels
     const contentRatio = nonBlackPixels / totalPixels
     
-    console.log(`Face detection - Skin ratio: ${(skinToneRatio * 100).toFixed(1)}%, Content ratio: ${(contentRatio * 100).toFixed(1)}%`)
+    // Calculate actual coverage based on skin-tone region bounding box
+    let actualCoverage = 0
+    let isCentered = false
+    
+    if (skinTonePixels > 100 && maxX > minX && maxY > minY) {
+      const skinWidth = maxX - minX
+      const skinHeight = maxY - minY
+      const skinArea = skinWidth * skinHeight
+      const imageArea = img.width * img.height
+      
+      // Calculate coverage as percentage of image
+      actualCoverage = Math.round((skinArea / imageArea) * 100)
+      
+      // Check if skin region is centered (within middle 60% of frame)
+      const skinCenterX = (minX + maxX) / 2
+      const skinCenterY = (minY + maxY) / 2
+      const isCenteredX = skinCenterX > img.width * 0.2 && skinCenterX < img.width * 0.8
+      const isCenteredY = skinCenterY > img.height * 0.15 && skinCenterY < img.height * 0.85
+      isCentered = isCenteredX && isCenteredY
+    }
+    
+    console.log(`Face detection - Skin ratio: ${(skinToneRatio * 100).toFixed(1)}%, Content ratio: ${(contentRatio * 100).toFixed(1)}%, Actual coverage: ${actualCoverage}%`)
     
     // If there's good content in the image (not just black screen)
     if (contentRatio > 0.5) {
-      // If we detect some skin tones (even a small amount), assume face is present
-      if (skinToneRatio > 0.15) {
-        const estimatedCoverage = Math.min(95, Math.max(80, Math.round(skinToneRatio * 200)))
-        
+      // If we detect some skin tones, calculate real coverage
+      if (skinToneRatio > 0.05) {
         return {
           success: true,
           faceDetected: true,
           faceCount: 1,
-          coverage: estimatedCoverage,
-          isCentered: true,
+          coverage: actualCoverage,
+          isCentered,
           isHumanFace: true,
           faceRectangle: {
-            top: centerY - sampleSize / 2,
-            left: centerX - sampleSize / 2,
-            width: sampleSize,
-            height: sampleSize,
+            top: minY,
+            left: minX,
+            width: maxX - minX,
+            height: maxY - minY,
           },
         }
       }
       
-      // Even if skin detection is low, if there's content, allow with lower coverage
-      // This handles cases where detection might fail but user is clearly there
+      // Very low skin detection - may not have face visible
       return {
         success: true,
-        faceDetected: true,
-        faceCount: 1,
-        coverage: 82, // Just above threshold to allow
-        isCentered: true,
-        isHumanFace: true,
+        faceDetected: false,
+        faceCount: 0,
+        coverage: 0,
+        isCentered: false,
+        isHumanFace: false,
+        errorMessage: 'Face not clearly visible. Please move closer to camera.',
       }
     }
     
@@ -367,13 +391,13 @@ function simulatedFaceDetection(img: HTMLImageElement): FaceDetectionResult {
     }
   } catch (error) {
     console.error('Error in simulated face detection:', error)
-    // On error, allow the capture to not block the user
+    // On error, return low coverage to encourage proper positioning
     return {
       success: true,
       faceDetected: true,
       faceCount: 1,
-      coverage: 85,
-      isCentered: true,
+      coverage: 30,
+      isCentered: false,
       isHumanFace: true,
     }
   }
@@ -398,7 +422,6 @@ async function getImageDimensions(imageData: string): Promise<{ width: number; h
 /**
  * Get Azure Face API key from runtime config or Key Vault
  * In production, this should be fetched from Key Vault
- * For now, we check runtime config
  */
 async function getFaceApiKey(): Promise<string | null> {
   try {
@@ -406,6 +429,11 @@ async function getFaceApiKey(): Promise<string | null> {
     const response = await fetch('/runtime.config.json')
     if (response.ok) {
       const config = await response.json()
+      // Check for key in azure.faceApi.key (new structure)
+      if (config.azure?.faceApi?.key) {
+        return config.azure.faceApi.key
+      }
+      // Fallback to old structure
       if (config.azureFaceApiKey) {
         return config.azureFaceApiKey
       }
@@ -416,6 +444,26 @@ async function getFaceApiKey(): Promise<string | null> {
   
   // For demo/development, return null to use browser fallback
   return null
+}
+
+/**
+ * Get Azure Face API endpoint from runtime config
+ */
+async function getFaceApiEndpoint(): Promise<string> {
+  try {
+    const response = await fetch('/runtime.config.json')
+    if (response.ok) {
+      const config = await response.json()
+      if (config.azure?.faceApi?.endpoint) {
+        return config.azure.faceApi.endpoint
+      }
+    }
+  } catch {
+    // Config not available
+  }
+  
+  // Default endpoint
+  return 'https://eastus2.api.cognitive.microsoft.com/'
 }
 
 /**

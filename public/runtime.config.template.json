@@ -1,0 +1,31 @@
+{
+  "$schema": "./runtime.config.schema.json",
+  "description": "Runtime configuration for ShaadiPartnerSearch - can be replaced in production without rebuild",
+  "version": "1.0.0",
+  
+  "api": {
+    "baseUrl": "https://shaadi-partner-api.azurewebsites.net",
+    "description": "Azure Function API backend URL. Leave empty for localStorage mode."
+  },
+  
+  "azure": {
+    "cosmosDb": {
+      "key": "",
+      "description": "Direct Cosmos DB key (fallback if API not configured). NOT recommended for production."
+    },
+    "faceApi": {
+      "endpoint": "https://eastus2.api.cognitive.microsoft.com/",
+      "key": "YOUR_FACE_API_KEY_HERE",
+      "description": "Azure Face API for face detection in selfies. Get key from Azure Portal or Key Vault."
+    }
+  },
+  
+  "features": {
+    "faceDetection": {
+      "enabled": true,
+      "minCoveragePercent": 80,
+      "requireCentered": true,
+      "maxFaces": 1
+    }
+  }
+}
