@@ -132,6 +132,7 @@ export const sampleProfiles: Profile[] = [
     mobileVerified: true,
     isBlocked: false,
     membershipPlan: '6-month',
+    membershipExpiry: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(), // 6 months from now
   },
   {
     id: 'profile-2',
@@ -171,6 +172,7 @@ export const sampleProfiles: Profile[] = [
     mobileVerified: true,
     isBlocked: false,
     membershipPlan: '6-month',
+    membershipExpiry: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(), // 6 months from now
   },
   {
     id: 'profile-3',
@@ -210,6 +212,7 @@ export const sampleProfiles: Profile[] = [
     mobileVerified: true,
     isBlocked: false,
     membershipPlan: '1-year',
+    membershipExpiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
   },
   {
     id: 'profile-free',
@@ -248,6 +251,7 @@ export const sampleProfiles: Profile[] = [
     mobileVerified: true,
     isBlocked: false,
     membershipPlan: 'free',
+    membershipExpiry: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(), // 6 months from now (free plan)
   },
 ]
 
