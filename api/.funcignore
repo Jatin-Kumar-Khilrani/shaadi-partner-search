@@ -1,0 +1,28 @@
+# Azure Functions ignore file
+# Excludes files from deployment package
+
+# Source files (we deploy compiled JS)
+*.ts
+!*.d.ts
+
+# Development files
+.git*
+.vscode
+local.settings.json
+tsconfig.json
+
+# Node modules (installed during deployment)
+node_modules
+
+# Test files
+*.test.ts
+*.spec.ts
+__tests__
+
+# Documentation
+*.md
+README.md
+
+# Build artifacts that shouldn't be deployed
+.env
+.env.*
