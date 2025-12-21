@@ -101,6 +101,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     education: '',
     occupation: '',
     location: '',
+    state: '',
     country: '',
     maritalStatus: undefined as MaritalStatus | undefined,
     email: '',
@@ -142,6 +143,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         education: editProfile.education || '',
         occupation: editProfile.occupation || '',
         location: editProfile.location || '',
+        state: editProfile.state || '',
         country: editProfile.country || '',
         maritalStatus: editProfile.maritalStatus,
         email: editProfile.email || '',
@@ -1015,7 +1017,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       toast.error(t.registration.fillEducation)
       return
     }
-    if (step === 3 && (!formData.location || !formData.country || !formData.email || !formData.mobile)) {
+    if (step === 3 && (!formData.location || !formData.state || !formData.country || !formData.email || !formData.mobile)) {
       toast.error(t.registration.fillContact)
       return
     }
@@ -1523,7 +1525,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
             {step === 3 && !showVerification && (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="location">{language === 'hi' ? 'शहर' : 'City'} *</Label>
                     <Input
@@ -1531,6 +1533,17 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       placeholder={language === 'hi' ? 'उदाहरण: मुंबई, जयपुर' : 'Example: Mumbai, Jaipur'}
                       value={formData.location}
                       onChange={(e) => updateField('location', e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="state">{language === 'hi' ? 'राज्य' : 'State'} *</Label>
+                    <Input
+                      id="state"
+                      placeholder={language === 'hi' ? 'उदाहरण: महाराष्ट्र, राजस्थान' : 'Example: Maharashtra, Rajasthan'}
+                      value={formData.state}
+                      onChange={(e) => updateField('state', e.target.value)}
                       required
                     />
                   </div>
@@ -1907,6 +1920,22 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           >
                             {language === 'hi' ? 'रद्द करें' : 'Cancel'}
                           </Button>
+                          {/* Switch Camera button - shown when multiple cameras available */}
+                          {availableCameras.length > 1 && (
+                            <Button 
+                              type="button" 
+                              variant="secondary"
+                              onClick={() => {
+                                // Cycle to next camera
+                                const currentIndex = availableCameras.findIndex(c => c.deviceId === selectedCameraId)
+                                const nextIndex = (currentIndex + 1) % availableCameras.length
+                                switchCamera(availableCameras[nextIndex].deviceId)
+                              }}
+                              className="gap-2"
+                            >
+                              🔄 {language === 'hi' ? 'कैमरा बदलें' : 'Switch Camera'}
+                            </Button>
+                          )}
                         </>
                       ) : (
                         <Button 
@@ -1920,14 +1949,19 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       )}
                     </div>
                     
-                    {/* Camera source selector */}
+                    {/* Camera source selector - dropdown for selecting specific camera */}
                     {showCamera && availableCameras.length > 1 && (
-                      <div className="flex justify-center mt-3">
+                      <div className="flex flex-col items-center gap-2 mt-3">
+                        <p className="text-xs text-muted-foreground">
+                          {language === 'hi' 
+                            ? `${availableCameras.length} कैमरे उपलब्ध हैं - नीचे से चुनें` 
+                            : `${availableCameras.length} cameras available - select below`}
+                        </p>
                         <Select value={selectedCameraId} onValueChange={switchCamera}>
-                          <SelectTrigger className="w-64">
+                          <SelectTrigger className="w-72">
                             <SelectValue placeholder={language === 'hi' ? 'कैमरा चुनें' : 'Select Camera'} />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="z-[9999]">
                             {availableCameras.map((camera, index) => (
                               <SelectItem key={camera.deviceId} value={camera.deviceId}>
                                 {camera.label || (language === 'hi' ? `कैमरा ${index + 1}` : `Camera ${index + 1}`)}
@@ -1936,6 +1970,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           </SelectContent>
                         </Select>
                       </div>
+                    )}
+                    
+                    {/* Show message when only one camera is available */}
+                    {showCamera && availableCameras.length === 1 && (
+                      <p className="text-xs text-center text-muted-foreground mt-2">
+                        {language === 'hi' 
+                          ? `कैमरा: ${availableCameras[0]?.label || 'डिफ़ॉल्ट कैमरा'}` 
+                          : `Camera: ${availableCameras[0]?.label || 'Default Camera'}`}
+                      </p>
                     )}
                     
                     <canvas ref={canvasRef} className="hidden" />
@@ -2410,7 +2453,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     (formData.horoscopeMatching === 'mandatory' && (!formData.birthTime || !formData.birthPlace))
                   )) ||
                   (step === 2 && (!formData.education || !formData.occupation)) ||
-                  (step === 3 && (!formData.location || !formData.country || !formData.email || !formData.mobile)) ||
+                  (step === 3 && (!formData.location || !formData.state || !formData.country || !formData.email || !formData.mobile)) ||
                   (step === 4 && (photos.length === 0 || !selfiePreview || (!isEditMode && !idProofPreview))) ||
                   (step === 5 && !formData.bio.trim())
                 }

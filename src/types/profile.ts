@@ -24,6 +24,7 @@ export interface Profile {
   occupation: string
   salary?: string
   location: string
+  state?: string
   country: string
   maritalStatus: MaritalStatus
   email: string
