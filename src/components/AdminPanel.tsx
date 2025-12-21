@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ShieldCheck, X, Check, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer } from '@phosphor-icons/react'
+import { ShieldCheck, X, Check, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard } from '@phosphor-icons/react'
 import type { Profile, WeddingService, PaymentTransaction } from '@/types/profile'
 import type { User } from '@/types/user'
 import type { ChatMessage } from '@/types/chat'
@@ -31,6 +31,7 @@ interface AdminPanelProps {
   users: User[] | undefined
   language: 'hi' | 'en'
   onLogout?: () => void
+  onLoginAsUser?: (userId: string) => void
 }
 
 interface BlockedContact {
@@ -50,7 +51,7 @@ interface MembershipSettings {
   discountEndDate: string
 }
 
-export function AdminPanel({ profiles, setProfiles, users, language, onLogout }: AdminPanelProps) {
+export function AdminPanel({ profiles, setProfiles, users, language, onLogout, onLoginAsUser }: AdminPanelProps) {
   const [blockedContacts, setBlockedContacts] = useKV<BlockedContact[]>('blockedContacts', [])
   const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
   const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
@@ -140,6 +141,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout }:
     documentType: 'aadhaar',
     notes: ''
   })
+  // ID Proof viewing dialog state
+  const [showIdProofViewDialog, setShowIdProofViewDialog] = useState(false)
+  const [idProofViewProfile, setIdProofViewProfile] = useState<Profile | null>(null)
   
   const t = {
     title: language === 'hi' ? 'प्रशासन पैनल' : 'Admin Panel',
@@ -329,6 +333,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout }:
     digilockerVerifyRemoved: language === 'hi' ? 'सत्यापन हटाया गया!' : 'Verification removed!',
     idProofVerification: language === 'hi' ? 'पहचान प्रमाण सत्यापन' : 'ID Proof Verification',
     verifyIdProof: language === 'hi' ? 'पहचान सत्यापित करें' : 'Verify ID Proof',
+    loginAsUser: language === 'hi' ? 'इस यूजर के रूप में लॉगिन करें' : 'Login as this user',
+    loginAsUserConfirm: language === 'hi' ? 'क्या आप इस यूजर के रूप में लॉगिन करना चाहते हैं? आप एडमिन पैनल से बाहर हो जाएंगे।' : 'Do you want to login as this user? You will be logged out of admin panel.',
+    loginAsUserSuccess: language === 'hi' ? 'यूजर के रूप में लॉगिन हो गया' : 'Logged in as user',
+    viewIdProof: language === 'hi' ? 'पहचान प्रमाण देखें' : 'View ID Proof',
+    idProofNotUploaded: language === 'hi' ? 'पहचान प्रमाण अपलोड नहीं किया गया' : 'ID Proof not uploaded',
+    idProofType: language === 'hi' ? 'दस्तावेज़ का प्रकार' : 'Document Type',
+    voterId: language === 'hi' ? 'मतदाता पहचान पत्र' : 'Voter ID',
   }
 
   // Helper to get user credentials for a profile
@@ -1450,6 +1461,38 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout }:
                                     title={t.approve}
                                   >
                                     <Check size={16} />
+                                  </Button>
+                                )}
+                                {/* View ID Proof button */}
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setIdProofViewProfile(profile)
+                                    setShowIdProofViewDialog(true)
+                                  }}
+                                  className={profile.idProofUrl ? (profile.idProofVerified ? 'text-green-600 hover:text-green-700' : 'text-orange-500 hover:text-orange-600') : 'text-gray-400'}
+                                  title={profile.idProofUrl ? t.viewIdProof : t.idProofNotUploaded}
+                                >
+                                  <IdentificationCard size={16} />
+                                </Button>
+                                {/* Login as User button */}
+                                {onLoginAsUser && creds?.userId && (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => {
+                                      if (confirm(t.loginAsUserConfirm)) {
+                                        onLoginAsUser(creds.userId)
+                                        toast.success(t.loginAsUserSuccess, {
+                                          description: `${profile.fullName} (${creds.userId})`
+                                        })
+                                      }
+                                    }}
+                                    className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                                    title={t.loginAsUser}
+                                  >
+                                    <Key size={16} />
                                   </Button>
                                 )}
                                 <Button 
@@ -3649,6 +3692,148 @@ ShaadiPartnerSearch Team
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ID Proof View Dialog */}
+      <Dialog open={showIdProofViewDialog} onOpenChange={setShowIdProofViewDialog}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <IdentificationCard size={24} weight="fill" />
+              {t.viewIdProof} - {idProofViewProfile?.fullName}
+            </DialogTitle>
+            <DialogDescription>
+              {idProofViewProfile?.profileId}
+            </DialogDescription>
+          </DialogHeader>
+
+          {idProofViewProfile && (
+            <div className="space-y-4">
+              {idProofViewProfile.idProofUrl ? (
+                <>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex-1">
+                      <Label className="text-sm text-muted-foreground">{t.idProofType}</Label>
+                      <Badge variant="secondary" className="mt-1">
+                        {idProofViewProfile.idProofType === 'aadhaar' && t.aadhaar}
+                        {idProofViewProfile.idProofType === 'pan' && t.pan}
+                        {idProofViewProfile.idProofType === 'driving-license' && t.drivingLicense}
+                        {idProofViewProfile.idProofType === 'passport' && t.passport}
+                        {idProofViewProfile.idProofType === 'voter-id' && t.voterId}
+                      </Badge>
+                    </div>
+                    <div className="flex-1">
+                      <Label className="text-sm text-muted-foreground">{language === 'hi' ? 'अपलोड तिथि' : 'Upload Date'}</Label>
+                      <p className="text-sm">{idProofViewProfile.idProofUploadedAt ? formatDateDDMMYYYY(idProofViewProfile.idProofUploadedAt) : '-'}</p>
+                    </div>
+                    <div className="flex-1">
+                      <Label className="text-sm text-muted-foreground">{t.status}</Label>
+                      <Badge variant={idProofViewProfile.idProofVerified ? 'default' : 'secondary'} className={idProofViewProfile.idProofVerified ? 'bg-green-600' : ''}>
+                        {idProofViewProfile.idProofVerified 
+                          ? (language === 'hi' ? 'सत्यापित ✓' : 'Verified ✓') 
+                          : (language === 'hi' ? 'लंबित' : 'Pending')}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg p-2 bg-muted/20">
+                    <img 
+                      src={idProofViewProfile.idProofUrl} 
+                      alt="ID Proof"
+                      className="w-full max-h-[400px] object-contain rounded"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.open(idProofViewProfile.idProofUrl, '_blank')}
+                    >
+                      <Eye size={16} className="mr-2" />
+                      {language === 'hi' ? 'पूर्ण आकार में देखें' : 'View Full Size'}
+                    </Button>
+                    {!idProofViewProfile.idProofVerified && (
+                      <Button 
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={() => {
+                          setProfiles((current) => 
+                            (current || []).map(p => 
+                              p.id === idProofViewProfile.id 
+                                ? { 
+                                    ...p, 
+                                    idProofVerified: true,
+                                    idProofVerifiedAt: new Date().toISOString(),
+                                    idProofVerifiedBy: 'Admin'
+                                  } 
+                                : p
+                            )
+                          )
+                          setIdProofViewProfile(prev => prev ? {...prev, idProofVerified: true, idProofVerifiedAt: new Date().toISOString()} : null)
+                          toast.success(language === 'hi' ? 'पहचान प्रमाण सत्यापित!' : 'ID Proof verified!')
+                        }}
+                      >
+                        <CheckCircle size={16} className="mr-2" />
+                        {t.markAsVerified}
+                      </Button>
+                    )}
+                    {idProofViewProfile.idProofVerified && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-red-600"
+                        onClick={() => {
+                          setProfiles((current) => 
+                            (current || []).map(p => 
+                              p.id === idProofViewProfile.id 
+                                ? { 
+                                    ...p, 
+                                    idProofVerified: false,
+                                    idProofVerifiedAt: undefined,
+                                    idProofVerifiedBy: undefined
+                                  } 
+                                : p
+                            )
+                          )
+                          setIdProofViewProfile(prev => prev ? {...prev, idProofVerified: false, idProofVerifiedAt: undefined} : null)
+                          toast.success(language === 'hi' ? 'सत्यापन हटाया गया!' : 'Verification removed!')
+                        }}
+                      >
+                        <XCircle size={16} className="mr-2" />
+                        {t.removeVerification}
+                      </Button>
+                    )}
+                  </div>
+
+                  {idProofViewProfile.idProofVerified && (
+                    <Alert className="bg-green-50 border-green-400">
+                      <CheckCircle size={18} className="text-green-600" />
+                      <AlertDescription className="text-green-700">
+                        {language === 'hi' 
+                          ? `${idProofViewProfile.idProofVerifiedBy || 'Admin'} द्वारा ${idProofViewProfile.idProofVerifiedAt ? formatDateDDMMYYYY(idProofViewProfile.idProofVerifiedAt) : ''} को सत्यापित` 
+                          : `Verified by ${idProofViewProfile.idProofVerifiedBy || 'Admin'} on ${idProofViewProfile.idProofVerifiedAt ? formatDateDDMMYYYY(idProofViewProfile.idProofVerifiedAt) : ''}`}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </>
+              ) : (
+                <Alert variant="destructive">
+                  <XCircle size={18} />
+                  <AlertDescription>
+                    {t.idProofNotUploaded}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => setShowIdProofViewDialog(false)}>
+                  {t.cancel}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </section>

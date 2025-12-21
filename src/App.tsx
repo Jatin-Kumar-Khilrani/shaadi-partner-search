@@ -882,7 +882,7 @@ function App() {
           </section>
         )}
 
-        {currentView === 'admin' && <AdminPanel profiles={profiles} setProfiles={setProfiles} users={users} language={language} onLogout={() => { setIsAdminLoggedIn(false); setCurrentView('home'); try { localStorage.removeItem('adminLoggedIn'); } catch (e) { console.error(e); } toast.info(language === 'hi' ? 'एडमिन से लॉगआउट हो गया' : 'Logged out from admin'); }} />}
+        {currentView === 'admin' && <AdminPanel profiles={profiles} setProfiles={setProfiles} users={users} language={language} onLogout={() => { setIsAdminLoggedIn(false); setCurrentView('home'); try { localStorage.removeItem('adminLoggedIn'); } catch (e) { console.error(e); } toast.info(language === 'hi' ? 'एडमिन से लॉगआउट हो गया' : 'Logged out from admin'); }} onLoginAsUser={(userId) => { setLoggedInUser(userId); setIsAdminLoggedIn(false); setCurrentView('my-profile'); try { localStorage.removeItem('adminLoggedIn'); } catch (e) { console.error(e); } }} />}
 
         {currentView === 'my-matches' && (
           <MyMatches 

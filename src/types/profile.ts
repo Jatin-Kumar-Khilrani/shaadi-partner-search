@@ -74,6 +74,14 @@ export interface Profile {
   aadhaarLastFour?: string  // Last 4 digits for reference
   aadhaarVerifiedName?: string  // Name as per Aadhaar
   aadhaarVerifiedDob?: string   // DOB as per Aadhaar
+  // Government ID proof for name/DOB verification (mandatory at registration)
+  idProofUrl?: string  // URL to uploaded ID proof image
+  idProofType?: 'aadhaar' | 'pan' | 'driving-license' | 'passport' | 'voter-id'
+  idProofUploadedAt?: string
+  idProofVerified?: boolean
+  idProofVerifiedAt?: string
+  idProofVerifiedBy?: string  // Admin who verified
+  idProofNotes?: string  // Admin notes about ID verification
   // Geolocation data captured during registration
   registrationLocation?: {
     latitude: number

@@ -8,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Separator } from '@/components/ui/separator'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Checkbox } from '@/components/ui/checkbox'
-import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, ArrowDown, FloppyDisk, Sparkle, Warning, SpinnerGap, Gift, ShieldCheck, IdentificationCard, ArrowCounterClockwise } from '@phosphor-icons/react'
+import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, ArrowDown, FloppyDisk, Sparkle, Warning, SpinnerGap, Gift, ShieldCheck, IdentificationCard, ArrowCounterClockwise, Upload } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Gender, MaritalStatus, Profile, MembershipPlan } from '@/types/profile'
 import { useTranslation, type Language } from '@/lib/translations'
@@ -34,6 +35,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([])
   const [selfieFile, setSelfieFile] = useState<File | null>(null)
   const [selfiePreview, setSelfiePreview] = useState<string | undefined>(undefined)
+  const [idProofFile, setIdProofFile] = useState<File | null>(null)
+  const [idProofPreview, setIdProofPreview] = useState<string | null>(null)
+  const [idProofType, setIdProofType] = useState<'aadhaar' | 'pan' | 'driving-license' | 'passport' | 'voter-id'>('aadhaar')
   const [showCamera, setShowCamera] = useState(false)
   const [isCameraReady, setIsCameraReady] = useState(false)
   const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([])
@@ -706,6 +710,21 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       hideMobile: editProfile?.hideMobile ?? false,
       photos: photos.map(p => p.preview),
       selfieUrl: selfiePreview,
+      // ID Proof data (only add if provided - for new registrations)
+      ...(idProofPreview ? {
+        idProofUrl: idProofPreview,
+        idProofType: idProofType,
+        idProofUploadedAt: new Date().toISOString(),
+        idProofVerified: false
+      } : (isEditMode && editProfile ? {
+        idProofUrl: editProfile.idProofUrl,
+        idProofType: editProfile.idProofType,
+        idProofUploadedAt: editProfile.idProofUploadedAt,
+        idProofVerified: editProfile.idProofVerified,
+        idProofVerifiedAt: editProfile.idProofVerifiedAt,
+        idProofVerifiedBy: editProfile.idProofVerifiedBy,
+        idProofNotes: editProfile.idProofNotes
+      } : {})),
       membershipExpiry: membershipExpiry.toISOString(),
       registrationLocation: isEditMode && editProfile?.registrationLocation ? editProfile.registrationLocation : (registrationGeoLocation || undefined)
     }
@@ -943,6 +962,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     }
     if (step === 4 && !selfiePreview) {
       toast.error(language === 'hi' ? 'कृपया लाइव सेल्फी लें' : 'Please capture a live selfie')
+      return
+    }
+    // ID Proof is mandatory for new registrations only (not for edit mode)
+    if (step === 4 && !isEditMode && !idProofPreview) {
+      toast.error(language === 'hi' ? 'कृपया सरकारी पहचान प्रमाण अपलोड करें' : 'Please upload government ID proof')
+      return
+    }
+    if (step === 4 && !isEditMode && !idProofType) {
+      toast.error(language === 'hi' ? 'कृपया दस्तावेज़ का प्रकार चुनें' : 'Please select document type')
       return
     }
     // Step 5 - Bio is mandatory
@@ -1862,6 +1890,115 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     </p>
                   </div>
                 )}
+
+                {/* Government ID Proof Upload Section - Mandatory */}
+                <Separator className="my-6" />
+                
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <IdentificationCard size={24} weight="bold" className="text-blue-600" />
+                    <Label className="text-lg font-semibold">
+                      {language === 'hi' ? 'सरकारी पहचान प्रमाण अपलोड करें' : 'Upload Government ID Proof'} *
+                    </Label>
+                  </div>
+                  
+                  <Alert className="bg-orange-50 border-orange-300 dark:bg-orange-950/20 dark:border-orange-700">
+                    <Warning size={18} className="text-orange-600" />
+                    <AlertDescription className="text-orange-700 dark:text-orange-400">
+                      {language === 'hi' 
+                        ? 'नाम और जन्म तिथि सत्यापन के लिए सरकारी पहचान पत्र अनिवार्य है। यह केवल सत्यापन के लिए है और अन्य उपयोगकर्ताओं को नहीं दिखाया जाएगा।'
+                        : 'Government ID is mandatory for name and DOB verification. This is for verification only and will NOT be shown to other users.'}
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="space-y-3">
+                    <Label>{language === 'hi' ? 'दस्तावेज़ का प्रकार चुनें' : 'Select Document Type'} *</Label>
+                    <Select 
+                      value={idProofType} 
+                      onValueChange={(value: 'aadhaar' | 'pan' | 'driving-license' | 'passport' | 'voter-id') => setIdProofType(value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={language === 'hi' ? 'दस्तावेज़ प्रकार चुनें' : 'Select document type'} />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999]">
+                        <SelectItem value="aadhaar">{language === 'hi' ? 'आधार कार्ड' : 'Aadhaar Card'}</SelectItem>
+                        <SelectItem value="pan">{language === 'hi' ? 'पैन कार्ड' : 'PAN Card'}</SelectItem>
+                        <SelectItem value="driving-license">{language === 'hi' ? 'ड्राइविंग लाइसेंस' : 'Driving License'}</SelectItem>
+                        <SelectItem value="passport">{language === 'hi' ? 'पासपोर्ट' : 'Passport'}</SelectItem>
+                        <SelectItem value="voter-id">{language === 'hi' ? 'मतदाता पहचान पत्र' : 'Voter ID'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                    {idProofPreview ? (
+                      <div className="space-y-3">
+                        <div className="relative inline-block">
+                          <img 
+                            src={idProofPreview} 
+                            alt="ID Proof" 
+                            className="max-h-48 object-contain rounded-lg mx-auto border"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                            onClick={() => {
+                              setIdProofFile(null)
+                              setIdProofPreview(null)
+                            }}
+                          >
+                            <X size={14} />
+                          </Button>
+                        </div>
+                        <div className="flex items-center justify-center gap-2 text-green-600">
+                          <CheckCircle size={20} weight="fill" />
+                          <span className="text-sm font-medium">
+                            {language === 'hi' ? 'पहचान प्रमाण अपलोड किया गया' : 'ID Proof uploaded'}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              setIdProofFile(file)
+                              const reader = new FileReader()
+                              reader.onload = (event) => {
+                                setIdProofPreview(event.target?.result as string)
+                              }
+                              reader.readAsDataURL(file)
+                            }
+                          }}
+                        />
+                        <div className="space-y-2">
+                          <Upload size={40} weight="light" className="mx-auto text-muted-foreground/50" />
+                          <p className="text-sm text-muted-foreground">
+                            {language === 'hi' ? 'पहचान पत्र की फोटो अपलोड करने के लिए क्लिक करें' : 'Click to upload ID proof photo'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === 'hi' ? 'नाम और जन्म तिथि स्पष्ट दिखनी चाहिए' : 'Name and DOB must be clearly visible'}
+                          </p>
+                        </div>
+                      </label>
+                    )}
+                  </div>
+
+                  <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800">
+                    <Info size={16} />
+                    <AlertDescription className="text-xs">
+                      {language === 'hi' 
+                        ? '• पहचान पत्र में आपका नाम और जन्म तिथि स्पष्ट दिखनी चाहिए\n• यह जानकारी केवल एडमिन सत्यापन के लिए है\n• गलत दस्तावेज़ देने पर प्रोफाइल अस्वीकार हो सकती है'
+                        : '• Name and DOB must be clearly visible on the ID\n• This information is for admin verification only\n• Profile may be rejected for incorrect documents'}
+                    </AlertDescription>
+                  </Alert>
+                </div>
               </div>
             )}
 
