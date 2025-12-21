@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Eye, EyeSlash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Language } from '@/lib/translations'
@@ -13,7 +14,7 @@ const ADMIN_PASSWORD = '1234'
 interface AdminLoginDialogProps {
   open: boolean
   onClose: () => void
-  onLoginSuccess: () => void
+  onLoginSuccess: (keepLoggedIn: boolean) => void
   language: Language
 }
 
@@ -29,6 +30,7 @@ export function AdminLoginDialog({
   const [generatedOtp, setGeneratedOtp] = useState('')
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
   const [showPassword, setShowPassword] = useState(false)
+  const [keepLoggedIn, setKeepLoggedIn] = useState(false)
 
   const t = {
     title: language === 'hi' ? 'एडमिन लॉगिन' : 'Admin Login',
@@ -40,7 +42,8 @@ export function AdminLoginDialog({
     otpLabel: language === 'hi' ? 'OTP दर्ज करें' : 'Enter OTP',
     verify: language === 'hi' ? 'सत्यापित करें' : 'Verify',
     invalidCredentials: language === 'hi' ? 'गलत यूज़रनेम या पासवर्ड' : 'Invalid username or password',
-    invalidOtp: language === 'hi' ? 'गलत OTP' : 'Invalid OTP'
+    invalidOtp: language === 'hi' ? 'गलत OTP' : 'Invalid OTP',
+    keepMeLoggedIn: language === 'hi' ? 'मुझे लॉग इन रखें' : 'Keep me logged in'
   }
 
   const handleClose = () => {
@@ -49,6 +52,7 @@ export function AdminLoginDialog({
     setOtp('')
     setStep('credentials')
     setGeneratedOtp('')
+    setKeepLoggedIn(false)
     onClose()
   }
 
@@ -73,7 +77,7 @@ export function AdminLoginDialog({
     e.preventDefault()
     
     if (otp === generatedOtp) {
-      onLoginSuccess()
+      onLoginSuccess(keepLoggedIn)
       handleClose()
     } else {
       toast.error(t.invalidOtp)
@@ -123,6 +127,20 @@ export function AdminLoginDialog({
                   {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
                 </Button>
               </div>
+            </div>
+
+            <div className="flex items-center space-x-2 py-2">
+              <Checkbox
+                id="keep-logged-in"
+                checked={keepLoggedIn}
+                onCheckedChange={(checked) => setKeepLoggedIn(checked === true)}
+              />
+              <Label
+                htmlFor="keep-logged-in"
+                className="text-sm font-normal cursor-pointer"
+              >
+                {t.keepMeLoggedIn}
+              </Label>
             </div>
 
             <div className="flex gap-2 justify-end">

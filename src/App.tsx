@@ -34,7 +34,14 @@ function App() {
   const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
   const [loggedInUser, setLoggedInUser] = useKV<string | null>('loggedInUser', null)
   const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false)
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
+    // Check if admin was previously logged in with 'keep me logged in'
+    try {
+      return localStorage.getItem('adminLoggedIn') === 'true'
+    } catch {
+      return false
+    }
+  })
   const [showAdminLogin, setShowAdminLogin] = useState(false)
   
   const [currentView, setCurrentView] = useState<View>('home')
@@ -875,7 +882,7 @@ function App() {
           </section>
         )}
 
-        {currentView === 'admin' && <AdminPanel profiles={profiles} setProfiles={setProfiles} users={users} language={language} onLogout={() => { setIsAdminLoggedIn(false); setCurrentView('home'); toast.info(language === 'hi' ? 'एडमिन से लॉगआउट हो गया' : 'Logged out from admin'); }} />}
+        {currentView === 'admin' && <AdminPanel profiles={profiles} setProfiles={setProfiles} users={users} language={language} onLogout={() => { setIsAdminLoggedIn(false); setCurrentView('home'); try { localStorage.removeItem('adminLoggedIn'); } catch (e) { console.error(e); } toast.info(language === 'hi' ? 'एडमिन से लॉगआउट हो गया' : 'Logged out from admin'); }} />}
 
         {currentView === 'my-matches' && (
           <MyMatches 
@@ -1048,9 +1055,16 @@ function App() {
       <AdminLoginDialog
         open={showAdminLogin}
         onClose={() => setShowAdminLogin(false)}
-        onLoginSuccess={() => {
+        onLoginSuccess={(keepLoggedIn) => {
           setIsAdminLoggedIn(true)
           setCurrentView('admin')
+          if (keepLoggedIn) {
+            try {
+              localStorage.setItem('adminLoggedIn', 'true')
+            } catch (e) {
+              console.error('Could not save admin login state:', e)
+            }
+          }
           toast.success(language === 'hi' ? 'एडमिन पैनल में आपका स्वागत है!' : 'Welcome to Admin Panel!')
         }}
         language={language}
