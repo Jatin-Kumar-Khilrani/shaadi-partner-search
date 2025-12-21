@@ -131,7 +131,7 @@ export const sampleProfiles: Profile[] = [
     emailVerified: true,
     mobileVerified: true,
     isBlocked: false,
-    membershipPlan: 'free',
+    membershipPlan: '6-month',
   },
   {
     id: 'profile-2',
