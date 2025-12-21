@@ -28,3 +28,6 @@ dist-ssr
 pids
 .file-manifest
 .devcontainer/
+
+# Azure Function local settings (contains secrets)
+api/local.settings.json

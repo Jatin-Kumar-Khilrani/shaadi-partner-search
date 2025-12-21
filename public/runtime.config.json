@@ -3,7 +3,16 @@
   "description": "Runtime configuration for ShaadiPartnerSearch - can be replaced in production without rebuild",
   "version": "1.0.0",
   
+  "api": {
+    "baseUrl": "https://shaadi-partner-api.azurewebsites.net",
+    "description": "Azure Function API backend URL. Leave empty for localStorage mode."
+  },
+  
   "azure": {
+    "cosmosDb": {
+      "key": "",
+      "description": "Direct Cosmos DB key (fallback if API not configured). NOT recommended for production."
+    },
     "faceApi": {
       "endpoint": "https://shaadipartnerface.cognitiveservices.azure.com/",
       "description": "Azure Face API endpoint for face detection in selfies. API key should be stored in Key Vault."

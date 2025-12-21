@@ -59,20 +59,28 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
 
   // Function to load from Azure (only called manually via button)
   const loadFromAzure = useCallback(async () => {
-    if (isLoadingFromAzure.current) return
+    console.log(`[useKV] Loading "${key}" from Azure...`)
     
+    // Reset loading flag to allow force refresh
     isLoadingFromAzure.current = true
 
     try {
       await ensureAzureInitialized()
       
       if (isAzureAvailable()) {
+        console.log(`[useKV] Azure available, fetching "${key}"...`)
         const azureValue = await azureStorage.get<{ data: T, updatedAt?: string }>(key)
+        console.log(`[useKV] Azure response for "${key}":`, azureValue)
         if (azureValue && azureValue.data !== undefined) {
+          console.log(`[useKV] Setting "${key}" data, count:`, Array.isArray(azureValue.data) ? azureValue.data.length : 'N/A')
           setValue(azureValue.data)
           // Sync to localStorage for faster subsequent loads
           localStorage.setItem(storageKey, JSON.stringify(azureValue.data))
+        } else {
+          console.log(`[useKV] No data found in Azure for "${key}"`)
         }
+      } else {
+        console.log(`[useKV] Azure not available for "${key}"`)
       }
     } catch (error) {
       console.warn(`Failed to load from Azure for key "${key}":`, error)
@@ -91,7 +99,7 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
     const handleForceRefresh = (event: Event) => {
       const customEvent = event as CustomEvent<{ key: string }>
       if (customEvent.detail.key === key || customEvent.detail.key === '*') {
-        loadFromAzure(true)
+        loadFromAzure()
       }
     }
 
