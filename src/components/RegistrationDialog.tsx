@@ -172,8 +172,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     }
   }, [editProfile, open])
 
-  // Load saved draft on mount (only for new registration, not edit mode)
+  // Load saved draft when dialog opens (only for new registration, not edit mode)
   useEffect(() => {
+    if (!open) return // Only load when dialog is opened
     if (isEditMode) return // Skip draft loading in edit mode
     
     try {
@@ -192,6 +193,19 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         if (parsed.selfiePreview) {
           setSelfiePreview(parsed.selfiePreview)
         }
+        // Also restore verification states if saved
+        if (parsed.emailVerified) {
+          setEmailVerified(parsed.emailVerified)
+        }
+        if (parsed.mobileVerified) {
+          setMobileVerified(parsed.mobileVerified)
+        }
+        if (parsed.aadhaarVerified) {
+          setAadhaarVerified(parsed.aadhaarVerified)
+        }
+        if (parsed.aadhaarVerificationData) {
+          setAadhaarVerificationData(parsed.aadhaarVerificationData)
+        }
         toast.info(
           language === 'hi' ? 'पिछला ड्राफ्ट लोड किया गया' : 'Previous draft loaded',
           { description: language === 'hi' ? 'आप वहीं से जारी रख सकते हैं' : 'You can continue from where you left' }
@@ -200,7 +214,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     } catch (e) {
       console.error('Error loading draft:', e)
     }
-  }, [isEditMode])
+  }, [open, isEditMode, language])
 
   // Save draft function
   const saveDraft = () => {
@@ -209,7 +223,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         formData,
         step,
         photos,
-        selfiePreview
+        selfiePreview,
+        // Also save verification states
+        emailVerified,
+        mobileVerified,
+        aadhaarVerified,
+        aadhaarVerificationData
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(draft))
       toast.success(
