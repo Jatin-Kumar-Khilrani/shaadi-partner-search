@@ -105,11 +105,18 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
                   {displayName}
                   {shouldHideSurname && <span className="text-muted-foreground"> ...</span>}
                 </h3>
-                {profile.status === 'verified' && badge && (
-                  <Badge className={`${badge.color} gap-1 whitespace-nowrap shrink-0`}>
-                    <span className="text-xs">{badge.icon}</span>
-                  </Badge>
-                )}
+                <div className="flex flex-col gap-1 items-end">
+                  {profile.status === 'verified' && badge && (
+                    <Badge className={`${badge.color} gap-1 whitespace-nowrap shrink-0`}>
+                      <span className="text-xs">{badge.icon}</span>
+                    </Badge>
+                  )}
+                  {profile.digilockerVerified && (
+                    <Badge className="bg-green-600 gap-1 whitespace-nowrap shrink-0 text-xs">
+                      ✓ ID
+                    </Badge>
+                  )}
+                </div>
               </div>
               <p className="text-muted-foreground text-sm mt-1">
                 {profile.age} {t.years} | {profile.gender === 'male' ? t.male : t.female}

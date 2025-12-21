@@ -249,6 +249,12 @@ Grace Period:
 • अनुचित व्यवहार पर तत्काल ब्लॉक
 • गोपनीयता सेटिंग्स - ईमेल/फोन छुपाने का विकल्प
 
+डिजिलॉकर/आधार सत्यापन:
+• नाम और जन्म तिथि सत्यापन के लिए पहचान प्रमाण
+• समर्थित दस्तावेज़: आधार, पैन कार्ड, ड्राइविंग लाइसेंस, पासपोर्ट
+• व्यवस्थापक द्वारा मैन्युअल सत्यापन
+• सत्यापित प्रोफाइल पर "डिजिलॉकर सत्यापित" बैज
+
 अस्वीकरण:
 • हम प्रोफाइल की 100% प्रामाणिकता की गारंटी नहीं दे सकते
 • व्यक्तिगत मिलने से पहले उचित सावधानी बरतें
@@ -258,6 +264,12 @@ Grace Period:
 • AI-based photo verification
 • Live selfie matching
 • Contact details OTP verification
+
+DigiLocker/Aadhaar Verification:
+• ID proof for name and date of birth verification
+• Supported documents: Aadhaar, PAN Card, Driving License, Passport
+• Manual verification by admin
+• "DigiLocker Verified" badge on verified profiles
 
 Volunteer Verification (Optional):
 • Family background verification
@@ -339,8 +351,57 @@ Maximum Liability:
 In no event shall ShaadiPartnerSearch's liability exceed the membership fee paid by you.`
     },
     {
+      icon: <Shield size={24} weight="bold" className="text-primary" />,
+      title: isHindi ? '10. क्षतिपूर्ति (Indemnification)' : '10. Indemnification',
+      content: isHindi
+        ? `क्षतिपूर्ति की शर्तें:
+
+आप ShaadiPartnerSearch, इसके निदेशकों, अधिकारियों, कर्मचारियों, एजेंटों और सहयोगियों को निम्नलिखित से उत्पन्न या संबंधित किसी भी दावे, नुकसान, देनदारियों, लागतों और खर्चों (कानूनी शुल्क सहित) से क्षतिपूर्ति करने, बचाव करने और हानिरहित रखने के लिए सहमत हैं:
+
+• आपके द्वारा प्रदान की गई जानकारी:
+  - आप अपने प्रोफाइल में दी गई सभी जानकारी के लिए पूर्णतः जिम्मेदार हैं
+  - गलत, भ्रामक, या झूठी जानकारी प्रदान करने के परिणामों के लिए आप उत्तरदायी हैं
+  - किसी तीसरे पक्ष को हुई हानि के लिए आप जिम्मेदार होंगे
+
+• इन नियमों और शर्तों का उल्लंघन
+• किसी तीसरे पक्ष के अधिकारों का उल्लंघन (बौद्धिक संपदा अधिकार सहित)
+• आपके द्वारा अपलोड की गई कोई भी सामग्री
+• प्लेटफॉर्म का दुरुपयोग या अनधिकृत उपयोग
+• अन्य उपयोगकर्ताओं के साथ आपके व्यवहार या संपर्क
+
+डेटा सत्यता की घोषणा:
+पंजीकरण करके, आप पुष्टि करते हैं कि:
+• सभी प्रदान की गई जानकारी सत्य और सटीक है
+• आपने किसी अन्य व्यक्ति की पहचान का उपयोग नहीं किया है
+• आप सभी जानकारी के सत्यापन के लिए जिम्मेदार हैं
+
+यह क्षतिपूर्ति दायित्व आपकी सदस्यता समाप्त होने के बाद भी जारी रहेगा।`
+        : `Indemnification Terms:
+
+You agree to indemnify, defend, and hold harmless ShaadiPartnerSearch, its directors, officers, employees, agents, and affiliates from and against any and all claims, damages, liabilities, costs, and expenses (including legal fees) arising out of or related to:
+
+• Information provided by you:
+  - You are fully responsible for all information provided in your profile
+  - You are liable for consequences of providing incorrect, misleading, or false information
+  - You will be responsible for any harm caused to third parties
+
+• Violation of these Terms and Conditions
+• Infringement of any third-party rights (including intellectual property rights)
+• Any content uploaded by you
+• Misuse or unauthorized use of the platform
+• Your conduct or interaction with other users
+
+Declaration of Data Accuracy:
+By registering, you confirm that:
+• All information provided is true and accurate
+• You have not used another person's identity
+• You are responsible for verification of all information
+
+This indemnification obligation shall survive the termination of your membership.`
+    },
+    {
       icon: <Handshake size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '10. विवाद समाधान' : '10. Dispute Resolution',
+      title: isHindi ? '11. विवाद समाधान' : '11. Dispute Resolution',
       content: isHindi
         ? `विवाद समाधान प्रक्रिया:
 
@@ -385,7 +446,7 @@ These Terms and Conditions shall be governed by Indian law.`
     },
     {
       icon: <Eye size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '11. बौद्धिक संपदा' : '11. Intellectual Property',
+      title: isHindi ? '12. बौद्धिक संपदा' : '12. Intellectual Property',
       content: isHindi
         ? `ShaadiPartnerSearch की सभी सामग्री, जिसमें शामिल हैं:
 • लोगो, डिज़ाइन और ट्रेडमार्क
@@ -414,7 +475,7 @@ User Content:
     },
     {
       icon: <Envelope size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '12. संपर्क और शिकायत' : '12. Contact and Grievance',
+      title: isHindi ? '13. संपर्क और शिकायत' : '13. Contact and Grievance',
       content: isHindi
         ? `शिकायत निवारण अधिकारी:
 (सूचना प्रौद्योगिकी अधिनियम, 2000 और DPDP Act, 2023 के अनुसार)

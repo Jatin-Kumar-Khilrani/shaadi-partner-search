@@ -28,6 +28,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile }: MyProf
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const [showBiodataGenerator, setShowBiodataGenerator] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showEditConfirmDialog, setShowEditConfirmDialog] = useState(false)
   const [deleteStep, setDeleteStep] = useState<'confirm' | 'otp'>('confirm')
   const [generatedOtp, setGeneratedOtp] = useState('')
   const [enteredOtp, setEnteredOtp] = useState('')
@@ -56,6 +57,8 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile }: MyProf
     pending: language === 'hi' ? 'लंबित' : 'Pending',
     level: language === 'hi' ? 'स्तर' : 'Level',
     trustLevel: language === 'hi' ? 'विश्वास स्तर' : 'Trust Level',
+    digilockerVerified: language === 'hi' ? 'डिजिलॉकर सत्यापित' : 'DigiLocker Verified',
+    idProofVerified: language === 'hi' ? 'पहचान सत्यापित' : 'ID Verified',
     returnedForEdit: language === 'hi' ? 'संपादन आवश्यक' : 'Edit Required',
     returnedForEditDesc: language === 'hi' ? 'एडमिन ने आपकी प्रोफाइल संपादन के लिए वापस भेजी है' : 'Admin has returned your profile for editing',
     adminReason: language === 'hi' ? 'एडमिन संदेश' : 'Admin Message',
@@ -70,6 +73,26 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile }: MyProf
     cancel: language === 'hi' ? 'रद्द करें' : 'Cancel',
     profileDeleted: language === 'hi' ? 'प्रोफाइल सफलतापूर्वक हटाई गई' : 'Profile deleted successfully',
     invalidOtp: language === 'hi' ? 'गलत OTP' : 'Invalid OTP',
+    editConfirmTitle: language === 'hi' ? 'प्रोफ़ाइल संपादित करें?' : 'Edit Profile?',
+    editConfirmDesc: language === 'hi' ? 'संपादन के बाद आपकी प्रोफ़ाइल को एडमिन द्वारा पुनः स्वीकृत करना होगा। स्वीकृति तक आपकी प्रोफ़ाइल अन्य उपयोगकर्ताओं को दिखाई नहीं देगी।' : 'After editing, your profile will need to be re-approved by admin. Your profile will not be visible to other users until approved.',
+    confirmEdit: language === 'hi' ? 'संपादित करें' : 'Proceed to Edit',
+    pendingApproval: language === 'hi' ? 'स्वीकृति लंबित' : 'Pending Approval',
+    pendingApprovalDesc: language === 'hi' ? 'आपकी प्रोफ़ाइल एडमिन द्वारा समीक्षा के लिए लंबित है। स्वीकृति तक अन्य उपयोगकर्ताओं को दिखाई नहीं देगी।' : 'Your profile is pending review by admin. It will not be visible to other users until approved.',
+  }
+
+  const handleEditClick = () => {
+    // If profile is returned for edit, go directly to edit
+    if (profile?.returnedForEdit) {
+      onEdit?.()
+    } else {
+      // Show confirmation dialog for regular edits
+      setShowEditConfirmDialog(true)
+    }
+  }
+
+  const handleConfirmEdit = () => {
+    setShowEditConfirmDialog(false)
+    onEdit?.()
   }
 
   const handleDeleteRequest = () => {
@@ -154,7 +177,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile }: MyProf
               {!canAccessBiodata && <Badge variant="outline" className="ml-1 text-xs">Premium</Badge>}
             </Button>
             {onEdit && (
-              <Button onClick={onEdit} className="gap-2">
+              <Button onClick={handleEditClick} className="gap-2">
                 <PencilSimple size={20} />
                 {t.edit}
               </Button>
@@ -221,6 +244,30 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile }: MyProf
           </DialogContent>
         </Dialog>
 
+        {/* Edit Confirmation Dialog */}
+        <Dialog open={showEditConfirmDialog} onOpenChange={setShowEditConfirmDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-amber-600">
+                <Warning size={24} weight="fill" />
+                {t.editConfirmTitle}
+              </DialogTitle>
+              <DialogDescription>
+                {t.editConfirmDesc}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="flex gap-3 mt-4">
+              <Button variant="outline" onClick={() => setShowEditConfirmDialog(false)} className="flex-1">
+                {t.cancel}
+              </Button>
+              <Button onClick={handleConfirmEdit} className="flex-1 bg-amber-600 hover:bg-amber-700">
+                {t.confirmEdit}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Biodata Generator Dialog */}
         <BiodataGenerator
           profile={profile}
@@ -250,6 +297,28 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile }: MyProf
                   {new Date(profile.returnedAt).toLocaleDateString()}
                 </p>
               )}
+              {onEdit && (
+                <Button 
+                  onClick={onEdit} 
+                  className="mt-4 gap-2 bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  <PencilSimple size={20} weight="bold" />
+                  {t.edit}
+                </Button>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Pending Approval Alert (when profile is pending and not returned for edit) */}
+        {profile.status === 'pending' && !profile.returnedForEdit && (
+          <Alert className="mb-6 bg-blue-50 border-blue-400 dark:bg-blue-950/30 dark:border-blue-700">
+            <Warning size={20} weight="fill" className="text-blue-600" />
+            <AlertTitle className="text-blue-800 dark:text-blue-200 font-semibold">
+              {t.pendingApproval}
+            </AlertTitle>
+            <AlertDescription className="text-blue-700 dark:text-blue-300">
+              {t.pendingApprovalDesc}
             </AlertDescription>
           </Alert>
         )}
@@ -314,6 +383,13 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile }: MyProf
                         {t.trustLevel} {profile.trustLevel}
                       </Badge>
                     </div>
+                    {profile.digilockerVerified && (
+                      <div className="mt-2">
+                        <Badge className="bg-green-600 hover:bg-green-700">
+                          {t.digilockerVerified}
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>

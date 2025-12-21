@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Checkbox } from '@/components/ui/checkbox'
-import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, ArrowDown, FloppyDisk, Sparkle, Warning, SpinnerGap, Gift } from '@phosphor-icons/react'
+import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, ArrowDown, FloppyDisk, Sparkle, Warning, SpinnerGap, Gift, ShieldCheck, IdentificationCard } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Gender, MaritalStatus, Profile, MembershipPlan } from '@/types/profile'
 import { useTranslation, type Language } from '@/lib/translations'
@@ -24,9 +24,10 @@ interface RegistrationDialogProps {
   onSubmit: (profile: Partial<Profile>) => void
   language: Language
   existingProfiles?: Profile[]
+  editProfile?: Profile | null
 }
 
-export function RegistrationDialog({ open, onClose, onSubmit, language, existingProfiles = [] }: RegistrationDialogProps) {
+export function RegistrationDialog({ open, onClose, onSubmit, language, existingProfiles = [], editProfile = null }: RegistrationDialogProps) {
   const t = useTranslation(language)
   const [step, setStep] = useState(1)
   const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([])
@@ -63,6 +64,21 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
   
+  // DigiLocker/Aadhaar verification state
+  const [aadhaarNumber, setAadhaarNumber] = useState('')
+  const [aadhaarOtp, setAadhaarOtp] = useState('')
+  const [generatedAadhaarOtp, setGeneratedAadhaarOtp] = useState('')
+  const [aadhaarOtpSent, setAadhaarOtpSent] = useState(false)
+  const [aadhaarVerified, setAadhaarVerified] = useState(false)
+  const [aadhaarVerifying, setAadhaarVerifying] = useState(false)
+  const [aadhaarVerificationData, setAadhaarVerificationData] = useState<{
+    name: string
+    dob: string
+    gender: 'male' | 'female'
+    verifiedAt: string
+    aadhaarLastFour: string
+  } | null>(null)
+  
   const [formData, setFormData] = useState({
     fullName: '',
     profileCreatedFor: undefined as 'Self' | 'Daughter' | 'Son' | 'Brother' | 'Sister' | 'Other' | undefined,
@@ -94,9 +110,71 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   })
 
   const STORAGE_KEY = 'registration_draft'
+  const isEditMode = !!editProfile
 
-  // Load saved draft on mount
+  // Load edit profile data when in edit mode
   useEffect(() => {
+    if (editProfile && open) {
+      // Parse mobile to extract country code and number
+      const mobileMatch = editProfile.mobile?.match(/^(\+\d+)\s*(.*)$/)
+      const countryCode = mobileMatch?.[1] || '+91'
+      const mobileNumber = mobileMatch?.[2]?.replace(/\s/g, '') || editProfile.mobile?.replace(/\s/g, '') || ''
+      
+      setFormData({
+        fullName: editProfile.fullName || '',
+        profileCreatedFor: editProfile.relationToProfile as 'Self' | 'Daughter' | 'Son' | 'Brother' | 'Sister' | 'Other' | undefined,
+        otherRelation: ['Self', 'Daughter', 'Son', 'Brother', 'Sister'].includes(editProfile.relationToProfile || '') ? '' : editProfile.relationToProfile || '',
+        dateOfBirth: editProfile.dateOfBirth || '',
+        birthTime: editProfile.birthTime || '',
+        birthPlace: editProfile.birthPlace || '',
+        horoscopeMatching: editProfile.horoscopeMatching || 'not-mandatory',
+        diet: (editProfile.dietPreference as '' | 'veg' | 'non-veg' | 'occasionally-non-veg' | 'jain' | 'vegan') || '',
+        habit: (editProfile.smokingHabit || editProfile.drinkingHabit || '') as '' | 'none' | 'smoking' | 'drinking' | 'occasionally-drinking' | 'occasionally-smoking',
+        annualIncome: editProfile.salary || '',
+        profession: editProfile.occupation || '',
+        position: editProfile.position || '',
+        gender: editProfile.gender,
+        religion: editProfile.religion || '',
+        caste: editProfile.caste || '',
+        education: editProfile.education || '',
+        occupation: editProfile.occupation || '',
+        location: editProfile.location || '',
+        country: editProfile.country || '',
+        maritalStatus: editProfile.maritalStatus,
+        email: editProfile.email || '',
+        countryCode: countryCode,
+        mobile: mobileNumber,
+        height: editProfile.height || '',
+        bio: editProfile.bio || '',
+        familyDetails: editProfile.familyDetails || '',
+        membershipPlan: editProfile.membershipPlan
+      })
+      
+      // Load existing photos
+      if (editProfile.photos && editProfile.photos.length > 0) {
+        setPhotos(editProfile.photos.map((url, index) => ({
+          file: new File([], `existing-photo-${index}`),
+          preview: url
+        })))
+      }
+      
+      // Load selfie
+      if (editProfile.selfieUrl) {
+        setSelfiePreview(editProfile.selfieUrl)
+      }
+      
+      // Skip verification for edit mode
+      setEmailVerified(true)
+      setMobileVerified(true)
+      setTermsAccepted(true)
+      setStep(1)
+    }
+  }, [editProfile, open])
+
+  // Load saved draft on mount (only for new registration, not edit mode)
+  useEffect(() => {
+    if (isEditMode) return // Skip draft loading in edit mode
+    
     try {
       const savedDraft = localStorage.getItem(STORAGE_KEY)
       if (savedDraft) {
@@ -121,7 +199,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     } catch (e) {
       console.error('Error loading draft:', e)
     }
-  }, [])
+  }, [isEditMode])
 
   // Save draft function
   const saveDraft = () => {
@@ -450,12 +528,18 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
   // Check for duplicate email or mobile
   const isDuplicateEmail = (email: string) => {
-    return existingProfiles.some(p => p.email?.toLowerCase() === email.toLowerCase())
+    return existingProfiles.some(p => {
+      // Skip self in edit mode
+      if (isEditMode && editProfile && p.id === editProfile.id) return false
+      return p.email?.toLowerCase() === email.toLowerCase()
+    })
   }
 
   const isDuplicateMobile = (mobile: string) => {
     const fullMobile = `${formData.countryCode} ${mobile}`
     return existingProfiles.some(p => {
+      // Skip self in edit mode
+      if (isEditMode && editProfile && p.id === editProfile.id) return false
       // Check both with and without country code
       const existingMobile = p.mobile?.replace(/\s+/g, '') || ''
       const newMobile = fullMobile.replace(/\s+/g, '')
@@ -531,12 +615,44 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
     // Calculate membership cost and expiry based on plan
     const membershipCost = formData.membershipPlan === 'free' ? 0 : formData.membershipPlan === '6-month' ? 500 : 900
-    const membershipExpiry = new Date()
-    // Free plan also gets 6 months, just with limited features
-    membershipExpiry.setMonth(membershipExpiry.getMonth() + (formData.membershipPlan === '1-year' ? 12 : 6))
+    
+    // In edit mode, keep existing membership expiry unless plan changed
+    let membershipExpiry: Date
+    if (isEditMode && editProfile?.membershipExpiry && formData.membershipPlan === editProfile.membershipPlan) {
+      membershipExpiry = new Date(editProfile.membershipExpiry)
+    } else {
+      membershipExpiry = new Date()
+      // Free plan also gets 6 months, just with limited features
+      membershipExpiry.setMonth(membershipExpiry.getMonth() + (formData.membershipPlan === '1-year' ? 12 : 6))
+    }
 
-    const profile: Omit<Profile, 'id' | 'profileId' | 'status' | 'trustLevel' | 'createdAt' | 'emailVerified' | 'mobileVerified' | 'isBlocked'> = {
+    const profile: Partial<Profile> = {
       ...formData,
+      // Include existing profile fields for edit mode
+      ...(isEditMode && editProfile ? {
+        id: editProfile.id,
+        profileId: editProfile.profileId,
+        createdAt: editProfile.createdAt,
+        trustLevel: editProfile.trustLevel,
+        status: 'pending', // Reset to pending for re-verification
+        returnedForEdit: false, // Clear the returned flag
+        editReason: undefined,
+        returnedAt: undefined
+      } : {}),
+      // Aadhaar verification data
+      ...(aadhaarVerified && aadhaarVerificationData ? {
+        aadhaarVerified: true,
+        aadhaarVerifiedAt: aadhaarVerificationData.verifiedAt,
+        aadhaarLastFour: aadhaarVerificationData.aadhaarLastFour,
+        aadhaarVerifiedName: aadhaarVerificationData.name,
+        aadhaarVerifiedDob: aadhaarVerificationData.dob
+      } : (isEditMode && editProfile ? {
+        aadhaarVerified: editProfile.aadhaarVerified,
+        aadhaarVerifiedAt: editProfile.aadhaarVerifiedAt,
+        aadhaarLastFour: editProfile.aadhaarLastFour,
+        aadhaarVerifiedName: editProfile.aadhaarVerifiedName,
+        aadhaarVerifiedDob: editProfile.aadhaarVerifiedDob
+      } : {})),
       firstName: formData.fullName.split(' ')[0],
       lastName: formData.fullName.split(' ').slice(1).join(' ') || formData.fullName.split(' ')[0],
       age,
@@ -545,19 +661,31 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       mobile: `${formData.countryCode} ${formData.mobile}`,
       membershipPlan: formData.membershipPlan!,
       relationToProfile: formData.profileCreatedFor === 'Other' ? formData.otherRelation : formData.profileCreatedFor!,
-      hideEmail: false,
-      hideMobile: false,
+      hideEmail: editProfile?.hideEmail ?? false,
+      hideMobile: editProfile?.hideMobile ?? false,
       photos: photos.map(p => p.preview),
       selfieUrl: selfiePreview,
       membershipExpiry: membershipExpiry.toISOString(),
-      registrationLocation: registrationGeoLocation || undefined
+      registrationLocation: isEditMode && editProfile?.registrationLocation ? editProfile.registrationLocation : (registrationGeoLocation || undefined)
     }
 
     onSubmit(profile)
-    clearDraft()
     
-    // Show appropriate message based on plan type
-    if (formData.membershipPlan === 'free') {
+    if (!isEditMode) {
+      clearDraft()
+    }
+    
+    // Show appropriate message based on mode and plan type
+    if (isEditMode) {
+      toast.success(
+        language === 'hi' ? 'प्रोफ़ाइल अपडेट किया गया!' : 'Profile Updated!',
+        {
+          description: language === 'hi' 
+            ? 'आपकी प्रोफ़ाइल सत्यापन के लिए भेजी गई है।'
+            : 'Your profile has been submitted for verification.'
+        }
+      )
+    } else if (formData.membershipPlan === 'free') {
       toast.success(
         t.registration.profileSubmitted,
         {
@@ -714,6 +842,105 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     }
   }
 
+  // Aadhaar/DigiLocker verification functions
+  const validateAadhaarNumber = (aadhaar: string) => {
+    // Aadhaar is 12 digits
+    const cleanAadhaar = aadhaar.replace(/\s/g, '')
+    return /^\d{12}$/.test(cleanAadhaar)
+  }
+
+  const sendAadhaarOtp = () => {
+    const cleanAadhaar = aadhaarNumber.replace(/\s/g, '')
+    if (!validateAadhaarNumber(cleanAadhaar)) {
+      toast.error(language === 'hi' ? 'कृपया सही 12 अंकों का आधार नंबर दर्ज करें' : 'Please enter valid 12-digit Aadhaar number')
+      return
+    }
+
+    setAadhaarVerifying(true)
+    
+    // Simulate API call to UIDAI/DigiLocker
+    setTimeout(() => {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString()
+      setGeneratedAadhaarOtp(otp)
+      setAadhaarOtpSent(true)
+      setAadhaarVerifying(false)
+      
+      toast.success(
+        language === 'hi' ? 'आधार OTP भेजा गया!' : 'Aadhaar OTP Sent!',
+        {
+          description: language === 'hi' 
+            ? `OTP आपके आधार से जुड़े मोबाइल पर भेजा गया है। Demo OTP: ${otp}`
+            : `OTP sent to mobile linked with Aadhaar. Demo OTP: ${otp}`,
+          duration: 30000
+        }
+      )
+    }, 1500)
+  }
+
+  const verifyAadhaarOtp = () => {
+    if (aadhaarOtp !== generatedAadhaarOtp) {
+      toast.error(language === 'hi' ? 'गलत आधार OTP' : 'Invalid Aadhaar OTP')
+      return
+    }
+
+    setAadhaarVerifying(true)
+    
+    // Simulate fetching data from DigiLocker/UIDAI
+    // In production, this would call the actual DigiLocker API
+    setTimeout(() => {
+      const cleanAadhaar = aadhaarNumber.replace(/\s/g, '')
+      
+      // Simulated response - in production, this comes from DigiLocker
+      // For demo, we generate a realistic name based on Aadhaar last 4 digits
+      const sampleNames = [
+        'Raj Kumar Sharma', 'Priya Singh', 'Amit Verma', 'Neha Patel', 
+        'Vikram Reddy', 'Sunita Gupta', 'Rohit Jain', 'Anjali Mehta'
+      ]
+      const sampleDobs = [
+        '1995-03-15', '1992-07-22', '1998-11-08', '1990-05-30',
+        '1993-09-12', '1996-02-28', '1994-12-05', '1991-08-18'
+      ]
+      const lastFour = parseInt(cleanAadhaar.slice(-4))
+      const index = lastFour % sampleNames.length
+      
+      const verificationData = {
+        name: sampleNames[index],
+        dob: sampleDobs[index],
+        gender: (lastFour % 2 === 0 ? 'male' : 'female') as 'male' | 'female',
+        verifiedAt: new Date().toISOString(),
+        aadhaarLastFour: cleanAadhaar.slice(-4)
+      }
+      
+      setAadhaarVerificationData(verificationData)
+      setAadhaarVerified(true)
+      setAadhaarVerifying(false)
+      
+      // Lock name and DOB to Aadhaar verified values
+      // Update form data with verified information
+      updateField('fullName', verificationData.name)
+      updateField('dateOfBirth', verificationData.dob)
+      updateField('gender', verificationData.gender)
+      
+      toast.success(
+        language === 'hi' ? 'आधार सत्यापित!' : 'Aadhaar Verified!',
+        {
+          description: language === 'hi' 
+            ? `नाम: ${verificationData.name} | जन्म तिथि: ${verificationData.dob} | DigiLocker से सत्यापित`
+            : `Name: ${verificationData.name} | DOB: ${verificationData.dob} | Verified via DigiLocker`
+        }
+      )
+    }, 2000)
+  }
+
+  const resetAadhaarVerification = () => {
+    setAadhaarNumber('')
+    setAadhaarOtp('')
+    setGeneratedAadhaarOtp('')
+    setAadhaarOtpSent(false)
+    setAadhaarVerified(false)
+    setAadhaarVerificationData(null)
+  }
+
   const handleVerificationComplete = () => {
     const emailValid = verifyEmailOtp()
     const mobileValid = verifyMobileOtp()
@@ -725,6 +952,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   }
 
   const nextStep = () => {
+    // Aadhaar verification required for new registrations
+    if (step === 1 && !isEditMode && !aadhaarVerified) {
+      toast.error(
+        language === 'hi' 
+          ? 'कृपया पहले अपना आधार सत्यापित करें' 
+          : 'Please verify your Aadhaar first'
+      )
+      return
+    }
     if (step === 1 && (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.religion || !formData.maritalStatus)) {
       toast.error(t.registration.fillAllFields)
       return
@@ -782,10 +1018,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         <DialogHeader>
           <DialogTitle className="text-3xl flex items-center gap-2">
             <UserPlus size={32} weight="bold" />
-            {t.registration.title}
+            {isEditMode 
+              ? (language === 'hi' ? 'प्रोफ़ाइल संपादित करें' : 'Edit Profile')
+              : t.registration.title}
           </DialogTitle>
           <DialogDescription>
-            {t.registration.subtitle}
+            {isEditMode
+              ? (language === 'hi' ? 'अपनी प्रोफ़ाइल जानकारी अपडेट करें' : 'Update your profile information')
+              : t.registration.subtitle}
           </DialogDescription>
         </DialogHeader>
 
@@ -821,9 +1061,170 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             <CardContent className="pt-6">
             {step === 1 && (
               <div className="space-y-4">
+                {/* Aadhaar/DigiLocker Verification Section */}
+                {!isEditMode && (
+                  <div className="p-4 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-700">
+                    <div className="flex items-center gap-2 mb-3">
+                      <IdentificationCard size={24} weight="bold" className="text-blue-600" />
+                      <h3 className="font-semibold text-blue-800 dark:text-blue-300">
+                        {language === 'hi' ? 'आधार सत्यापन (DigiLocker)' : 'Aadhaar Verification (DigiLocker)'}
+                      </h3>
+                      {aadhaarVerified && (
+                        <span className="ml-auto flex items-center gap-1 text-green-600 text-sm font-medium">
+                          <ShieldCheck size={18} weight="fill" />
+                          {language === 'hi' ? 'सत्यापित' : 'Verified'}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {!aadhaarVerified ? (
+                      <div className="space-y-3">
+                        <p className="text-sm text-blue-700 dark:text-blue-400">
+                          {language === 'hi' 
+                            ? 'कृपया अपना आधार नंबर दर्ज करें। यह आपके नाम और जन्म तिथि को सत्यापित करेगा।'
+                            : 'Please enter your Aadhaar number. This will verify your name and date of birth.'}
+                        </p>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="aadhaar">
+                            {language === 'hi' ? 'आधार नंबर' : 'Aadhaar Number'} *
+                          </Label>
+                          <Input
+                            id="aadhaar"
+                            placeholder="XXXX XXXX XXXX"
+                            value={aadhaarNumber}
+                            onChange={(e) => {
+                              // Format as XXXX XXXX XXXX
+                              const value = e.target.value.replace(/\D/g, '').slice(0, 12)
+                              const formatted = value.replace(/(\d{4})(?=\d)/g, '$1 ')
+                              setAadhaarNumber(formatted)
+                            }}
+                            disabled={aadhaarOtpSent}
+                            maxLength={14}
+                          />
+                        </div>
+                        
+                        {!aadhaarOtpSent ? (
+                          <Button 
+                            onClick={sendAadhaarOtp}
+                            disabled={aadhaarVerifying || aadhaarNumber.replace(/\s/g, '').length !== 12}
+                            className="w-full bg-blue-600 hover:bg-blue-700"
+                          >
+                            {aadhaarVerifying ? (
+                              <>
+                                <SpinnerGap size={16} className="mr-2 animate-spin" />
+                                {language === 'hi' ? 'OTP भेज रहा है...' : 'Sending OTP...'}
+                              </>
+                            ) : (
+                              <>
+                                <IdentificationCard size={16} className="mr-2" />
+                                {language === 'hi' ? 'आधार OTP भेजें' : 'Send Aadhaar OTP'}
+                              </>
+                            )}
+                          </Button>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="space-y-2">
+                              <Label htmlFor="aadhaarOtp">
+                                {language === 'hi' ? 'आधार OTP दर्ज करें' : 'Enter Aadhaar OTP'}
+                              </Label>
+                              <Input
+                                id="aadhaarOtp"
+                                placeholder="XXXXXX"
+                                value={aadhaarOtp}
+                                onChange={(e) => setAadhaarOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                maxLength={6}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                {language === 'hi' 
+                                  ? 'OTP आपके आधार से जुड़े मोबाइल नंबर पर भेजा गया है'
+                                  : 'OTP sent to mobile number linked with your Aadhaar'}
+                              </p>
+                            </div>
+                            
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline"
+                                onClick={() => {
+                                  setAadhaarOtpSent(false)
+                                  setAadhaarOtp('')
+                                }}
+                                className="flex-1"
+                              >
+                                {language === 'hi' ? 'वापस' : 'Back'}
+                              </Button>
+                              <Button 
+                                onClick={verifyAadhaarOtp}
+                                disabled={aadhaarVerifying || aadhaarOtp.length !== 6}
+                                className="flex-1 bg-green-600 hover:bg-green-700"
+                              >
+                                {aadhaarVerifying ? (
+                                  <>
+                                    <SpinnerGap size={16} className="mr-2 animate-spin" />
+                                    {language === 'hi' ? 'सत्यापित हो रहा है...' : 'Verifying...'}
+                                  </>
+                                ) : (
+                                  <>
+                                    <ShieldCheck size={16} className="mr-2" />
+                                    {language === 'hi' ? 'सत्यापित करें' : 'Verify'}
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck size={20} weight="fill" className="text-green-600" />
+                            <span className="text-sm font-medium text-green-800 dark:text-green-300">
+                              {language === 'hi' 
+                                ? `आधार XXXX XXXX ${aadhaarVerificationData?.aadhaarLastFour} सत्यापित`
+                                : `Aadhaar XXXX XXXX ${aadhaarVerificationData?.aadhaarLastFour} verified`}
+                            </span>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={resetAadhaarVerification}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            {language === 'hi' ? 'बदलें' : 'Change'}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-green-700 dark:text-green-400">
+                          {language === 'hi' 
+                            ? 'आपका नाम और जन्म तिथि आधार से सत्यापित है और संपादित नहीं किया जा सकता।'
+                            : 'Your name and date of birth are verified from Aadhaar and cannot be edited.'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Show verified badge for edit mode if already verified */}
+                {isEditMode && editProfile?.aadhaarVerified && (
+                  <Alert className="bg-green-50 border-green-400 dark:bg-green-950/30">
+                    <ShieldCheck size={20} weight="fill" className="text-green-600" />
+                    <AlertDescription className="text-green-700 dark:text-green-300">
+                      {language === 'hi' 
+                        ? `आधार सत्यापित (XXXX XXXX ${editProfile.aadhaarLastFour || '****'})`
+                        : `Aadhaar Verified (XXXX XXXX ${editProfile.aadhaarLastFour || '****'})`}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="fullName">
                     {language === 'hi' ? 'नाम' : 'Name'} *
+                    {(aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)) && (
+                      <span className="ml-2 text-xs text-green-600">
+                        <ShieldCheck size={12} className="inline mr-1" />
+                        {language === 'hi' ? 'आधार सत्यापित' : 'Aadhaar Verified'}
+                      </span>
+                    )}
                   </Label>
                   <Input
                     id="fullName"
@@ -831,6 +1232,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     value={formData.fullName}
                     onChange={(e) => updateField('fullName', e.target.value)}
                     required
+                    disabled={aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)}
+                    className={(aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)) ? 'bg-muted' : ''}
                   />
                 </div>
 
@@ -887,21 +1290,34 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="dateOfBirth">{language === 'hi' ? 'जन्म तिथि' : 'Date of Birth'} * <span className="text-xs font-normal text-muted-foreground">(DD/MM/YYYY)</span></Label>
+                    <Label htmlFor="dateOfBirth">
+                      {language === 'hi' ? 'जन्म तिथि' : 'Date of Birth'} * <span className="text-xs font-normal text-muted-foreground">(DD/MM/YYYY)</span>
+                      {(aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)) && (
+                        <span className="ml-2 text-xs text-green-600">
+                          <ShieldCheck size={12} className="inline mr-1" />
+                          {language === 'hi' ? 'आधार सत्यापित' : 'Aadhaar Verified'}
+                        </span>
+                      )}
+                    </Label>
                     <DatePicker
                       value={formData.dateOfBirth}
                       onChange={(value) => updateField('dateOfBirth', value)}
                       maxDate={new Date(getMaxDate())}
                       minDate={new Date(getMinDate())}
-                      disabled={!formData.gender}
+                      disabled={!formData.gender || aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)}
                       placeholder="DD/MM/YYYY"
                     />
-                    {!formData.gender && (
+                    {(aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)) && (
+                      <p className="text-xs text-green-600">
+                        {language === 'hi' ? 'आधार से सत्यापित - संपादन अक्षम' : 'Verified from Aadhaar - editing disabled'}
+                      </p>
+                    )}
+                    {!formData.gender && !(aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)) && (
                       <p className="text-xs text-muted-foreground">
                         {t.registration.selectGenderFirst}
                       </p>
                     )}
-                    {formData.gender && (
+                    {formData.gender && !(aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)) && (
                       <p className="text-xs text-muted-foreground">
                         {t.registration.minAgeInfo}: {formData.gender === 'male' ? '21' : '18'} {t.registration.yearsText}
                       </p>

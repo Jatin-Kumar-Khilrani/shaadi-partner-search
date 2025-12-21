@@ -41,6 +41,7 @@ function App() {
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({})
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [showRegistration, setShowRegistration] = useState(false)
+  const [profileToEdit, setProfileToEdit] = useState<Profile | null>(null)
   const [showLogin, setShowLogin] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -53,13 +54,14 @@ function App() {
 
   // Membership status utility functions
   const getMembershipStatus = (profile: Profile | null) => {
-    if (!profile) return { isExpired: true, daysUntilExpiry: 0, isFree: false, shouldBlur: true }
+    if (!profile) return { isExpired: true, daysUntilExpiry: 0, isFree: false, shouldBlur: true, isVerified: false }
     
     const isFree = profile.membershipPlan === 'free'
+    const isVerified = profile.status === 'verified'
     const expiry = profile.membershipExpiry ? new Date(profile.membershipExpiry) : null
     const now = new Date()
     
-    if (!expiry) return { isExpired: true, daysUntilExpiry: 0, isFree, shouldBlur: true }
+    if (!expiry) return { isExpired: true, daysUntilExpiry: 0, isFree, shouldBlur: true, isVerified }
     
     const timeDiff = expiry.getTime() - now.getTime()
     const daysUntilExpiry = Math.ceil(timeDiff / (1000 * 60 * 60 * 24))
@@ -67,9 +69,10 @@ function App() {
     
     // Free plan has limited features (acts like expired for certain features)
     // Expired plan also has limited features
-    const shouldBlur = isExpired || isFree
+    // Non-verified profiles also have limited features (treated as free plan)
+    const shouldBlur = isExpired || isFree || !isVerified
     
-    return { isExpired, daysUntilExpiry, isFree, shouldBlur }
+    return { isExpired, daysUntilExpiry, isFree, shouldBlur, isVerified }
   }
 
   const currentMembershipStatus = getMembershipStatus(currentUserProfile)
@@ -321,6 +324,61 @@ function App() {
       })
     })
     setLoggedInUser(null)
+  }
+
+  // Handle edit profile request
+  const handleEditProfile = () => {
+    if (currentUserProfile) {
+      setProfileToEdit(currentUserProfile)
+      setShowRegistration(true)
+    }
+  }
+
+  // Handle profile update (from edit mode)
+  const handleUpdateProfile = (profileData: Partial<Profile>) => {
+    if (!profileData.id) {
+      // This is a new registration, not an edit
+      handleRegisterProfile(profileData)
+      return
+    }
+
+    // Update existing profile - always send back to pending for admin approval
+    setProfiles(current => {
+      if (!current) return []
+      return current.map(p => {
+        if (p.id === profileData.id) {
+          return {
+            ...p,
+            ...profileData,
+            // Reset status to pending for admin re-approval
+            status: 'pending',
+            // Clear the returnedForEdit flag
+            returnedForEdit: false,
+            editReason: undefined,
+            returnedAt: undefined,
+            // Track when profile was edited
+            updatedAt: new Date().toISOString(),
+            lastEditedAt: new Date().toISOString()
+          }
+        }
+        return p
+      })
+    })
+
+    setShowRegistration(false)
+    setProfileToEdit(null)
+    
+    // Notify user that profile is sent for re-approval
+    toast.info(
+      language === 'hi' 
+        ? 'प्रोफ़ाइल अपडेट हो गई। एडमिन की पुनः स्वीकृति के लिए भेजी गई।' 
+        : 'Profile updated. Sent for admin re-approval.',
+      {
+        description: language === 'hi'
+          ? 'आपकी प्रोफ़ाइल स्वीकृति तक अन्य उपयोगकर्ताओं को दिखाई नहीं देगी।'
+          : 'Your profile will not be visible to other users until approved.'
+      }
+    )
   }
 
   const handleLogout = () => {
@@ -859,6 +917,7 @@ function App() {
           <MyProfile 
             profile={currentUserProfile}
             language={language}
+            onEdit={currentUserProfile?.returnedForEdit ? handleEditProfile : undefined}
             onDeleteProfile={handleDeleteProfile}
           />
         )}
@@ -945,10 +1004,14 @@ function App() {
 
       <RegistrationDialog
         open={showRegistration}
-        onClose={() => setShowRegistration(false)}
-        onSubmit={handleRegisterProfile}
+        onClose={() => {
+          setShowRegistration(false)
+          setProfileToEdit(null)
+        }}
+        onSubmit={profileToEdit ? handleUpdateProfile : handleRegisterProfile}
         language={language}
         existingProfiles={profiles}
+        editProfile={profileToEdit}
       />
 
       <LoginDialog

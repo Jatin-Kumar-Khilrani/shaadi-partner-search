@@ -130,6 +130,15 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
     refundReason: '',
     refundTransactionId: ''
   })
+  const [showDigilockerDialog, setShowDigilockerDialog] = useState(false)
+  const [digilockerProfile, setDigilockerProfile] = useState<Profile | null>(null)
+  const [digilockerFormData, setDigilockerFormData] = useState<{
+    documentType: 'aadhaar' | 'pan' | 'driving-license' | 'passport'
+    notes: string
+  }>({
+    documentType: 'aadhaar',
+    notes: ''
+  })
   
   const t = {
     title: language === 'hi' ? 'प्रशासन पैनल' : 'Admin Panel',
@@ -302,6 +311,23 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
     refunded: language === 'hi' ? 'रिफंड किया गया' : 'Refunded',
     totalRefunds: language === 'hi' ? 'कुल रिफंड' : 'Total Refunds',
     netRevenue: language === 'hi' ? 'शुद्ध राजस्व' : 'Net Revenue',
+    // DigiLocker/Aadhaar Verification
+    digilockerVerification: language === 'hi' ? 'डिजिलॉकर सत्यापन' : 'DigiLocker Verification',
+    digilockerVerify: language === 'hi' ? 'डिजिलॉकर सत्यापित करें' : 'Verify DigiLocker',
+    digilockerVerified: language === 'hi' ? 'डिजिलॉकर सत्यापित' : 'DigiLocker Verified',
+    digilockerNotVerified: language === 'hi' ? 'सत्यापित नहीं' : 'Not Verified',
+    digilockerDocType: language === 'hi' ? 'दस्तावेज़ प्रकार' : 'Document Type',
+    aadhaar: language === 'hi' ? 'आधार' : 'Aadhaar',
+    pan: language === 'hi' ? 'पैन कार्ड' : 'PAN Card',
+    drivingLicense: language === 'hi' ? 'ड्राइविंग लाइसेंस' : 'Driving License',
+    passport: language === 'hi' ? 'पासपोर्ट' : 'Passport',
+    verificationNotes: language === 'hi' ? 'सत्यापन नोट्स' : 'Verification Notes',
+    markAsVerified: language === 'hi' ? 'सत्यापित के रूप में चिह्नित करें' : 'Mark as Verified',
+    removeVerification: language === 'hi' ? 'सत्यापन हटाएं' : 'Remove Verification',
+    digilockerVerifySuccess: language === 'hi' ? 'डिजिलॉकर सत्यापित!' : 'DigiLocker verified!',
+    digilockerVerifyRemoved: language === 'hi' ? 'सत्यापन हटाया गया!' : 'Verification removed!',
+    idProofVerification: language === 'hi' ? 'पहचान प्रमाण सत्यापन' : 'ID Proof Verification',
+    verifyIdProof: language === 'hi' ? 'पहचान सत्यापित करें' : 'Verify ID Proof',
   }
 
   // Helper to get user credentials for a profile
@@ -329,6 +355,40 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
       )
     )
     toast.success(t.restoreSuccess)
+  }
+
+  // DigiLocker verification handler
+  const handleDigilockerVerify = (verified: boolean) => {
+    if (!digilockerProfile) return
+    
+    setProfiles((current) =>
+      (current || []).map(p =>
+        p.id === digilockerProfile.id
+          ? verified 
+            ? {
+                ...p,
+                digilockerVerified: true,
+                digilockerVerifiedAt: new Date().toISOString(),
+                digilockerVerifiedBy: 'Admin',
+                digilockerDocumentType: digilockerFormData.documentType,
+                digilockerNotes: digilockerFormData.notes || undefined
+              }
+            : {
+                ...p,
+                digilockerVerified: false,
+                digilockerVerifiedAt: undefined,
+                digilockerVerifiedBy: undefined,
+                digilockerDocumentType: undefined,
+                digilockerNotes: undefined
+              }
+          : p
+      )
+    )
+    
+    toast.success(verified ? t.digilockerVerifySuccess : t.digilockerVerifyRemoved)
+    setShowDigilockerDialog(false)
+    setDigilockerProfile(null)
+    setDigilockerFormData({ documentType: 'aadhaar', notes: '' })
   }
 
   const handleApprove = (profileId: string) => {
@@ -905,6 +965,19 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
                                   <div className="col-span-2">{t.occupation}: {profile.occupation}</div>
                                   <div className="col-span-2">{t.email}: {profile.email}</div>
                                   <div className="col-span-2">{t.mobile}: {profile.mobile}</div>
+                                  <div className="col-span-2 flex items-center gap-2">
+                                    <ShieldCheck size={14} className={profile.digilockerVerified ? 'text-green-600' : 'text-muted-foreground'} />
+                                    <span>{t.idProofVerification}:</span>
+                                    {profile.digilockerVerified ? (
+                                      <Badge variant="outline" className="text-green-600 border-green-400">
+                                        {t.digilockerVerified}
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="text-amber-600 border-amber-400">
+                                        {t.digilockerNotVerified}
+                                      </Badge>
+                                    )}
+                                  </div>
                                 </div>
                                 
                                 {/* Login Credentials */}
@@ -1017,6 +1090,18 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
                               >
                                 <ChatCircle size={16} className="mr-1" />
                                 {t.chat}
+                              </Button>
+                              <Button 
+                                onClick={() => {
+                                  setDigilockerProfile(profile)
+                                  setShowDigilockerDialog(true)
+                                }}
+                                variant="outline"
+                                size="sm"
+                                className={profile.digilockerVerified ? 'text-green-600 border-green-400' : 'text-blue-600 border-blue-400'}
+                              >
+                                <ShieldCheck size={16} className="mr-1" />
+                                {profile.digilockerVerified ? t.digilockerVerified : t.verifyIdProof}
                               </Button>
                               <Button 
                                 onClick={() => handleApprove(profile.id)} 
@@ -1321,6 +1406,18 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
                                   title={t.chat}
                                 >
                                   <ChatCircle size={16} />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setDigilockerProfile(profile)
+                                    setShowDigilockerDialog(true)
+                                  }}
+                                  className={profile.digilockerVerified ? 'text-green-600 hover:text-green-700' : 'text-blue-600 hover:text-blue-700'}
+                                  title={profile.digilockerVerified ? t.digilockerVerified : t.verifyIdProof}
+                                >
+                                  <ShieldCheck size={16} />
                                 </Button>
                                 {profile.status !== 'verified' && (
                                   <Button 
@@ -3423,6 +3520,112 @@ ShaadiPartnerSearch Team
               <ArrowCounterClockwise size={16} />
               {t.processRefund}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* DigiLocker Verification Dialog */}
+      <Dialog open={showDigilockerDialog} onOpenChange={setShowDigilockerDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck size={24} className="text-blue-600" />
+              {t.idProofVerification}
+            </DialogTitle>
+            <DialogDescription>
+              {digilockerProfile?.fullName} ({digilockerProfile?.profileId})
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Current Status */}
+            <div className="p-3 rounded-lg bg-muted">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{t.status}:</span>
+                {digilockerProfile?.digilockerVerified ? (
+                  <Badge className="bg-green-600">
+                    <ShieldCheck size={14} className="mr-1" />
+                    {t.digilockerVerified}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-amber-600 border-amber-400">
+                    {t.digilockerNotVerified}
+                  </Badge>
+                )}
+              </div>
+              {digilockerProfile?.digilockerVerified && (
+                <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                  <p>{t.digilockerDocType}: {
+                    digilockerProfile.digilockerDocumentType === 'aadhaar' ? t.aadhaar :
+                    digilockerProfile.digilockerDocumentType === 'pan' ? t.pan :
+                    digilockerProfile.digilockerDocumentType === 'driving-license' ? t.drivingLicense :
+                    t.passport
+                  }</p>
+                  <p>{t.verifiedAt}: {new Date(digilockerProfile.digilockerVerifiedAt!).toLocaleDateString()}</p>
+                  {digilockerProfile.digilockerNotes && (
+                    <p>{t.verificationNotes}: {digilockerProfile.digilockerNotes}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Verification Form */}
+            {!digilockerProfile?.digilockerVerified && (
+              <>
+                <div className="space-y-2">
+                  <Label>{t.digilockerDocType}</Label>
+                  <Select
+                    value={digilockerFormData.documentType}
+                    onValueChange={(v) => setDigilockerFormData(prev => ({ 
+                      ...prev, 
+                      documentType: v as 'aadhaar' | 'pan' | 'driving-license' | 'passport' 
+                    }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="aadhaar">{t.aadhaar}</SelectItem>
+                      <SelectItem value="pan">{t.pan}</SelectItem>
+                      <SelectItem value="driving-license">{t.drivingLicense}</SelectItem>
+                      <SelectItem value="passport">{t.passport}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t.verificationNotes}</Label>
+                  <Textarea
+                    value={digilockerFormData.notes}
+                    onChange={(e) => setDigilockerFormData(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder={language === 'hi' ? 'वैकल्पिक नोट्स...' : 'Optional notes...'}
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowDigilockerDialog(false)}>
+                {t.cancel}
+              </Button>
+              {digilockerProfile?.digilockerVerified ? (
+                <Button 
+                  variant="destructive" 
+                  onClick={() => handleDigilockerVerify(false)}
+                  className="gap-2"
+                >
+                  {t.removeVerification}
+                </Button>
+              ) : (
+                <Button 
+                  onClick={() => handleDigilockerVerify(true)}
+                  className="gap-2 bg-green-600 hover:bg-green-700"
+                >
+                  <ShieldCheck size={16} />
+                  {t.markAsVerified}
+                </Button>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>

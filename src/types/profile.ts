@@ -43,6 +43,8 @@ export interface Profile {
   status: ProfileStatus
   trustLevel: number
   createdAt: string
+  updatedAt?: string
+  lastEditedAt?: string
   verifiedAt?: string
   membershipPlan?: MembershipPlan
   membershipExpiry?: string
@@ -60,6 +62,18 @@ export interface Profile {
   isDeleted?: boolean
   deletedAt?: string
   deletedReason?: string
+  // DigiLocker/Aadhaar verification for identity proof
+  digilockerVerified?: boolean
+  digilockerVerifiedAt?: string
+  digilockerVerifiedBy?: string  // Admin who verified or 'Self' for user verification
+  digilockerDocumentType?: 'aadhaar' | 'pan' | 'driving-license' | 'passport'
+  digilockerNotes?: string
+  // Aadhaar OTP verification data (from registration)
+  aadhaarVerified?: boolean
+  aadhaarVerifiedAt?: string
+  aadhaarLastFour?: string  // Last 4 digits for reference
+  aadhaarVerifiedName?: string  // Name as per Aadhaar
+  aadhaarVerifiedDob?: string   // DOB as per Aadhaar
   // Geolocation data captured during registration
   registrationLocation?: {
     latitude: number
