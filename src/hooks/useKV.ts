@@ -8,12 +8,27 @@ import { initializeAzureServices, isAzureAvailable, azureStorage } from '@/lib/a
  */
 
 const STORAGE_PREFIX = 'shaadi_partner_'
+const CACHE_TTL_MS = 30000 // 30 seconds cache TTL - refresh from Azure if older
 
 // Event emitter for cross-component state sync
 const kvEventEmitter = new EventTarget()
 
+// Track last Azure fetch time per key
+const lastAzureFetchTime: Record<string, number> = {}
+
 function emitKVChange(key: string) {
   kvEventEmitter.dispatchEvent(new CustomEvent('kv-change', { detail: { key } }))
+}
+
+// Force refresh event emitter
+function emitForceRefresh(key: string) {
+  kvEventEmitter.dispatchEvent(new CustomEvent('kv-force-refresh', { detail: { key } }))
+}
+
+// Export function to force refresh a key from Azure
+export function forceRefreshFromAzure(key: string) {
+  lastAzureFetchTime[key] = 0 // Reset cache time
+  emitForceRefresh(key)
 }
 
 // Initialize Azure on module load
@@ -29,7 +44,7 @@ function ensureAzureInitialized(): Promise<boolean> {
 // Start initialization early
 ensureAzureInitialized()
 
-export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValue: T | ((oldValue?: T) => T)) => void] {
+export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValue: T | ((oldValue?: T) => T)) => void, () => Promise<void>] {
   const storageKey = `${STORAGE_PREFIX}${key}`
   const isLoadingFromAzure = useRef(false)
   
@@ -47,32 +62,55 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
     }
   })
 
+  // Function to load from Azure
+  const loadFromAzure = useCallback(async (force: boolean = false) => {
+    if (isLoadingFromAzure.current && !force) return
+    
+    // Check cache TTL - skip if recently fetched (unless forced)
+    const now = Date.now()
+    const lastFetch = lastAzureFetchTime[key] || 0
+    if (!force && now - lastFetch < CACHE_TTL_MS) {
+      return
+    }
+    
+    isLoadingFromAzure.current = true
+
+    try {
+      await ensureAzureInitialized()
+      
+      if (isAzureAvailable()) {
+        const azureValue = await azureStorage.get<{ data: T, updatedAt?: string }>(key)
+        if (azureValue && azureValue.data !== undefined) {
+          setValue(azureValue.data)
+          // Sync to localStorage for faster subsequent loads
+          localStorage.setItem(storageKey, JSON.stringify(azureValue.data))
+          lastAzureFetchTime[key] = Date.now()
+        }
+      }
+    } catch (error) {
+      console.warn(`Failed to load from Azure for key "${key}":`, error)
+    } finally {
+      isLoadingFromAzure.current = false
+    }
+  }, [key, storageKey])
+
   // Load from Azure on mount
   useEffect(() => {
-    const loadFromAzure = async () => {
-      if (isLoadingFromAzure.current) return
-      isLoadingFromAzure.current = true
+    loadFromAzure()
+  }, [loadFromAzure])
 
-      try {
-        await ensureAzureInitialized()
-        
-        if (isAzureAvailable()) {
-          const azureValue = await azureStorage.get<{ data: T }>(key)
-          if (azureValue && azureValue.data !== undefined) {
-            setValue(azureValue.data)
-            // Sync to localStorage for faster subsequent loads
-            localStorage.setItem(storageKey, JSON.stringify(azureValue.data))
-          }
-        }
-      } catch (error) {
-        console.warn(`Failed to load from Azure for key "${key}":`, error)
-      } finally {
-        isLoadingFromAzure.current = false
+  // Listen for force refresh events
+  useEffect(() => {
+    const handleForceRefresh = (event: Event) => {
+      const customEvent = event as CustomEvent<{ key: string }>
+      if (customEvent.detail.key === key || customEvent.detail.key === '*') {
+        loadFromAzure(true)
       }
     }
 
-    loadFromAzure()
-  }, [key, storageKey])
+    kvEventEmitter.addEventListener('kv-force-refresh', handleForceRefresh)
+    return () => kvEventEmitter.removeEventListener('kv-force-refresh', handleForceRefresh)
+  }, [key, loadFromAzure])
 
   // Listen for changes from other components
   useEffect(() => {
@@ -137,7 +175,12 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
     })
   }, [key, storageKey])
 
-  return [value, updateValue]
+  // Return refresh function as third element
+  const refresh = useCallback(async () => {
+    await loadFromAzure(true)
+  }, [loadFromAzure])
+
+  return [value, updateValue, refresh]
 }
 
 export default useKV

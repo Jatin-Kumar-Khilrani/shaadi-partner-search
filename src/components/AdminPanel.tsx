@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useKV } from '@/hooks/useKV'
+import { useKV, forceRefreshFromAzure } from '@/hooks/useKV'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ShieldCheck, X, Check, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard } from '@phosphor-icons/react'
+import { ShieldCheck, X, Check, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, ArrowsClockwise } from '@phosphor-icons/react'
 import type { Profile, WeddingService, PaymentTransaction } from '@/types/profile'
 import type { User } from '@/types/user'
 import type { ChatMessage } from '@/types/chat'
@@ -24,6 +24,7 @@ import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 import { toast } from 'sonner'
 import { formatDateDDMMYYYY } from '@/lib/utils'
 import { verifyPhotosWithVision, type PhotoVerificationResult } from '@/lib/visionPhotoVerification'
+import { sampleProfiles, sampleUsers } from '@/lib/sampleData'
 
 interface AdminPanelProps {
   profiles: Profile[] | undefined
@@ -78,6 +79,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [viewProfileDialog, setViewProfileDialog] = useState<Profile | null>(null)
   const [faceVerificationDialog, setFaceVerificationDialog] = useState<Profile | null>(null)
   const [faceVerificationResult, setFaceVerificationResult] = useState<PhotoVerificationResult | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [isVerifyingFace, setIsVerifyingFace] = useState(false)
   const [editMembershipDialog, setEditMembershipDialog] = useState<Profile | null>(null)
   const [returnToEditDialog, setReturnToEditDialog] = useState<Profile | null>(null)
@@ -148,6 +150,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const t = {
     title: language === 'hi' ? 'प्रशासन पैनल' : 'Admin Panel',
     description: language === 'hi' ? 'प्रोफाइल सत्यापन और प्रबंधन' : 'Profile verification and management',
+    refreshData: language === 'hi' ? 'डेटा रिफ्रेश करें' : 'Refresh Data',
+    refreshing: language === 'hi' ? 'रिफ्रेश हो रहा है...' : 'Refreshing...',
+    dataRefreshed: language === 'hi' ? 'डेटा रिफ्रेश हो गया' : 'Data refreshed',
+    resetSampleData: language === 'hi' ? 'सैंपल डेटा रीसेट करें' : 'Reset Sample Data',
+    sampleDataReset: language === 'hi' ? 'सैंपल डेटा रीसेट हो गया' : 'Sample data has been reset',
     pendingProfiles: language === 'hi' ? 'लंबित प्रोफाइल' : 'Pending Profiles',
     approvedProfiles: language === 'hi' ? 'स्वीकृत प्रोफाइल' : 'Approved Profiles',
     allDatabase: language === 'hi' ? 'पूरा डेटाबेस' : 'All Database',
@@ -754,21 +761,42 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               <p className="text-muted-foreground">{t.description}</p>
             </div>
             {onLogout && (
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  if (confirm(language === 'hi' 
-                    ? 'क्या आप वाकई एडमिन पैनल से लॉगआउट करना चाहते हैं?' 
-                    : 'Are you sure you want to logout from admin panel?'
-                  )) {
-                    onLogout()
-                  }
-                }}
-                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <X size={18} />
-                {language === 'hi' ? 'लॉगआउट' : 'Logout'}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={async () => {
+                    setIsRefreshing(true)
+                    try {
+                      forceRefreshFromAzure('profiles')
+                      forceRefreshFromAzure('users')
+                      await new Promise(resolve => setTimeout(resolve, 1000))
+                      toast.success(t.dataRefreshed)
+                    } finally {
+                      setIsRefreshing(false)
+                    }
+                  }}
+                  disabled={isRefreshing}
+                  className="gap-2"
+                >
+                  <ArrowsClockwise size={18} className={isRefreshing ? 'animate-spin' : ''} />
+                  {isRefreshing ? t.refreshing : t.refreshData}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    if (confirm(language === 'hi' 
+                      ? 'क्या आप वाकई एडमिन पैनल से लॉगआउट करना चाहते हैं?' 
+                      : 'Are you sure you want to logout from admin panel?'
+                    )) {
+                      onLogout()
+                    }
+                  }}
+                  className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <X size={18} />
+                  {language === 'hi' ? 'लॉगआउट' : 'Logout'}
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -1354,13 +1382,34 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
           <TabsContent value="database">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Database size={24} weight="fill" />
-                  {t.allDatabase}
-                </CardTitle>
-                <CardDescription>
-                  {profiles?.length || 0} {language === 'hi' ? 'कुल प्रोफाइल' : 'total profiles'}
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Database size={24} weight="fill" />
+                      {t.allDatabase}
+                    </CardTitle>
+                    <CardDescription>
+                      {profiles?.length || 0} {language === 'hi' ? 'कुल प्रोफाइल' : 'total profiles'}
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      if (confirm(language === 'hi' 
+                        ? 'क्या आप वाकई सैंपल डेटा रीसेट करना चाहते हैं? यह मौजूदा डेटा को बदल देगा।' 
+                        : 'Are you sure you want to reset to sample data? This will replace existing data.'
+                      )) {
+                        setProfiles(sampleProfiles)
+                        toast.success(t.sampleDataReset)
+                      }
+                    }}
+                    className="gap-2"
+                  >
+                    <ArrowCounterClockwise size={16} />
+                    {t.resetSampleData}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {!profiles || profiles.length === 0 ? (
