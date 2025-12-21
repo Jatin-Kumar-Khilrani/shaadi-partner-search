@@ -57,30 +57,37 @@ export async function detectFace(imageData: string): Promise<FaceDetectionResult
 
     // Get endpoint from runtime config
     const endpoint = await getFaceApiEndpoint()
+    
+    // Construct the API URL - ensure endpoint ends with /
+    const baseEndpoint = endpoint.endsWith('/') ? endpoint : `${endpoint}/`
+    const apiUrl = `${baseEndpoint}face/v1.0/detect?returnFaceId=false&returnFaceLandmarks=false&returnFaceAttributes=blur,exposure,headpose,occlusion&detectionModel=detection_03`
+    
+    console.log('[AzureFaceAPI] Calling:', apiUrl)
+    console.log('[AzureFaceAPI] Image size:', bytes.length, 'bytes')
 
     // Call Azure Face API
     // Note: detection_03 supports: blur,exposure,glasses,headpose,mask,occlusion
     // qualityForRecognition requires recognition model, so we skip it
-    const response = await fetch(
-      `${endpoint}face/v1.0/detect?returnFaceId=false&returnFaceLandmarks=false&returnFaceAttributes=blur,exposure,headpose,occlusion&detectionModel=detection_03`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/octet-stream',
-          'Ocp-Apim-Subscription-Key': apiKey,
-        },
-        body: bytes.buffer,
-      }
-    )
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'Ocp-Apim-Subscription-Key': apiKey,
+      },
+      body: bytes.buffer,
+    })
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Azure Face API error:', errorText)
+      console.error('[AzureFaceAPI] Error response:', response.status, errorText)
       // Fall back to browser detection
       return await browserFaceDetection(imageData)
     }
+    
+    console.log('[AzureFaceAPI] Success!')
 
     const faces = await response.json()
+    console.log('[AzureFaceAPI] Detected faces:', faces.length)
 
     if (!faces || faces.length === 0) {
       return {
@@ -108,14 +115,17 @@ export async function detectFace(imageData: string): Promise<FaceDetectionResult
 
     const face = faces[0]
     const faceRect = face.faceRectangle
+    console.log('[AzureFaceAPI] Face rectangle:', faceRect)
 
     // Calculate image dimensions from base64
     const imgDimensions = await getImageDimensions(imageData)
+    console.log('[AzureFaceAPI] Image dimensions:', imgDimensions)
     
     // Calculate face coverage percentage
     const faceArea = faceRect.width * faceRect.height
     const imageArea = imgDimensions.width * imgDimensions.height
     const coverage = Math.round((faceArea / imageArea) * 100)
+    console.log('[AzureFaceAPI] Face area:', faceArea, 'Image area:', imageArea, 'Coverage:', coverage + '%')
 
     // Check if face is centered (within middle 60% of frame)
     const faceCenterX = faceRect.left + faceRect.width / 2
@@ -148,14 +158,28 @@ export async function detectFace(imageData: string): Promise<FaceDetectionResult
  * Falls back to simulated detection for browsers without FaceDetector support
  */
 async function browserFaceDetection(imageData: string): Promise<FaceDetectionResult> {
+  console.log('[BrowserFaceDetection] Starting fallback detection...')
+  
   return new Promise((resolve) => {
     // Check if browser supports FaceDetector (Chrome/Edge only)
-    if ('FaceDetector' in window) {
+    // Also verify it's actually a constructor before using it
+    let hasFaceDetector = false
+    try {
+      hasFaceDetector = 'FaceDetector' in window && 
+        typeof (window as unknown as { FaceDetector?: unknown }).FaceDetector === 'function'
+      console.log('[BrowserFaceDetection] FaceDetector available:', hasFaceDetector)
+    } catch (e) {
+      console.log('[BrowserFaceDetection] FaceDetector check failed:', e)
+    }
+    
+    if (hasFaceDetector) {
       const img = new Image()
       img.onload = async () => {
         try {
+          console.log('[BrowserFaceDetection] Using browser FaceDetector API...')
           // @ts-ignore - FaceDetector is a newer API
-          const faceDetector = new window.FaceDetector({ fastMode: false, maxDetectedFaces: 5 })
+          const FaceDetectorClass = (window as unknown as { FaceDetector: new (options: { fastMode: boolean; maxDetectedFaces: number }) => { detect: (source: HTMLImageElement) => Promise<Array<{ boundingBox: { x: number; y: number; width: number; height: number } }>> } }).FaceDetector
+          const faceDetector = new FaceDetectorClass({ fastMode: false, maxDetectedFaces: 5 })
           const faces = await faceDetector.detect(img)
 
           if (faces.length === 0) {
@@ -430,23 +454,30 @@ async function getFaceApiKey(): Promise<string | null> {
     // Try to get from runtime config - use import.meta.env.BASE_URL for correct path
     const basePath = import.meta.env.BASE_URL || '/'
     const configUrl = `${basePath}runtime.config.json`
+    console.log('[AzureFaceAPI] Fetching config from:', configUrl)
     const response = await fetch(configUrl)
     if (response.ok) {
       const config = await response.json()
       // Check for key in azure.faceApi.key (new structure)
       if (config.azure?.faceApi?.key) {
+        console.log('[AzureFaceAPI] Found API key in config (azure.faceApi.key)')
         return config.azure.faceApi.key
       }
       // Fallback to old structure
       if (config.azureFaceApiKey) {
+        console.log('[AzureFaceAPI] Found API key in config (azureFaceApiKey)')
         return config.azureFaceApiKey
       }
+      console.log('[AzureFaceAPI] Config loaded but no API key found')
+    } else {
+      console.log('[AzureFaceAPI] Config fetch failed:', response.status)
     }
-  } catch {
-    // Config not available
+  } catch (e) {
+    console.log('[AzureFaceAPI] Error loading config:', e)
   }
   
   // For demo/development, return null to use browser fallback
+  console.log('[AzureFaceAPI] No API key available, will use browser fallback')
   return null
 }
 
