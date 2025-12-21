@@ -40,7 +40,8 @@ app.http('blobUploadUrl', {
   authLevel: 'anonymous',
   route: 'blob/upload-url',
   handler: async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const corsHeaders = getCorsHeaders()
+    const origin = request.headers.get('origin') || undefined
+    const corsHeaders = getCorsHeaders(origin)
     
     if (request.method === 'OPTIONS') {
       return { status: 204, headers: corsHeaders }
@@ -103,7 +104,8 @@ app.http('blobListPhotos', {
   authLevel: 'anonymous',
   route: 'blob/photos/{profileId}',
   handler: async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const corsHeaders = getCorsHeaders()
+    const origin = request.headers.get('origin') || undefined
+    const corsHeaders = getCorsHeaders(origin)
     
     if (request.method === 'OPTIONS') {
       return { status: 204, headers: corsHeaders }
@@ -155,7 +157,8 @@ app.http('blobDelete', {
   authLevel: 'anonymous',
   route: 'blob/{*blobName}',
   handler: async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const corsHeaders = getCorsHeaders()
+    const origin = request.headers.get('origin') || undefined
+    const corsHeaders = getCorsHeaders(origin)
     
     if (request.method === 'OPTIONS') {
       return { status: 204, headers: corsHeaders }

@@ -21,11 +21,29 @@ export function getCosmosContainer(): Container {
   return container
 }
 
-export function getCorsHeaders(): Record<string, string> {
-  const allowedOrigins = process.env.ALLOWED_ORIGINS || '*'
+export function getCorsHeaders(requestOrigin?: string): Record<string, string> {
+  const allowedOriginsStr = process.env.ALLOWED_ORIGINS || '*'
+  
+  // If wildcard, allow all
+  if (allowedOriginsStr === '*') {
+    return {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '86400'
+    }
+  }
+  
+  const allowedOrigins = allowedOriginsStr.split(',').map(o => o.trim())
+  
+  // Check if request origin is in allowed list
+  let origin = allowedOrigins[0] // Default to first
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    origin = requestOrigin
+  }
   
   return {
-    'Access-Control-Allow-Origin': allowedOrigins.split(',')[0] || '*',
+    'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400'

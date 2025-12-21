@@ -9,7 +9,8 @@ app.http('kv', {
   authLevel: 'anonymous',
   route: 'kv/{key}',
   handler: async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const corsHeaders = getCorsHeaders()
+    const origin = request.headers.get('origin') || undefined
+    const corsHeaders = getCorsHeaders(origin)
     
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
@@ -127,7 +128,8 @@ app.http('health', {
   authLevel: 'anonymous',
   route: 'health',
   handler: async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const corsHeaders = getCorsHeaders()
+    const origin = request.headers.get('origin') || undefined
+    const corsHeaders = getCorsHeaders(origin)
     
     if (request.method === 'OPTIONS') {
       return { status: 204, headers: corsHeaders }
