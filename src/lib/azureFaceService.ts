@@ -59,9 +59,10 @@ export async function detectFace(imageData: string): Promise<FaceDetectionResult
     const endpoint = await getFaceApiEndpoint()
 
     // Call Azure Face API
-    // Note: detection_03 only supports: blur,exposure,glasses,headpose,mask,occlusion,qualityforrecognition
+    // Note: detection_03 supports: blur,exposure,glasses,headpose,mask,occlusion
+    // qualityForRecognition requires recognition model, so we skip it
     const response = await fetch(
-      `${endpoint}face/v1.0/detect?returnFaceId=false&returnFaceLandmarks=false&returnFaceAttributes=blur,exposure,headpose,occlusion,qualityforrecognition&detectionModel=detection_03`,
+      `${endpoint}face/v1.0/detect?returnFaceId=false&returnFaceLandmarks=false&returnFaceAttributes=blur,exposure,headpose,occlusion&detectionModel=detection_03`,
       {
         method: 'POST',
         headers: {
