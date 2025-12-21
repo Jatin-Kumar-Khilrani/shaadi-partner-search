@@ -2,8 +2,8 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MapPin, Briefcase, GraduationCap, UserCircle, ShieldCheck, Seal, Clock } from '@phosphor-icons/react'
-import type { Profile } from '@/types/profile'
+import { MapPin, Briefcase, GraduationCap, UserCircle, ShieldCheck, Seal, Clock, Lock, Crown } from '@phosphor-icons/react'
+import type { Profile, MembershipPlan } from '@/types/profile'
 import { motion } from 'framer-motion'
 
 interface ProfileCardProps {
@@ -12,9 +12,13 @@ interface ProfileCardProps {
   language?: 'hi' | 'en'
   isLoggedIn?: boolean
   shouldBlur?: boolean
+  membershipPlan?: MembershipPlan
 }
 
-export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedIn = false, shouldBlur = false }: ProfileCardProps) {
+export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedIn = false, shouldBlur = false, membershipPlan }: ProfileCardProps) {
+  
+  // Determine if user has premium access
+  const hasPremiumAccess = membershipPlan === '6-month' || membershipPlan === '1-year'
   
   const getTrustBadge = () => {
     if (profile.trustLevel >= 5) {
@@ -91,14 +95,22 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
       <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 hover:border-teal/30">
         <CardHeader className="pb-4">
           <div className="flex items-start gap-4">
-            <Avatar className={`w-20 h-20 border-4 border-background shadow-lg ${(!isLoggedIn || shouldBlur) ? 'blur-sm' : ''}`}>
-              {isLoggedIn && !shouldBlur ? (
-                <AvatarImage src={profile.photos?.[0]} alt={displayName} />
-              ) : null}
-              <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className={`w-20 h-20 border-4 border-background shadow-lg ${(!isLoggedIn || shouldBlur) ? 'blur-md' : ''}`}>
+                {isLoggedIn && !shouldBlur ? (
+                  <AvatarImage src={profile.photos?.[0]} alt={displayName} />
+                ) : null}
+                <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              {/* Lock overlay for free/pending users */}
+              {shouldBlur && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-full">
+                  <Lock size={24} weight="fill" className="text-white" />
+                </div>
+              )}
+            </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="font-bold text-xl leading-tight">
@@ -124,6 +136,20 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
             </div>
           </div>
         </CardHeader>
+
+        {/* Upgrade prompt for free/pending users */}
+        {shouldBlur && (
+          <div className="mx-4 mb-2 p-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-lg">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-xs">
+              <Crown size={14} weight="fill" />
+              <span>
+                {language === 'hi' 
+                  ? 'फोटो और पूरा नाम देखने के लिए प्लान अपग्रेड करें' 
+                  : 'Upgrade plan to view photo & full name'}
+              </span>
+            </div>
+          </div>
+        )}
 
         <CardContent className="space-y-3 pb-4">
           <div className="flex items-center gap-2 text-sm">

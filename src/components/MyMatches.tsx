@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { ProfileCard } from './ProfileCard'
 import { MagnifyingGlass, Funnel, X } from '@phosphor-icons/react'
-import type { Profile, SearchFilters, BlockedProfile } from '@/types/profile'
+import type { Profile, SearchFilters, BlockedProfile, MembershipPlan, ProfileStatus } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 
 interface MyMatchesProps {
@@ -19,15 +19,23 @@ interface MyMatchesProps {
   profiles: Profile[]
   onViewProfile: (profile: Profile) => void
   language: Language
+  membershipPlan?: MembershipPlan
+  profileStatus?: ProfileStatus
 }
 
-export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }: MyMatchesProps) {
+export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, membershipPlan, profileStatus }: MyMatchesProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState<SearchFilters>({})
   const [showFilters, setShowFilters] = useState(false)
   const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
 
   const currentUserProfile = profiles.find(p => p.id === loggedInUserId)
+  
+  // Free plan users or pending approval users should have restricted access
+  // They cannot see full names (surname) or profile photos
+  const isFreePlan = membershipPlan === 'free' || !membershipPlan
+  const isPendingApproval = profileStatus === 'pending'
+  const shouldBlurProfiles = isFreePlan || isPendingApproval
 
   const t = {
     title: language === 'hi' ? 'मेरे मैच' : 'My Matches',
@@ -257,6 +265,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language }:
                 onViewProfile={onViewProfile}
                 language={language}
                 isLoggedIn={true}
+                shouldBlur={shouldBlurProfiles}
+                membershipPlan={membershipPlan}
               />
             ))}
           </div>

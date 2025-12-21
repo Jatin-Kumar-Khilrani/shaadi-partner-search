@@ -883,6 +883,8 @@ function App() {
             profiles={profiles || []}
             onViewProfile={setSelectedProfile}
             language={language}
+            membershipPlan={currentUserProfile?.membershipPlan}
+            profileStatus={currentUserProfile?.status}
           />
         )}
 
