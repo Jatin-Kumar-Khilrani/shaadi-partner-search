@@ -19,6 +19,7 @@ import { useTranslation, type Language } from '@/lib/translations'
 import { generateBio, type BioGenerationParams } from '@/lib/aiFoundryService'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 import { TermsAndConditions } from '@/components/TermsAndConditions'
+import { uploadPhoto, isBlobStorageAvailable, dataUrlToFile } from '@/lib/blobService'
 
 interface RegistrationDialogProps {
   open: boolean
@@ -590,7 +591,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     })
   }
 
-  const handleSubmit = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = async () => {
     if (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.religion || !formData.maritalStatus || !formData.horoscopeMatching || !formData.email || !formData.mobile || !formData.membershipPlan) {
       toast.error(t.registration.fillAllFields)
       return
@@ -669,6 +672,74 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       membershipExpiry.setMonth(membershipExpiry.getMonth() + (formData.membershipPlan === '1-year' ? 12 : 6))
     }
 
+    // Generate a temporary profile ID for new registrations (for photo uploads)
+    const tempProfileId = isEditMode && editProfile?.profileId 
+      ? editProfile.profileId 
+      : `SP${Date.now().toString().slice(-8)}`
+
+    // Upload photos to blob storage if available
+    setIsSubmitting(true)
+    let photoUrls: string[] = []
+    let uploadedSelfieUrl: string | undefined = selfiePreview
+    let uploadedIdProofUrl: string | undefined = idProofPreview
+
+    try {
+      const blobAvailable = await isBlobStorageAvailable()
+      
+      if (blobAvailable) {
+        // Upload profile photos
+        const photoUploadPromises = photos.map(async (photo, index) => {
+          // Skip if it's already a CDN URL (from previous upload)
+          if (photo.preview.startsWith('https://')) {
+            return photo.preview
+          }
+          // Convert base64 to file and upload
+          try {
+            const file = photo.file.size > 0 
+              ? photo.file 
+              : dataUrlToFile(photo.preview, `photo-${index}.jpg`)
+            const { cdnUrl } = await uploadPhoto(tempProfileId, file)
+            return cdnUrl
+          } catch (err) {
+            console.warn(`Failed to upload photo ${index}:`, err)
+            return photo.preview // Fallback to base64
+          }
+        })
+
+        photoUrls = await Promise.all(photoUploadPromises)
+
+        // Upload selfie if it's base64
+        if (selfiePreview && !selfiePreview.startsWith('https://')) {
+          try {
+            const selfieFile = dataUrlToFile(selfiePreview, 'selfie.jpg')
+            const { cdnUrl } = await uploadPhoto(tempProfileId, selfieFile)
+            uploadedSelfieUrl = cdnUrl
+          } catch (err) {
+            console.warn('Failed to upload selfie:', err)
+          }
+        }
+
+        // Upload ID proof if it's base64
+        if (idProofPreview && !idProofPreview.startsWith('https://')) {
+          try {
+            const idFile = dataUrlToFile(idProofPreview, 'id-proof.jpg')
+            const { cdnUrl } = await uploadPhoto(tempProfileId, idFile)
+            uploadedIdProofUrl = cdnUrl
+          } catch (err) {
+            console.warn('Failed to upload ID proof:', err)
+          }
+        }
+      } else {
+        // Fallback: use base64 (not recommended for production)
+        photoUrls = photos.map(p => p.preview)
+      }
+    } catch (err) {
+      console.warn('Blob storage not available, using base64:', err)
+      photoUrls = photos.map(p => p.preview)
+    } finally {
+      setIsSubmitting(false)
+    }
+
     const profile: Partial<Profile> = {
       ...formData,
       // Include existing profile fields for edit mode
@@ -681,7 +752,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         returnedForEdit: false, // Clear the returned flag
         editReason: undefined,
         returnedAt: undefined
-      } : {}),
+      } : {
+        profileId: tempProfileId // Use the temp ID for new registrations
+      }),
       // DigiLocker verification data
       ...(digilockerVerified && digilockerData ? {
         digilockerVerified: true,
@@ -708,11 +781,11 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       relationToProfile: formData.profileCreatedFor === 'Other' ? formData.otherRelation : formData.profileCreatedFor!,
       hideEmail: editProfile?.hideEmail ?? false,
       hideMobile: editProfile?.hideMobile ?? false,
-      photos: photos.map(p => p.preview),
-      selfieUrl: selfiePreview,
+      photos: photoUrls, // Use uploaded CDN URLs (or base64 fallback)
+      selfieUrl: uploadedSelfieUrl, // Use uploaded CDN URL
       // ID Proof data (only add if provided - for new registrations)
-      ...(idProofPreview ? {
-        idProofUrl: idProofPreview,
+      ...(uploadedIdProofUrl ? {
+        idProofUrl: uploadedIdProofUrl, // Use uploaded CDN URL
         idProofType: idProofType,
         idProofUploadedAt: new Date().toISOString(),
         idProofVerified: false
@@ -2326,8 +2399,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 {t.registration.next}
               </Button>
             ) : step === 6 ? (
-              <Button onClick={handleSubmit} disabled={!termsAccepted || !formData.membershipPlan}>
-                {t.registration.submit}
+              <Button onClick={handleSubmit} disabled={!termsAccepted || !formData.membershipPlan || isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />
+                    {language === 'hi' ? 'अपलोड हो रहा है...' : 'Uploading...'}
+                  </>
+                ) : (
+                  t.registration.submit
+                )}
               </Button>
             ) : null}
           </div>

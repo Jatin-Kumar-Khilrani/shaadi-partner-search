@@ -31,7 +31,7 @@ let useApiMode = false
 /**
  * Fetch runtime configuration from public/runtime.config.json
  */
-async function fetchRuntimeConfig(): Promise<typeof runtimeConfig> {
+export async function fetchRuntimeConfig(): Promise<typeof runtimeConfig> {
   if (runtimeConfig !== null) return runtimeConfig
   
   try {
@@ -62,6 +62,13 @@ async function fetchRuntimeConfig(): Promise<typeof runtimeConfig> {
     runtimeConfig = {}
     return runtimeConfig
   }
+}
+
+/**
+ * Get cached runtime config (synchronous, may return null if not yet fetched)
+ */
+export function getRuntimeConfig(): typeof runtimeConfig {
+  return runtimeConfig
 }
 
 /**
