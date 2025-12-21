@@ -38,6 +38,36 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate runtime config
+        run: |
+          cat > public/runtime.config.json << 'EOF'
+          {
+            "$schema": "./runtime.config.schema.json",
+            "description": "Runtime configuration for ShaadiPartnerSearch",
+            "version": "1.0.0",
+            "api": {
+              "baseUrl": "https://shaadi-partner-api.azurewebsites.net"
+            },
+            "azure": {
+              "cosmosDb": {
+                "key": ""
+              },
+              "faceApi": {
+                "endpoint": "${{ secrets.AZURE_FACE_API_ENDPOINT }}",
+                "key": "${{ secrets.AZURE_FACE_API_KEY }}"
+              }
+            },
+            "features": {
+              "faceDetection": {
+                "enabled": true,
+                "minCoveragePercent": 80,
+                "requireCentered": true,
+                "maxFaces": 1
+              }
+            }
+          }
+          EOF
+
       - name: Build
         run: npm run build
         env:
