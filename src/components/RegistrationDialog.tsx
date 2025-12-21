@@ -883,65 +883,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     }
   }
 
-  // DigiLocker verification function (OAuth flow - no Aadhaar input)
-  const initiateDigiLockerVerification = async () => {
-    setDigilockerVerifying(true)
-    
-    // Import DigiLocker service dynamically
-    const { simulateDigiLockerVerification, isDigiLockerConfigured, initiateDigiLockerAuth } = await import('@/lib/digilockerService')
-    
-    // Check if production DigiLocker is configured
-    if (isDigiLockerConfigured()) {
-      // Use actual DigiLocker OAuth flow
-      initiateDigiLockerAuth()
-      setDigilockerVerifying(false)
-      return
-    }
-    
-    // Demo mode - simulate DigiLocker popup
-    simulateDigiLockerVerification(
-      (user) => {
-        // Success callback
-        const verificationData = {
-          name: user.name,
-          dob: user.dob,
-          gender: (user.gender === 'M' ? 'male' : 'female') as 'male' | 'female',
-          verifiedAt: new Date().toISOString(),
-          digilockerID: user.digilockerID,
-          aadhaarLastFour: user.eaadhaar?.uid
-        }
-        
-        setDigilockerData(verificationData)
-        setDigilockerVerified(true)
-        setDigilockerVerifying(false)
-        
-        // Lock name and DOB to DigiLocker verified values
-        updateField('fullName', verificationData.name)
-        updateField('dateOfBirth', verificationData.dob)
-        updateField('gender', verificationData.gender)
-        
-        toast.success(
-          language === 'hi' ? 'DigiLocker सत्यापित!' : 'DigiLocker Verified!',
-          {
-            description: language === 'hi' 
-              ? `नाम: ${verificationData.name} | जन्म तिथि: ${verificationData.dob}`
-              : `Name: ${verificationData.name} | DOB: ${verificationData.dob}`
-          }
-        )
-      },
-      (error) => {
-        // Error callback
-        setDigilockerVerifying(false)
-        toast.error(error)
-      },
-      language
-    )
-  }
-
-  const resetDigiLockerVerification = () => {
-    setDigilockerVerified(false)
-    setDigilockerData(null)
-  }
+  // DigiLocker verification disabled for now - will be integrated later
+  // Using strict warnings for name/DOB instead
 
   const handleVerificationComplete = () => {
     const emailValid = verifyEmailOtp()
@@ -954,15 +897,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   }
 
   const nextStep = () => {
-    // DigiLocker verification required for new registrations
-    if (step === 1 && !isEditMode && !digilockerVerified) {
-      toast.error(
-        language === 'hi' 
-          ? 'कृपया पहले DigiLocker से सत्यापित करें' 
-          : 'Please verify with DigiLocker first'
-      )
-      return
-    }
+    // Validate step 1 fields
     if (step === 1 && (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.religion || !formData.maritalStatus)) {
       toast.error(t.registration.fillAllFields)
       return
@@ -1069,110 +1004,57 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             <CardContent className="pt-6">
             {step === 1 && (
               <div className="space-y-4">
-                {/* DigiLocker Verification Section - OAuth flow, no Aadhaar input */}
+                {/* Important Warning - Name and DOB cannot be changed after registration */}
                 {!isEditMode && (
-                  <div className="p-4 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-700">
-                    <div className="flex items-center gap-2 mb-3">
-                      <IdentificationCard size={24} weight="bold" className="text-blue-600" />
-                      <h3 className="font-semibold text-blue-800 dark:text-blue-300">
-                        {language === 'hi' ? 'DigiLocker से सत्यापन' : 'Verify via DigiLocker'}
-                      </h3>
-                      {digilockerVerified && (
-                        <span className="ml-auto flex items-center gap-1 text-green-600 text-sm font-medium">
-                          <ShieldCheck size={18} weight="fill" />
-                          {language === 'hi' ? 'सत्यापित' : 'Verified'}
-                        </span>
-                      )}
-                    </div>
-                    
-                    {!digilockerVerified ? (
-                      <div className="space-y-3">
-                        <p className="text-sm text-blue-700 dark:text-blue-400">
-                          {language === 'hi' 
-                            ? 'DigiLocker से लॉगिन करके अपना नाम और जन्म तिथि सत्यापित करें। यह सुरक्षित और तेज़ है।'
-                            : 'Login with DigiLocker to verify your name and date of birth. This is secure and fast.'}
-                        </p>
-                        
-                        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-                              🔐
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-sm font-medium mb-1">
-                                {language === 'hi' ? 'DigiLocker क्या है?' : 'What is DigiLocker?'}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {language === 'hi' 
-                                  ? 'भारत सरकार की सुरक्षित डिजिटल दस्तावेज़ सेवा। आपका आधार नंबर हमारे साथ साझा नहीं होता।'
-                                  : 'Govt. of India\'s secure digital document service. Your Aadhaar number is not shared with us.'}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <Button 
-                          onClick={initiateDigiLockerVerification}
-                          disabled={digilockerVerifying}
-                          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
-                        >
-                          {digilockerVerifying ? (
-                            <>
-                              <SpinnerGap size={16} className="mr-2 animate-spin" />
-                              {language === 'hi' ? 'DigiLocker खुल रहा है...' : 'Opening DigiLocker...'}
-                            </>
-                          ) : (
-                            <>
-                              <IdentificationCard size={18} className="mr-2" />
-                              {language === 'hi' ? 'DigiLocker से लॉगिन करें' : 'Login with DigiLocker'}
-                            </>
-                          )}
-                        </Button>
-                        
-                        <p className="text-xs text-center text-muted-foreground">
-                          {language === 'hi' 
-                            ? 'DigiLocker भारत सरकार के इलेक्ट्रॉनिक्स और सूचना प्रौद्योगिकी मंत्रालय की पहल है'
-                            : 'DigiLocker is an initiative of Ministry of Electronics & IT, Govt. of India'}
-                        </p>
-                      </div>
-                    ) : (
+                  <div className="p-4 rounded-lg border-2 border-orange-400 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-600">
+                    <div className="flex items-start gap-3">
+                      <Warning size={28} weight="bold" className="text-orange-600 flex-shrink-0 mt-0.5" />
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <ShieldCheck size={20} weight="fill" className="text-green-600" />
-                            <span className="text-sm font-medium text-green-800 dark:text-green-300">
+                        <h3 className="font-bold text-orange-800 dark:text-orange-300 text-lg">
+                          {language === 'hi' ? '⚠️ महत्वपूर्ण सूचना - ध्यान से पढ़ें' : '⚠️ Important Notice - Read Carefully'}
+                        </h3>
+                        <div className="space-y-2 text-sm text-orange-700 dark:text-orange-400">
+                          <p className="font-semibold">
+                            {language === 'hi' 
+                              ? 'आपका नाम और जन्म तिथि पंजीकरण के बाद कभी भी बदले नहीं जा सकते।'
+                              : 'Your Name and Date of Birth CANNOT be changed after registration.'}
+                          </p>
+                          <ul className="list-disc list-inside space-y-1 ml-2">
+                            <li>
                               {language === 'hi' 
-                                ? `DigiLocker सत्यापित ✓`
-                                : `DigiLocker Verified ✓`}
-                            </span>
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={resetDigiLockerVerification}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            {language === 'hi' ? 'बदलें' : 'Change'}
-                          </Button>
+                                ? 'कृपया अपने आधिकारिक दस्तावेजों (आधार/पैन) के अनुसार सही नाम दर्ज करें'
+                                : 'Please enter your name exactly as per official documents (Aadhaar/PAN)'}
+                            </li>
+                            <li>
+                              {language === 'hi' 
+                                ? 'जन्म तिथि सही दर्ज करें - यह बाद में संशोधित नहीं की जा सकती'
+                                : 'Enter correct date of birth - it cannot be modified later'}
+                            </li>
+                            <li>
+                              {language === 'hi' 
+                                ? 'गलत जानकारी देने पर प्रोफाइल अस्वीकार हो सकती है'
+                                : 'Incorrect information may lead to profile rejection'}
+                            </li>
+                          </ul>
+                          <p className="text-xs italic mt-2 border-t border-orange-300 pt-2">
+                            {language === 'hi' 
+                              ? 'हम फोटो सत्यापन द्वारा आपकी पहचान की जांच करते हैं। गलत जानकारी वाली प्रोफाइल स्थायी रूप से ब्लॉक की जा सकती है।'
+                              : 'We verify identity through photo verification. Profiles with false information may be permanently blocked.'}
+                          </p>
                         </div>
-                        <p className="text-xs text-green-700 dark:text-green-400">
-                          {language === 'hi' 
-                            ? 'आपका नाम और जन्म तिथि DigiLocker से सत्यापित है और संपादित नहीं किया जा सकता।'
-                            : 'Your name and date of birth are verified via DigiLocker and cannot be edited.'}
-                        </p>
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
 
-                {/* Show verified badge for edit mode if already verified */}
-                {isEditMode && editProfile?.digilockerVerified && (
-                  <Alert className="bg-green-50 border-green-400 dark:bg-green-950/30">
-                    <ShieldCheck size={20} weight="fill" className="text-green-600" />
-                    <AlertDescription className="text-green-700 dark:text-green-300">
+                {/* Show locked badge for edit mode */}
+                {isEditMode && (
+                  <Alert className="bg-gray-50 border-gray-400 dark:bg-gray-950/30">
+                    <ShieldCheck size={20} weight="fill" className="text-gray-600" />
+                    <AlertDescription className="text-gray-700 dark:text-gray-300">
                       {language === 'hi' 
-                        ? 'DigiLocker सत्यापित ✓'
-                        : 'DigiLocker Verified ✓'}
+                        ? 'नाम और जन्म तिथि संपादित नहीं किए जा सकते'
+                        : 'Name and Date of Birth cannot be edited'}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -1180,22 +1062,26 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 <div className="space-y-2">
                   <Label htmlFor="fullName">
                     {language === 'hi' ? 'नाम' : 'Name'} *
-                    {(digilockerVerified || (isEditMode && editProfile?.digilockerVerified)) && (
-                      <span className="ml-2 text-xs text-green-600">
-                        <ShieldCheck size={12} className="inline mr-1" />
-                        {language === 'hi' ? 'DigiLocker सत्यापित' : 'DigiLocker Verified'}
+                    {isEditMode && (
+                      <span className="ml-2 text-xs text-gray-500">
+                        🔒 {language === 'hi' ? 'स्थायी' : 'Permanent'}
                       </span>
                     )}
                   </Label>
                   <Input
                     id="fullName"
-                    placeholder={language === 'hi' ? 'उदाहरण: राज आहूजा' : 'Example: Raj Ahuja'}
+                    placeholder={language === 'hi' ? 'आधिकारिक नाम दर्ज करें (आधार/पैन अनुसार)' : 'Enter official name (as per Aadhaar/PAN)'}
                     value={formData.fullName}
                     onChange={(e) => updateField('fullName', e.target.value)}
                     required
-                    disabled={digilockerVerified || (isEditMode && editProfile?.digilockerVerified)}
-                    className={(digilockerVerified || (isEditMode && editProfile?.digilockerVerified)) ? 'bg-muted' : ''}
+                    disabled={isEditMode}
+                    className={isEditMode ? 'bg-muted' : ''}
                   />
+                  {!isEditMode && (
+                    <p className="text-xs text-orange-600 dark:text-orange-400">
+                      ⚠️ {language === 'hi' ? 'पंजीकरण के बाद बदला नहीं जा सकता' : 'Cannot be changed after registration'}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1253,10 +1139,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   <div className="space-y-2">
                     <Label htmlFor="dateOfBirth">
                       {language === 'hi' ? 'जन्म तिथि' : 'Date of Birth'} * <span className="text-xs font-normal text-muted-foreground">(DD/MM/YYYY)</span>
-                      {(digilockerVerified || (isEditMode && editProfile?.digilockerVerified)) && (
-                        <span className="ml-2 text-xs text-green-600">
-                          <ShieldCheck size={12} className="inline mr-1" />
-                          {language === 'hi' ? 'DigiLocker सत्यापित' : 'DigiLocker Verified'}
+                      {isEditMode && (
+                        <span className="ml-2 text-xs text-gray-500">
+                          🔒 {language === 'hi' ? 'स्थायी' : 'Permanent'}
                         </span>
                       )}
                     </Label>
@@ -1265,23 +1150,28 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       onChange={(value) => updateField('dateOfBirth', value)}
                       maxDate={new Date(getMaxDate())}
                       minDate={new Date(getMinDate())}
-                      disabled={!formData.gender || digilockerVerified || (isEditMode && editProfile?.digilockerVerified)}
+                      disabled={!formData.gender || isEditMode}
                       placeholder="DD/MM/YYYY"
                     />
-                    {(digilockerVerified || (isEditMode && editProfile?.digilockerVerified)) && (
-                      <p className="text-xs text-green-600">
-                        {language === 'hi' ? 'DigiLocker से सत्यापित - संपादन अक्षम' : 'Verified from DigiLocker - editing disabled'}
+                    {isEditMode && (
+                      <p className="text-xs text-gray-600">
+                        {language === 'hi' ? 'जन्म तिथि संपादित नहीं की जा सकती' : 'Date of birth cannot be edited'}
                       </p>
                     )}
-                    {!formData.gender && !(digilockerVerified || (isEditMode && editProfile?.digilockerVerified)) && (
+                    {!formData.gender && !isEditMode && (
                       <p className="text-xs text-muted-foreground">
                         {t.registration.selectGenderFirst}
                       </p>
                     )}
-                    {formData.gender && !(digilockerVerified || (isEditMode && editProfile?.digilockerVerified)) && (
-                      <p className="text-xs text-muted-foreground">
-                        {t.registration.minAgeInfo}: {formData.gender === 'male' ? '21' : '18'} {t.registration.yearsText}
-                      </p>
+                    {formData.gender && !isEditMode && (
+                      <>
+                        <p className="text-xs text-muted-foreground">
+                          {t.registration.minAgeInfo}: {formData.gender === 'male' ? '21' : '18'} {t.registration.yearsText}
+                        </p>
+                        <p className="text-xs text-orange-600 dark:text-orange-400">
+                          ⚠️ {language === 'hi' ? 'पंजीकरण के बाद बदला नहीं जा सकता' : 'Cannot be changed after registration'}
+                        </p>
+                      </>
                     )}
                   </div>
                 </div>
