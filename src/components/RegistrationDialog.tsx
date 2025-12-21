@@ -65,19 +65,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
   
-  // DigiLocker/Aadhaar verification state
-  const [aadhaarNumber, setAadhaarNumber] = useState('')
-  const [aadhaarOtp, setAadhaarOtp] = useState('')
-  const [generatedAadhaarOtp, setGeneratedAadhaarOtp] = useState('')
-  const [aadhaarOtpSent, setAadhaarOtpSent] = useState(false)
-  const [aadhaarVerified, setAadhaarVerified] = useState(false)
-  const [aadhaarVerifying, setAadhaarVerifying] = useState(false)
-  const [aadhaarVerificationData, setAadhaarVerificationData] = useState<{
+  // DigiLocker verification state (OAuth flow - no Aadhaar number input)
+  const [digilockerVerifying, setDigilockerVerifying] = useState(false)
+  const [digilockerVerified, setDigilockerVerified] = useState(false)
+  const [digilockerData, setDigilockerData] = useState<{
     name: string
     dob: string
     gender: 'male' | 'female'
     verifiedAt: string
-    aadhaarLastFour: string
+    digilockerID: string
+    aadhaarLastFour?: string
   } | null>(null)
   
   const [formData, setFormData] = useState({
@@ -200,11 +197,11 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         if (parsed.mobileVerified) {
           setMobileVerified(parsed.mobileVerified)
         }
-        if (parsed.aadhaarVerified) {
-          setAadhaarVerified(parsed.aadhaarVerified)
+        if (parsed.digilockerVerified) {
+          setDigilockerVerified(parsed.digilockerVerified)
         }
-        if (parsed.aadhaarVerificationData) {
-          setAadhaarVerificationData(parsed.aadhaarVerificationData)
+        if (parsed.digilockerData) {
+          setDigilockerData(parsed.digilockerData)
         }
         toast.info(
           language === 'hi' ? 'पिछला ड्राफ्ट लोड किया गया' : 'Previous draft loaded',
@@ -227,8 +224,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         // Also save verification states
         emailVerified,
         mobileVerified,
-        aadhaarVerified,
-        aadhaarVerificationData
+        digilockerVerified,
+        digilockerData
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(draft))
       toast.success(
@@ -247,6 +244,51 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       localStorage.removeItem(STORAGE_KEY)
     } catch (e) {
       console.error('Error clearing draft:', e)
+    }
+  }
+
+  // Reset draft function (user-facing with confirmation)
+  const resetDraft = () => {
+    if (confirm(language === 'hi' 
+      ? 'क्या आप वाकई सभी सहेजे गए ड्राफ्ट डेटा को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।'
+      : 'Are you sure you want to delete all saved draft data? This action cannot be undone.'
+    )) {
+      try {
+        localStorage.removeItem(STORAGE_KEY)
+        // Reset all form states
+        setFormData({
+          fullName: '', email: '', mobile: '', dateOfBirth: '', gender: '' as 'male' | 'female',
+          religion: '', caste: '', motherTongue: '', height: '', weight: '',
+          maritalStatus: '', education: '', occupation: '', income: '', city: '',
+          state: '', country: 'India', about: '', familyType: '', familyStatus: '',
+          fatherOccupation: '', motherOccupation: '', siblings: '', familyAbout: '',
+          partnerAgeMin: '', partnerAgeMax: '', partnerHeightMin: '', partnerHeightMax: '',
+          partnerEducation: '', partnerOccupation: '', partnerLocation: '', partnerAbout: '',
+          membershipPlan: '', profileCreatedFor: '', otherRelation: '', subcaste: '', gotram: '',
+          manglik: '', horoscope: '', residentialStatus: '', citizenship: '', employmentSector: '',
+          companyName: '', fatherStatus: '', motherStatus: '', brothersCount: '', sistersCount: '',
+          familyValues: '', physicalStatus: '', bloodGroup: '', skinTone: '',
+          bodyType: '', partnerReligion: '', partnerCaste: '', partnerMotherTongue: '',
+          partnerMaritalStatus: '', partnerIncomeMin: '', partnerIncomeMax: '', partnerCountry: '',
+          partnerState: '', alternateEmail: '', alternatePhone: '', landlinePhone: '', timeToCall: '',
+          address: '', pincode: '', nativePlace: '', birthTime: '', birthPlace: ''
+        })
+        setStep(1)
+        setPhotos([])
+        setSelfiePreview(null)
+        setEmailVerified(false)
+        setMobileVerified(false)
+        setDigilockerVerified(false)
+        setDigilockerData(null)
+        setTermsAccepted(false)
+        toast.success(
+          language === 'hi' ? 'ड्राफ्ट रीसेट हो गया!' : 'Draft reset successfully!',
+          { description: language === 'hi' ? 'आप नए सिरे से शुरू कर सकते हैं' : 'You can start fresh' }
+        )
+      } catch (e) {
+        console.error('Error resetting draft:', e)
+        toast.error(language === 'hi' ? 'ड्राफ्ट रीसेट नहीं हो सका' : 'Could not reset draft')
+      }
     }
   }
 
@@ -636,19 +678,21 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         editReason: undefined,
         returnedAt: undefined
       } : {}),
-      // Aadhaar verification data
-      ...(aadhaarVerified && aadhaarVerificationData ? {
-        aadhaarVerified: true,
-        aadhaarVerifiedAt: aadhaarVerificationData.verifiedAt,
-        aadhaarLastFour: aadhaarVerificationData.aadhaarLastFour,
-        aadhaarVerifiedName: aadhaarVerificationData.name,
-        aadhaarVerifiedDob: aadhaarVerificationData.dob
+      // DigiLocker verification data
+      ...(digilockerVerified && digilockerData ? {
+        digilockerVerified: true,
+        digilockerVerifiedAt: digilockerData.verifiedAt,
+        digilockerID: digilockerData.digilockerID,
+        aadhaarLastFour: digilockerData.aadhaarLastFour,
+        digilockerVerifiedName: digilockerData.name,
+        digilockerVerifiedDob: digilockerData.dob
       } : (isEditMode && editProfile ? {
-        aadhaarVerified: editProfile.aadhaarVerified,
-        aadhaarVerifiedAt: editProfile.aadhaarVerifiedAt,
+        digilockerVerified: editProfile.digilockerVerified,
+        digilockerVerifiedAt: editProfile.digilockerVerifiedAt,
+        digilockerID: editProfile.digilockerID,
         aadhaarLastFour: editProfile.aadhaarLastFour,
-        aadhaarVerifiedName: editProfile.aadhaarVerifiedName,
-        aadhaarVerifiedDob: editProfile.aadhaarVerifiedDob
+        digilockerVerifiedName: editProfile.digilockerVerifiedName,
+        digilockerVerifiedDob: editProfile.digilockerVerifiedDob
       } : {})),
       firstName: formData.fullName.split(' ')[0],
       lastName: formData.fullName.split(' ').slice(1).join(' ') || formData.fullName.split(' ')[0],
@@ -839,103 +883,64 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     }
   }
 
-  // Aadhaar/DigiLocker verification functions
-  const validateAadhaarNumber = (aadhaar: string) => {
-    // Aadhaar is 12 digits
-    const cleanAadhaar = aadhaar.replace(/\s/g, '')
-    return /^\d{12}$/.test(cleanAadhaar)
-  }
-
-  const sendAadhaarOtp = () => {
-    const cleanAadhaar = aadhaarNumber.replace(/\s/g, '')
-    if (!validateAadhaarNumber(cleanAadhaar)) {
-      toast.error(language === 'hi' ? 'कृपया सही 12 अंकों का आधार नंबर दर्ज करें' : 'Please enter valid 12-digit Aadhaar number')
+  // DigiLocker verification function (OAuth flow - no Aadhaar input)
+  const initiateDigiLockerVerification = async () => {
+    setDigilockerVerifying(true)
+    
+    // Import DigiLocker service dynamically
+    const { simulateDigiLockerVerification, isDigiLockerConfigured, initiateDigiLockerAuth } = await import('@/lib/digilockerService')
+    
+    // Check if production DigiLocker is configured
+    if (isDigiLockerConfigured()) {
+      // Use actual DigiLocker OAuth flow
+      initiateDigiLockerAuth()
+      setDigilockerVerifying(false)
       return
     }
-
-    setAadhaarVerifying(true)
     
-    // Simulate API call to UIDAI/DigiLocker
-    setTimeout(() => {
-      const otp = Math.floor(100000 + Math.random() * 900000).toString()
-      setGeneratedAadhaarOtp(otp)
-      setAadhaarOtpSent(true)
-      setAadhaarVerifying(false)
-      
-      toast.success(
-        language === 'hi' ? 'आधार OTP भेजा गया!' : 'Aadhaar OTP Sent!',
-        {
-          description: language === 'hi' 
-            ? `OTP आपके आधार से जुड़े मोबाइल पर भेजा गया है। Demo OTP: ${otp}`
-            : `OTP sent to mobile linked with Aadhaar. Demo OTP: ${otp}`,
-          duration: 30000
+    // Demo mode - simulate DigiLocker popup
+    simulateDigiLockerVerification(
+      (user) => {
+        // Success callback
+        const verificationData = {
+          name: user.name,
+          dob: user.dob,
+          gender: (user.gender === 'M' ? 'male' : 'female') as 'male' | 'female',
+          verifiedAt: new Date().toISOString(),
+          digilockerID: user.digilockerID,
+          aadhaarLastFour: user.eaadhaar?.uid
         }
-      )
-    }, 1500)
+        
+        setDigilockerData(verificationData)
+        setDigilockerVerified(true)
+        setDigilockerVerifying(false)
+        
+        // Lock name and DOB to DigiLocker verified values
+        updateField('fullName', verificationData.name)
+        updateField('dateOfBirth', verificationData.dob)
+        updateField('gender', verificationData.gender)
+        
+        toast.success(
+          language === 'hi' ? 'DigiLocker सत्यापित!' : 'DigiLocker Verified!',
+          {
+            description: language === 'hi' 
+              ? `नाम: ${verificationData.name} | जन्म तिथि: ${verificationData.dob}`
+              : `Name: ${verificationData.name} | DOB: ${verificationData.dob}`
+          }
+        )
+      },
+      (error) => {
+        // Error callback
+        setDigilockerVerifying(false)
+        toast.error(error)
+      },
+      language
+    )
   }
 
-  const verifyAadhaarOtp = () => {
-    if (aadhaarOtp !== generatedAadhaarOtp) {
-      toast.error(language === 'hi' ? 'गलत आधार OTP' : 'Invalid Aadhaar OTP')
-      return
-    }
-
-    setAadhaarVerifying(true)
-    
-    // Simulate fetching data from DigiLocker/UIDAI
-    // In production, this would call the actual DigiLocker API
-    setTimeout(() => {
-      const cleanAadhaar = aadhaarNumber.replace(/\s/g, '')
-      
-      // Simulated response - in production, this comes from DigiLocker
-      // For demo, we generate a realistic name based on Aadhaar last 4 digits
-      const sampleNames = [
-        'Raj Kumar Sharma', 'Priya Singh', 'Amit Verma', 'Neha Patel', 
-        'Vikram Reddy', 'Sunita Gupta', 'Rohit Jain', 'Anjali Mehta'
-      ]
-      const sampleDobs = [
-        '1995-03-15', '1992-07-22', '1998-11-08', '1990-05-30',
-        '1993-09-12', '1996-02-28', '1994-12-05', '1991-08-18'
-      ]
-      const lastFour = parseInt(cleanAadhaar.slice(-4))
-      const index = lastFour % sampleNames.length
-      
-      const verificationData = {
-        name: sampleNames[index],
-        dob: sampleDobs[index],
-        gender: (lastFour % 2 === 0 ? 'male' : 'female') as 'male' | 'female',
-        verifiedAt: new Date().toISOString(),
-        aadhaarLastFour: cleanAadhaar.slice(-4)
-      }
-      
-      setAadhaarVerificationData(verificationData)
-      setAadhaarVerified(true)
-      setAadhaarVerifying(false)
-      
-      // Lock name and DOB to Aadhaar verified values
-      // Update form data with verified information
-      updateField('fullName', verificationData.name)
-      updateField('dateOfBirth', verificationData.dob)
-      updateField('gender', verificationData.gender)
-      
-      toast.success(
-        language === 'hi' ? 'आधार सत्यापित!' : 'Aadhaar Verified!',
-        {
-          description: language === 'hi' 
-            ? `नाम: ${verificationData.name} | जन्म तिथि: ${verificationData.dob} | DigiLocker से सत्यापित`
-            : `Name: ${verificationData.name} | DOB: ${verificationData.dob} | Verified via DigiLocker`
-        }
-      )
-    }, 2000)
-  }
-
-  const resetAadhaarVerification = () => {
-    setAadhaarNumber('')
-    setAadhaarOtp('')
-    setGeneratedAadhaarOtp('')
-    setAadhaarOtpSent(false)
-    setAadhaarVerified(false)
-    setAadhaarVerificationData(null)
+  const resetDigiLockerVerification = () => {
+    setDigilockerVerified(false)
+    setDigilockerData(null)
   }
 
   const handleVerificationComplete = () => {
@@ -949,12 +954,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   }
 
   const nextStep = () => {
-    // Aadhaar verification required for new registrations
-    if (step === 1 && !isEditMode && !aadhaarVerified) {
+    // DigiLocker verification required for new registrations
+    if (step === 1 && !isEditMode && !digilockerVerified) {
       toast.error(
         language === 'hi' 
-          ? 'कृपया पहले अपना आधार सत्यापित करें' 
-          : 'Please verify your Aadhaar first'
+          ? 'कृपया पहले DigiLocker से सत्यापित करें' 
+          : 'Please verify with DigiLocker first'
       )
       return
     }
@@ -1064,15 +1069,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             <CardContent className="pt-6">
             {step === 1 && (
               <div className="space-y-4">
-                {/* Aadhaar/DigiLocker Verification Section */}
+                {/* DigiLocker Verification Section - OAuth flow, no Aadhaar input */}
                 {!isEditMode && (
                   <div className="p-4 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-700">
                     <div className="flex items-center gap-2 mb-3">
                       <IdentificationCard size={24} weight="bold" className="text-blue-600" />
                       <h3 className="font-semibold text-blue-800 dark:text-blue-300">
-                        {language === 'hi' ? 'आधार सत्यापन (DigiLocker)' : 'Aadhaar Verification (DigiLocker)'}
+                        {language === 'hi' ? 'DigiLocker से सत्यापन' : 'Verify via DigiLocker'}
                       </h3>
-                      {aadhaarVerified && (
+                      {digilockerVerified && (
                         <span className="ml-auto flex items-center gap-1 text-green-600 text-sm font-medium">
                           <ShieldCheck size={18} weight="fill" />
                           {language === 'hi' ? 'सत्यापित' : 'Verified'}
@@ -1080,102 +1085,55 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       )}
                     </div>
                     
-                    {!aadhaarVerified ? (
+                    {!digilockerVerified ? (
                       <div className="space-y-3">
                         <p className="text-sm text-blue-700 dark:text-blue-400">
                           {language === 'hi' 
-                            ? 'कृपया अपना आधार नंबर दर्ज करें। यह आपके नाम और जन्म तिथि को सत्यापित करेगा।'
-                            : 'Please enter your Aadhaar number. This will verify your name and date of birth.'}
+                            ? 'DigiLocker से लॉगिन करके अपना नाम और जन्म तिथि सत्यापित करें। यह सुरक्षित और तेज़ है।'
+                            : 'Login with DigiLocker to verify your name and date of birth. This is secure and fast.'}
                         </p>
                         
-                        <div className="space-y-2">
-                          <Label htmlFor="aadhaar">
-                            {language === 'hi' ? 'आधार नंबर' : 'Aadhaar Number'} *
-                          </Label>
-                          <Input
-                            id="aadhaar"
-                            placeholder="XXXX XXXX XXXX"
-                            value={aadhaarNumber}
-                            onChange={(e) => {
-                              // Format as XXXX XXXX XXXX
-                              const value = e.target.value.replace(/\D/g, '').slice(0, 12)
-                              const formatted = value.replace(/(\d{4})(?=\d)/g, '$1 ')
-                              setAadhaarNumber(formatted)
-                            }}
-                            disabled={aadhaarOtpSent}
-                            maxLength={14}
-                          />
-                        </div>
-                        
-                        {!aadhaarOtpSent ? (
-                          <Button 
-                            onClick={sendAadhaarOtp}
-                            disabled={aadhaarVerifying || aadhaarNumber.replace(/\s/g, '').length !== 12}
-                            className="w-full bg-blue-600 hover:bg-blue-700"
-                          >
-                            {aadhaarVerifying ? (
-                              <>
-                                <SpinnerGap size={16} className="mr-2 animate-spin" />
-                                {language === 'hi' ? 'OTP भेज रहा है...' : 'Sending OTP...'}
-                              </>
-                            ) : (
-                              <>
-                                <IdentificationCard size={16} className="mr-2" />
-                                {language === 'hi' ? 'आधार OTP भेजें' : 'Send Aadhaar OTP'}
-                              </>
-                            )}
-                          </Button>
-                        ) : (
-                          <div className="space-y-3">
-                            <div className="space-y-2">
-                              <Label htmlFor="aadhaarOtp">
-                                {language === 'hi' ? 'आधार OTP दर्ज करें' : 'Enter Aadhaar OTP'}
-                              </Label>
-                              <Input
-                                id="aadhaarOtp"
-                                placeholder="XXXXXX"
-                                value={aadhaarOtp}
-                                onChange={(e) => setAadhaarOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                maxLength={6}
-                              />
+                        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border">
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                              🔐
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-medium mb-1">
+                                {language === 'hi' ? 'DigiLocker क्या है?' : 'What is DigiLocker?'}
+                              </p>
                               <p className="text-xs text-muted-foreground">
                                 {language === 'hi' 
-                                  ? 'OTP आपके आधार से जुड़े मोबाइल नंबर पर भेजा गया है'
-                                  : 'OTP sent to mobile number linked with your Aadhaar'}
+                                  ? 'भारत सरकार की सुरक्षित डिजिटल दस्तावेज़ सेवा। आपका आधार नंबर हमारे साथ साझा नहीं होता।'
+                                  : 'Govt. of India\'s secure digital document service. Your Aadhaar number is not shared with us.'}
                               </p>
                             </div>
-                            
-                            <div className="flex gap-2">
-                              <Button 
-                                variant="outline"
-                                onClick={() => {
-                                  setAadhaarOtpSent(false)
-                                  setAadhaarOtp('')
-                                }}
-                                className="flex-1"
-                              >
-                                {language === 'hi' ? 'वापस' : 'Back'}
-                              </Button>
-                              <Button 
-                                onClick={verifyAadhaarOtp}
-                                disabled={aadhaarVerifying || aadhaarOtp.length !== 6}
-                                className="flex-1 bg-green-600 hover:bg-green-700"
-                              >
-                                {aadhaarVerifying ? (
-                                  <>
-                                    <SpinnerGap size={16} className="mr-2 animate-spin" />
-                                    {language === 'hi' ? 'सत्यापित हो रहा है...' : 'Verifying...'}
-                                  </>
-                                ) : (
-                                  <>
-                                    <ShieldCheck size={16} className="mr-2" />
-                                    {language === 'hi' ? 'सत्यापित करें' : 'Verify'}
-                                  </>
-                                )}
-                              </Button>
-                            </div>
                           </div>
-                        )}
+                        </div>
+                        
+                        <Button 
+                          onClick={initiateDigiLockerVerification}
+                          disabled={digilockerVerifying}
+                          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                        >
+                          {digilockerVerifying ? (
+                            <>
+                              <SpinnerGap size={16} className="mr-2 animate-spin" />
+                              {language === 'hi' ? 'DigiLocker खुल रहा है...' : 'Opening DigiLocker...'}
+                            </>
+                          ) : (
+                            <>
+                              <IdentificationCard size={18} className="mr-2" />
+                              {language === 'hi' ? 'DigiLocker से लॉगिन करें' : 'Login with DigiLocker'}
+                            </>
+                          )}
+                        </Button>
+                        
+                        <p className="text-xs text-center text-muted-foreground">
+                          {language === 'hi' 
+                            ? 'DigiLocker भारत सरकार के इलेक्ट्रॉनिक्स और सूचना प्रौद्योगिकी मंत्रालय की पहल है'
+                            : 'DigiLocker is an initiative of Ministry of Electronics & IT, Govt. of India'}
+                        </p>
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -1184,14 +1142,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                             <ShieldCheck size={20} weight="fill" className="text-green-600" />
                             <span className="text-sm font-medium text-green-800 dark:text-green-300">
                               {language === 'hi' 
-                                ? `आधार XXXX XXXX ${aadhaarVerificationData?.aadhaarLastFour} सत्यापित`
-                                : `Aadhaar XXXX XXXX ${aadhaarVerificationData?.aadhaarLastFour} verified`}
+                                ? `DigiLocker सत्यापित ✓`
+                                : `DigiLocker Verified ✓`}
                             </span>
                           </div>
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={resetAadhaarVerification}
+                            onClick={resetDigiLockerVerification}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
                             {language === 'hi' ? 'बदलें' : 'Change'}
@@ -1199,8 +1157,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                         </div>
                         <p className="text-xs text-green-700 dark:text-green-400">
                           {language === 'hi' 
-                            ? 'आपका नाम और जन्म तिथि आधार से सत्यापित है और संपादित नहीं किया जा सकता।'
-                            : 'Your name and date of birth are verified from Aadhaar and cannot be edited.'}
+                            ? 'आपका नाम और जन्म तिथि DigiLocker से सत्यापित है और संपादित नहीं किया जा सकता।'
+                            : 'Your name and date of birth are verified via DigiLocker and cannot be edited.'}
                         </p>
                       </div>
                     )}
@@ -1208,13 +1166,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 )}
 
                 {/* Show verified badge for edit mode if already verified */}
-                {isEditMode && editProfile?.aadhaarVerified && (
+                {isEditMode && editProfile?.digilockerVerified && (
                   <Alert className="bg-green-50 border-green-400 dark:bg-green-950/30">
                     <ShieldCheck size={20} weight="fill" className="text-green-600" />
                     <AlertDescription className="text-green-700 dark:text-green-300">
                       {language === 'hi' 
-                        ? `आधार सत्यापित (XXXX XXXX ${editProfile.aadhaarLastFour || '****'})`
-                        : `Aadhaar Verified (XXXX XXXX ${editProfile.aadhaarLastFour || '****'})`}
+                        ? 'DigiLocker सत्यापित ✓'
+                        : 'DigiLocker Verified ✓'}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -1222,10 +1180,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 <div className="space-y-2">
                   <Label htmlFor="fullName">
                     {language === 'hi' ? 'नाम' : 'Name'} *
-                    {(aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)) && (
+                    {(digilockerVerified || (isEditMode && editProfile?.digilockerVerified)) && (
                       <span className="ml-2 text-xs text-green-600">
                         <ShieldCheck size={12} className="inline mr-1" />
-                        {language === 'hi' ? 'आधार सत्यापित' : 'Aadhaar Verified'}
+                        {language === 'hi' ? 'DigiLocker सत्यापित' : 'DigiLocker Verified'}
                       </span>
                     )}
                   </Label>
@@ -1235,8 +1193,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     value={formData.fullName}
                     onChange={(e) => updateField('fullName', e.target.value)}
                     required
-                    disabled={aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)}
-                    className={(aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)) ? 'bg-muted' : ''}
+                    disabled={digilockerVerified || (isEditMode && editProfile?.digilockerVerified)}
+                    className={(digilockerVerified || (isEditMode && editProfile?.digilockerVerified)) ? 'bg-muted' : ''}
                   />
                 </div>
 
@@ -1295,10 +1253,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   <div className="space-y-2">
                     <Label htmlFor="dateOfBirth">
                       {language === 'hi' ? 'जन्म तिथि' : 'Date of Birth'} * <span className="text-xs font-normal text-muted-foreground">(DD/MM/YYYY)</span>
-                      {(aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)) && (
+                      {(digilockerVerified || (isEditMode && editProfile?.digilockerVerified)) && (
                         <span className="ml-2 text-xs text-green-600">
                           <ShieldCheck size={12} className="inline mr-1" />
-                          {language === 'hi' ? 'आधार सत्यापित' : 'Aadhaar Verified'}
+                          {language === 'hi' ? 'DigiLocker सत्यापित' : 'DigiLocker Verified'}
                         </span>
                       )}
                     </Label>
@@ -1307,20 +1265,20 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       onChange={(value) => updateField('dateOfBirth', value)}
                       maxDate={new Date(getMaxDate())}
                       minDate={new Date(getMinDate())}
-                      disabled={!formData.gender || aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)}
+                      disabled={!formData.gender || digilockerVerified || (isEditMode && editProfile?.digilockerVerified)}
                       placeholder="DD/MM/YYYY"
                     />
-                    {(aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)) && (
+                    {(digilockerVerified || (isEditMode && editProfile?.digilockerVerified)) && (
                       <p className="text-xs text-green-600">
-                        {language === 'hi' ? 'आधार से सत्यापित - संपादन अक्षम' : 'Verified from Aadhaar - editing disabled'}
+                        {language === 'hi' ? 'DigiLocker से सत्यापित - संपादन अक्षम' : 'Verified from DigiLocker - editing disabled'}
                       </p>
                     )}
-                    {!formData.gender && !(aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)) && (
+                    {!formData.gender && !(digilockerVerified || (isEditMode && editProfile?.digilockerVerified)) && (
                       <p className="text-xs text-muted-foreground">
                         {t.registration.selectGenderFirst}
                       </p>
                     )}
-                    {formData.gender && !(aadhaarVerified || (isEditMode && editProfile?.aadhaarVerified)) && (
+                    {formData.gender && !(digilockerVerified || (isEditMode && editProfile?.digilockerVerified)) && (
                       <p className="text-xs text-muted-foreground">
                         {t.registration.minAgeInfo}: {formData.gender === 'male' ? '21' : '18'} {t.registration.yearsText}
                       </p>
@@ -2309,6 +2267,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           </div>
           
           <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              onClick={resetDraft}
+              className="gap-2 text-muted-foreground hover:text-destructive"
+              title={language === 'hi' ? 'ड्राफ्ट रीसेट करें' : 'Reset Draft'}
+            >
+              <ArrowCounterClockwise size={18} />
+              <span className="hidden sm:inline">{language === 'hi' ? 'रीसेट' : 'Reset'}</span>
+            </Button>
             <Button 
               variant="ghost" 
               onClick={saveDraft}

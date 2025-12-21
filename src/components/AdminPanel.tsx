@@ -30,6 +30,7 @@ interface AdminPanelProps {
   setProfiles: (newValue: Profile[] | ((oldValue?: Profile[] | undefined) => Profile[])) => void
   users: User[] | undefined
   language: 'hi' | 'en'
+  onLogout?: () => void
 }
 
 interface BlockedContact {
@@ -49,7 +50,7 @@ interface MembershipSettings {
   discountEndDate: string
 }
 
-export function AdminPanel({ profiles, setProfiles, users, language }: AdminPanelProps) {
+export function AdminPanel({ profiles, setProfiles, users, language, onLogout }: AdminPanelProps) {
   const [blockedContacts, setBlockedContacts] = useKV<BlockedContact[]>('blockedContacts', [])
   const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
   const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
@@ -733,11 +734,32 @@ export function AdminPanel({ profiles, setProfiles, users, language }: AdminPane
     <section className="container mx-auto px-4 md:px-8 py-12">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2 flex items-center gap-2">
-            <ShieldCheck size={32} weight="fill" />
-            {t.title}
-          </h2>
-          <p className="text-muted-foreground">{t.description}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold mb-2 flex items-center gap-2">
+                <ShieldCheck size={32} weight="fill" />
+                {t.title}
+              </h2>
+              <p className="text-muted-foreground">{t.description}</p>
+            </div>
+            {onLogout && (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  if (confirm(language === 'hi' 
+                    ? 'क्या आप वाकई एडमिन पैनल से लॉगआउट करना चाहते हैं?' 
+                    : 'Are you sure you want to logout from admin panel?'
+                  )) {
+                    onLogout()
+                  }
+                }}
+                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <X size={18} />
+                {language === 'hi' ? 'लॉगआउट' : 'Logout'}
+              </Button>
+            )}
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
