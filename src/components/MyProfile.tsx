@@ -4,21 +4,33 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { 
   User, MapPin, Briefcase, GraduationCap, Heart, House, PencilSimple,
-  ChatCircle, Envelope, Phone, Calendar
+  ChatCircle, Envelope, Phone, Calendar, Warning, FilePdf, Trash
 } from '@phosphor-icons/react'
+import { toast } from 'sonner'
 import type { Profile } from '@/types/profile'
 import type { Language } from '@/lib/translations'
+import { BiodataGenerator } from './BiodataGenerator'
 
 interface MyProfileProps {
   profile: Profile | null
   language: Language
   onEdit?: () => void
+  onDeleteProfile?: (profileId: string) => void
 }
 
-export function MyProfile({ profile, language, onEdit }: MyProfileProps) {
+export function MyProfile({ profile, language, onEdit, onDeleteProfile }: MyProfileProps) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
+  const [showBiodataGenerator, setShowBiodataGenerator] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteStep, setDeleteStep] = useState<'confirm' | 'otp'>('confirm')
+  const [generatedOtp, setGeneratedOtp] = useState('')
+  const [enteredOtp, setEnteredOtp] = useState('')
 
   const t = {
     title: language === 'hi' ? 'मेरी प्रोफाइल' : 'My Profile',
@@ -44,6 +56,59 @@ export function MyProfile({ profile, language, onEdit }: MyProfileProps) {
     pending: language === 'hi' ? 'लंबित' : 'Pending',
     level: language === 'hi' ? 'स्तर' : 'Level',
     trustLevel: language === 'hi' ? 'विश्वास स्तर' : 'Trust Level',
+    returnedForEdit: language === 'hi' ? 'संपादन आवश्यक' : 'Edit Required',
+    returnedForEditDesc: language === 'hi' ? 'एडमिन ने आपकी प्रोफाइल संपादन के लिए वापस भेजी है' : 'Admin has returned your profile for editing',
+    adminReason: language === 'hi' ? 'एडमिन संदेश' : 'Admin Message',
+    generateBiodata: language === 'hi' ? 'बायोडाटा बनाएं' : 'Generate Biodata',
+    deleteProfile: language === 'hi' ? 'प्रोफाइल हटाएं' : 'Delete Profile',
+    deleteConfirmTitle: language === 'hi' ? 'क्या आप वाकई प्रोफाइल हटाना चाहते हैं?' : 'Are you sure you want to delete your profile?',
+    deleteConfirmDesc: language === 'hi' ? 'यह क्रिया आपकी प्रोफाइल को सभी उपयोगकर्ताओं से छुपा देगी। आप बाद में एडमिन से संपर्क करके इसे पुनः सक्रिय कर सकते हैं।' : 'This action will hide your profile from all users. You can contact admin later to reactivate it.',
+    sendOtp: language === 'hi' ? 'OTP भेजें' : 'Send OTP',
+    enterOtp: language === 'hi' ? 'OTP दर्ज करें' : 'Enter OTP',
+    otpSent: language === 'hi' ? 'OTP आपके मोबाइल पर भेजा गया' : 'OTP sent to your mobile',
+    confirmDelete: language === 'hi' ? 'हटाने की पुष्टि करें' : 'Confirm Delete',
+    cancel: language === 'hi' ? 'रद्द करें' : 'Cancel',
+    profileDeleted: language === 'hi' ? 'प्रोफाइल सफलतापूर्वक हटाई गई' : 'Profile deleted successfully',
+    invalidOtp: language === 'hi' ? 'गलत OTP' : 'Invalid OTP',
+  }
+
+  const handleDeleteRequest = () => {
+    setShowDeleteDialog(true)
+    setDeleteStep('confirm')
+    setEnteredOtp('')
+  }
+
+  const handleSendOtp = () => {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    setGeneratedOtp(otp)
+    setDeleteStep('otp')
+    toast.info(t.otpSent, {
+      description: `OTP: ${otp}`,
+      duration: 10000
+    })
+  }
+
+  const handleConfirmDelete = () => {
+    if (enteredOtp !== generatedOtp) {
+      toast.error(t.invalidOtp)
+      return
+    }
+    
+    if (onDeleteProfile && profile) {
+      onDeleteProfile(profile.profileId)
+      toast.success(t.profileDeleted)
+      setShowDeleteDialog(false)
+      setDeleteStep('confirm')
+      setEnteredOtp('')
+      setGeneratedOtp('')
+    }
+  }
+
+  const handleCloseDeleteDialog = () => {
+    setShowDeleteDialog(false)
+    setDeleteStep('confirm')
+    setEnteredOtp('')
+    setGeneratedOtp('')
   }
 
   if (!profile) {
@@ -59,19 +124,135 @@ export function MyProfile({ profile, language, onEdit }: MyProfileProps) {
   }
 
   const photos = profile.photos?.length > 0 ? profile.photos : []
+  const isPaidUser = !!profile.membershipPlan && profile.membershipExpiry && new Date(profile.membershipExpiry) > new Date()
+  const isFreePlan = profile.membershipPlan === 'free'
+  const canAccessBiodata = isPaidUser && !isFreePlan
 
   return (
     <div className="container mx-auto px-4 md:px-8 py-8">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">{t.title}</h1>
-          {onEdit && (
-            <Button onClick={onEdit} className="gap-2">
-              <PencilSimple size={20} />
-              {t.edit}
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => {
+                if (!canAccessBiodata) {
+                  toast.error(
+                    language === 'hi' 
+                      ? 'बायोडाटा जनरेटर मुफ्त योजना पर उपलब्ध नहीं है। कृपया प्रीमियम में अपग्रेड करें।' 
+                      : 'Biodata generator is not available on Free Plan. Please upgrade to Premium.'
+                  )
+                  return
+                }
+                setShowBiodataGenerator(true)
+              }} 
+              variant="outline"
+              className={`gap-2 ${canAccessBiodata ? 'text-red-600 border-red-300 hover:bg-red-50' : 'text-muted-foreground border-muted'}`}
+            >
+              <FilePdf size={20} weight="fill" />
+              {t.generateBiodata}
+              {!canAccessBiodata && <Badge variant="outline" className="ml-1 text-xs">Premium</Badge>}
             </Button>
-          )}
+            {onEdit && (
+              <Button onClick={onEdit} className="gap-2">
+                <PencilSimple size={20} />
+                {t.edit}
+              </Button>
+            )}
+            {onDeleteProfile && (
+              <Button 
+                onClick={handleDeleteRequest} 
+                variant="destructive"
+                className="gap-2"
+              >
+                <Trash size={20} />
+                {t.deleteProfile}
+              </Button>
+            )}
+          </div>
         </div>
+
+        {/* Delete Profile Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={handleCloseDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <Trash size={24} />
+                {t.deleteConfirmTitle}
+              </DialogTitle>
+              <DialogDescription>
+                {t.deleteConfirmDesc}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {deleteStep === 'confirm' ? (
+              <div className="flex gap-3 mt-4">
+                <Button variant="outline" onClick={handleCloseDeleteDialog} className="flex-1">
+                  {t.cancel}
+                </Button>
+                <Button variant="destructive" onClick={handleSendOtp} className="flex-1">
+                  {t.sendOtp}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="delete-otp">{t.enterOtp}</Label>
+                  <Input
+                    id="delete-otp"
+                    type="text"
+                    value={enteredOtp}
+                    onChange={(e) => setEnteredOtp(e.target.value)}
+                    maxLength={6}
+                    placeholder="000000"
+                    autoComplete="one-time-code"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={handleCloseDeleteDialog} className="flex-1">
+                    {t.cancel}
+                  </Button>
+                  <Button variant="destructive" onClick={handleConfirmDelete} className="flex-1">
+                    {t.confirmDelete}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Biodata Generator Dialog */}
+        <BiodataGenerator
+          profile={profile}
+          language={language}
+          isPaidUser={isPaidUser}
+          open={showBiodataGenerator}
+          onClose={() => setShowBiodataGenerator(false)}
+        />
+
+        {/* Returned for Edit Alert */}
+        {profile.returnedForEdit && (
+          <Alert className="mb-6 bg-amber-50 border-amber-400 dark:bg-amber-950/30 dark:border-amber-700">
+            <Warning size={20} weight="fill" className="text-amber-600" />
+            <AlertTitle className="text-amber-800 dark:text-amber-200 font-semibold">
+              {t.returnedForEdit}
+            </AlertTitle>
+            <AlertDescription className="text-amber-700 dark:text-amber-300">
+              {t.returnedForEditDesc}
+              {profile.editReason && (
+                <div className="mt-2 p-3 bg-white/50 dark:bg-black/20 rounded-md border border-amber-300">
+                  <span className="font-semibold">{t.adminReason}:</span>{' '}
+                  {profile.editReason}
+                </div>
+              )}
+              {profile.returnedAt && (
+                <p className="text-sm mt-2 text-amber-600 dark:text-amber-400">
+                  {new Date(profile.returnedAt).toLocaleDateString()}
+                </p>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-1">

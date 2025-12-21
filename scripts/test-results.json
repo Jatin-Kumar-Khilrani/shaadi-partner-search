@@ -1,0 +1,87 @@
+{
+  "timestamp": "2025-12-21T07:35:57.246Z",
+  "config": {
+    "endpoint": "https://eastus2.api.cognitive.microsoft.com/",
+    "deployment": "gpt-4o"
+  },
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "totalDuration": 6311
+  },
+  "results": [
+    {
+      "testName": "Azure OpenAI Endpoint Connectivity (Informational)",
+      "passed": true,
+      "message": "Deployment listing not available (this is normal for some regions)",
+      "duration": 981,
+      "details": {
+        "note": "Chat completions still work"
+      }
+    },
+    {
+      "testName": "GPT-4o Deployment Verification (Informational)",
+      "passed": true,
+      "message": "Deployment listing not available (chat API works)",
+      "duration": 219,
+      "details": {
+        "note": "Deployment works via chat completions"
+      }
+    },
+    {
+      "testName": "Basic Chat Completion",
+      "passed": "Hello, Shaadi Partner Search is working!",
+      "message": "Chat completion working correctly",
+      "duration": 588,
+      "details": {
+        "response": "Hello, Shaadi Partner Search is working!",
+        "usage": {
+          "completion_tokens": 10,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 0,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 33,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 43
+        }
+      }
+    },
+    {
+      "testName": "Vision API Capability",
+      "passed": true,
+      "message": "Vision API can detect faces in images",
+      "duration": 1552,
+      "details": {
+        "response": "A person with medium-length hair is wearing a white shirt and dark jacket, standing in front of a colorful background.",
+        "faceDetected": true
+      }
+    },
+    {
+      "testName": "Photo Comparison for Face Matching",
+      "passed": true,
+      "message": "Photo comparison API is functional",
+      "duration": 1529,
+      "details": {
+        "isMatch": false,
+        "confidence": 80,
+        "reason": "The hairstyles and settings are different, suggesting they are not the same person."
+      }
+    },
+    {
+      "testName": "Matrimonial Bio Generation",
+      "passed": "Meet Rahul Sharma, a 28-year-old dynamic and ambitious software engineer based in Mumbai. With an MBA under his belt, Rahul excels in his career while maintaining a balanced lifestyle. Deeply rooted in Hindu values, he is family-oriented and cherishes meaningful connections. Rahul enjoys traveling, exploring new cuisines, and staying active. He is seeking a like-minded partner who is compassionate, ambitious, and ready to embark on a journey of love and lifelong companionship.",
+      "message": "Bio generation working correctly",
+      "duration": 1442,
+      "details": {
+        "generatedBio": "Meet Rahul Sharma, a 28-year-old dynamic and ambitious software engineer based in Mumbai. With an MBA under his belt, Rahul excels in his career while maintaining a balanced lifestyle. Deeply rooted in Hindu values, he is family-oriented and cherishes meaningful connections. Rahul enjoys traveling, exploring new cuisines, and staying active. He is seeking a like-minded partner who is compassionate, ambitious, and ready to embark on a journey of love and lifelong companionship.",
+        "wordCount": 72
+      }
+    }
+  ]
+}

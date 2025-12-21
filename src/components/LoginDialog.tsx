@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Checkbox } from '@/components/ui/checkbox'
-import { SignIn, Info } from '@phosphor-icons/react'
+import { SignIn, Info, Eye, EyeSlash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { LoginCredentials, User } from '@/types/user'
 
@@ -23,6 +23,7 @@ export function LoginDialog({ open, onClose, onLogin, users, language }: LoginDi
     password: ''
   })
   const [keepLoggedIn, setKeepLoggedIn] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const t = {
     title: language === 'hi' ? 'लॉगिन करें' : 'Login',
@@ -100,15 +101,27 @@ export function LoginDialog({ open, onClose, onLogin, users, language }: LoginDi
 
           <div className="space-y-2">
             <Label htmlFor="password">{t.password}</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder={t.password}
-              value={credentials.password}
-              onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-              onKeyPress={handleKeyPress}
-              autoComplete="current-password"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder={t.password}
+                value={credentials.password}
+                onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                onKeyPress={handleKeyPress}
+                autoComplete="current-password"
+                className="pr-10"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
+              </Button>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">

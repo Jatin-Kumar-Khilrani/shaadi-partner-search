@@ -3,11 +3,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { MapPin, Briefcase, GraduationCap, UserCircle, Phone, Envelope, Heart, ShieldCheck, Seal, Calendar } from '@phosphor-icons/react'
-import type { Profile, Interest, ContactRequest } from '@/types/profile'
+import { MapPin, Briefcase, GraduationCap, UserCircle, Phone, Envelope, Heart, ShieldCheck, Seal, Calendar, Clock } from '@phosphor-icons/react'
+import type { Profile, Interest, ContactRequest, MembershipPlan } from '@/types/profile'
 import { toast } from 'sonner'
 import { useKV } from '@/hooks/useKV'
 import { formatDateDDMMYYYY } from '@/lib/utils'
+import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 
 interface ProfileDetailDialogProps {
   profile: Profile | null
@@ -15,15 +16,28 @@ interface ProfileDetailDialogProps {
   onClose: () => void
   language: 'hi' | 'en'
   currentUserProfile?: Profile | null
+  isLoggedIn?: boolean
+  isAdmin?: boolean
+  shouldBlur?: boolean
+  membershipPlan?: MembershipPlan
 }
 
-export function ProfileDetailDialog({ profile, open, onClose, language, currentUserProfile }: ProfileDetailDialogProps) {
+export function ProfileDetailDialog({ profile, open, onClose, language, currentUserProfile, isLoggedIn = false, isAdmin = false, shouldBlur = false, membershipPlan }: ProfileDetailDialogProps) {
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests, setContactRequests] = useKV<ContactRequest[]>('contactRequests', [])
+  const { lightboxState, openLightbox, closeLightbox } = useLightbox()
 
   if (!profile) return null
 
-  const initials = profile.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  // For admin or logged in users without blur, show full name; otherwise first name only
+  const canSeeFullDetails = isAdmin || (isLoggedIn && !shouldBlur)
+  const displayName = canSeeFullDetails ? profile.fullName : profile.fullName.split(' ')[0]
+  const initials = canSeeFullDetails 
+    ? profile.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : profile.fullName.split(' ')[0][0].toUpperCase()
+  
+  // Blur content for free/expired membership
+  const blurContent = shouldBlur && !isAdmin
 
   const getTrustBadge = () => {
     if (profile.trustLevel >= 5) {
@@ -190,6 +204,40 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     requestContact: language === 'hi' ? 'संपर्क अनुरोध करें' : 'Request Contact',
     profileId: language === 'hi' ? 'प्रोफाइल ID' : 'Profile ID',
     createdOn: language === 'hi' ? 'बनाया गया' : 'Created on',
+    // Admin labels
+    allPhotos: language === 'hi' ? 'सभी फोटो' : 'All Photos',
+    selfiePhoto: language === 'hi' ? 'सेल्फी फोटो' : 'Selfie Photo',
+    mobileNumber: language === 'hi' ? 'मोबाइल नंबर' : 'Mobile Number',
+    email: language === 'hi' ? 'ईमेल' : 'Email',
+    birthTime: language === 'hi' ? 'जन्म समय' : 'Birth Time',
+    birthPlace: language === 'hi' ? 'जन्म स्थान' : 'Birth Place',
+    horoscopeMatching: language === 'hi' ? 'कुंडली मिलान' : 'Horoscope Matching',
+    diet: language === 'hi' ? 'खान-पान' : 'Diet',
+    habits: language === 'hi' ? 'आदतें' : 'Habits',
+    annualIncome: language === 'hi' ? 'वार्षिक आय' : 'Annual Income',
+    profession: language === 'hi' ? 'पेशा' : 'Profession',
+    position: language === 'hi' ? 'पद/पदनाम' : 'Position/Designation',
+    relation: language === 'hi' ? 'संबंध' : 'Relation',
+    registeredBy: language === 'hi' ? 'पंजीकरणकर्ता' : 'Registered By',
+    notProvided: language === 'hi' ? 'प्रदान नहीं किया गया' : 'Not Provided',
+    mandatory: language === 'hi' ? 'अनिवार्य' : 'Mandatory',
+    preferred: language === 'hi' ? 'वांछित' : 'Preferred',
+    notRequired: language === 'hi' ? 'आवश्यक नहीं' : 'Not Required',
+    lastLogin: language === 'hi' ? 'अंतिम लॉगिन' : 'Last Login',
+  }
+
+  // Format last login time
+  const formatLastLogin = (lastLoginAt?: string) => {
+    if (!lastLoginAt) return language === 'hi' ? 'कभी नहीं' : 'Never'
+    const date = new Date(lastLoginAt)
+    return date.toLocaleString(language === 'hi' ? 'hi-IN' : 'en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
   }
 
   return (
@@ -197,14 +245,19 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start gap-4 mb-4">
-            <Avatar className="w-24 h-24 border-4 border-background shadow-xl">
-              <AvatarImage src={profile.photos?.[0]} alt={profile.fullName} />
+            <Avatar className={`w-24 h-24 border-4 border-background shadow-xl ${(!canSeeFullDetails || blurContent) ? 'blur-sm' : ''}`}>
+              {canSeeFullDetails && !blurContent ? (
+                <AvatarImage src={profile.photos?.[0]} alt={displayName} />
+              ) : null}
               <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <DialogTitle className="text-3xl mb-2">{profile.fullName}</DialogTitle>
+              <DialogTitle className="text-3xl mb-2">
+                {displayName}
+                {!canSeeFullDetails && <span className="text-muted-foreground"> ...</span>}
+              </DialogTitle>
               <DialogDescription className="text-base">
                 {profile.age} {t.years} | {profile.gender === 'male' ? t.male : t.female} | {getMaritalStatus()}
               </DialogDescription>
@@ -238,15 +291,161 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
               {profile.height && (
                 <InfoItem icon={<UserCircle size={18} />} label={t.height} value={profile.height} />
               )}
+              {/* Show last login for logged in users */}
+              {canSeeFullDetails && (
+                <InfoItem 
+                  icon={<Clock size={18} className="text-green-600" />} 
+                  label={t.lastLogin} 
+                  value={formatLastLogin(profile.lastLoginAt)} 
+                />
+              )}
+              {/* Admin sees all additional fields */}
+              {isAdmin && (
+                <>
+                  <InfoItem 
+                    icon={<UserCircle size={18} />} 
+                    label={t.birthTime} 
+                    value={(profile as any).birthTime || t.notProvided} 
+                  />
+                  <InfoItem 
+                    icon={<MapPin size={18} />} 
+                    label={t.birthPlace} 
+                    value={(profile as any).birthPlace || t.notProvided} 
+                  />
+                  <InfoItem 
+                    icon={<UserCircle size={18} />} 
+                    label={t.horoscopeMatching} 
+                    value={
+                      (profile as any).horoscopeMatching === 'mandatory' ? t.mandatory :
+                      (profile as any).horoscopeMatching === 'preferred' ? t.preferred :
+                      (profile as any).horoscopeMatching === 'not-required' ? t.notRequired : t.notProvided
+                    } 
+                  />
+                  <InfoItem 
+                    icon={<UserCircle size={18} />} 
+                    label={t.diet} 
+                    value={(profile as any).diet || t.notProvided} 
+                  />
+                  <InfoItem 
+                    icon={<UserCircle size={18} />} 
+                    label={t.habits} 
+                    value={(profile as any).habits || t.notProvided} 
+                  />
+                  <InfoItem 
+                    icon={<Briefcase size={18} />} 
+                    label={t.annualIncome} 
+                    value={(profile as any).annualIncome || t.notProvided} 
+                  />
+                  <InfoItem 
+                    icon={<Briefcase size={18} />} 
+                    label={t.profession} 
+                    value={(profile as any).profession || t.notProvided} 
+                  />
+                  <InfoItem 
+                    icon={<Briefcase size={18} />} 
+                    label={t.position} 
+                    value={(profile as any).position || t.notProvided} 
+                  />
+                  <InfoItem 
+                    icon={<UserCircle size={18} />} 
+                    label={t.relation} 
+                    value={(profile as any).relation || (language === 'hi' ? 'स्वयं' : 'Self')} 
+                  />
+                </>
+              )}
             </div>
           </section>
+
+          {/* Admin: Show all photos and selfie */}
+          {isAdmin && (
+            <>
+              <Separator />
+              <section>
+                <h3 className="font-bold text-lg mb-3">{t.allPhotos}</h3>
+                <p className="text-xs text-muted-foreground mb-2">
+                  {language === 'hi' ? 'बड़ा देखने के लिए फोटो पर क्लिक करें' : 'Click on a photo to view larger'}
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {profile.photos && profile.photos.length > 0 ? (
+                    profile.photos.map((photo, idx) => (
+                      <img 
+                        key={idx} 
+                        src={photo} 
+                        alt={`Photo ${idx + 1}`} 
+                        className="w-24 h-24 object-cover rounded-lg border-2 border-border shadow cursor-pointer hover:opacity-80 transition-opacity hover:ring-2 hover:ring-primary"
+                        onClick={() => openLightbox(profile.photos || [], idx)}
+                        title={language === 'hi' ? 'बड़ा देखें' : 'View larger'}
+                      />
+                    ))
+                  ) : (
+                    <span className="text-muted-foreground">{t.notProvided}</span>
+                  )}
+                </div>
+              </section>
+              <section>
+                <h3 className="font-bold text-lg mb-3">{t.selfiePhoto}</h3>
+                <div className="flex gap-3">
+                  {profile.selfieUrl ? (
+                    <img 
+                      src={profile.selfieUrl} 
+                      alt="Selfie" 
+                      className="w-24 h-24 object-cover rounded-lg border-2 border-blue-500 shadow cursor-pointer hover:opacity-80 transition-opacity hover:ring-2 hover:ring-primary"
+                      onClick={() => openLightbox([profile.selfieUrl!], 0)}
+                      title={language === 'hi' ? 'बड़ा देखें' : 'View larger'}
+                    />
+                  ) : (
+                    <span className="text-muted-foreground">{t.notProvided}</span>
+                  )}
+                </div>
+              </section>
+            </>
+          )}
+
+          {/* Admin: Show contact information */}
+          {isAdmin && (
+            <>
+              <Separator />
+              <section className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg">
+                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <Phone size={22} weight="fill" />
+                  {t.contactInfo} ({language === 'hi' ? 'व्यवस्थापक दृश्य' : 'Admin View'})
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InfoItem 
+                    icon={<Phone size={18} />} 
+                    label={t.mobileNumber} 
+                    value={(profile as any).mobile || (profile as any).phoneNumber || t.notProvided} 
+                  />
+                  <InfoItem 
+                    icon={<Envelope size={18} />} 
+                    label={t.email} 
+                    value={(profile as any).email || t.notProvided} 
+                  />
+                  <InfoItem 
+                    icon={<UserCircle size={18} />} 
+                    label={t.registeredBy} 
+                    value={(profile as any).registeredByName || t.notProvided} 
+                  />
+                </div>
+              </section>
+            </>
+          )}
 
           {profile.bio && (
             <>
               <Separator />
               <section>
                 <h3 className="font-bold text-lg mb-3">{t.bio}</h3>
-                <p className="text-muted-foreground leading-relaxed">{profile.bio}</p>
+                <p className={`text-muted-foreground leading-relaxed ${blurContent ? 'blur-sm select-none' : ''}`}>
+                  {profile.bio}
+                </p>
+                {blurContent && (
+                  <p className="text-xs text-amber-600 mt-2">
+                    {language === 'hi' 
+                      ? 'पूर्ण विवरण देखने के लिए प्रीमियम योजना में अपग्रेड करें' 
+                      : 'Upgrade to Premium plan to view full details'}
+                  </p>
+                )}
               </section>
             </>
           )}
@@ -269,29 +468,45 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                 <Phone size={22} weight="fill" />
                 {t.contactInfo}
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {t.privacyNotice}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button 
-                  onClick={handleExpressInterest} 
-                  className="flex-1 bg-primary hover:bg-primary/90"
-                  disabled={!!existingInterest || !!hasReceivedInterestFromProfile}
-                  variant={(existingInterest || hasReceivedInterestFromProfile) ? "secondary" : "default"}
-                >
-                  <Heart size={20} weight="fill" className="mr-2" />
-                  {existingInterest 
-                    ? (language === 'hi' ? 'रुचि भेजी गई' : 'Interest Sent')
-                    : hasReceivedInterestFromProfile
-                    ? (language === 'hi' ? 'रुचि प्राप्त' : 'Interest Received')
-                    : t.expressInterest
-                  }
-                </Button>
-                <Button onClick={handleRequestContact} variant="outline" className="flex-1">
-                  <Phone size={20} className="mr-2" />
-                  {t.requestContact}
-                </Button>
-              </div>
+              {blurContent ? (
+                <div className="text-center py-4">
+                  <div className="blur-sm select-none mb-3">
+                    <p className="text-muted-foreground">+91 98XXX XXXXX</p>
+                    <p className="text-muted-foreground">example@email.com</p>
+                  </div>
+                  <p className="text-sm text-amber-600">
+                    {language === 'hi' 
+                      ? 'संपर्क विवरण देखने के लिए प्रीमियम योजना में अपग्रेड करें' 
+                      : 'Upgrade to Premium plan to view contact details'}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {t.privacyNotice}
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button 
+                      onClick={handleExpressInterest} 
+                      className="flex-1 bg-primary hover:bg-primary/90"
+                      disabled={!!existingInterest || !!hasReceivedInterestFromProfile}
+                      variant={(existingInterest || hasReceivedInterestFromProfile) ? "secondary" : "default"}
+                    >
+                      <Heart size={20} weight="fill" className="mr-2" />
+                      {existingInterest 
+                        ? (language === 'hi' ? 'रुचि भेजी गई' : 'Interest Sent')
+                        : hasReceivedInterestFromProfile
+                        ? (language === 'hi' ? 'रुचि प्राप्त' : 'Interest Received')
+                        : t.expressInterest
+                      }
+                    </Button>
+                    <Button onClick={handleRequestContact} variant="outline" className="flex-1">
+                      <Phone size={20} className="mr-2" />
+                      {t.requestContact}
+                    </Button>
+                  </div>
+                </>
+              )}
             </section>
           )}
 
@@ -299,6 +514,14 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
             {t.profileId}: {profile.id} | {t.createdOn}: {formatDateDDMMYYYY(profile.createdAt)}
           </div>
         </div>
+
+        {/* Photo Lightbox for viewing photos in full size */}
+        <PhotoLightbox
+          photos={lightboxState.photos}
+          initialIndex={lightboxState.initialIndex}
+          open={lightboxState.open}
+          onClose={closeLightbox}
+        />
       </DialogContent>
     </Dialog>
   )

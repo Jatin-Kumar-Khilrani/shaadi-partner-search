@@ -1,0 +1,512 @@
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import { FileText, Shield, User, Scales, Lock, Warning, Envelope, Handshake, CurrencyInr, Calendar, Trash, Eye } from '@phosphor-icons/react'
+import type { Language } from '@/lib/translations'
+
+interface TermsAndConditionsProps {
+  open: boolean
+  onClose: () => void
+  language: Language
+}
+
+export function TermsAndConditions({ open, onClose, language }: TermsAndConditionsProps) {
+  const isHindi = language === 'hi'
+
+  const sections = [
+    {
+      icon: <FileText size={24} weight="bold" className="text-primary" />,
+      title: isHindi ? '1. परिचय और स्वीकृति' : '1. Introduction and Acceptance',
+      content: isHindi 
+        ? `ShaadiPartnerSearch ("हम", "हमारा", या "सेवा") एक ऑनलाइन मैट्रिमोनी प्लेटफॉर्म है जो भारत और विदेश में रहने वाले भारतीय मूल के व्यक्तियों को जीवनसाथी खोजने में सहायता प्रदान करता है।
+
+इस वेबसाइट या मोबाइल एप्लिकेशन का उपयोग करके, आप इन नियमों और शर्तों को स्वीकार करते हैं। यदि आप इन शर्तों से सहमत नहीं हैं, तो कृपया हमारी सेवाओं का उपयोग न करें।
+
+ये नियम और शर्तें भारतीय कानून के अनुसार बनाई गई हैं और भारतीय न्यायालयों के अधिकार क्षेत्र में आती हैं।`
+        : `ShaadiPartnerSearch ("we", "our", or "Service") is an online matrimonial platform that assists individuals of Indian origin residing in India and abroad to find life partners.
+
+By using this website or mobile application, you accept these Terms and Conditions. If you do not agree to these terms, please do not use our services.
+
+These Terms and Conditions are governed by Indian law and are subject to the jurisdiction of Indian courts.`
+    },
+    {
+      icon: <User size={24} weight="bold" className="text-primary" />,
+      title: isHindi ? '2. पात्रता मानदंड' : '2. Eligibility Criteria',
+      content: isHindi
+        ? `हमारी सेवाओं का उपयोग करने के लिए, आपको निम्नलिखित मानदंडों को पूरा करना होगा:
+
+• आयु: पुरुष के लिए न्यूनतम 21 वर्ष और महिला के लिए न्यूनतम 18 वर्ष (भारतीय विवाह कानूनों के अनुसार)
+• वैवाहिक स्थिति: अविवाहित, तलाकशुदा, या विधवा/विधुर
+• पहचान: वैध भारतीय नागरिक या भारतीय मूल का व्यक्ति (OCI/PIO)
+• मानसिक स्थिति: मानसिक रूप से स्वस्थ और विवाह के लिए सक्षम
+• कानूनी: किसी भी आपराधिक मामले में वांछित नहीं होना चाहिए
+
+नाबालिगों या पहले से विवाहित व्यक्तियों द्वारा पंजीकरण कानूनन अपराध है।`
+        : `To use our services, you must meet the following criteria:
+
+• Age: Minimum 21 years for males and 18 years for females (as per Indian Marriage Laws)
+• Marital Status: Single, Divorced, or Widowed
+• Identity: Valid Indian citizen or Person of Indian Origin (OCI/PIO)
+• Mental Capacity: Mentally sound and capable of marriage
+• Legal: Must not be wanted in any criminal case
+
+Registration by minors or already married individuals is a punishable offense.`
+    },
+    {
+      icon: <Scales size={24} weight="bold" className="text-primary" />,
+      title: isHindi ? '3. उपयोगकर्ता की जिम्मेदारियां' : '3. User Responsibilities',
+      content: isHindi
+        ? `उपयोगकर्ता के रूप में, आप निम्नलिखित के लिए जिम्मेदार हैं:
+
+• सटीक जानकारी: सभी व्यक्तिगत जानकारी सत्य और सटीक प्रदान करना
+• अपडेट: किसी भी परिवर्तन की स्थिति में प्रोफाइल अपडेट करना
+• गोपनीयता: अपने लॉगिन क्रेडेंशियल्स को सुरक्षित रखना
+• सम्मानजनक व्यवहार: अन्य उपयोगकर्ताओं के साथ सम्मानजनक और शालीन व्यवहार करना
+• रिपोर्टिंग: किसी भी संदिग्ध या अनुचित गतिविधि की रिपोर्ट करना
+
+निषिद्ध गतिविधियां:
+• झूठी या भ्रामक जानकारी प्रदान करना
+• किसी अन्य व्यक्ति की पहचान का उपयोग करना
+• अश्लील या आपत्तिजनक सामग्री साझा करना
+• उत्पीड़न, धमकी या अपमानजनक संदेश भेजना
+• वाणिज्यिक प्रचार या स्पैम
+• प्लेटफॉर्म को हैक करने या नुकसान पहुंचाने का प्रयास`
+        : `As a user, you are responsible for:
+
+• Accurate Information: Providing true and accurate personal information
+• Updates: Updating your profile in case of any changes
+• Confidentiality: Keeping your login credentials secure
+• Respectful Behavior: Treating other users with respect and decency
+• Reporting: Reporting any suspicious or inappropriate activity
+
+Prohibited Activities:
+• Providing false or misleading information
+• Using another person's identity
+• Sharing obscene or objectionable content
+• Sending harassment, threatening, or abusive messages
+• Commercial promotion or spam
+• Attempting to hack or damage the platform`
+    },
+    {
+      icon: <Lock size={24} weight="bold" className="text-primary" />,
+      title: isHindi ? '4. डेटा गोपनीयता और सुरक्षा' : '4. Data Privacy and Security',
+      content: isHindi
+        ? `हम आपकी गोपनीयता को गंभीरता से लेते हैं और डिजिटल पर्सनल डेटा प्रोटेक्शन एक्ट, 2023 (DPDP Act) के अनुसार काम करते हैं।
+
+डेटा संग्रह:
+• व्यक्तिगत जानकारी: नाम, आयु, संपर्क विवरण, शैक्षिक और व्यावसायिक जानकारी
+• फोटो: प्रोफाइल फोटो और सेल्फी सत्यापन के लिए
+• स्थान: पंजीकरण के समय भौगोलिक स्थान (सत्यापन के लिए)
+
+डेटा का उपयोग:
+• मैचमेकिंग और प्रोफाइल मिलान के लिए
+• सत्यापन और धोखाधड़ी रोकथाम के लिए
+• संचार और ग्राहक सहायता के लिए
+
+डेटा सुरक्षा:
+• सभी डेटा एन्क्रिप्टेड स्टोरेज में रखा जाता है
+• Azure के सुरक्षित क्लाउड इंफ्रास्ट्रक्चर का उपयोग
+• नियमित सुरक्षा ऑडिट
+
+आपके अधिकार:
+• डेटा एक्सेस का अधिकार
+• डेटा सुधार का अधिकार
+• डेटा विलोपन का अधिकार ("भूल जाने का अधिकार")
+• डेटा पोर्टेबिलिटी का अधिकार`
+        : `We take your privacy seriously and operate in accordance with the Digital Personal Data Protection Act, 2023 (DPDP Act).
+
+Data Collection:
+• Personal Information: Name, age, contact details, educational and professional information
+• Photos: Profile photos and selfie for verification
+• Location: Geographical location during registration (for verification)
+
+Data Usage:
+• For matchmaking and profile matching
+• For verification and fraud prevention
+• For communication and customer support
+
+Data Security:
+• All data is stored in encrypted storage
+• Use of Azure's secure cloud infrastructure
+• Regular security audits
+
+Your Rights:
+• Right to data access
+• Right to data correction
+• Right to data deletion ("Right to be forgotten")
+• Right to data portability`
+    },
+    {
+      icon: <CurrencyInr size={24} weight="bold" className="text-primary" />,
+      title: isHindi ? '5. सदस्यता और भुगतान' : '5. Membership and Payment',
+      content: isHindi
+        ? `सदस्यता योजनाएं:
+
+मुफ्त योजना (6 महीने परिचयात्मक):
+• प्रोफाइल बनाना और देखना
+• बायोडेटा जनरेशन उपलब्ध नहीं
+• वेडिंग सर्विसेज एक्सेस नहीं
+• सीमित संपर्क सुविधाएं
+
+6 महीने की योजना (₹500):
+• असीमित प्रोफाइल देखना
+• संपर्क विवरण एक्सेस
+• बायोडेटा जनरेशन
+• वेडिंग सर्विसेज एक्सेस
+
+1 साल की योजना (₹900):
+• सभी 6 महीने की सुविधाएं
+• प्राथमिकता सहायता
+• प्रोफाइल हाइलाइट
+
+भुगतान नीति:
+• सभी भुगतान अग्रिम हैं
+• UPI, नेट बैंकिंग, डेबिट/क्रेडिट कार्ड स्वीकार्य
+• सभी शुल्क 18% GST सहित
+
+रिफंड नीति:
+• प्रोफाइल अस्वीकृति पर पूर्ण रिफंड
+• स्वैच्छिक रद्दीकरण पर कोई रिफंड नहीं
+• रिफंड 7-10 कार्य दिवसों में प्रोसेस होगा`
+        : `Membership Plans:
+
+Free Plan (6 months introductory):
+• Create and view profiles
+• Biodata generation not available
+• No Wedding Services access
+• Limited contact features
+
+6 Month Plan (₹500):
+• Unlimited profile viewing
+• Contact details access
+• Biodata generation
+• Wedding Services access
+
+1 Year Plan (₹900):
+• All 6-month features
+• Priority support
+• Profile highlight
+
+Payment Policy:
+• All payments are advance
+• UPI, Net Banking, Debit/Credit Cards accepted
+• All charges include 18% GST
+
+Refund Policy:
+• Full refund on profile rejection
+• No refund on voluntary cancellation
+• Refunds processed within 7-10 business days`
+    },
+    {
+      icon: <Calendar size={24} weight="bold" className="text-primary" />,
+      title: isHindi ? '6. सदस्यता समाप्ति और नवीनीकरण' : '6. Membership Expiry and Renewal',
+      content: isHindi
+        ? `सदस्यता समाप्ति:
+• सदस्यता समाप्ति से 7 दिन पहले दैनिक रिमाइंडर भेजे जाएंगे
+• समाप्ति के बाद, आपकी प्रोफाइल निष्क्रिय हो जाएगी
+• निष्क्रिय प्रोफाइल पर: चैट, संपर्क, फोटो, बायो धुंधले हो जाएंगे
+
+नवीनीकरण:
+• समय पर नवीनीकरण करने पर सभी सुविधाएं जारी रहेंगी
+• नवीनीकरण विलंब पर डेटा 90 दिनों तक सुरक्षित रहेगा
+• 90 दिनों के बाद, प्रोफाइल स्वतः हटाई जा सकती है
+
+ग्रेस पीरियड:
+• समाप्ति के बाद 7 दिन का ग्रेस पीरियड
+• ग्रेस पीरियड में नवीनीकरण पर कोई अतिरिक्त शुल्क नहीं`
+        : `Membership Expiry:
+• Daily reminders will be sent 7 days before membership expiry
+• After expiry, your profile will become inactive
+• On inactive profile: Chat, Contact, Photos, Bio will be blurred
+
+Renewal:
+• On-time renewal keeps all features active
+• Data remains secure for 90 days on delayed renewal
+• After 90 days, profile may be automatically deleted
+
+Grace Period:
+• 7-day grace period after expiry
+• No extra charges for renewal during grace period`
+    },
+    {
+      icon: <Shield size={24} weight="bold" className="text-primary" />,
+      title: isHindi ? '7. सत्यापन और सुरक्षा' : '7. Verification and Safety',
+      content: isHindi
+        ? `सत्यापन प्रक्रिया:
+• सभी प्रोफाइल मैन्युअल समीक्षा से गुजरती हैं
+• AI-आधारित फोटो सत्यापन
+• लाइव सेल्फी मिलान
+• संपर्क विवरण OTP सत्यापन
+
+स्वयंसेवक सत्यापन (वैकल्पिक):
+• परिवार की पृष्ठभूमि सत्यापन
+• व्यवसाय/नौकरी सत्यापन
+• आय सत्यापन (दस्तावेज़ के साथ)
+
+सुरक्षा उपाय:
+• संदिग्ध प्रोफाइल की रिपोर्टिंग सुविधा
+• अनुचित व्यवहार पर तत्काल ब्लॉक
+• गोपनीयता सेटिंग्स - ईमेल/फोन छुपाने का विकल्प
+
+अस्वीकरण:
+• हम प्रोफाइल की 100% प्रामाणिकता की गारंटी नहीं दे सकते
+• व्यक्तिगत मिलने से पहले उचित सावधानी बरतें
+• वित्तीय लेनदेन से बचें`
+        : `Verification Process:
+• All profiles undergo manual review
+• AI-based photo verification
+• Live selfie matching
+• Contact details OTP verification
+
+Volunteer Verification (Optional):
+• Family background verification
+• Business/Job verification
+• Income verification (with documents)
+
+Safety Measures:
+• Suspicious profile reporting feature
+• Immediate block on inappropriate behavior
+• Privacy settings - Option to hide email/phone
+
+Disclaimer:
+• We cannot guarantee 100% authenticity of profiles
+• Exercise due caution before meeting in person
+• Avoid financial transactions`
+    },
+    {
+      icon: <Trash size={24} weight="bold" className="text-primary" />,
+      title: isHindi ? '8. प्रोफाइल निष्क्रियता और विलोपन' : '8. Profile Deactivation and Deletion',
+      content: isHindi
+        ? `प्रोफाइल निष्क्रियता:
+• आप कभी भी अपनी प्रोफाइल निष्क्रिय कर सकते हैं
+• निष्क्रिय प्रोफाइल खोज परिणामों में नहीं दिखेगी
+• डेटा 90 दिनों तक सुरक्षित रहेगा
+
+प्रोफाइल विलोपन:
+• OTP सत्यापन के बाद प्रोफाइल हटाई जा सकती है
+• विलोपन के बाद डेटा पुनर्प्राप्त नहीं किया जा सकता
+• विवाह की स्थिति में कृपया हमें सूचित करें
+
+व्यवस्थापक द्वारा निष्कासन:
+• नियमों के उल्लंघन पर प्रोफाइल निलंबित की जा सकती है
+• गंभीर उल्लंघन पर स्थायी प्रतिबंध
+• निलंबित प्रोफाइल पर कोई रिफंड नहीं`
+        : `Profile Deactivation:
+• You can deactivate your profile anytime
+• Deactivated profile won't appear in search results
+• Data remains secure for 90 days
+
+Profile Deletion:
+• Profile can be deleted after OTP verification
+• Data cannot be recovered after deletion
+• Please inform us in case of marriage
+
+Admin Removal:
+• Profile may be suspended for rule violations
+• Permanent ban for serious violations
+• No refund on suspended profiles`
+    },
+    {
+      icon: <Warning size={24} weight="bold" className="text-primary" />,
+      title: isHindi ? '9. दायित्व की सीमा' : '9. Limitation of Liability',
+      content: isHindi
+        ? `ShaadiPartnerSearch निम्नलिखित के लिए उत्तरदायी नहीं है:
+
+• उपयोगकर्ताओं द्वारा प्रदान की गई गलत या भ्रामक जानकारी
+• उपयोगकर्ताओं के बीच किसी भी विवाद या असहमति
+• व्यक्तिगत मुलाकातों के परिणामस्वरूप होने वाली कोई भी घटना
+• तकनीकी खराबी या सेवा में रुकावट
+• किसी तीसरे पक्ष की वेबसाइट या सेवाओं के उपयोग से होने वाली हानि
+• विवाह के बाद होने वाली कोई भी समस्या
+
+हम केवल एक मंच प्रदान करते हैं और विवाह की सफलता या असफलता के लिए जिम्मेदार नहीं हैं।
+
+अधिकतम दायित्व:
+किसी भी स्थिति में, ShaadiPartnerSearch का अधिकतम दायित्व आपके द्वारा भुगतान की गई सदस्यता शुल्क से अधिक नहीं होगा।`
+        : `ShaadiPartnerSearch is not liable for:
+
+• False or misleading information provided by users
+• Any disputes or disagreements between users
+• Any incident resulting from personal meetings
+• Technical malfunction or service interruption
+• Loss from use of third-party websites or services
+• Any problems occurring after marriage
+
+We only provide a platform and are not responsible for the success or failure of marriages.
+
+Maximum Liability:
+In no event shall ShaadiPartnerSearch's liability exceed the membership fee paid by you.`
+    },
+    {
+      icon: <Handshake size={24} weight="bold" className="text-primary" />,
+      title: isHindi ? '10. विवाद समाधान' : '10. Dispute Resolution',
+      content: isHindi
+        ? `विवाद समाधान प्रक्रिया:
+
+1. शिकायत पंजीकरण:
+   • support@shaadipartnersearch.com पर ईमेल करें
+   • शिकायत 48 घंटों के भीतर स्वीकार की जाएगी
+
+2. मध्यस्थता:
+   • विवादों का समाधान पहले आपसी बातचीत से किया जाएगा
+   • असफल होने पर, मध्यस्थता प्रक्रिया अपनाई जाएगी
+
+3. मध्यस्थता (Arbitration):
+   • भारतीय मध्यस्थता और सुलह अधिनियम, 1996 के अनुसार
+   • मध्यस्थता स्थान: नई दिल्ली, भारत
+   • भाषा: हिंदी या अंग्रेजी
+
+4. न्यायालय:
+   • अंतिम उपाय के रूप में, दिल्ली के न्यायालयों का विशेष अधिकार क्षेत्र होगा
+
+शासी कानून:
+ये नियम और शर्तें भारतीय कानून द्वारा शासित होंगी।`
+        : `Dispute Resolution Process:
+
+1. Complaint Registration:
+   • Email at support@shaadipartnersearch.com
+   • Complaint will be acknowledged within 48 hours
+
+2. Mediation:
+   • Disputes will first be resolved through mutual discussion
+   • If unsuccessful, mediation process will be followed
+
+3. Arbitration:
+   • As per Indian Arbitration and Conciliation Act, 1996
+   • Arbitration venue: New Delhi, India
+   • Language: Hindi or English
+
+4. Courts:
+   • As a last resort, courts in Delhi shall have exclusive jurisdiction
+
+Governing Law:
+These Terms and Conditions shall be governed by Indian law.`
+    },
+    {
+      icon: <Eye size={24} weight="bold" className="text-primary" />,
+      title: isHindi ? '11. बौद्धिक संपदा' : '11. Intellectual Property',
+      content: isHindi
+        ? `ShaadiPartnerSearch की सभी सामग्री, जिसमें शामिल हैं:
+• लोगो, डिज़ाइन और ट्रेडमार्क
+• वेबसाइट का स्रोत कोड
+• सामग्री और टेक्स्ट
+• AI मॉडल और एल्गोरिदम
+
+ये सभी ShaadiPartnerSearch की बौद्धिक संपदा हैं और कॉपीराइट कानूनों द्वारा संरक्षित हैं।
+
+उपयोगकर्ता सामग्री:
+• आप अपने द्वारा अपलोड की गई सामग्री के मालिक हैं
+• आप हमें अपनी सामग्री का उपयोग करने का लाइसेंस देते हैं
+• हम आपकी अनुमति के बिना आपकी फोटो का व्यावसायिक उपयोग नहीं करेंगे`
+        : `All content of ShaadiPartnerSearch, including:
+• Logos, designs, and trademarks
+• Website source code
+• Content and text
+• AI models and algorithms
+
+These are all intellectual property of ShaadiPartnerSearch and are protected by copyright laws.
+
+User Content:
+• You own the content you upload
+• You grant us a license to use your content
+• We will not use your photos commercially without your permission`
+    },
+    {
+      icon: <Envelope size={24} weight="bold" className="text-primary" />,
+      title: isHindi ? '12. संपर्क और शिकायत' : '12. Contact and Grievance',
+      content: isHindi
+        ? `शिकायत निवारण अधिकारी:
+(सूचना प्रौद्योगिकी अधिनियम, 2000 और DPDP Act, 2023 के अनुसार)
+
+नाम: [शिकायत अधिकारी का नाम]
+ईमेल: grievance@shaadipartnersearch.com
+पता: [कंपनी का पता], भारत
+
+सामान्य संपर्क:
+• ईमेल: support@shaadipartnersearch.com
+• फोन: [संपर्क नंबर]
+• कार्य समय: सोमवार-शनिवार, सुबह 10 बजे - शाम 6 बजे
+
+प्रतिक्रिया समय:
+• शिकायत स्वीकृति: 48 घंटे
+• समाधान: 15 कार्य दिवस
+
+अंतिम अपडेट: ${new Date().toLocaleDateString('hi-IN', { year: 'numeric', month: 'long', day: 'numeric' })}`
+        : `Grievance Redressal Officer:
+(As per Information Technology Act, 2000 and DPDP Act, 2023)
+
+Name: [Grievance Officer Name]
+Email: grievance@shaadipartnersearch.com
+Address: [Company Address], India
+
+General Contact:
+• Email: support@shaadipartnersearch.com
+• Phone: [Contact Number]
+• Working Hours: Monday-Saturday, 10 AM - 6 PM
+
+Response Time:
+• Complaint acknowledgment: 48 hours
+• Resolution: 15 business days
+
+Last Updated: ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}`
+    }
+  ]
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="text-2xl flex items-center gap-2">
+            <FileText size={28} weight="bold" className="text-primary" />
+            {isHindi ? 'नियम और शर्तें' : 'Terms and Conditions'}
+          </DialogTitle>
+          <DialogDescription>
+            {isHindi 
+              ? 'ShaadiPartnerSearch मैट्रिमोनी सेवा का उपयोग करने से पहले कृपया इन नियमों को ध्यान से पढ़ें।' 
+              : 'Please read these terms carefully before using the ShaadiPartnerSearch matrimony service.'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-6 pb-4">
+            {sections.map((section, index) => (
+              <div key={index} className="space-y-3">
+                <div className="flex items-center gap-3">
+                  {section.icon}
+                  <h3 className="text-lg font-semibold">{section.title}</h3>
+                </div>
+                <div className="pl-9 text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
+                  {section.content}
+                </div>
+                {index < sections.length - 1 && <Separator className="mt-4" />}
+              </div>
+            ))}
+
+            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mt-6">
+              <div className="flex items-start gap-3">
+                <Warning size={24} weight="fill" className="text-amber-600 flex-shrink-0" />
+                <div>
+                  <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-1">
+                    {isHindi ? 'महत्वपूर्ण सूचना' : 'Important Notice'}
+                  </h4>
+                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                    {isHindi 
+                      ? 'पंजीकरण करके, आप इन सभी नियमों और शर्तों को पढ़ने और स्वीकार करने की पुष्टि करते हैं। यदि आपको कोई शर्त समझ में नहीं आई है, तो कृपया आगे बढ़ने से पहले हमसे संपर्क करें।' 
+                      : 'By registering, you confirm that you have read and accept all these terms and conditions. If you do not understand any term, please contact us before proceeding.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ScrollArea>
+
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button onClick={onClose}>
+            {isHindi ? 'बंद करें' : 'Close'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

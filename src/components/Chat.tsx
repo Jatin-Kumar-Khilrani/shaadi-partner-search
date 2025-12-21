@@ -7,9 +7,9 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
-import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple } from '@phosphor-icons/react'
+import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks } from '@phosphor-icons/react'
 import type { ChatMessage, ChatConversation } from '@/types/chat'
-import type { Profile, Interest } from '@/types/profile'
+import type { Profile, Interest, MembershipPlan } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 import { toast } from 'sonner'
 
@@ -18,9 +18,11 @@ interface ChatProps {
   profiles: Profile[]
   language: Language
   isAdmin?: boolean
+  shouldBlur?: boolean
+  membershipPlan?: MembershipPlan
 }
 
-export function Chat({ currentUserProfile, profiles, language, isAdmin = false }: ChatProps) {
+export function Chat({ currentUserProfile, profiles, language, isAdmin = false, shouldBlur = false, membershipPlan }: ChatProps) {
   const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [conversations, setConversations] = useState<ChatConversation[]>([])
@@ -168,6 +170,44 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
     setConversations(sortedConversations)
   }, [messages, currentUserProfile, isAdmin])
 
+  // Mark messages as delivered/read when conversation is opened
+  useEffect(() => {
+    if (!selectedConversation || !messages || isAdmin) return
+    if (!currentUserProfile) return
+
+    const currentProfileId = currentUserProfile.profileId
+    let hasUpdates = false
+    
+    const updatedMessages = messages.map(msg => {
+      // Only update messages sent TO the current user
+      if (msg.toProfileId === currentProfileId && msg.fromProfileId !== currentProfileId) {
+        // Check if message belongs to selected conversation
+        const convId = [msg.fromProfileId, msg.toProfileId].sort().join('-')
+        const isAdminConv = msg.type === 'admin-to-user' || msg.type === 'admin-broadcast'
+        const matchesConversation = isAdminConv 
+          ? selectedConversation.startsWith('admin-')
+          : convId === selectedConversation || selectedConversation.includes(msg.fromProfileId)
+        
+        if (matchesConversation && !msg.read) {
+          hasUpdates = true
+          return { 
+            ...msg, 
+            read: true, 
+            readAt: new Date().toISOString(),
+            status: 'read' as const,
+            delivered: true,
+            deliveredAt: msg.deliveredAt || new Date().toISOString()
+          }
+        }
+      }
+      return msg
+    })
+
+    if (hasUpdates) {
+      setMessages(updatedMessages)
+    }
+  }, [selectedConversation, currentUserProfile])
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [selectedConversation, messages])
@@ -232,6 +272,8 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
       timestamp: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       read: false,
+      status: 'sent',
+      delivered: false,
       type: 'user-to-user',
     }
 
@@ -316,6 +358,25 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">{t.title}</h1>
 
+        {/* Blur overlay for free/expired membership */}
+        {shouldBlur && !isAdmin && (
+          <div className="relative mb-6">
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg">
+              <LockSimple size={48} weight="bold" className="text-amber-600 mb-4" />
+              <h3 className="text-xl font-bold text-amber-600 mb-2">
+                {language === 'hi' ? 'चैट सुविधा सीमित है' : 'Chat Feature Limited'}
+              </h3>
+              <p className="text-muted-foreground text-center max-w-md">
+                {language === 'hi' 
+                  ? 'मुफ्त या समाप्त सदस्यता पर चैट सुविधा उपलब्ध नहीं है। पूर्ण एक्सेस के लिए प्रीमियम योजना में अपग्रेड करें।' 
+                  : 'Chat feature is not available on Free or Expired membership. Upgrade to Premium for full access.'}
+              </p>
+            </div>
+            <div className="filter blur-sm pointer-events-none h-[600px] bg-muted/20 rounded-lg" />
+          </div>
+        )}
+
+        {!shouldBlur && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[600px]">
           <Card className="md:col-span-1">
             <CardHeader>
@@ -410,6 +471,15 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
                           ? profiles.find(p => p.profileId === msg.fromProfileId)
                           : null
 
+                        // Determine message status for tick marks
+                        const getMessageStatus = () => {
+                          if (msg.status) return msg.status
+                          if (msg.read || msg.readAt) return 'read'
+                          if (msg.delivered || msg.deliveredAt) return 'delivered'
+                          return 'sent'
+                        }
+                        const messageStatus = getMessageStatus()
+
                         return (
                           <div
                             key={msg.id}
@@ -429,9 +499,26 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
                                 }`}
                               >
                                 <p className="text-sm">{msg.message}</p>
-                                <p className="text-xs opacity-70 mt-1">
-                                  {formatTime(msg.timestamp)}
-                                </p>
+                                <div className="flex items-center justify-end gap-1 mt-1">
+                                  <span className="text-xs opacity-70">
+                                    {formatTime(msg.timestamp)}
+                                  </span>
+                                  {isFromCurrentUser && (
+                                    <span className={`flex items-center ${
+                                      messageStatus === 'read' 
+                                        ? 'text-blue-400' 
+                                        : messageStatus === 'delivered' 
+                                          ? 'text-gray-400' 
+                                          : 'text-gray-300'
+                                    }`}>
+                                      {messageStatus === 'sent' ? (
+                                        <Check size={14} weight="bold" />
+                                      ) : (
+                                        <Checks size={14} weight="bold" />
+                                      )}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -470,6 +557,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false }
             })()}
           </Card>
         </div>
+        )}
       </div>
     </div>
   )

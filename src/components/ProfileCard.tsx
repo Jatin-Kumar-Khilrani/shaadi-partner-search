@@ -2,7 +2,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MapPin, Briefcase, GraduationCap, UserCircle, ShieldCheck, Seal } from '@phosphor-icons/react'
+import { MapPin, Briefcase, GraduationCap, UserCircle, ShieldCheck, Seal, Clock } from '@phosphor-icons/react'
 import type { Profile } from '@/types/profile'
 import { motion } from 'framer-motion'
 
@@ -11,9 +11,10 @@ interface ProfileCardProps {
   onViewProfile: (profile: Profile) => void
   language?: 'hi' | 'en'
   isLoggedIn?: boolean
+  shouldBlur?: boolean
 }
 
-export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedIn = false }: ProfileCardProps) {
+export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedIn = false, shouldBlur = false }: ProfileCardProps) {
   
   const getTrustBadge = () => {
     if (profile.trustLevel >= 5) {
@@ -40,11 +41,12 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
 
   const badge = getTrustBadge()
   
-  // Get first name only (hide surname for non-logged in users)
-  const displayName = isLoggedIn ? profile.fullName : profile.fullName.split(' ')[0]
-  const initials = isLoggedIn 
-    ? profile.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    : profile.fullName.split(' ')[0][0].toUpperCase()
+  // Get first name only (hide surname for non-logged in users or blurred users)
+  const shouldHideSurname = !isLoggedIn || shouldBlur
+  const displayName = shouldHideSurname ? profile.fullName.split(' ')[0] : profile.fullName
+  const initials = shouldHideSurname 
+    ? profile.fullName.split(' ')[0][0].toUpperCase()
+    : profile.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   
   const t = {
     years: language === 'hi' ? 'वर्ष' : 'years',
@@ -53,6 +55,31 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
     religion: language === 'hi' ? 'धर्म' : 'Religion',
     caste: language === 'hi' ? 'जाति' : 'Caste',
     viewProfile: language === 'hi' ? 'प्रोफाइल देखें' : 'View Profile',
+    lastSeen: language === 'hi' ? 'अंतिम लॉगिन' : 'Last seen',
+  }
+
+  // Format last login time
+  const formatLastLogin = (lastLoginAt?: string) => {
+    if (!lastLoginAt) return null
+    const date = new Date(lastLoginAt)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffMins = Math.floor(diffMs / (1000 * 60))
+    
+    if (diffMins < 60) {
+      return language === 'hi' ? `${diffMins} मिनट पहले` : `${diffMins}m ago`
+    } else if (diffHours < 24) {
+      return language === 'hi' ? `${diffHours} घंटे पहले` : `${diffHours}h ago`
+    } else if (diffDays < 7) {
+      return language === 'hi' ? `${diffDays} दिन पहले` : `${diffDays}d ago`
+    } else {
+      return date.toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-IN', { 
+        day: 'numeric', 
+        month: 'short' 
+      })
+    }
   }
 
   return (
@@ -64,8 +91,8 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
       <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 hover:border-teal/30">
         <CardHeader className="pb-4">
           <div className="flex items-start gap-4">
-            <Avatar className={`w-20 h-20 border-4 border-background shadow-lg ${!isLoggedIn ? 'blur-sm' : ''}`}>
-              {isLoggedIn ? (
+            <Avatar className={`w-20 h-20 border-4 border-background shadow-lg ${(!isLoggedIn || shouldBlur) ? 'blur-sm' : ''}`}>
+              {isLoggedIn && !shouldBlur ? (
                 <AvatarImage src={profile.photos?.[0]} alt={displayName} />
               ) : null}
               <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
@@ -76,7 +103,7 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
               <div className="flex items-start justify-between gap-2">
                 <h3 className="font-bold text-xl leading-tight">
                   {displayName}
-                  {!isLoggedIn && <span className="text-muted-foreground"> ...</span>}
+                  {shouldHideSurname && <span className="text-muted-foreground"> ...</span>}
                 </h3>
                 {profile.status === 'verified' && badge && (
                   <Badge className={`${badge.color} gap-1 whitespace-nowrap shrink-0`}>
@@ -121,8 +148,15 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
             </div>
           )}
 
+          {isLoggedIn && profile.lastLoginAt && (
+            <div className="flex items-center gap-2 text-sm text-green-600">
+              <Clock size={16} className="shrink-0" />
+              <span className="truncate">{t.lastSeen}: {formatLastLogin(profile.lastLoginAt)}</span>
+            </div>
+          )}
+
           {profile.bio && (
-            <p className="text-sm text-muted-foreground line-clamp-2 mt-3 pt-3 border-t">
+            <p className={`text-sm text-muted-foreground line-clamp-2 mt-3 pt-3 border-t ${shouldBlur ? 'blur-sm select-none' : ''}`}>
               {profile.bio}
             </p>
           )}

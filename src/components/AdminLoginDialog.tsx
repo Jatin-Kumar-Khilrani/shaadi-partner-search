@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Eye, EyeSlash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Language } from '@/lib/translations'
 
@@ -27,6 +28,7 @@ export function AdminLoginDialog({
   const [otp, setOtp] = useState('')
   const [generatedOtp, setGeneratedOtp] = useState('')
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
+  const [showPassword, setShowPassword] = useState(false)
 
   const t = {
     title: language === 'hi' ? 'एडमिन लॉगिन' : 'Admin Login',
@@ -101,14 +103,26 @@ export function AdminLoginDialog({
 
             <div className="space-y-2">
               <Label htmlFor="admin-password">{t.password}</Label>
-              <Input
-                id="admin-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-              />
+              <div className="relative">
+                <Input
+                  id="admin-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
+                </Button>
+              </div>
             </div>
 
             <div className="flex gap-2 justify-end">

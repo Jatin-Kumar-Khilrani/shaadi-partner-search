@@ -51,6 +51,89 @@ function App() {
     ? profiles?.find(p => p.id === currentUser.profileId) || null
     : null
 
+  // Membership status utility functions
+  const getMembershipStatus = (profile: Profile | null) => {
+    if (!profile) return { isExpired: true, daysUntilExpiry: 0, isFree: false, shouldBlur: true }
+    
+    const isFree = profile.membershipPlan === 'free'
+    const expiry = profile.membershipExpiry ? new Date(profile.membershipExpiry) : null
+    const now = new Date()
+    
+    if (!expiry) return { isExpired: true, daysUntilExpiry: 0, isFree, shouldBlur: true }
+    
+    const timeDiff = expiry.getTime() - now.getTime()
+    const daysUntilExpiry = Math.ceil(timeDiff / (1000 * 60 * 60 * 24))
+    const isExpired = daysUntilExpiry <= 0
+    
+    // Free plan has limited features (acts like expired for certain features)
+    // Expired plan also has limited features
+    const shouldBlur = isExpired || isFree
+    
+    return { isExpired, daysUntilExpiry, isFree, shouldBlur }
+  }
+
+  const currentMembershipStatus = getMembershipStatus(currentUserProfile)
+
+  // Check for expiry notifications on login and periodically
+  useEffect(() => {
+    if (!currentUserProfile || !loggedInUser) return
+    
+    const { daysUntilExpiry, isExpired, isFree } = getMembershipStatus(currentUserProfile)
+    
+    // Show expiry warning 7 days before expiry (once per day)
+    const notificationKey = `expiry_notification_${currentUserProfile.profileId}_${new Date().toDateString()}`
+    const alreadyNotified = localStorage.getItem(notificationKey)
+    
+    if (!alreadyNotified) {
+      if (isExpired && !isFree) {
+        // Membership has expired
+        toast.error(
+          language === 'hi' 
+            ? 'आपकी सदस्यता समाप्त हो गई है!' 
+            : 'Your membership has expired!',
+          {
+            description: language === 'hi' 
+              ? 'चैट, संपर्क, फोटो और अन्य सुविधाएं धुंधली हो जाएंगी। कृपया नवीनीकरण करें।' 
+              : 'Chat, contact, photos and other features will be blurred. Please renew your plan.',
+            duration: 10000
+          }
+        )
+        localStorage.setItem(notificationKey, 'true')
+      } else if (daysUntilExpiry > 0 && daysUntilExpiry <= 7 && !isFree) {
+        // 7 days before expiry - daily reminder
+        toast.warning(
+          language === 'hi' 
+            ? `सदस्यता समाप्ति चेतावनी: ${daysUntilExpiry} दिन शेष` 
+            : `Membership Expiry Warning: ${daysUntilExpiry} days remaining`,
+          {
+            description: language === 'hi' 
+              ? 'कृपया समय पर नवीनीकरण करें। समाप्ति के बाद सुविधाएं सीमित हो जाएंगी।' 
+              : 'Please renew on time. Features will be limited after expiry.',
+            duration: 8000
+          }
+        )
+        localStorage.setItem(notificationKey, 'true')
+      } else if (isFree) {
+        // First time login notification for free users
+        const freeNotifKey = `free_plan_info_${currentUserProfile.profileId}`
+        if (!localStorage.getItem(freeNotifKey)) {
+          toast.info(
+            language === 'hi' 
+              ? 'मुफ्त योजना सक्रिय' 
+              : 'Free Plan Active',
+            {
+              description: language === 'hi' 
+                ? 'आप मुफ्त परिचयात्मक योजना पर हैं। पूर्ण सुविधाओं के लिए प्रीमियम योजना में अपग्रेड करें।' 
+                : 'You are on the Free Introductory Plan. Upgrade to Premium for full features.',
+              duration: 8000
+            }
+          )
+          localStorage.setItem(freeNotifKey, 'true')
+        }
+      }
+    }
+  }, [loggedInUser, currentUserProfile, language])
+
   useEffect(() => {
     if ((!profiles || profiles.length === 0) && sampleProfiles.length > 0) {
       setProfiles(sampleProfiles)
@@ -74,6 +157,9 @@ function App() {
     return profiles.filter(profile => {
       if (profile.status !== 'verified') return false
       
+      // Exclude deleted profiles from regular users
+      if (profile.isDeleted) return false
+      
       if (currentUserProfile && blockedProfiles) {
         const isBlocked = blockedProfiles.some(
           b => (b.blockerProfileId === currentUserProfile.profileId && b.blockedProfileId === profile.profileId) ||
@@ -96,15 +182,44 @@ function App() {
   }, [profiles, searchFilters, currentUserProfile, blockedProfiles])
 
   const handleRegisterProfile = (profileData: Partial<Profile>) => {
-    const id = `profile-${Date.now()}`
-    const userId = `USER${Math.random().toString(36).substr(2, 6).toUpperCase()}`
-    const password = Math.random().toString(36).substr(2, 8)
+    // Check for duplicate email or mobile
+    const existingEmailProfile = profiles?.find(p => p.email && p.email.toLowerCase() === profileData.email?.toLowerCase())
+    const existingMobileProfile = profiles?.find(p => p.mobile && p.mobile === profileData.mobile)
     
+    if (existingEmailProfile) {
+      toast.error(
+        language === 'hi' 
+          ? 'यह ईमेल पहले से पंजीकृत है। कृपया दूसरा ईमेल उपयोग करें।' 
+          : 'This email is already registered. Please use a different email.'
+      )
+      return
+    }
+    
+    if (existingMobileProfile) {
+      toast.error(
+        language === 'hi' 
+          ? 'यह मोबाइल नंबर पहले से पंजीकृत है। कृपया दूसरा नंबर उपयोग करें।' 
+          : 'This mobile number is already registered. Please use a different number.'
+      )
+      return
+    }
+    
+    const id = `profile-${Date.now()}`
+    
+    // Generate easy-to-remember credentials
     const firstName = profileData.firstName || profileData.fullName?.split(' ')[0] || ''
     const lastName = profileData.lastName || profileData.fullName?.split(' ').slice(1).join(' ') || firstName
     const birthYear = profileData.dateOfBirth ? new Date(profileData.dateOfBirth).getFullYear().toString().slice(-2) : '00'
     const randomDigits = Math.floor(Math.random() * 9000 + 1000)
     const generatedProfileId = `${firstName.charAt(0).toUpperCase()}${lastName.charAt(0).toUpperCase()}${randomDigits}${birthYear}`
+    
+    // Easy to remember User ID: FirstName + LastName Initial + 2-digit number (e.g., RahulS25)
+    const userRandomNum = Math.floor(Math.random() * 90 + 10)
+    const userId = `${firstName.charAt(0).toUpperCase()}${firstName.slice(1, 5).toLowerCase()}${lastName.charAt(0).toUpperCase()}${userRandomNum}`
+    
+    // Easy to remember Password: FirstNameLowercase + Birth Year (e.g., rahul1995)
+    const mobileLastFour = profileData.mobile?.slice(-4) || Math.floor(Math.random() * 9000 + 1000).toString()
+    const password = `${firstName.toLowerCase().slice(0, 4)}${mobileLastFour}`
     
     const newProfile: Profile = {
       id,
@@ -176,6 +291,36 @@ function App() {
     } else {
       setLoggedInUser(userId)
     }
+    
+    // Update last login time for the profile
+    setProfiles(current => {
+      if (!current) return []
+      return current.map(p => {
+        if (p.profileId === profileId) {
+          return { ...p, lastLoginAt: new Date().toISOString() }
+        }
+        return p
+      })
+    })
+  }
+
+  // Handle soft delete profile (hide from everyone but admin)
+  const handleDeleteProfile = (profileId: string) => {
+    setProfiles(current => {
+      if (!current) return []
+      return current.map(p => {
+        if (p.profileId === profileId) {
+          return { 
+            ...p, 
+            isDeleted: true, 
+            deletedAt: new Date().toISOString(),
+            deletedReason: 'User requested deletion'
+          }
+        }
+        return p
+      })
+    })
+    setLoggedInUser(null)
   }
 
   const handleLogout = () => {
@@ -554,10 +699,10 @@ function App() {
                         </div>
                         <div>
                           <h3 className="font-bold text-xl mb-2">
-                            {language === 'hi' ? 'स्वयंसेवकों द्वारा संचालित' : 'Managed by Volunteers'}
+                            {language === 'hi' ? 'अनुभवी पेशेवरों द्वारा ऑनलाइन सहायता' : 'Online Support by Experienced Professionals'}
                           </h3>
                           <p className="text-muted-foreground">
-                            {language === 'hi' ? 'हर शहर में समुदाय के सदस्य परिवारों की मदद करते हैं।' : 'Community members in every city help families.'}
+                            {language === 'hi' ? 'हमारे अनुभवी पेशेवर ऑनलाइन परिवारों की मदद करते हैं।' : 'Our experienced professionals help families online.'}
                           </p>
                         </div>
                       </div>
@@ -582,6 +727,39 @@ function App() {
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Free Biodata Advertisement */}
+                <Card className="bg-gradient-to-r from-red-50 to-amber-50 border-2 border-red-200 dark:from-red-950/20 dark:to-amber-950/20 dark:border-red-800">
+                  <CardContent className="py-6">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="p-4 rounded-full bg-red-100 dark:bg-red-900/30">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" className="text-red-600" viewBox="0 0 256 256">
+                            <path d="M224,152a8,8,0,0,1-8,8H192v16h16a8,8,0,0,1,0,16H192v16a8,8,0,0,1-16,0V152a8,8,0,0,1,8-8h32A8,8,0,0,1,224,152ZM92,172a28,28,0,0,1-28,28H56v8a8,8,0,0,1-16,0V152a8,8,0,0,1,8-8H64A28,28,0,0,1,92,172Zm-16,0a12,12,0,0,0-12-12H56v24h8A12,12,0,0,0,76,172Zm84,8a36,36,0,0,1-36,36H104a8,8,0,0,1-8-8V152a8,8,0,0,1,8-8h20A36,36,0,0,1,160,180Zm-16,0a20,20,0,0,0-20-20H112v40h12A20,20,0,0,0,144,180ZM40,112V40A16,16,0,0,1,56,24h96a8,8,0,0,1,5.66,2.34l56,56A8,8,0,0,1,216,88v24a8,8,0,0,1-16,0V96H152a8,8,0,0,1-8-8V40H56v72a8,8,0,0,1-16,0ZM160,80h28.69L160,51.31Z"></path>
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-2xl text-red-700 dark:text-red-400 mb-1">
+                            {language === 'hi' ? '🎉 मुफ्त बायोडाटा!' : '🎉 Free Biodata!'}
+                          </h3>
+                          <p className="text-muted-foreground">
+                            {language === 'hi' 
+                              ? 'पंजीकृत और स्वीकृत उपयोगकर्ताओं के लिए सुंदर बायोडाटा PDF मुफ्त में बनाएं और डाउनलोड करें!'
+                              : 'Create and download beautiful biodata PDF for free for registered & approved users!'
+                            }
+                          </p>
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={() => setShowRegister(true)}
+                        size="lg"
+                        className="bg-red-600 hover:bg-red-700 text-white gap-2 whitespace-nowrap"
+                      >
+                        {language === 'hi' ? 'अभी पंजीकरण करें' : 'Register Now'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 <Alert className="bg-primary/5 border-primary/20">
                   <ShieldCheck size={20} weight="fill" />
@@ -629,6 +807,7 @@ function App() {
                       onViewProfile={setSelectedProfile}
                       language={language}
                       isLoggedIn={!!loggedInUser}
+                      shouldBlur={currentMembershipStatus.shouldBlur}
                     />
                   ))}
                 </div>
@@ -671,6 +850,8 @@ function App() {
             currentUserProfile={currentUserProfile}
             profiles={profiles || []}
             language={language}
+            shouldBlur={currentMembershipStatus.shouldBlur}
+            membershipPlan={currentUserProfile?.membershipPlan}
           />
         )}
 
@@ -678,11 +859,16 @@ function App() {
           <MyProfile 
             profile={currentUserProfile}
             language={language}
+            onDeleteProfile={handleDeleteProfile}
           />
         )}
 
         {currentView === 'wedding-services' && (
-          <WeddingServices language={language} />
+          <WeddingServices 
+            language={language} 
+            shouldBlur={currentMembershipStatus.shouldBlur}
+            membershipPlan={currentUserProfile?.membershipPlan}
+          />
         )}
       </main>
 
@@ -752,6 +938,9 @@ function App() {
         onClose={() => setSelectedProfile(null)}
         language={language}
         currentUserProfile={currentUserProfile}
+        isLoggedIn={!!currentUserProfile}
+        shouldBlur={currentMembershipStatus.shouldBlur}
+        membershipPlan={currentUserProfile?.membershipPlan}
       />
 
       <RegistrationDialog

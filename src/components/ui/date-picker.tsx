@@ -121,8 +121,11 @@ export function DatePicker({
               if (maxDate && date > maxDate) return true
               return false
             }}
-            defaultMonth={selectedDate}
+            defaultMonth={selectedDate || maxDate}
             initialFocus
+            captionLayout="dropdown-buttons"
+            fromYear={1950}
+            toYear={maxDate ? maxDate.getFullYear() : new Date().getFullYear()}
           />
         </PopoverContent>
       </Popover>

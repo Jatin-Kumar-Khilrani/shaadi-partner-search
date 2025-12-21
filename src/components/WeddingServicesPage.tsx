@@ -8,15 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { MapPin, Phone, Envelope, CurrencyInr, Star, Camera, MagnifyingGlass } from '@phosphor-icons/react'
-import type { WeddingService } from '@/types/profile'
+import { MapPin, Phone, Envelope, CurrencyInr, Star, Camera, MagnifyingGlass, LockSimple } from '@phosphor-icons/react'
+import type { WeddingService, MembershipPlan } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 
 interface WeddingServicesProps {
   language: Language
+  shouldBlur?: boolean
+  membershipPlan?: MembershipPlan
 }
 
-export function WeddingServices({ language }: WeddingServicesProps) {
+export function WeddingServices({ language, shouldBlur = false, membershipPlan }: WeddingServicesProps) {
   const [services] = useKV<WeddingService[]>('weddingServices', [])
   const [selectedService, setSelectedService] = useState<WeddingService | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -85,7 +87,7 @@ export function WeddingServices({ language }: WeddingServicesProps) {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-3xl font-bold">{t.title}</h1>
-          {(categoryFilter || cityFilter || searchQuery) && (
+          {(categoryFilter || cityFilter || searchQuery) && !shouldBlur && (
             <Button variant="outline" onClick={() => {
               setCategoryFilter('')
               setCityFilter('')
@@ -97,6 +99,32 @@ export function WeddingServices({ language }: WeddingServicesProps) {
         </div>
         <p className="text-muted-foreground mb-8">{t.subtitle}</p>
 
+        {/* Blur overlay for free/expired membership */}
+        {shouldBlur && (
+          <div className="relative mb-6">
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg min-h-[400px]">
+              <LockSimple size={48} weight="bold" className="text-amber-600 mb-4" />
+              <h3 className="text-xl font-bold text-amber-600 mb-2">
+                {language === 'hi' ? 'विवाह सेवाएं सीमित हैं' : 'Wedding Services Limited'}
+              </h3>
+              <p className="text-muted-foreground text-center max-w-md">
+                {language === 'hi' 
+                  ? 'मुफ्त या समाप्त सदस्यता पर विवाह सेवाएं उपलब्ध नहीं हैं। पूर्ण एक्सेस के लिए प्रीमियम योजना में अपग्रेड करें।' 
+                  : 'Wedding Services are not available on Free or Expired membership. Upgrade to Premium for full access.'}
+              </p>
+            </div>
+            <div className="filter blur-sm pointer-events-none min-h-[400px] bg-muted/20 rounded-lg p-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[1, 2, 3, 4, 5, 6].map(i => (
+                  <div key={i} className="h-40 bg-muted rounded-lg" />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!shouldBlur && (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="relative">
             <MagnifyingGlass size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -190,6 +218,8 @@ export function WeddingServices({ language }: WeddingServicesProps) {
               </Card>
             ))}
           </div>
+        )}
+        </>
         )}
       </div>
 

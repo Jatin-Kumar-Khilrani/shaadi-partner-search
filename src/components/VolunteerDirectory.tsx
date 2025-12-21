@@ -21,10 +21,10 @@ export function VolunteerDirectory({ volunteers }: VolunteerDirectoryProps) {
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            समुदाय सहयोग
+            अनुभवी पेशेवर सहायता
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            हर शहर में हमारे पास स्थानीय स्वयंसेवक हैं जो परिवारों की मदद करते हैं
+            हमारे अनुभवी पेशेवर ऑनलाइन परिवारों की मदद करते हैं
           </p>
         </div>
 

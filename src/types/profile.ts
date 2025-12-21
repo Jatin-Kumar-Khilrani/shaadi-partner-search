@@ -4,7 +4,7 @@ export type ProfileStatus = 'pending' | 'verified' | 'rejected'
 export type DietPreference = 'veg' | 'non-veg' | 'eggetarian'
 export type DrinkingHabit = 'never' | 'occasionally' | 'regularly'
 export type SmokingHabit = 'never' | 'occasionally' | 'regularly'
-export type MembershipPlan = '6-month' | '1-year'
+export type MembershipPlan = 'free' | '6-month' | '1-year'
 export type Manglik = boolean
 
 export interface Profile {
@@ -50,6 +50,26 @@ export interface Profile {
   mobileVerified: boolean
   isBlocked: boolean
   adminNotes?: string
+  // Return to edit feature - allows admin to send profile back for user to edit
+  returnedForEdit?: boolean
+  editReason?: string
+  returnedAt?: string
+  // Last login tracking
+  lastLoginAt?: string
+  // Soft delete feature - profile hidden from everyone but admin
+  isDeleted?: boolean
+  deletedAt?: string
+  deletedReason?: string
+  // Geolocation data captured during registration
+  registrationLocation?: {
+    latitude: number
+    longitude: number
+    accuracy: number
+    city?: string
+    region?: string
+    country?: string
+    capturedAt: string
+  }
 }
 
 export interface SearchFilters {
@@ -152,4 +172,31 @@ export interface WeddingService {
   verificationStatus: 'pending' | 'verified' | 'rejected'
   createdAt: string
   consultationFee: number
+}
+
+export interface PaymentTransaction {
+  id: string
+  transactionId: string // Manual entry by admin
+  profileId: string
+  profileName: string
+  profileMobile: string
+  profileEmail: string
+  plan: MembershipPlan
+  amount: number
+  discountAmount: number
+  finalAmount: number
+  paymentMode: 'cash' | 'upi' | 'card' | 'netbanking' | 'cheque' | 'other'
+  paymentDate: string
+  expiryDate: string
+  receiptNumber: string
+  notes?: string
+  createdAt: string
+  createdBy: string // Admin who recorded this
+  // Refund tracking
+  isRefunded?: boolean
+  refundAmount?: number
+  refundDate?: string
+  refundReason?: string
+  refundTransactionId?: string
+  refundedBy?: string
 }

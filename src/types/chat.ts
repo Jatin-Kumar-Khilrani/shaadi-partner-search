@@ -9,6 +9,9 @@ export interface ChatMessage {
   timestamp: string
   readAt?: string
   read?: boolean
+  delivered?: boolean
+  deliveredAt?: string
+  status?: 'sent' | 'delivered' | 'read'
 }
 
 export interface ChatConversation {

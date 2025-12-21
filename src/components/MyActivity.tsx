@@ -29,7 +29,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile }
     sentInterests: language === 'hi' ? 'भेजी गई रुचि' : 'Sent Interests',
     receivedInterests: language === 'hi' ? 'प्राप्त रुचि' : 'Received Interests',
     myContactRequests: language === 'hi' ? 'संपर्क अनुरोध' : 'Contact Requests',
-    recentChats: language === 'hi' ? 'हालिया चैट' : 'Recent Chats',
+    recentChats: language === 'hi' ? 'नवीनतम चैट' : 'Recent Chats',
     profileViews: language === 'hi' ? 'प्रोफाइल देखे गए' : 'Profile Views',
     pending: language === 'hi' ? 'लंबित' : 'Pending',
     accepted: language === 'hi' ? 'स्वीकृत' : 'Accepted',

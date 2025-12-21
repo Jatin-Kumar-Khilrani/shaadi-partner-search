@@ -82,7 +82,11 @@ export async function initializeAzureServices(): Promise<boolean> {
     return true
   } catch (error) {
     initializationError = error as Error
-    console.warn('⚠️ Azure services not available, using localStorage fallback:', error)
+    // This is expected in browser environments - DefaultAzureCredential is for server-side
+    // The app works fine with localStorage fallback for demo/development
+    if (import.meta.env.DEV) {
+      console.info('ℹ️ Running in browser mode with localStorage (Azure SDK requires server-side for full functionality)')
+    }
     return false
   }
 }

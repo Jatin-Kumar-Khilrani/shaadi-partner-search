@@ -96,7 +96,7 @@ Terms and Conditions
 - All features available during membership period.
 
 4. Profile Verification
-- All profiles are verified by volunteers.
+- All profiles are verified by experienced professionals.
 - False or offensive profiles will be removed.
 
 5. Liability
@@ -126,6 +126,7 @@ Terms and Conditions
 - हमेशा सत्यापित प्रोफाइल से संपर्क करें।
 - वीडियो कॉल पर मिलें।
 - परिवार से मिलें।
+- परिवार, व्यापार/सेवा स्थान, आय और आय के स्रोत की जानकारी प्राप्त करें।
 
 5. रिपोर्ट करें
 - संदिग्ध गतिविधि की रिपोर्ट करें।
@@ -152,11 +153,12 @@ Online Safety Tips
 - Always contact verified profiles.
 - Meet on video call.
 - Meet the family.
+- Verify family details, business/service place, income and source of income.
 
 5. Report
 - Report suspicious activity.
 - Block inappropriate messages.
-- Contact our volunteers.
+- Contact our experienced professionals.
     `
   }
 
@@ -282,8 +284,8 @@ Online Safety Tips
                     <Info size={18} />
                     <AlertDescription>
                       {language === 'hi' 
-                        ? 'हमारे स्वयंसेवक सोमवार से शनिवार, सुबह 10 बजे से शाम 6 बजे तक उपलब्ध हैं।'
-                        : 'Our volunteers are available Monday to Saturday, 10 AM to 6 PM.'}
+                        ? 'हमारे अनुभवी पेशेवर सोमवार से शनिवार, सुबह 10 बजे से शाम 6 बजे तक उपलब्ध हैं।'
+                        : 'Our experienced professionals are available Monday to Saturday, 10 AM to 6 PM.'}
                     </AlertDescription>
                   </Alert>
                 </CardContent>
