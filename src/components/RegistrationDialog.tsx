@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -335,43 +336,47 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       canvas.height = video.videoHeight
       const ctx = canvas.getContext('2d')
       if (ctx) {
+        // Flip the canvas horizontally to un-mirror the captured image
+        // This ensures the saved selfie is not mirrored (natural view)
+        ctx.translate(canvas.width, 0)
+        ctx.scale(-1, 1)
         ctx.drawImage(video, 0, 0)
+        // Reset transformation for any future drawings
+        ctx.setTransform(1, 0, 0, 1, 0, 0)
         
-        // Analyze face coverage
-        const imageData = canvas.toDataURL('image/jpeg')
+        // Analyze face coverage using Azure Face API service
+        // The service handles all validation: no face, multiple faces, hands/objects, centering, coverage
         const coverage = await analyzeFaceCoverageFromCanvas(canvas)
         setFaceCoveragePercent(coverage)
         
+        // If coverage is less than 80%, face detection/validation failed (toast already shown)
         if (coverage < 80) {
           setFaceCoverageValid(false)
-          toast.error(
-            language === 'hi' 
-              ? `चेहरा ${coverage}% है। कृपया कैमरे के करीब आएं (80% आवश्यक है)` 
-              : `Face covers ${coverage}% of frame. Please move closer to camera (80% required)`,
-            { duration: 5000 }
-          )
           return
         }
         
-        setFaceCoverageValid(true)
-        
-        // Capture geolocation when selfie is taken
-        captureGeoLocation()
-        
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], 'selfie.jpg', { type: 'image/jpeg' })
-            setSelfieFile(file)
-            setSelfiePreview(canvas.toDataURL('image/jpeg'))
-            stopCamera()
-            toast.success(
-              language === 'hi' 
-                ? `सेल्फी कैप्चर हो गई! चेहरा ${coverage}% है ✓` 
-                : `Selfie captured! Face coverage ${coverage}% ✓`
-            )
-          }
-        }, 'image/jpeg')
+        // Face validated successfully - save selfie
+        finalizeSelfieCapture(coverage)
       }
+    }
+  }
+
+  // Finalize selfie capture after validation
+  const finalizeSelfieCapture = (coverage: number) => {
+    if (canvasRef.current) {
+      setFaceCoverageValid(true)
+      
+      // Capture geolocation when selfie is taken
+      captureGeoLocation()
+      
+      canvasRef.current.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], 'selfie.jpg', { type: 'image/jpeg' })
+          setSelfieFile(file)
+          setSelfiePreview(canvasRef.current!.toDataURL('image/jpeg'))
+          stopCamera()
+        }
+      }, 'image/jpeg')
     }
   }
 
@@ -431,51 +436,24 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     }
   }
 
-  // Analyze face coverage from canvas using face detection API
+  // Analyze face coverage from canvas using Azure Face API service
   const analyzeFaceCoverageFromCanvas = async (canvas: HTMLCanvasElement): Promise<number> => {
-    return new Promise((resolve) => {
-      // Check if browser supports face detection
-      if ('FaceDetector' in window) {
-        try {
-          // @ts-ignore - FaceDetector is a newer API
-          const faceDetector = new window.FaceDetector({ fastMode: true })
-          const imageData = canvas.getContext('2d')?.getImageData(0, 0, canvas.width, canvas.height)
-          
-          if (imageData) {
-            faceDetector.detect(canvas)
-              .then((faces: any[]) => {
-                if (faces.length > 0) {
-                  const face = faces[0].boundingBox
-                  const faceArea = face.width * face.height
-                  const canvasArea = canvas.width * canvas.height
-                  const coverage = Math.round((faceArea / canvasArea) * 100)
-                  resolve(Math.min(coverage, 100))
-                } else {
-                  // No face detected - return low coverage
-                  resolve(30)
-                }
-              })
-              .catch(() => {
-                // Fallback to simulation
-                resolve(simulateFaceCoverage())
-              })
-          } else {
-            resolve(simulateFaceCoverage())
-          }
-        } catch {
-          resolve(simulateFaceCoverage())
-        }
-      } else {
-        // Browser doesn't support FaceDetector, use simulation
-        resolve(simulateFaceCoverage())
-      }
-    })
-  }
-
-  // Simulate face coverage for browsers without Face Detection API
-  const simulateFaceCoverage = (): number => {
-    // In demo mode, simulate 75-95% coverage with bias towards valid
-    return 75 + Math.floor(Math.random() * 20)
+    // Convert canvas to data URL for face detection service
+    const imageData = canvas.toDataURL('image/jpeg', 0.9)
+    
+    // Import and use the Azure Face Service
+    const { validateSelfie } = await import('@/lib/azureFaceService')
+    
+    const result = await validateSelfie(imageData, language)
+    
+    if (!result.valid) {
+      toast.error(result.message, { duration: 5000 })
+      return result.coverage // Return 0 or partial coverage for rejection
+    }
+    
+    // Face detected, validated, and meets all criteria
+    toast.success(result.message, { duration: 3000 })
+    return result.coverage
   }
 
   // AI Bio Generation
@@ -991,6 +969,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       return
     }
     if (step === 3) {
+      // Only send OTPs if not already verified
+      if (emailVerified && mobileVerified) {
+        // Both already verified, skip OTP step and proceed to next step
+        setStep(4)
+        return
+      }
       sendOtps()
       return
     }
@@ -1884,12 +1868,27 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           className="w-full h-full object-cover"
                         />
                       ) : showCamera ? (
-                        <video 
-                          ref={videoRef} 
-                          autoPlay 
-                          playsInline
-                          className="w-full h-full object-cover"
-                        />
+                        <div className="relative w-full h-full">
+                          <video 
+                            ref={videoRef} 
+                            autoPlay 
+                            playsInline
+                            className="w-full h-full object-cover"
+                            style={{ transform: 'scaleX(-1)' }}
+                          />
+                          {/* Face guide overlay - shows oval for face positioning */}
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="w-48 h-64 border-4 border-dashed border-white/60 rounded-full flex items-center justify-center">
+                              <div className="text-white/80 text-xs text-center bg-black/40 px-2 py-1 rounded">
+                                {language === 'hi' ? 'चेहरा यहां रखें' : 'Position face here'}
+                              </div>
+                            </div>
+                          </div>
+                          {/* Coverage indicator */}
+                          <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                            {language === 'hi' ? 'चेहरा 80% तक दिखना चाहिए' : 'Face must cover 80% of frame'}
+                          </div>
+                        </div>
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
                           <Camera size={64} weight="light" className="opacity-30 mb-2" />

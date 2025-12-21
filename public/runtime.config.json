@@ -1,0 +1,21 @@
+{
+  "$schema": "./runtime.config.schema.json",
+  "description": "Runtime configuration for ShaadiPartnerSearch - can be replaced in production without rebuild",
+  "version": "1.0.0",
+  
+  "azure": {
+    "faceApi": {
+      "endpoint": "https://shaadipartnerface.cognitiveservices.azure.com/",
+      "description": "Azure Face API endpoint for face detection in selfies. API key should be stored in Key Vault."
+    }
+  },
+  
+  "features": {
+    "faceDetection": {
+      "enabled": true,
+      "minCoveragePercent": 80,
+      "requireCentered": true,
+      "maxFaces": 1
+    }
+  }
+}
