@@ -29,8 +29,8 @@ import { sampleWeddingServices, sampleProfiles, sampleUsers } from '@/lib/sample
 type View = 'home' | 'search-results' | 'admin' | 'my-matches' | 'my-activity' | 'inbox' | 'chat' | 'my-profile' | 'wedding-services'
 
 function App() {
-  const [profiles, setProfiles, refreshProfiles] = useKV<Profile[]>('profiles', [])
-  const [users, setUsers, refreshUsers] = useKV<User[]>('users', [])
+  const [profiles, setProfiles] = useKV<Profile[]>('profiles', [])
+  const [users, setUsers] = useKV<User[]>('users', [])
   const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
   const [loggedInUser, setLoggedInUser] = useKV<string | null>('loggedInUser', null)
   const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
@@ -143,15 +143,6 @@ function App() {
       }
     }
   }, [loggedInUser, currentUserProfile, language])
-
-  // Auto-refresh profiles from Azure when entering admin view
-  useEffect(() => {
-    if (currentView === 'admin' && isAdminLoggedIn) {
-      // Refresh profiles and users from Azure to get latest data
-      refreshProfiles()
-      refreshUsers()
-    }
-  }, [currentView, isAdminLoggedIn, refreshProfiles, refreshUsers])
 
   useEffect(() => {
     if ((!profiles || profiles.length === 0) && sampleProfiles.length > 0) {

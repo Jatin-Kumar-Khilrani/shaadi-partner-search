@@ -8,13 +8,9 @@ import { initializeAzureServices, isAzureAvailable, azureStorage } from '@/lib/a
  */
 
 const STORAGE_PREFIX = 'shaadi_partner_'
-const CACHE_TTL_MS = 30000 // 30 seconds cache TTL - refresh from Azure if older
 
 // Event emitter for cross-component state sync
 const kvEventEmitter = new EventTarget()
-
-// Track last Azure fetch time per key
-const lastAzureFetchTime: Record<string, number> = {}
 
 function emitKVChange(key: string) {
   kvEventEmitter.dispatchEvent(new CustomEvent('kv-change', { detail: { key } }))
@@ -27,7 +23,6 @@ function emitForceRefresh(key: string) {
 
 // Export function to force refresh a key from Azure
 export function forceRefreshFromAzure(key: string) {
-  lastAzureFetchTime[key] = 0 // Reset cache time
   emitForceRefresh(key)
 }
 
@@ -62,16 +57,9 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
     }
   })
 
-  // Function to load from Azure
-  const loadFromAzure = useCallback(async (force: boolean = false) => {
-    if (isLoadingFromAzure.current && !force) return
-    
-    // Check cache TTL - skip if recently fetched (unless forced)
-    const now = Date.now()
-    const lastFetch = lastAzureFetchTime[key] || 0
-    if (!force && now - lastFetch < CACHE_TTL_MS) {
-      return
-    }
+  // Function to load from Azure (only called manually via button)
+  const loadFromAzure = useCallback(async () => {
+    if (isLoadingFromAzure.current) return
     
     isLoadingFromAzure.current = true
 
@@ -84,7 +72,6 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
           setValue(azureValue.data)
           // Sync to localStorage for faster subsequent loads
           localStorage.setItem(storageKey, JSON.stringify(azureValue.data))
-          lastAzureFetchTime[key] = Date.now()
         }
       }
     } catch (error) {
@@ -94,7 +81,7 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
     }
   }, [key, storageKey])
 
-  // Load from Azure on mount
+  // Load from Azure on mount (initial load only)
   useEffect(() => {
     loadFromAzure()
   }, [loadFromAzure])
