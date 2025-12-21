@@ -1664,6 +1664,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     {language === 'hi' ? 'फोटो अपलोड करें (1-3 फोटो अनिवार्य)' : 'Upload Photos (1-3 photos required)'} *
                   </Label>
                   
+                  <Alert className="bg-amber-50 border-amber-300 dark:bg-amber-950/20 dark:border-amber-700">
+                    <Warning size={16} className="text-amber-600" />
+                    <AlertDescription className="text-amber-700 dark:text-amber-400 text-sm">
+                      {language === 'hi' 
+                        ? '⏰ कृपया हाल की फोटो अपलोड करें। फोटो 6 महीने से अधिक पुरानी नहीं होनी चाहिए।'
+                        : '⏰ Please upload recent photographs. Photos should not be more than 6 months old.'}
+                    </AlertDescription>
+                  </Alert>
+                  
                   <div className="grid grid-cols-3 gap-3">
                     {/* Existing Photos */}
                     {photos.map((photo, index) => (
