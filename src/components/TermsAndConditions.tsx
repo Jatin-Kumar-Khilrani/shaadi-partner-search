@@ -5,14 +5,29 @@ import { Separator } from '@/components/ui/separator'
 import { FileText, Shield, User, Scales, Lock, Warning, Envelope, Handshake, CurrencyInr, Calendar, Trash, Eye } from '@phosphor-icons/react'
 import type { Language } from '@/lib/translations'
 
+interface MembershipSettings {
+  sixMonthPrice: number
+  oneYearPrice: number
+  sixMonthDuration: number
+  oneYearDuration: number
+  discountPercentage: number
+  discountEnabled: boolean
+  discountEndDate: string | null
+}
+
 interface TermsAndConditionsProps {
   open: boolean
   onClose: () => void
   language: Language
+  membershipSettings?: MembershipSettings
 }
 
-export function TermsAndConditions({ open, onClose, language }: TermsAndConditionsProps) {
+export function TermsAndConditions({ open, onClose, language, membershipSettings }: TermsAndConditionsProps) {
   const isHindi = language === 'hi'
+  
+  // Dynamic pricing from membership settings
+  const sixMonthPrice = membershipSettings?.sixMonthPrice || 500
+  const oneYearPrice = membershipSettings?.oneYearPrice || 900
 
   const sections = [
     {
@@ -149,13 +164,13 @@ Your Rights:
 • वेडिंग सर्विसेज एक्सेस नहीं
 • सीमित संपर्क सुविधाएं
 
-6 महीने की योजना (₹500):
+6 महीने की योजना (₹${sixMonthPrice}):
 • असीमित प्रोफाइल देखना
 • संपर्क विवरण एक्सेस
 • बायोडेटा जनरेशन
 • वेडिंग सर्विसेज एक्सेस
 
-1 साल की योजना (₹900):
+1 साल की योजना (₹${oneYearPrice}):
 • सभी 6 महीने की सुविधाएं
 • प्राथमिकता सहायता
 • प्रोफाइल हाइलाइट
@@ -177,13 +192,13 @@ Free Plan (6 months introductory):
 • No Wedding Services access
 • Limited contact features
 
-6 Month Plan (₹500):
+6 Month Plan (₹${sixMonthPrice}):
 • Unlimited profile viewing
 • Contact details access
 • Biodata generation
 • Wedding Services access
 
-1 Year Plan (₹900):
+1 Year Plan (₹${oneYearPrice}):
 • All 6-month features
 • Priority support
 • Profile highlight
@@ -516,8 +531,8 @@ Last Updated: ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month:
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl flex items-center gap-2">
             <FileText size={28} weight="bold" className="text-primary" />
             {isHindi ? 'नियम और शर्तें' : 'Terms and Conditions'}
@@ -529,7 +544,7 @@ Last Updated: ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month:
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="flex-1 min-h-0 pr-4">
           <div className="space-y-6 pb-4">
             {sections.map((section, index) => (
               <div key={index} className="space-y-3">
@@ -562,7 +577,7 @@ Last Updated: ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month:
           </div>
         </ScrollArea>
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end gap-3 pt-4 border-t flex-shrink-0">
           <Button onClick={onClose}>
             {isHindi ? 'बंद करें' : 'Close'}
           </Button>

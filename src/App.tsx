@@ -28,12 +28,34 @@ import { sampleWeddingServices, sampleProfiles, sampleUsers } from '@/lib/sample
 
 type View = 'home' | 'search-results' | 'admin' | 'my-matches' | 'my-activity' | 'inbox' | 'chat' | 'my-profile' | 'wedding-services'
 
+// Membership settings interface for dynamic pricing
+interface MembershipSettings {
+  sixMonthPrice: number
+  oneYearPrice: number
+  sixMonthDuration: number
+  oneYearDuration: number
+  discountPercentage: number
+  discountEnabled: boolean
+  discountEndDate: string | null
+}
+
+const defaultMembershipSettings: MembershipSettings = {
+  sixMonthPrice: 500,
+  oneYearPrice: 900,
+  sixMonthDuration: 6,
+  oneYearDuration: 12,
+  discountPercentage: 0,
+  discountEnabled: false,
+  discountEndDate: null
+}
+
 function App() {
   const [profiles, setProfiles] = useKV<Profile[]>('profiles', [])
   const [users, setUsers] = useKV<User[]>('users', [])
   const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
   const [loggedInUser, setLoggedInUser] = useKV<string | null>('loggedInUser', null)
   const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
+  const [membershipSettings] = useKV<MembershipSettings>('membershipSettings', defaultMembershipSettings)
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
     // Check if admin was previously logged in with 'keep me logged in'
     try {
@@ -83,6 +105,96 @@ function App() {
   }
 
   const currentMembershipStatus = getMembershipStatus(currentUserProfile)
+
+  // Free user profile view limit (max 2 profiles)
+  const FREE_PROFILE_VIEW_LIMIT = 2
+
+  const handleViewProfile = (profile: Profile) => {
+    // Admin can view any profile
+    if (isAdminLoggedIn) {
+      setSelectedProfile(profile)
+      return
+    }
+
+    // Not logged in - allow viewing (for browsing)
+    if (!currentUserProfile) {
+      setSelectedProfile(profile)
+      return
+    }
+
+    // Own profile - always allowed
+    if (profile.profileId === currentUserProfile.profileId) {
+      setSelectedProfile(profile)
+      return
+    }
+
+    // Premium/Paid users - unlimited viewing
+    const { isFree, isExpired } = getMembershipStatus(currentUserProfile)
+    if (!isFree && !isExpired) {
+      setSelectedProfile(profile)
+      return
+    }
+
+    // Free/Expired users - check limit
+    const viewedProfiles = currentUserProfile.freeViewedProfiles || []
+    
+    // If already viewed this profile, allow viewing again
+    if (viewedProfiles.includes(profile.profileId)) {
+      setSelectedProfile(profile)
+      return
+    }
+
+    // Check if limit reached
+    if (viewedProfiles.length >= FREE_PROFILE_VIEW_LIMIT) {
+      toast.error(
+        language === 'hi' 
+          ? `मुफ्त सीमा समाप्त: आप केवल ${FREE_PROFILE_VIEW_LIMIT} प्रोफाइल मुफ्त में देख सकते हैं` 
+          : `Free limit reached: You can only view ${FREE_PROFILE_VIEW_LIMIT} profiles for free`,
+        {
+          description: language === 'hi' 
+            ? 'असीमित प्रोफाइल देखने के लिए प्रीमियम सदस्यता लें' 
+            : 'Upgrade to premium membership for unlimited profile views',
+          duration: 6000
+        }
+      )
+      return
+    }
+
+    // Add to viewed profiles and allow viewing
+    const updatedViewedProfiles = [...viewedProfiles, profile.profileId]
+    setProfiles((current) => 
+      (current || []).map(p => 
+        p.id === currentUserProfile.id 
+          ? { ...p, freeViewedProfiles: updatedViewedProfiles }
+          : p
+      )
+    )
+    
+    setSelectedProfile(profile)
+    
+    // Notify user about remaining free views
+    const remaining = FREE_PROFILE_VIEW_LIMIT - updatedViewedProfiles.length
+    if (remaining > 0) {
+      toast.info(
+        language === 'hi' 
+          ? `मुफ्त प्रोफाइल दृश्य: ${remaining} शेष` 
+          : `Free profile views: ${remaining} remaining`,
+        { duration: 3000 }
+      )
+    } else {
+      toast.warning(
+        language === 'hi' 
+          ? 'यह आपका अंतिम मुफ्त प्रोफाइल दृश्य था!' 
+          : 'This was your last free profile view!',
+        {
+          description: language === 'hi' 
+            ? 'असीमित प्रोफाइल देखने के लिए प्रीमियम में अपग्रेड करें' 
+            : 'Upgrade to premium for unlimited profile views',
+          duration: 5000
+        }
+      )
+    }
+  }
 
   // Check for expiry notifications on login and periodically
   useEffect(() => {
@@ -713,7 +825,11 @@ function App() {
       <main className="flex-1">
         {currentView === 'home' && (
           <>
-            <HeroSearch onSearch={handleSearch} language={language} />
+            <HeroSearch 
+              onSearch={handleSearch} 
+              language={language} 
+              membershipSettings={membershipSettings || defaultMembershipSettings}
+            />
             <section className="container mx-auto px-4 md:px-8 py-16">
               <div className="max-w-5xl mx-auto">
                 <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">
@@ -732,7 +848,9 @@ function App() {
                             {language === 'hi' ? 'किफायती सदस्यता' : 'Affordable Membership'}
                           </h3>
                           <p className="text-muted-foreground">
-                            {language === 'hi' ? '6 महीने के लिए ₹500 या 1 साल के लिए ₹900 — कोई छुपी लागत नहीं।' : '₹500 for 6 months or ₹900 for 1 year — no hidden costs.'}
+                            {language === 'hi' 
+                              ? `6 महीने के लिए ₹${membershipSettings?.sixMonthPrice || 500} या 1 साल के लिए ₹${membershipSettings?.oneYearPrice || 900} — कोई छुपी लागत नहीं।` 
+                              : `₹${membershipSettings?.sixMonthPrice || 500} for 6 months or ₹${membershipSettings?.oneYearPrice || 900} for 1 year — no hidden costs.`}
                           </p>
                         </div>
                       </div>
@@ -870,7 +988,7 @@ function App() {
                     <ProfileCard
                       key={profile.id}
                       profile={profile}
-                      onViewProfile={setSelectedProfile}
+                      onViewProfile={handleViewProfile}
                       language={language}
                       isLoggedIn={!!loggedInUser}
                       shouldBlur={currentMembershipStatus.shouldBlur}
@@ -888,7 +1006,7 @@ function App() {
           <MyMatches 
             loggedInUserId={currentUserProfile?.id || null}
             profiles={profiles || []}
-            onViewProfile={setSelectedProfile}
+            onViewProfile={handleViewProfile}
             language={language}
             membershipPlan={currentUserProfile?.membershipPlan}
             profileStatus={currentUserProfile?.status}
@@ -900,7 +1018,7 @@ function App() {
             loggedInUserId={currentUserProfile?.id || null}
             profiles={profiles || []}
             language={language}
-            onViewProfile={setSelectedProfile}
+            onViewProfile={handleViewProfile}
           />
         )}
 
@@ -920,6 +1038,7 @@ function App() {
             language={language}
             shouldBlur={currentMembershipStatus.shouldBlur}
             membershipPlan={currentUserProfile?.membershipPlan}
+            setProfiles={setProfiles}
           />
         )}
 
@@ -1022,6 +1141,7 @@ function App() {
         language={language}
         existingProfiles={profiles}
         editProfile={profileToEdit}
+        membershipSettings={membershipSettings || defaultMembershipSettings}
       />
 
       <LoginDialog

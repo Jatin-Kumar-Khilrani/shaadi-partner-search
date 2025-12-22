@@ -20,9 +20,12 @@ interface ChatProps {
   isAdmin?: boolean
   shouldBlur?: boolean
   membershipPlan?: MembershipPlan
+  setProfiles?: (newValue: Profile[] | ((oldValue?: Profile[] | undefined) => Profile[])) => void
 }
 
-export function Chat({ currentUserProfile, profiles, language, isAdmin = false, shouldBlur = false, membershipPlan }: ChatProps) {
+const FREE_CHAT_LIMIT = 2
+
+export function Chat({ currentUserProfile, profiles, language, isAdmin = false, shouldBlur = false, membershipPlan, setProfiles }: ChatProps) {
   const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [conversations, setConversations] = useState<ChatConversation[]>([])
@@ -43,6 +46,18 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     broadcast: language === 'hi' ? 'सभी को' : 'Broadcast',
     chatLocked: language === 'hi' ? 'चैट लॉक है' : 'Chat Locked',
     acceptInterestFirst: language === 'hi' ? 'चैट करने के लिए पहले रुचि स्वीकार करें' : 'Accept interest first to chat',
+    freeChatLimitReached: language === 'hi' 
+      ? `मुफ्त चैट सीमा समाप्त: आप केवल ${FREE_CHAT_LIMIT} प्रोफाइल के साथ मुफ्त में चैट कर सकते हैं` 
+      : `Free chat limit reached: You can only chat with ${FREE_CHAT_LIMIT} profiles for free`,
+    upgradeForUnlimitedChat: language === 'hi' 
+      ? 'असीमित चैट के लिए प्रीमियम सदस्यता लें' 
+      : 'Upgrade to premium membership for unlimited chats',
+    freeChatRemaining: language === 'hi' 
+      ? (n: number) => `मुफ्त चैट: ${n} प्रोफाइल शेष` 
+      : (n: number) => `Free chats: ${n} profiles remaining`,
+    lastFreeChat: language === 'hi' 
+      ? 'यह आपकी अंतिम मुफ्त चैट थी!' 
+      : 'This was your last free chat!',
   }
 
   const getOtherProfileIdFromConversation = (conversationId: string): string | null => {
@@ -255,11 +270,53 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     if (!messageInput.trim() || !selectedConversation) return
     if (!isAdmin && !currentUserProfile) return
 
-    if (!isAdmin && selectedConversation.includes('-') && !selectedConversation.startsWith('admin-')) {
+    // Check if this is admin chat (always allowed for free users)
+    const isAdminChat = selectedConversation.startsWith('admin-')
+
+    if (!isAdmin && selectedConversation.includes('-') && !isAdminChat) {
       const otherProfileId = getOtherProfileIdFromConversation(selectedConversation)
       if (otherProfileId && !canChatWith(otherProfileId)) {
         toast.error(t.acceptInterestFirst)
         return
+      }
+
+      // Check free user chat limit (only for user-to-user chats, not admin chats)
+      const isFreeUser = !membershipPlan || membershipPlan === 'free'
+      if (isFreeUser && otherProfileId && setProfiles) {
+        const chattedProfiles = currentUserProfile.freeChatProfiles || []
+        
+        // If already chatted with this profile, allow
+        if (!chattedProfiles.includes(otherProfileId)) {
+          // Check if limit reached
+          if (chattedProfiles.length >= FREE_CHAT_LIMIT) {
+            toast.error(t.freeChatLimitReached, {
+              description: t.upgradeForUnlimitedChat,
+              duration: 6000
+            })
+            return
+          }
+
+          // Add to chatted profiles
+          const updatedChattedProfiles = [...chattedProfiles, otherProfileId]
+          setProfiles((current) => 
+            (current || []).map(p => 
+              p.id === currentUserProfile.id 
+                ? { ...p, freeChatProfiles: updatedChattedProfiles }
+                : p
+            )
+          )
+
+          // Notify user about remaining free chats
+          const remaining = FREE_CHAT_LIMIT - updatedChattedProfiles.length
+          if (remaining > 0) {
+            toast.info(t.freeChatRemaining(remaining), { duration: 3000 })
+          } else {
+            toast.warning(t.lastFreeChat, {
+              description: t.upgradeForUnlimitedChat,
+              duration: 5000
+            })
+          }
+        }
       }
     }
 

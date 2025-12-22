@@ -123,9 +123,9 @@ export function DatePicker({
             }}
             defaultMonth={selectedDate || maxDate}
             initialFocus
-            captionLayout="dropdown-buttons"
-            fromYear={1950}
-            toYear={maxDate ? maxDate.getFullYear() : new Date().getFullYear()}
+            captionLayout="dropdown"
+            startMonth={new Date(1950, 0)}
+            endMonth={maxDate || new Date()}
           />
         </PopoverContent>
       </Popover>

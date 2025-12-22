@@ -93,6 +93,9 @@ export interface Profile {
     country?: string
     capturedAt: string
   }
+  // Free user view/chat limits
+  freeViewedProfiles?: string[]  // Profile IDs viewed by free user (max 2)
+  freeChatProfiles?: string[]    // Profile IDs chatted by free user (max 2)
 }
 
 export interface SearchFilters {

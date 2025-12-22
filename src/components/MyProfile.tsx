@@ -57,7 +57,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile }: MyProf
     pending: language === 'hi' ? 'लंबित' : 'Pending',
     level: language === 'hi' ? 'स्तर' : 'Level',
     trustLevel: language === 'hi' ? 'विश्वास स्तर' : 'Trust Level',
-    digilockerVerified: language === 'hi' ? 'डिजिलॉकर सत्यापित' : 'DigiLocker Verified',
+    digilockerVerified: language === 'hi' ? 'सत्यापित' : 'Verified',
     idProofVerified: language === 'hi' ? 'पहचान सत्यापित' : 'ID Verified',
     returnedForEdit: language === 'hi' ? 'संपादन आवश्यक' : 'Edit Required',
     returnedForEditDesc: language === 'hi' ? 'एडमिन ने आपकी प्रोफाइल संपादन के लिए वापस भेजी है' : 'Admin has returned your profile for editing',
@@ -386,7 +386,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile }: MyProf
                     {profile.digilockerVerified && (
                       <div className="mt-2">
                         <Badge className="bg-green-600 hover:bg-green-700">
-                          {t.digilockerVerified}
+                          ✓ {t.digilockerVerified}
                         </Badge>
                       </div>
                     )}

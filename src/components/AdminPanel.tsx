@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -98,6 +99,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [showBroadcastDialog, setShowBroadcastDialog] = useState(false)
   const [broadcastMessage, setBroadcastMessage] = useState('')
   const [broadcastProfiles, setBroadcastProfiles] = useState<string[]>([])
+  // Rejection with notification dialog state
+  const [showRejectDialog, setShowRejectDialog] = useState<Profile | null>(null)
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [sendRejectionNotification, setSendRejectionNotification] = useState(true)
   const { lightboxState, openLightbox, closeLightbox } = useLightbox()
   
   // Payment & Accounts state
@@ -192,6 +197,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     approveSuccess: language === 'hi' ? 'प्रोफाइल स्वीकृत की गई!' : 'Profile approved!',
     rejectSuccess: language === 'hi' ? 'प्रोफाइल अस्वीकृत की गई!' : 'Profile rejected!',
     blockSuccess: language === 'hi' ? 'प्रोफाइल ब्लॉक की गई!' : 'Profile blocked!',
+    unblock: language === 'hi' ? 'अनब्लॉक करें' : 'Unblock',
+    unblockSuccess: language === 'hi' ? 'प्रोफाइल अनब्लॉक की गई!' : 'Profile unblocked!',
     moveToPending: language === 'hi' ? 'पेंडिंग में ले जाएं' : 'Move to Pending',
     movedToPending: language === 'hi' ? 'प्रोफाइल पेंडिंग में ले जाया गया!' : 'Profile moved to pending!',
     returnToEdit: language === 'hi' ? 'संपादन के लिए वापस करें' : 'Return to Edit',
@@ -280,6 +287,14 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     deletedBy: language === 'hi' ? 'हटाने का कारण' : 'Reason',
     restoreProfile: language === 'hi' ? 'प्रोफाइल पुनर्स्थापित करें' : 'Restore Profile',
     restoreSuccess: language === 'hi' ? 'प्रोफाइल पुनर्स्थापित!' : 'Profile restored!',
+    permanentDelete: language === 'hi' ? 'स्थायी रूप से हटाएं' : 'Permanently Delete',
+    permanentDeleteConfirm: language === 'hi' ? 'क्या आप इस प्रोफाइल को स्थायी रूप से हटाना चाहते हैं? यह कार्रवाई पूर्ववत नहीं की जा सकती।' : 'Are you sure you want to permanently delete this profile? This action cannot be undone.',
+    permanentDeleteSuccess: language === 'hi' ? 'प्रोफाइल स्थायी रूप से हटा दी गई!' : 'Profile permanently deleted!',
+    // Rejection notification
+    rejectionReason: language === 'hi' ? 'अस्वीकृति का कारण' : 'Rejection Reason',
+    rejectionReasonPlaceholder: language === 'hi' ? 'कृपया अस्वीकृति का कारण बताएं...' : 'Please provide reason for rejection...',
+    sendNotification: language === 'hi' ? 'SMS और ईमेल सूचना भेजें' : 'Send SMS & Email Notification',
+    notificationSent: language === 'hi' ? 'SMS और ईमेल सूचना भेजी गई!' : 'SMS and Email notification sent!',
     // Accounts & Payments
     accounts: language === 'hi' ? 'खाते' : 'Accounts',
     accountsDescription: language === 'hi' ? 'भुगतान प्रबंधन और रसीद जनरेशन' : 'Payment management and receipt generation',
@@ -323,10 +338,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     refunded: language === 'hi' ? 'रिफंड किया गया' : 'Refunded',
     totalRefunds: language === 'hi' ? 'कुल रिफंड' : 'Total Refunds',
     netRevenue: language === 'hi' ? 'शुद्ध राजस्व' : 'Net Revenue',
-    // DigiLocker/Aadhaar Verification
-    digilockerVerification: language === 'hi' ? 'डिजिलॉकर सत्यापन' : 'DigiLocker Verification',
-    digilockerVerify: language === 'hi' ? 'डिजिलॉकर सत्यापित करें' : 'Verify DigiLocker',
-    digilockerVerified: language === 'hi' ? 'डिजिलॉकर सत्यापित' : 'DigiLocker Verified',
+    // ID Verification
+    digilockerVerification: language === 'hi' ? 'पहचान सत्यापन' : 'ID Verification',
+    digilockerVerify: language === 'hi' ? 'पहचान सत्यापित करें' : 'Verify ID',
+    digilockerVerified: language === 'hi' ? 'सत्यापित' : 'Verified',
     digilockerNotVerified: language === 'hi' ? 'सत्यापित नहीं' : 'Not Verified',
     digilockerDocType: language === 'hi' ? 'दस्तावेज़ प्रकार' : 'Document Type',
     aadhaar: language === 'hi' ? 'आधार' : 'Aadhaar',
@@ -336,7 +351,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     verificationNotes: language === 'hi' ? 'सत्यापन नोट्स' : 'Verification Notes',
     markAsVerified: language === 'hi' ? 'सत्यापित के रूप में चिह्नित करें' : 'Mark as Verified',
     removeVerification: language === 'hi' ? 'सत्यापन हटाएं' : 'Remove Verification',
-    digilockerVerifySuccess: language === 'hi' ? 'डिजिलॉकर सत्यापित!' : 'DigiLocker verified!',
+    digilockerVerifySuccess: language === 'hi' ? 'पहचान सत्यापित!' : 'ID Verified!',
     digilockerVerifyRemoved: language === 'hi' ? 'सत्यापन हटाया गया!' : 'Verification removed!',
     idProofVerification: language === 'hi' ? 'पहचान प्रमाण सत्यापन' : 'ID Proof Verification',
     verifyIdProof: language === 'hi' ? 'पहचान सत्यापित करें' : 'Verify ID Proof',
@@ -374,6 +389,49 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
       )
     )
     toast.success(t.restoreSuccess)
+  }
+
+  // Permanently delete profile from database
+  const handlePermanentDelete = (profileId: string) => {
+    if (!confirm(t.permanentDeleteConfirm)) return
+    setProfiles((current) => (current || []).filter(p => p.id !== profileId))
+    toast.success(t.permanentDeleteSuccess)
+  }
+
+  // Reject with notification (SMS + Email)
+  const handleRejectWithNotification = () => {
+    if (!showRejectDialog) return
+    
+    const profile = showRejectDialog
+    
+    // Update profile status
+    setProfiles((current) => 
+      (current || []).map(p => 
+        p.id === profile.id 
+          ? { ...p, status: 'rejected' as const, rejectionReason: rejectionReason }
+          : p
+      )
+    )
+    
+    // Send notification if enabled
+    if (sendRejectionNotification) {
+      // In production, this would call an API to send SMS and Email
+      // For now, we simulate the notification
+      console.log(`[Notification] Sending rejection SMS to: ${profile.mobile}`)
+      console.log(`[Notification] Sending rejection Email to: ${profile.email}`)
+      console.log(`[Notification] Rejection reason: ${rejectionReason}`)
+      
+      // Show success toast
+      toast.info(t.notificationSent)
+    }
+    
+    toast.error(t.rejectSuccess)
+    
+    // Reset dialog state
+    setShowRejectDialog(null)
+    setRejectionReason('')
+    setSendRejectionNotification(true)
+    setSelectedProfile(null)
   }
 
   // DigiLocker verification handler
@@ -474,6 +532,25 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     ])
     
     toast.success(t.blockSuccess)
+    setSelectedProfile(null)
+  }
+
+  // Unblock a blocked profile
+  const handleUnblock = (profile: Profile) => {
+    setProfiles((current) => 
+      (current || []).map(p => 
+        p.id === profile.id 
+          ? { ...p, status: 'pending' as const, isBlocked: false }
+          : p
+      )
+    )
+    
+    // Remove from blocked contacts
+    setBlockedContacts((current) => 
+      (current || []).filter(bc => bc.email !== profile.email && bc.mobile !== profile.mobile)
+    )
+    
+    toast.success(t.unblockSuccess)
     setSelectedProfile(null)
   }
 
@@ -1031,7 +1108,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     <span>{t.idProofVerification}:</span>
                                     {profile.digilockerVerified ? (
                                       <Badge variant="outline" className="text-green-600 border-green-400">
-                                        {t.digilockerVerified}
+                                        ✓ {t.digilockerVerified}
                                       </Badge>
                                     ) : (
                                       <Badge variant="outline" className="text-amber-600 border-amber-400">
@@ -1162,7 +1239,21 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 className={profile.digilockerVerified ? 'text-green-600 border-green-400' : 'text-blue-600 border-blue-400'}
                               >
                                 <ShieldCheck size={16} className="mr-1" />
-                                {profile.digilockerVerified ? t.digilockerVerified : t.verifyIdProof}
+                                {profile.digilockerVerified ? `✓ ${t.digilockerVerified}` : t.verifyIdProof}
+                              </Button>
+                              <Button 
+                                onClick={() => {
+                                  setIdProofViewProfile(profile)
+                                  setShowIdProofViewDialog(true)
+                                }}
+                                variant="outline"
+                                size="sm"
+                                className={profile.idProofUrl ? 'text-orange-600 border-orange-400' : 'text-gray-400 border-gray-300'}
+                                disabled={!profile.idProofUrl}
+                                title={profile.idProofUrl ? t.viewIdProof : t.idProofNotUploaded}
+                              >
+                                <IdentificationCard size={16} className="mr-1" />
+                                {t.viewIdProof}
                               </Button>
                               <Button 
                                 onClick={() => handleApprove(profile.id)} 
@@ -1174,7 +1265,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 {t.approve}
                               </Button>
                               <Button 
-                                onClick={() => handleReject(profile.id)} 
+                                onClick={() => setShowRejectDialog(profile)} 
                                 variant="outline"
                                 size="sm"
                               >
@@ -1544,6 +1635,18 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     <Key size={16} />
                                   </Button>
                                 )}
+                                {/* Unblock button for blocked profiles */}
+                                {profile.isBlocked && (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleUnblock(profile)}
+                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                    title={t.unblock}
+                                  >
+                                    <ArrowCounterClockwise size={16} />
+                                  </Button>
+                                )}
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
@@ -1643,6 +1746,16 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 >
                                   <ArrowCounterClockwise size={16} />
                                   <span className="ml-1 hidden md:inline">{t.restoreProfile}</span>
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handlePermanentDelete(profile.id)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                  title={t.permanentDelete}
+                                >
+                                  <Trash size={16} weight="fill" />
+                                  <span className="ml-1 hidden md:inline">{t.permanentDelete}</span>
                                 </Button>
                               </div>
                             </TableCell>
@@ -2980,6 +3093,77 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
         onClose={closeLightbox}
       />
 
+      {/* Rejection Dialog with Notification */}
+      <Dialog open={!!showRejectDialog} onOpenChange={(open) => !open && setShowRejectDialog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <X size={24} weight="bold" />
+              {t.reject} - {showRejectDialog?.fullName}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'hi' 
+                ? 'प्रोफाइल को अस्वीकार करने का कारण दें और उपयोगकर्ता को SMS/Email द्वारा सूचित करें।'
+                : 'Provide a reason for rejection and notify the user via SMS/Email.'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejection-reason">{t.rejectionReason}</Label>
+              <Textarea
+                id="rejection-reason"
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder={t.rejectionReasonPlaceholder}
+                className="min-h-[100px]"
+              />
+            </div>
+            
+            <div className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
+              <Switch
+                id="send-notification"
+                checked={sendRejectionNotification}
+                onCheckedChange={setSendRejectionNotification}
+              />
+              <Label htmlFor="send-notification" className="flex items-center gap-2 cursor-pointer">
+                <Bell size={16} />
+                {t.sendNotification}
+                <span className="text-xs text-muted-foreground">
+                  ({language === 'hi' ? 'SMS + Email' : 'SMS + Email'})
+                </span>
+              </Label>
+            </div>
+            
+            {showRejectDialog && (
+              <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                <p className="font-medium mb-1">{language === 'hi' ? 'संपर्क विवरण:' : 'Contact Details:'}</p>
+                <p className="text-muted-foreground">📱 {showRejectDialog.mobile}</p>
+                <p className="text-muted-foreground">✉️ {showRejectDialog.email}</p>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowRejectDialog(null)
+              setRejectionReason('')
+              setSendRejectionNotification(true)
+            }}>
+              {t.cancel}
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleRejectWithNotification}
+              disabled={!rejectionReason.trim()}
+            >
+              <X size={16} className="mr-1" />
+              {t.reject}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Broadcast Message Dialog */}
       <Dialog open={showBroadcastDialog} onOpenChange={setShowBroadcastDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh]">
@@ -3638,7 +3822,7 @@ ShaadiPartnerSearch Team
         </DialogContent>
       </Dialog>
 
-      {/* DigiLocker Verification Dialog */}
+      {/* ID Verification Dialog */}
       <Dialog open={showDigilockerDialog} onOpenChange={setShowDigilockerDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>

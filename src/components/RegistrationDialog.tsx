@@ -21,6 +21,16 @@ import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 import { TermsAndConditions } from '@/components/TermsAndConditions'
 import { uploadPhoto, isBlobStorageAvailable, dataUrlToFile } from '@/lib/blobService'
 
+interface MembershipSettings {
+  sixMonthPrice: number
+  oneYearPrice: number
+  sixMonthDuration: number
+  oneYearDuration: number
+  discountPercentage: number
+  discountEnabled: boolean
+  discountEndDate: string | null
+}
+
 interface RegistrationDialogProps {
   open: boolean
   onClose: () => void
@@ -28,9 +38,10 @@ interface RegistrationDialogProps {
   language: Language
   existingProfiles?: Profile[]
   editProfile?: Profile | null
+  membershipSettings?: MembershipSettings
 }
 
-export function RegistrationDialog({ open, onClose, onSubmit, language, existingProfiles = [], editProfile = null }: RegistrationDialogProps) {
+export function RegistrationDialog({ open, onClose, onSubmit, language, existingProfiles = [], editProfile = null, membershipSettings }: RegistrationDialogProps) {
   const t = useTranslation(language)
   const [step, setStep] = useState(1)
   const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([])
@@ -1049,6 +1060,44 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       return
     }
     if (step === 3) {
+      // Validate mobile is 10 digits
+      if (formData.mobile.length !== 10) {
+        toast.error(
+          language === 'hi' 
+            ? 'कृपया 10 अंक का मोबाइल नंबर दर्ज करें' 
+            : 'Please enter a 10 digit mobile number'
+        )
+        return
+      }
+      
+      // Check for duplicate email in database (skip if editing own profile)
+      const duplicateEmail = existingProfiles.find(
+        p => p.email.toLowerCase() === formData.email.toLowerCase() && 
+        (!isEditMode || p.id !== editProfile?.id)
+      )
+      if (duplicateEmail) {
+        toast.error(
+          language === 'hi' 
+            ? 'यह ईमेल पहले से पंजीकृत है। कृपया दूसरा ईमेल उपयोग करें।' 
+            : 'This email is already registered. Please use a different email.'
+        )
+        return
+      }
+      
+      // Check for duplicate mobile in database (skip if editing own profile)
+      const duplicateMobile = existingProfiles.find(
+        p => p.mobile === formData.mobile && 
+        (!isEditMode || p.id !== editProfile?.id)
+      )
+      if (duplicateMobile) {
+        toast.error(
+          language === 'hi' 
+            ? 'यह मोबाइल नंबर पहले से पंजीकृत है। कृपया दूसरा नंबर उपयोग करें।' 
+            : 'This mobile number is already registered. Please use a different number.'
+        )
+        return
+      }
+      
       // Only send OTPs if not already verified
       if (emailVerified && mobileVerified) {
         // Both already verified, skip OTP step and proceed to next step
@@ -2572,6 +2621,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         open={showTerms}
         onClose={() => setShowTerms(false)}
         language={language}
+        membershipSettings={membershipSettings}
       />
     </Dialog>
   )

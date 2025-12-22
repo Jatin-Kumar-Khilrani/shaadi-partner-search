@@ -7,17 +7,32 @@ import { MagnifyingGlass, Heart, Users, ShieldCheck } from '@phosphor-icons/reac
 import { useState } from 'react'
 import type { SearchFilters } from '@/types/profile'
 
+interface MembershipSettings {
+  sixMonthPrice: number
+  oneYearPrice: number
+  sixMonthDuration: number
+  oneYearDuration: number
+  discountPercentage: number
+  discountEnabled: boolean
+  discountEndDate: string | null
+}
+
 interface HeroSearchProps {
   onSearch: (filters: SearchFilters) => void
   language?: 'hi' | 'en'
+  membershipSettings?: MembershipSettings
 }
 
-export function HeroSearch({ onSearch, language = 'hi' }: HeroSearchProps) {
+export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: HeroSearchProps) {
   const [filters, setFilters] = useState<SearchFilters>({})
 
   const handleSearch = () => {
     onSearch(filters)
   }
+
+  // Dynamic pricing from membership settings
+  const sixMonthPrice = membershipSettings?.sixMonthPrice || 500
+  const oneYearPrice = membershipSettings?.oneYearPrice || 900
 
   const t = {
     title: language === 'hi' ? 'अपना जीवनसाथी खोजें' : 'Find Your Life Partner',
@@ -37,7 +52,9 @@ export function HeroSearch({ onSearch, language = 'hi' }: HeroSearchProps) {
     female: language === 'hi' ? 'महिला' : 'Female',
     searchButton: language === 'hi' ? 'खोजें' : 'Search',
     feature1: language === 'hi' ? 'किफायती सदस्यता' : 'Affordable Membership',
-    feature1Desc: language === 'hi' ? '6 महीने ₹500 या 1 साल ₹900 — कोई छुपी लागत नहीं' : '6 months ₹500 or 1 year ₹900 — no hidden costs',
+    feature1Desc: language === 'hi' 
+      ? `6 महीने ₹${sixMonthPrice} या 1 साल ₹${oneYearPrice} — कोई छुपी लागत नहीं` 
+      : `6 months ₹${sixMonthPrice} or 1 year ₹${oneYearPrice} — no hidden costs`,
     feature2: language === 'hi' ? 'सुरक्षित और सत्यापित' : 'Secure and Verified',
     feature2Desc: language === 'hi' ? 'हर प्रोफ़ाइल AI और अनुभवी पेशेवरों द्वारा सत्यापित' : 'Every profile verified by AI and experienced professionals',
     feature3: language === 'hi' ? 'सभी समुदायों के लिए' : 'For All Communities',
