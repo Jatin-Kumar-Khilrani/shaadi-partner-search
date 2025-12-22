@@ -121,11 +121,16 @@ export async function detectFace(imageData: string): Promise<FaceDetectionResult
     const imgDimensions = await getImageDimensions(imageData)
     console.log('[AzureFaceAPI] Image dimensions:', imgDimensions)
     
-    // Calculate face coverage percentage
+    // Calculate face coverage percentage relative to FACE GUIDE OVAL
+    // The face guide oval is approximately 40% width x 53% height of the image (192x256 in 480x480 container)
+    // We calculate how much of the face guide area is covered by the detected face
+    const faceGuideWidth = imgDimensions.width * 0.4  // ~40% of image width
+    const faceGuideHeight = imgDimensions.height * 0.53  // ~53% of image height
+    const faceGuideArea = faceGuideWidth * faceGuideHeight
+    
     const faceArea = faceRect.width * faceRect.height
-    const imageArea = imgDimensions.width * imgDimensions.height
-    const coverage = Math.round((faceArea / imageArea) * 100)
-    console.log('[AzureFaceAPI] Face area:', faceArea, 'Image area:', imageArea, 'Coverage:', coverage + '%')
+    const coverage = Math.round((faceArea / faceGuideArea) * 100)
+    console.log('[AzureFaceAPI] Face area:', faceArea, 'Face guide area:', faceGuideArea, 'Coverage:', coverage + '%')
 
     // Check if face is centered (within middle 60% of frame)
     const faceCenterX = faceRect.left + faceRect.width / 2
@@ -209,9 +214,13 @@ async function browserFaceDetection(imageData: string): Promise<FaceDetectionRes
           }
 
           const face = faces[0].boundingBox
+          // Calculate coverage relative to face guide oval (40% width x 53% height of image)
+          const faceGuideWidth = img.width * 0.4
+          const faceGuideHeight = img.height * 0.53
+          const faceGuideArea = faceGuideWidth * faceGuideHeight
+          
           const faceArea = face.width * face.height
-          const imageArea = img.width * img.height
-          const coverage = Math.round((faceArea / imageArea) * 100)
+          const coverage = Math.round((faceArea / faceGuideArea) * 100)
 
           const faceCenterX = face.x + face.width / 2
           const faceCenterY = face.y + face.height / 2
@@ -351,6 +360,7 @@ function simulatedFaceDetection(img: HTMLImageElement): FaceDetectionResult {
     const contentRatio = nonBlackPixels / totalPixels
     
     // Calculate actual coverage based on skin-tone region bounding box
+    // Coverage is relative to face guide oval (40% width x 53% height of image)
     let actualCoverage = 0
     let isCentered = false
     
@@ -358,10 +368,14 @@ function simulatedFaceDetection(img: HTMLImageElement): FaceDetectionResult {
       const skinWidth = maxX - minX
       const skinHeight = maxY - minY
       const skinArea = skinWidth * skinHeight
-      const imageArea = img.width * img.height
       
-      // Calculate coverage as percentage of image
-      actualCoverage = Math.round((skinArea / imageArea) * 100)
+      // Face guide area (40% width x 53% height)
+      const faceGuideWidth = img.width * 0.4
+      const faceGuideHeight = img.height * 0.53
+      const faceGuideArea = faceGuideWidth * faceGuideHeight
+      
+      // Calculate coverage as percentage of face guide area
+      actualCoverage = Math.round((skinArea / faceGuideArea) * 100)
       
       // Check if skin region is centered (within middle 60% of frame)
       const skinCenterX = (minX + maxX) / 2
