@@ -937,7 +937,7 @@ function App() {
                         </div>
                       </div>
                       <Button 
-                        onClick={() => setShowRegister(true)}
+                        onClick={() => setShowRegistration(true)}
                         size="lg"
                         className="bg-red-600 hover:bg-red-700 text-white gap-2 whitespace-nowrap"
                       >
