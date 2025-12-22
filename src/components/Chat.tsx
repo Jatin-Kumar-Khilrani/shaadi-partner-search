@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
-import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks } from '@phosphor-icons/react'
+import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks, X } from '@phosphor-icons/react'
 import type { ChatMessage, ChatConversation } from '@/types/chat'
 import type { Profile, Interest, MembershipPlan } from '@/types/profile'
 import type { Language } from '@/lib/translations'
@@ -320,6 +320,45 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       }
     }
 
+    // Close/delete a conversation (admin only) - removes all messages for this conversation
+    const handleCloseConversation = (conversationId: string, e: React.MouseEvent) => {
+      e.stopPropagation() // Prevent selecting the conversation
+      if (!isAdmin) return
+      
+      if (!confirm(language === 'hi' 
+        ? 'क्या आप वाकई इस चैट को बंद करना चाहते हैं? सभी संदेश हटा दिए जाएंगे।' 
+        : 'Are you sure you want to close this chat? All messages will be deleted.'
+      )) return
+
+      // Remove all messages for this conversation
+      setMessages((current) => {
+        if (!current) return []
+        return current.filter(msg => {
+          if (conversationId === 'admin-broadcast') {
+            return msg.type !== 'admin-broadcast'
+          }
+          if (conversationId.startsWith('admin-')) {
+            const profileId = conversationId.replace('admin-', '')
+            return !(msg.type === 'admin-to-user' && 
+              (msg.fromProfileId === profileId || msg.toProfileId === profileId))
+          }
+          // User-to-user conversation
+          const [profileId1, profileId2] = conversationId.split('-')
+          return !(
+            (msg.fromProfileId === profileId1 && msg.toProfileId === profileId2) ||
+            (msg.fromProfileId === profileId2 && msg.toProfileId === profileId1)
+          )
+        })
+      })
+      
+      // Clear selection if this was selected
+      if (selectedConversation === conversationId) {
+        setSelectedConversation(null)
+      }
+      
+      toast.success(language === 'hi' ? 'चैट बंद कर दी गई' : 'Chat closed')
+    }
+
     const newMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
       fromUserId: isAdmin ? 'admin' : currentUserProfile!.id,
@@ -458,12 +497,26 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                     <div
                       key={conv.id}
                       onClick={() => setSelectedConversation(conv.id)}
-                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                      className={`p-3 rounded-lg cursor-pointer transition-colors relative group ${
                         selectedConversation === conv.id
                           ? 'bg-primary text-primary-foreground'
                           : 'hover:bg-muted'
                       }`}
                     >
+                      {/* Close button for admin */}
+                      {isAdmin && (
+                        <button
+                          onClick={(e) => handleCloseConversation(conv.id, e)}
+                          className={`absolute top-1 right-1 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 ${
+                            selectedConversation === conv.id 
+                              ? 'hover:bg-primary-foreground/20 text-primary-foreground' 
+                              : 'hover:bg-destructive/10 text-destructive'
+                          }`}
+                          title={language === 'hi' ? 'चैट बंद करें' : 'Close chat'}
+                        >
+                          <X size={16} weight="bold" />
+                        </button>
+                      )}
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-sm font-bold">
                           <ChatCircle size={20} weight="fill" />
