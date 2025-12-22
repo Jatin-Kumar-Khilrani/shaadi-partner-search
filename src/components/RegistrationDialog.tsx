@@ -1756,8 +1756,27 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
                 )}
 
+                {/* Email and Mobile - Locked in edit mode */}
+                {isEditMode && (
+                  <Alert className="bg-gray-50 border-gray-400 dark:bg-gray-950/30">
+                    <ShieldCheck size={20} weight="fill" className="text-gray-600" />
+                    <AlertDescription className="text-gray-700 dark:text-gray-300">
+                      {language === 'hi' 
+                        ? 'ईमेल और मोबाइल संपादित नहीं किए जा सकते। इन्हें पंजीकरण के समय सत्यापित किया गया था। बदलने के लिए एडमिन से संपर्क करें।'
+                        : 'Email and Mobile cannot be edited. These were verified during registration. Contact admin to change.'}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <div className="space-y-2">
-                  <Label htmlFor="email">{language === 'hi' ? 'ईमेल' : 'Email'} *</Label>
+                  <Label htmlFor="email">
+                    {language === 'hi' ? 'ईमेल' : 'Email'} *
+                    {isEditMode && (
+                      <span className="ml-2 text-xs text-gray-500">
+                        🔒 {language === 'hi' ? 'सत्यापित' : 'Verified'}
+                      </span>
+                    )}
+                  </Label>
                   <Input
                     id="email"
                     type="email"
@@ -1765,14 +1784,32 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     value={formData.email}
                     onChange={(e) => updateField('email', e.target.value)}
                     required
+                    disabled={isEditMode}
+                    className={isEditMode ? 'bg-muted' : ''}
                   />
+                  {isEditMode && (
+                    <p className="text-xs text-gray-600">
+                      {language === 'hi' ? 'ईमेल बदलने के लिए एडमिन से संपर्क करें' : 'Contact admin to change email'}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="mobile">{language === 'hi' ? 'मोबाइल' : 'Mobile'} *</Label>
+                  <Label htmlFor="mobile">
+                    {language === 'hi' ? 'मोबाइल' : 'Mobile'} *
+                    {isEditMode && (
+                      <span className="ml-2 text-xs text-gray-500">
+                        🔒 {language === 'hi' ? 'सत्यापित' : 'Verified'}
+                      </span>
+                    )}
+                  </Label>
                   <div className="flex gap-2">
-                    <Select onValueChange={(value) => updateField('countryCode', value)} value={formData.countryCode}>
-                      <SelectTrigger className="w-[100px]">
+                    <Select 
+                      onValueChange={(value) => updateField('countryCode', value)} 
+                      value={formData.countryCode}
+                      disabled={isEditMode}
+                    >
+                      <SelectTrigger className={`w-[100px] ${isEditMode ? 'bg-muted' : ''}`}>
                         <SelectValue placeholder="+91" />
                       </SelectTrigger>
                       <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
@@ -1799,10 +1836,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       }}
                       maxLength={10}
                       required
-                      className="flex-1"
+                      disabled={isEditMode}
+                      className={`flex-1 ${isEditMode ? 'bg-muted' : ''}`}
                     />
                   </div>
-                  {formData.mobile && formData.mobile.length !== 10 && (
+                  {isEditMode && (
+                    <p className="text-xs text-gray-600">
+                      {language === 'hi' ? 'मोबाइल बदलने के लिए एडमिन से संपर्क करें' : 'Contact admin to change mobile'}
+                    </p>
+                  )}
+                  {!isEditMode && formData.mobile && formData.mobile.length !== 10 && (
                     <p className="text-xs text-destructive">
                       {language === 'hi' ? 'कृपया 10 अंक का मोबाइल नंबर दर्ज करें' : 'Please enter a 10 digit mobile number'}
                     </p>
