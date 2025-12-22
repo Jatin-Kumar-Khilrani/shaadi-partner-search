@@ -232,6 +232,6 @@ export async function analyzeFaceCoverage(imageBase64: string): Promise<{
     isValid,
     message: isValid
       ? 'Face coverage is adequate'
-      : 'Please ensure your face covers at least 80% of the frame'
+      : 'Please ensure your face covers at least 50% of the frame'
   }
 }

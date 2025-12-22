@@ -5,7 +5,7 @@
  * Ensures that:
  * - Exactly one human face is detected (not hands, objects, etc.)
  * - Face is centered in the frame
- * - Face covers sufficient area (80%+ recommended)
+ * - Face covers sufficient area (50%+ recommended)
  */
 
 // Azure Face API configuration

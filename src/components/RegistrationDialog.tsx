@@ -1197,7 +1197,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               {step === 2 && t.registration.step2}
               {step === 3 && !showVerification && t.registration.step3}
               {step === 3 && showVerification && (language === 'hi' ? 'कृपया अपने ईमेल और मोबाइल पर भेजे गए OTP को सत्यापित करें।' : 'Please verify the OTPs sent to your email and mobile.')}
-              {step === 4 && (language === 'hi' ? 'अपनी फ़ोटो और लाइव सेल्फी अपलोड करें। चेहरा फ्रेम का 80% होना चाहिए।' : 'Upload your photos and capture a live selfie. Face must cover 80% of frame.')}
+              {step === 4 && (language === 'hi' ? 'अपनी फ़ोटो और लाइव सेल्फी अपलोड करें। चेहरा फ्रेम का 50% होना चाहिए।' : 'Upload your photos and capture a live selfie. Face must cover 50% of frame.')}
               {step === 5 && (language === 'hi' ? 'अपने बारे में और परिवार की जानकारी दें। यह आवश्यक है।' : 'Tell us about yourself and your family. This is required.')}
               {step === 6 && t.registration.step5}
             </AlertDescription>
@@ -2006,7 +2006,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                               <span className="text-white text-xs font-medium w-10">{Math.round(liveZoom * 100)}%</span>
                             </div>
                             <p className="text-white/80 text-xs mt-1 text-center">
-                              {language === 'hi' ? 'चेहरा 80% तक दिखने के लिए ज़ूम करें' : 'Zoom until face covers 80% of frame'}
+                              {language === 'hi' ? 'चेहरा 50% तक दिखने के लिए ज़ूम करें' : 'Zoom until face covers 50% of frame'}
                             </p>
                           </div>
                         </div>
@@ -2163,8 +2163,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <Info size={16} />
                     <AlertDescription className="text-xs">
                       {language === 'hi' 
-                        ? 'चेहरा फ्रेम का कम से कम 80% होना चाहिए। सेल्फी का उपयोग AI द्वारा पहचान सत्यापन के लिए किया जाएगा।' 
-                        : 'Face must cover at least 80% of the frame. Selfie will be used for AI identity verification.'}
+                        ? 'चेहरा फ्रेम का कम से कम 50% होना चाहिए। सेल्फी का उपयोग AI द्वारा पहचान सत्यापन के लिए किया जाएगा।' 
+                        : 'Face must cover at least 50% of the frame. Selfie will be used for AI identity verification.'}
                     </AlertDescription>
                   </Alert>
                   
