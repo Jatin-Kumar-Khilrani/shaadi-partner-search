@@ -50,12 +50,16 @@ const defaultMembershipSettings: MembershipSettings = {
 }
 
 function App() {
-  const [profiles, setProfiles] = useKV<Profile[]>('profiles', [])
-  const [users, setUsers] = useKV<User[]>('users', [])
+  const [profiles, setProfiles, , isProfilesLoaded] = useKV<Profile[]>('profiles', [])
+  const [users, setUsers, , isUsersLoaded] = useKV<User[]>('users', [])
   const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
   const [loggedInUser, setLoggedInUser] = useKV<string | null>('loggedInUser', null)
   const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [membershipSettings] = useKV<MembershipSettings>('membershipSettings', defaultMembershipSettings)
+  
+  // Track if critical data is loaded from Azure
+  const isDataReady = isProfilesLoaded && isUsersLoaded
+  
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
     // Check if admin was previously logged in with 'keep me logged in'
     try {
@@ -304,6 +308,16 @@ function App() {
   }, [profiles, searchFilters, currentUserProfile, blockedProfiles])
 
   const handleRegisterProfile = (profileData: Partial<Profile>) => {
+    // Ensure data is loaded from Azure before registering
+    if (!isDataReady) {
+      toast.error(
+        language === 'hi' 
+          ? 'कृपया प्रतीक्षा करें, डेटा लोड हो रहा है...' 
+          : 'Please wait, data is loading from server...'
+      )
+      return
+    }
+    
     // Check for duplicate email or mobile
     const existingEmailProfile = profiles?.find(p => p.email && p.email.toLowerCase() === profileData.email?.toLowerCase())
     const existingMobileProfile = profiles?.find(p => p.mobile && p.mobile === profileData.mobile)
@@ -344,6 +358,9 @@ function App() {
     const password = `${firstName.toLowerCase().slice(0, 4)}${mobileLastFour}`
     
     const newProfile: Profile = {
+      // Spread all profileData fields first to include all form data
+      ...profileData as Profile,
+      // Then override with computed/generated fields
       id,
       profileId: generatedProfileId,
       firstName,
@@ -352,15 +369,6 @@ function App() {
       dateOfBirth: profileData.dateOfBirth || '',
       age: profileData.age || 0,
       gender: profileData.gender || 'male',
-      religion: profileData.religion,
-      caste: profileData.caste,
-      community: profileData.community,
-      motherTongue: profileData.motherTongue,
-      education: profileData.education || '',
-      occupation: profileData.occupation || '',
-      salary: profileData.salary,
-      location: profileData.location || '',
-      country: profileData.country || '',
       maritalStatus: profileData.maritalStatus || 'never-married',
       email: profileData.email || '',
       mobile: profileData.mobile || '',
@@ -368,19 +376,13 @@ function App() {
       hideEmail: profileData.hideEmail || false,
       hideMobile: profileData.hideMobile || false,
       photos: profileData.photos || [],
-      selfieUrl: profileData.selfieUrl,
-      bio: profileData.bio,
-      height: profileData.height,
-      familyDetails: profileData.familyDetails,
-      dietPreference: profileData.dietPreference,
-      manglik: profileData.manglik,
-      drinkingHabit: profileData.drinkingHabit,
-      smokingHabit: profileData.smokingHabit,
+      education: profileData.education || '',
+      occupation: profileData.occupation || '',
+      location: profileData.location || '',
+      country: profileData.country || '',
       status: 'pending',
       trustLevel: 1,
       createdAt: new Date().toISOString(),
-      membershipPlan: profileData.membershipPlan,
-      membershipExpiry: profileData.membershipExpiry,
       emailVerified: false,
       mobileVerified: false,
       isBlocked: false

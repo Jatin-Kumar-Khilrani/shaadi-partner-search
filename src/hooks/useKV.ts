@@ -39,9 +39,13 @@ function ensureAzureInitialized(): Promise<boolean> {
 // Start initialization early
 ensureAzureInitialized()
 
-export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValue: T | ((oldValue?: T) => T)) => void, () => Promise<void>] {
+// Track which keys have been loaded from Azure (global to prevent race conditions)
+const loadedFromAzure = new Set<string>()
+
+export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValue: T | ((oldValue?: T) => T)) => void, () => Promise<void>, boolean] {
   const storageKey = `${STORAGE_PREFIX}${key}`
   const isLoadingFromAzure = useRef(false)
+  const [hasLoadedFromAzure, setHasLoadedFromAzure] = useState(() => loadedFromAzure.has(key))
   
   // Initialize state from localStorage (immediate) or Azure (async)
   const [value, setValue] = useState<T | undefined>(() => {
@@ -57,11 +61,15 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
     }
   })
 
-  // Function to load from Azure (only called manually via button)
-  const loadFromAzure = useCallback(async () => {
-    console.log(`[useKV] Loading "${key}" from Azure...`)
+  // Function to load from Azure
+  const loadFromAzure = useCallback(async (forceRefresh = false) => {
+    // Skip if already loading
+    if (isLoadingFromAzure.current && !forceRefresh) {
+      console.log(`[useKV] Already loading "${key}" from Azure, skipping...`)
+      return
+    }
     
-    // Reset loading flag to allow force refresh
+    console.log(`[useKV] Loading "${key}" from Azure...`)
     isLoadingFromAzure.current = true
 
     try {
@@ -79,11 +87,20 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
         } else {
           console.log(`[useKV] No data found in Azure for "${key}"`)
         }
+        // Mark as loaded from Azure
+        loadedFromAzure.add(key)
+        setHasLoadedFromAzure(true)
       } else {
         console.log(`[useKV] Azure not available for "${key}"`)
+        // Still mark as "loaded" so we don't block operations
+        loadedFromAzure.add(key)
+        setHasLoadedFromAzure(true)
       }
     } catch (error) {
       console.warn(`Failed to load from Azure for key "${key}":`, error)
+      // Still mark as loaded to not block operations
+      loadedFromAzure.add(key)
+      setHasLoadedFromAzure(true)
     } finally {
       isLoadingFromAzure.current = false
     }
@@ -154,6 +171,7 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
       try {
         localStorage.setItem(storageKey, JSON.stringify(resolvedValue))
         emitKVChange(key)
+        console.log(`[useKV] Saved "${key}" to localStorage, count:`, Array.isArray(resolvedValue) ? resolvedValue.length : 'N/A')
       } catch (error) {
         console.error(`Failed to persist to localStorage for key "${key}":`, error)
       }
@@ -161,8 +179,12 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
       // Also save to Azure (async, in background)
       ensureAzureInitialized().then(() => {
         if (isAzureAvailable()) {
+          console.log(`[useKV] Saving "${key}" to Azure...`)
           azureStorage.set(key, { data: resolvedValue, updatedAt: new Date().toISOString() })
-            .catch(error => console.warn(`Failed to persist to Azure for key "${key}":`, error))
+            .then(() => console.log(`[useKV] ✅ Successfully saved "${key}" to Azure`))
+            .catch(error => console.warn(`[useKV] ❌ Failed to persist to Azure for key "${key}":`, error))
+        } else {
+          console.log(`[useKV] Azure not available, skipping Azure save for "${key}"`)
         }
       })
       
@@ -170,12 +192,12 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
     })
   }, [key, storageKey])
 
-  // Return refresh function as third element
+  // Return refresh function as third element, and loaded status as fourth
   const refresh = useCallback(async () => {
     await loadFromAzure(true)
   }, [loadFromAzure])
 
-  return [value, updateValue, refresh]
+  return [value, updateValue, refresh, hasLoadedFromAzure]
 }
 
 export default useKV
