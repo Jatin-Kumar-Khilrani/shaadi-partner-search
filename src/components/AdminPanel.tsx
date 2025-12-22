@@ -879,45 +879,53 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8 max-w-7xl">
-            <TabsTrigger value="pending" className="gap-2">
-              <Info size={18} />
-              {t.pendingProfiles}
+          <TabsList className="flex flex-wrap h-auto gap-1 p-1 w-full max-w-7xl">
+            <TabsTrigger value="pending" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+              <Info size={16} className="shrink-0" />
+              <span className="hidden sm:inline">{t.pendingProfiles}</span>
+              <span className="sm:hidden">{language === 'hi' ? 'लंबित' : 'Pending'}</span>
               {pendingProfiles.length > 0 && (
-                <Badge variant="destructive" className="ml-2">{pendingProfiles.length}</Badge>
+                <Badge variant="destructive" className="ml-1 text-xs">{pendingProfiles.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="approved" className="gap-2">
-              <Check size={18} />
-              {t.approvedProfiles}
-              <Badge variant="secondary" className="ml-2">{approvedProfiles.length}</Badge>
+            <TabsTrigger value="approved" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+              <Check size={16} className="shrink-0" />
+              <span className="hidden sm:inline">{t.approvedProfiles}</span>
+              <span className="sm:hidden">{language === 'hi' ? 'स्वीकृत' : 'Approved'}</span>
+              <Badge variant="secondary" className="ml-1 text-xs">{approvedProfiles.length}</Badge>
             </TabsTrigger>
-            <TabsTrigger value="database" className="gap-2">
-              <Database size={18} />
-              {t.allDatabase}
+            <TabsTrigger value="database" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+              <Database size={16} className="shrink-0" />
+              <span className="hidden sm:inline">{t.allDatabase}</span>
+              <span className="sm:hidden">{language === 'hi' ? 'डेटाबेस' : 'Database'}</span>
             </TabsTrigger>
-            <TabsTrigger value="deleted" className="gap-2 text-red-600">
-              <Trash size={18} weight="fill" />
-              {t.deletedProfiles}
+            <TabsTrigger value="deleted" className="gap-1 text-xs sm:text-sm whitespace-nowrap text-red-600">
+              <Trash size={16} weight="fill" className="shrink-0" />
+              <span className="hidden sm:inline">{t.deletedProfiles}</span>
+              <span className="sm:hidden">{language === 'hi' ? 'हटाए गए' : 'Deleted'}</span>
               {(profiles?.filter(p => p.isDeleted).length ?? 0) > 0 && (
-                <Badge variant="destructive" className="ml-2">{profiles?.filter(p => p.isDeleted).length}</Badge>
+                <Badge variant="destructive" className="ml-1 text-xs">{profiles?.filter(p => p.isDeleted).length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="membership" className="gap-2">
-              <CurrencyInr size={18} weight="fill" />
-              {t.membershipSettings}
+            <TabsTrigger value="membership" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+              <CurrencyInr size={16} weight="fill" className="shrink-0" />
+              <span className="hidden sm:inline">{t.membershipSettings}</span>
+              <span className="sm:hidden">{language === 'hi' ? 'सदस्यता' : 'Membership'}</span>
             </TabsTrigger>
-            <TabsTrigger value="accounts" className="gap-2 text-green-600">
-              <CurrencyCircleDollar size={18} weight="fill" />
-              {t.accounts}
+            <TabsTrigger value="accounts" className="gap-1 text-xs sm:text-sm whitespace-nowrap text-green-600">
+              <CurrencyCircleDollar size={16} weight="fill" className="shrink-0" />
+              <span className="hidden sm:inline">{t.accounts}</span>
+              <span className="sm:hidden">{language === 'hi' ? 'खाते' : 'Accounts'}</span>
             </TabsTrigger>
-            <TabsTrigger value="chat" className="gap-2">
-              <ChatCircle size={18} weight="fill" />
-              {t.adminChat}
+            <TabsTrigger value="chat" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+              <ChatCircle size={16} weight="fill" className="shrink-0" />
+              <span className="hidden sm:inline">{t.adminChat}</span>
+              <span className="sm:hidden">{language === 'hi' ? 'चैट' : 'Chat'}</span>
             </TabsTrigger>
-            <TabsTrigger value="services" className="gap-2">
-              <Storefront size={18} weight="fill" />
-              {t.weddingServices}
+            <TabsTrigger value="services" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+              <Storefront size={16} weight="fill" className="shrink-0" />
+              <span className="hidden sm:inline">{t.weddingServices}</span>
+              <span className="sm:hidden">{language === 'hi' ? 'सेवाएं' : 'Services'}</span>
             </TabsTrigger>
           </TabsList>
 
