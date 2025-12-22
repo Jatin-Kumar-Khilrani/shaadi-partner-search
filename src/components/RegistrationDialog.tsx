@@ -47,7 +47,6 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const [faceCoveragePercent, setFaceCoveragePercent] = useState(0)
   const [selfieZoom, setSelfieZoom] = useState(1) // Zoom level for selfie (1 = 100%)
   const [liveZoom, setLiveZoom] = useState(1) // Live zoom for camera preview
-  const [isZoomMode, setIsZoomMode] = useState(false) // Whether in zoom/crop mode
   const [isGeneratingBio, setIsGeneratingBio] = useState(false)
   const [registrationGeoLocation, setRegistrationGeoLocation] = useState<{
     latitude: number
@@ -444,13 +443,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         console.log('[Capture] Coverage result:', coverage + '%')
         setFaceCoveragePercent(coverage)
         
-        // If coverage is less than 50%, allow user to zoom in more
+        // If coverage is less than 50%, show preview and ask user to retake with live zoom
         if (coverage < 50 && coverage > 0) {
           setFaceCoverageValid(false)
-          // Save preview for additional zoom mode if needed
+          // Save preview to show what was captured
           setSelfiePreview(canvas.toDataURL('image/jpeg'))
-          setIsZoomMode(true)
-          setSelfieZoom(1)
+          // Don't enter zoom mode - user should retake with live zoom instead
           stopCamera()
           return
         } else if (coverage === 0) {
@@ -481,51 +479,6 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           stopCamera()
         }
       }, 'image/jpeg')
-    }
-  }
-
-  // Apply zoom to captured selfie and re-analyze
-  const applyZoomToSelfie = async () => {
-    if (!selfiePreview || selfieZoom <= 1) return
-    
-    const img = new Image()
-    img.src = selfiePreview
-    await new Promise(resolve => { img.onload = resolve })
-    
-    // Calculate cropped dimensions (center crop based on zoom)
-    const cropWidth = img.width / selfieZoom
-    const cropHeight = img.height / selfieZoom
-    const cropX = (img.width - cropWidth) / 2
-    const cropY = (img.height - cropHeight) / 2
-    
-    // Create new canvas with cropped/zoomed image
-    const canvas = document.createElement('canvas')
-    canvas.width = img.width
-    canvas.height = img.height
-    const ctx = canvas.getContext('2d')
-    
-    if (ctx) {
-      // Draw cropped portion scaled to full canvas
-      ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height)
-      
-      // Re-analyze face coverage
-      const coverage = await analyzeFaceCoverageFromCanvas(canvas)
-      setFaceCoveragePercent(coverage)
-      
-      if (coverage >= 50) {
-        setFaceCoverageValid(true)
-        setIsZoomMode(false)
-        
-        // Save the zoomed/cropped image
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], 'selfie.jpg', { type: 'image/jpeg' })
-            setSelfieFile(file)
-            setSelfiePreview(canvas.toDataURL('image/jpeg'))
-            setSelfieZoom(1) // Reset zoom for next capture
-          }
-        }, 'image/jpeg')
-      }
     }
   }
 
@@ -1957,16 +1910,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           <img 
                             src={selfiePreview} 
                             alt="Captured Selfie" 
-                            className="w-full h-full object-cover transition-transform duration-200"
-                            style={{ transform: `scale(${selfieZoom})` }}
+                            className="w-full h-full object-cover"
                           />
-                          {/* Zoom mode overlay */}
-                          {isZoomMode && (
+                          {/* Show coverage info on captured image */}
+                          {faceCoveragePercent > 0 && !faceCoverageValid && (
                             <div className="absolute inset-0 border-4 border-amber-400 pointer-events-none">
                               <div className="absolute top-2 left-2 right-2 bg-amber-500/90 text-white text-xs px-2 py-1 rounded text-center">
                                 {language === 'hi' 
-                                  ? `ज़ूम करें जब तक चेहरा 50% न हो (वर्तमान: ${faceCoveragePercent}%)`
-                                  : `Zoom in until face is 50% (Current: ${faceCoveragePercent}%)`}
+                                  ? `चेहरा ${faceCoveragePercent}% - कृपया लाइव ज़ूम के साथ दोबारा लें (50% आवश्यक)`
+                                  : `Face ${faceCoveragePercent}% - Please retake with live zoom (50% required)`}
                               </div>
                             </div>
                           )}
@@ -2019,58 +1971,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     </div>
                     
                     <div className="flex justify-center gap-3 mt-4">
-                      {selfiePreview && isZoomMode ? (
-                        /* Zoom mode controls */
-                        <div className="flex flex-col items-center gap-3 w-full max-w-md">
-                          <div className="flex items-center gap-4 w-full">
-                            <span className="text-sm text-muted-foreground whitespace-nowrap">
-                              {language === 'hi' ? 'ज़ूम:' : 'Zoom:'}
-                            </span>
-                            <input
-                              type="range"
-                              min="1"
-                              max="3"
-                              step="0.1"
-                              value={selfieZoom}
-                              onChange={(e) => setSelfieZoom(parseFloat(e.target.value))}
-                              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
-                            />
-                            <span className="text-sm font-medium w-12">{Math.round(selfieZoom * 100)}%</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              type="button" 
-                              onClick={applyZoomToSelfie}
-                              disabled={selfieZoom <= 1}
-                              className="gap-2 bg-green-600 hover:bg-green-700"
-                            >
-                              {language === 'hi' ? 'ज़ूम लागू करें' : 'Apply Zoom'}
-                            </Button>
-                            <Button 
-                              type="button" 
-                              variant="outline"
-                              onClick={() => {
-                                setSelfieFile(null)
-                                setSelfiePreview(undefined)
-                                setIsZoomMode(false)
-                                setSelfieZoom(1)
-                              }}
-                              className="gap-2"
-                            >
-                              <Camera size={16} />
-                              {language === 'hi' ? 'दोबारा लें' : 'Retake'}
-                            </Button>
-                          </div>
-                        </div>
-                      ) : selfiePreview ? (
+                      {selfiePreview ? (
+                        /* Preview mode - just show retake button */
                         <Button 
                           type="button" 
                           variant="outline"
                           onClick={() => {
                             setSelfieFile(null)
                             setSelfiePreview(undefined)
-                            setIsZoomMode(false)
                             setSelfieZoom(1)
+                            setLiveZoom(1)
                           }}
                           className="gap-2"
                         >
