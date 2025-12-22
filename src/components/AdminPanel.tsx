@@ -1347,22 +1347,23 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     <AlertDescription>{t.noApproved}</AlertDescription>
                   </Alert>
                 ) : (
+                  <div className="overflow-x-auto">
                   <ScrollArea className="h-[600px]">
-                    <Table>
+                    <Table className="min-w-[1400px]">
                       <TableHeader>
                         <TableRow>
-                          <TableHead>{language === 'hi' ? 'फोटो' : 'Photo'}</TableHead>
-                          <TableHead>{t.profileId}</TableHead>
-                          <TableHead>{t.name}</TableHead>
-                          <TableHead>{t.relation}</TableHead>
-                          <TableHead>{t.membershipPlan}</TableHead>
-                          <TableHead>{t.membershipExpiry}</TableHead>
-                          <TableHead>{t.userId}</TableHead>
-                          <TableHead>{t.password}</TableHead>
-                          <TableHead>{t.email}</TableHead>
-                          <TableHead>{t.mobile}</TableHead>
-                          <TableHead>{t.verifiedAt}</TableHead>
-                          <TableHead>{t.actions}</TableHead>
+                          <TableHead className="whitespace-nowrap">{language === 'hi' ? 'फोटो' : 'Photo'}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.profileId}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.name}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.relation}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.membershipPlan}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.membershipExpiry}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.userId}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.password}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.email}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.mobile}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.verifiedAt}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.actions}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1474,10 +1475,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               </TableCell>
                             </TableRow>
                           )
-                        })}
-                      </TableBody>
+                        })}n                      </TableBody>
                     </Table>
                   </ScrollArea>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -1524,24 +1525,25 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     </AlertDescription>
                   </Alert>
                 ) : (
-                  <ScrollArea className="h-[600px]">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>{t.profileId}</TableHead>
-                          <TableHead>{t.name}</TableHead>
-                          <TableHead>{t.userId}</TableHead>
-                          <TableHead>{t.password}</TableHead>
-                          <TableHead>{t.relation}</TableHead>
-                          <TableHead>{t.age}</TableHead>
-                          <TableHead>{t.location}</TableHead>
-                          <TableHead>{t.status}</TableHead>
-                          <TableHead>{t.email}</TableHead>
-                          <TableHead>{t.mobile}</TableHead>
-                          <TableHead>{t.createdAt}</TableHead>
-                          <TableHead>{t.actions}</TableHead>
-                        </TableRow>
-                      </TableHeader>
+                  <div className="overflow-x-auto">
+                    <ScrollArea className="h-[600px]">
+                      <Table className="min-w-[1200px]">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="whitespace-nowrap">{t.profileId}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t.name}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t.userId}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t.password}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t.relation}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t.age}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t.location}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t.status}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t.email}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t.mobile}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t.createdAt}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t.actions}</TableHead>
+                          </TableRow>
+                        </TableHeader>
                       <TableBody>
                         {profiles.map((profile) => {
                           const creds = getUserCredentials(profile.id)
@@ -1677,6 +1679,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       </TableBody>
                     </Table>
                   </ScrollArea>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -1703,17 +1706,18 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     </AlertDescription>
                   </Alert>
                 ) : (
+                  <div className="overflow-x-auto">
                   <ScrollArea className="h-[600px]">
-                    <Table>
+                    <Table className="min-w-[900px]">
                       <TableHeader>
                         <TableRow>
-                          <TableHead>{t.profileId}</TableHead>
-                          <TableHead>{t.name}</TableHead>
-                          <TableHead>{t.email}</TableHead>
-                          <TableHead>{t.mobile}</TableHead>
-                          <TableHead>{t.deletedAt}</TableHead>
-                          <TableHead>{t.deletedBy}</TableHead>
-                          <TableHead>{t.actions}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.profileId}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.name}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.email}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.mobile}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.deletedAt}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.deletedBy}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.actions}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1777,6 +1781,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       </TableBody>
                     </Table>
                   </ScrollArea>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -2132,17 +2137,18 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     </AlertDescription>
                   </Alert>
                 ) : (
+                  <div className="overflow-x-auto">
                   <ScrollArea className="h-[600px]">
-                    <Table>
+                    <Table className="min-w-[900px]">
                       <TableHeader>
                         <TableRow>
-                          <TableHead>{t.businessName}</TableHead>
-                          <TableHead>{t.category}</TableHead>
-                          <TableHead>{t.contactPerson}</TableHead>
-                          <TableHead>{t.mobile}</TableHead>
-                          <TableHead>{t.city}</TableHead>
-                          <TableHead>{t.status}</TableHead>
-                          <TableHead>{t.actions}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.businessName}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.category}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.contactPerson}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.mobile}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.city}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.status}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.actions}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -2186,12 +2192,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       </TableBody>
                     </Table>
                   </ScrollArea>
+                  </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Membership Settings Tab */}
+          {/* Membership Settings Tab */}}
           <TabsContent value="membership">
             <div className="space-y-6">
               {/* Default Plan Settings */}
@@ -2425,16 +2432,17 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <div className="overflow-x-auto">
                   <ScrollArea className="h-[400px]">
-                    <Table>
+                    <Table className="min-w-[800px]">
                       <TableHeader>
                         <TableRow>
-                          <TableHead>{t.name}</TableHead>
-                          <TableHead>{t.profileId}</TableHead>
-                          <TableHead>{t.membershipPlan}</TableHead>
-                          <TableHead>{t.membershipExpiry}</TableHead>
-                          <TableHead>{t.status}</TableHead>
-                          <TableHead>{t.actions}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.name}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.profileId}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.membershipPlan}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.membershipExpiry}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.status}</TableHead>
+                          <TableHead className="whitespace-nowrap">{t.actions}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -2490,6 +2498,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       </TableBody>
                     </Table>
                   </ScrollArea>
+                  </div>
                 </CardContent>
               </Card>
             </div>
