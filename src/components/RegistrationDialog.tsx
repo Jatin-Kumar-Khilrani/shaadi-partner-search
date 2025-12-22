@@ -411,14 +411,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       const sourceX = (video.videoWidth - sourceWidth) / 2
       const sourceY = (video.videoHeight - sourceHeight) / 2
       
-      console.log('[Capture] Live zoom:', zoom)
-      console.log('[Capture] Video dimensions:', video.videoWidth, 'x', video.videoHeight)
-      console.log('[Capture] Source crop:', { sourceX, sourceY, sourceWidth, sourceHeight })
-      
       // Output at original resolution for quality
       canvas.width = video.videoWidth
       canvas.height = video.videoHeight
-      console.log('[Capture] Canvas dimensions:', canvas.width, 'x', canvas.height)
       
       const ctx = canvas.getContext('2d')
       if (ctx) {
@@ -438,9 +433,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         
         // Analyze face coverage using Azure Face API service
         // The service handles all validation: no face, multiple faces, hands/objects, centering, coverage
-        console.log('[Capture] Analyzing face coverage...')
         const coverage = await analyzeFaceCoverageFromCanvas(canvas)
-        console.log('[Capture] Coverage result:', coverage + '%')
         setFaceCoveragePercent(coverage)
         
         // If coverage is less than 50%, show preview and ask user to retake with live zoom
