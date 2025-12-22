@@ -1346,8 +1346,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     <AlertDescription>{t.noApproved}</AlertDescription>
                   </Alert>
                 ) : (
-                  <div className="overflow-x-auto">
-                  <ScrollArea className="h-[600px]">
+                  <div className="overflow-auto max-h-[600px]">
                     <Table className="min-w-[1400px]">
                       <TableHeader>
                         <TableRow>
@@ -1474,9 +1473,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               </TableCell>
                             </TableRow>
                           )
-                        })}n                      </TableBody>
+                        })}
+                      </TableBody>
                     </Table>
-                  </ScrollArea>
                   </div>
                 )}
               </CardContent>
@@ -1524,8 +1523,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     </AlertDescription>
                   </Alert>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <ScrollArea className="h-[600px]">
+                  <div className="overflow-auto max-h-[600px]">
                       <Table className="min-w-[1200px]">
                         <TableHeader>
                           <TableRow>
@@ -1677,7 +1675,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         })}
                       </TableBody>
                     </Table>
-                  </ScrollArea>
                   </div>
                 )}
               </CardContent>
@@ -1705,8 +1702,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     </AlertDescription>
                   </Alert>
                 ) : (
-                  <div className="overflow-x-auto">
-                  <ScrollArea className="h-[600px]">
+                  <div className="overflow-auto max-h-[600px]">
                     <Table className="min-w-[900px]">
                       <TableHeader>
                         <TableRow>
@@ -1779,7 +1775,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         ))}
                       </TableBody>
                     </Table>
-                  </ScrollArea>
                   </div>
                 )}
               </CardContent>
@@ -2136,8 +2131,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     </AlertDescription>
                   </Alert>
                 ) : (
-                  <div className="overflow-x-auto">
-                  <ScrollArea className="h-[600px]">
+                  <div className="overflow-auto max-h-[600px]">
                     <Table className="min-w-[900px]">
                       <TableHeader>
                         <TableRow>
@@ -2190,7 +2184,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         ))}
                       </TableBody>
                     </Table>
-                  </ScrollArea>
                   </div>
                 )}
               </CardContent>
@@ -2431,8 +2424,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="overflow-x-auto">
-                  <ScrollArea className="h-[400px]">
+                  <div className="overflow-auto max-h-[400px]">
                     <Table className="min-w-[800px]">
                       <TableHeader>
                         <TableRow>
@@ -2496,7 +2488,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         })}
                       </TableBody>
                     </Table>
-                  </ScrollArea>
                   </div>
                 </CardContent>
               </Card>
