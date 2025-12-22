@@ -568,13 +568,13 @@ export async function validateSelfie(imageData: string, language: 'hi' | 'en'): 
     }
   }
 
-  if (result.coverage < 80) {
+  if (result.coverage < 50) {
     return {
       valid: false,
       coverage: result.coverage,
       message: language === 'hi' 
-        ? `चेहरा ${result.coverage}% है। कृपया कैमरे के करीब आएं (80% आवश्यक है)।`
-        : `Face covers ${result.coverage}% of frame. Please move closer to camera (80% required).`,
+        ? `चेहरा ${result.coverage}% है। कृपया कैमरे के करीब आएं (50% आवश्यक है)।`
+        : `Face covers ${result.coverage}% of frame. Please move closer to camera (50% required).`,
     }
   }
 

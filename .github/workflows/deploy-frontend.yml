@@ -60,7 +60,7 @@ jobs:
             "features": {
               "faceDetection": {
                 "enabled": true,
-                "minCoveragePercent": 80,
+                "minCoveragePercent": 50,
                 "requireCentered": true,
                 "maxFaces": 1
               }

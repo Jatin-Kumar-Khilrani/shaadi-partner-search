@@ -444,8 +444,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         console.log('[Capture] Coverage result:', coverage + '%')
         setFaceCoveragePercent(coverage)
         
-        // If coverage is less than 80%, allow user to zoom in more
-        if (coverage < 80 && coverage > 0) {
+        // If coverage is less than 50%, allow user to zoom in more
+        if (coverage < 50 && coverage > 0) {
           setFaceCoverageValid(false)
           // Save preview for additional zoom mode if needed
           setSelfiePreview(canvas.toDataURL('image/jpeg'))
@@ -512,7 +512,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       const coverage = await analyzeFaceCoverageFromCanvas(canvas)
       setFaceCoveragePercent(coverage)
       
-      if (coverage >= 80) {
+      if (coverage >= 50) {
         setFaceCoverageValid(true)
         setIsZoomMode(false)
         
@@ -1965,8 +1965,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                             <div className="absolute inset-0 border-4 border-amber-400 pointer-events-none">
                               <div className="absolute top-2 left-2 right-2 bg-amber-500/90 text-white text-xs px-2 py-1 rounded text-center">
                                 {language === 'hi' 
-                                  ? `ज़ूम करें जब तक चेहरा 80% न हो (वर्तमान: ${faceCoveragePercent}%)`
-                                  : `Zoom in until face is 80% (Current: ${faceCoveragePercent}%)`}
+                                  ? `ज़ूम करें जब तक चेहरा 50% न हो (वर्तमान: ${faceCoveragePercent}%)`
+                                  : `Zoom in until face is 50% (Current: ${faceCoveragePercent}%)`}
                               </div>
                             </div>
                           )}
@@ -2177,8 +2177,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                         <Warning size={16} weight="fill" />
                       )}
                       {language === 'hi' 
-                        ? `चेहरा कवरेज: ${faceCoveragePercent}% ${faceCoverageValid ? '✓' : '(80% आवश्यक)'}` 
-                        : `Face coverage: ${faceCoveragePercent}% ${faceCoverageValid ? '✓' : '(80% required)'}`}
+                        ? `चेहरा कवरेज: ${faceCoveragePercent}% ${faceCoverageValid ? '✓' : '(50% आवश्यक)'}` 
+                        : `Face coverage: ${faceCoveragePercent}% ${faceCoverageValid ? '✓' : '(50% required)'}`}
                     </div>
                   )}
                 </div>

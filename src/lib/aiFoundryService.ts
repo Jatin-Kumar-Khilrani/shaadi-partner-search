@@ -225,7 +225,7 @@ export async function analyzeFaceCoverage(imageBase64: string): Promise<{
   
   // Demo simulation
   const simulatedCoverage = 60 + Math.random() * 30 // 60-90%
-  const isValid = simulatedCoverage >= 80
+  const isValid = simulatedCoverage >= 50
 
   return {
     coverage: Math.round(simulatedCoverage),
