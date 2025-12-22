@@ -366,13 +366,24 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   // Helper to get user credentials for a profile
   const getUserCredentials = (profileId: string) => users?.find(u => u.profileId === profileId)
 
-  const pendingProfiles = profiles?.filter(p => p.status === 'pending') || []
-  const approvedProfiles = profiles?.filter(p => p.status === 'verified') || []
+  const pendingProfiles = profiles?.filter(p => p.status === 'pending' && !p.isDeleted) || []
+  const approvedProfiles = profiles?.filter(p => p.status === 'verified' && !p.isDeleted) || []
 
-  // Delete profile handler
+  // Delete profile handler (soft delete - moves to Deleted Profiles tab)
   const handleDeleteProfile = (profileId: string) => {
     if (!confirm(t.deleteConfirm)) return
-    setProfiles((current) => (current || []).filter(p => p.id !== profileId))
+    setProfiles((current) => 
+      (current || []).map(p => 
+        p.id === profileId 
+          ? { 
+              ...p, 
+              isDeleted: true, 
+              deletedAt: new Date().toISOString(),
+              deletedBy: 'Admin'
+            }
+          : p
+      )
+    )
     toast.success(t.deleteSuccess)
     setSelectedProfile(null)
     setViewProfileDialog(null)
@@ -843,9 +854,12 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   onClick={async () => {
                     setIsRefreshing(true)
                     try {
+                      // Wait a bit for any pending Azure saves to complete
+                      await new Promise(resolve => setTimeout(resolve, 500))
                       forceRefreshFromAzure('profiles')
                       forceRefreshFromAzure('users')
-                      await new Promise(resolve => setTimeout(resolve, 1000))
+                      // Wait for Azure fetch to complete
+                      await new Promise(resolve => setTimeout(resolve, 2000))
                       toast.success(t.dataRefreshed)
                     } finally {
                       setIsRefreshing(false)
@@ -1492,7 +1506,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       {t.allDatabase}
                     </CardTitle>
                     <CardDescription>
-                      {profiles?.length || 0} {language === 'hi' ? 'कुल प्रोफाइल' : 'total profiles'}
+                      {profiles?.filter(p => !p.isDeleted).length || 0} {language === 'hi' ? 'कुल प्रोफाइल' : 'total profiles'}
                     </CardDescription>
                   </div>
                   <Button 
@@ -1515,7 +1529,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 </div>
               </CardHeader>
               <CardContent>
-                {!profiles || profiles.length === 0 ? (
+                {!profiles || profiles.filter(p => !p.isDeleted).length === 0 ? (
                   <Alert>
                     <Info size={18} />
                     <AlertDescription>
@@ -1542,7 +1556,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           </TableRow>
                         </TableHeader>
                       <TableBody>
-                        {profiles.map((profile) => {
+                        {profiles.filter(p => !p.isDeleted).map((profile) => {
                           const creds = getUserCredentials(profile.id)
                           return (
                             <TableRow key={profile.id}>

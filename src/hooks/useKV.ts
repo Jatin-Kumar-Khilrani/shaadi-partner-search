@@ -116,7 +116,7 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
     const handleForceRefresh = (event: Event) => {
       const customEvent = event as CustomEvent<{ key: string }>
       if (customEvent.detail.key === key || customEvent.detail.key === '*') {
-        loadFromAzure()
+        loadFromAzure(true) // Force refresh bypasses loading check
       }
     }
 
