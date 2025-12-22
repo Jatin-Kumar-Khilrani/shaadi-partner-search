@@ -115,7 +115,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     occupation: '',
     location: '',
     state: '',
-    country: '',
+    country: 'India',
+    residentialStatus: '' as string,
     maritalStatus: undefined as MaritalStatus | undefined,
     email: '',
     countryCode: '+91',
@@ -157,7 +158,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         occupation: editProfile.occupation || '',
         location: editProfile.location || '',
         state: editProfile.state || '',
-        country: editProfile.country || '',
+        country: editProfile.country || 'India',
+        residentialStatus: editProfile.residentialStatus || '',
         maritalStatus: editProfile.maritalStatus,
         email: editProfile.email || '',
         countryCode: countryCode,
@@ -1059,6 +1061,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       toast.error(t.registration.fillContact)
       return
     }
+    // Validate residential status is required when living outside India
+    if (step === 3 && formData.country && formData.country !== 'India' && !formData.residentialStatus) {
+      toast.error(
+        language === 'hi' 
+          ? 'विदेश में रहने वालों के लिए निवास स्थिति चुनना आवश्यक है' 
+          : 'Residential status is required for those living outside India'
+      )
+      return
+    }
     if (step === 3) {
       // Validate mobile is 10 digits
       if (formData.mobile.length !== 10) {
@@ -1620,23 +1631,56 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
             {step === 3 && !showVerification && (
               <div className="space-y-4">
+                {/* Country, State, City - in order */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="location">{language === 'hi' ? 'शहर' : 'City'} *</Label>
-                    <Input
-                      id="location"
-                      placeholder={language === 'hi' ? 'उदाहरण: मुंबई, जयपुर' : 'Example: Mumbai, Jaipur'}
-                      value={formData.location}
-                      onChange={(e) => updateField('location', e.target.value)}
-                      required
-                    />
+                    <Label htmlFor="country">{language === 'hi' ? 'वर्तमान में रह रहे देश' : 'Living in Country'} *</Label>
+                    <Select 
+                      value={formData.country} 
+                      onValueChange={(value) => {
+                        updateField('country', value)
+                        // Clear residential status if switching to India
+                        if (value === 'India') {
+                          updateField('residentialStatus', '')
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={language === 'hi' ? 'देश चुनें' : 'Select Country'} />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999] max-h-[300px]" position="popper" sideOffset={4}>
+                        <SelectItem value="India">🇮🇳 India</SelectItem>
+                        <SelectItem value="United States">🇺🇸 United States</SelectItem>
+                        <SelectItem value="United Kingdom">🇬🇧 United Kingdom</SelectItem>
+                        <SelectItem value="Canada">🇨🇦 Canada</SelectItem>
+                        <SelectItem value="Australia">🇦🇺 Australia</SelectItem>
+                        <SelectItem value="UAE">🇦🇪 UAE</SelectItem>
+                        <SelectItem value="Singapore">🇸🇬 Singapore</SelectItem>
+                        <SelectItem value="Germany">🇩🇪 Germany</SelectItem>
+                        <SelectItem value="New Zealand">🇳🇿 New Zealand</SelectItem>
+                        <SelectItem value="Saudi Arabia">🇸🇦 Saudi Arabia</SelectItem>
+                        <SelectItem value="Qatar">🇶🇦 Qatar</SelectItem>
+                        <SelectItem value="Kuwait">🇰🇼 Kuwait</SelectItem>
+                        <SelectItem value="Oman">🇴🇲 Oman</SelectItem>
+                        <SelectItem value="Bahrain">🇧🇭 Bahrain</SelectItem>
+                        <SelectItem value="Malaysia">🇲🇾 Malaysia</SelectItem>
+                        <SelectItem value="Netherlands">🇳🇱 Netherlands</SelectItem>
+                        <SelectItem value="France">🇫🇷 France</SelectItem>
+                        <SelectItem value="Ireland">🇮🇪 Ireland</SelectItem>
+                        <SelectItem value="Switzerland">🇨🇭 Switzerland</SelectItem>
+                        <SelectItem value="Japan">🇯🇵 Japan</SelectItem>
+                        <SelectItem value="South Korea">🇰🇷 South Korea</SelectItem>
+                        <SelectItem value="Hong Kong">🇭🇰 Hong Kong</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="state">{language === 'hi' ? 'राज्य' : 'State'} *</Label>
+                    <Label htmlFor="state">{language === 'hi' ? 'राज्य/प्रांत' : 'State/Province'} *</Label>
                     <Input
                       id="state"
-                      placeholder={language === 'hi' ? 'उदाहरण: महाराष्ट्र, राजस्थान' : 'Example: Maharashtra, Rajasthan'}
+                      placeholder={language === 'hi' ? 'उदाहरण: महाराष्ट्र, कैलिफोर्निया' : 'Example: Maharashtra, California'}
                       value={formData.state}
                       onChange={(e) => updateField('state', e.target.value)}
                       required
@@ -1644,16 +1688,73 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="country">{language === 'hi' ? 'देश' : 'Country'} *</Label>
+                    <Label htmlFor="location">{language === 'hi' ? 'शहर' : 'City'} *</Label>
                     <Input
-                      id="country"
-                      placeholder={language === 'hi' ? 'उदाहरण: भारत, USA' : 'Example: India, USA'}
-                      value={formData.country}
-                      onChange={(e) => updateField('country', e.target.value)}
+                      id="location"
+                      placeholder={language === 'hi' ? 'उदाहरण: मुंबई, न्यूयॉर्क' : 'Example: Mumbai, New York'}
+                      value={formData.location}
+                      onChange={(e) => updateField('location', e.target.value)}
                       required
                     />
                   </div>
                 </div>
+
+                {/* Residential Status - Only show if country is not India */}
+                {formData.country && formData.country !== 'India' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="residentialStatus">
+                      {language === 'hi' ? 'निवास स्थिति' : 'Residential Status'} *
+                    </Label>
+                    <Select 
+                      value={formData.residentialStatus} 
+                      onValueChange={(value) => updateField('residentialStatus', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={language === 'hi' ? 'निवास स्थिति चुनें' : 'Select Residential Status'} />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
+                        <SelectItem value="citizen">
+                          {language === 'hi' ? '🛂 नागरिक (Citizen)' : '🛂 Citizen'}
+                        </SelectItem>
+                        <SelectItem value="permanent-resident">
+                          {language === 'hi' ? '🏠 स्थायी निवासी (PR)' : '🏠 Permanent Resident (PR)'}
+                        </SelectItem>
+                        <SelectItem value="work-permit">
+                          {language === 'hi' ? '💼 वर्क परमिट / वर्क वीसा' : '💼 Work Permit / Work Visa'}
+                        </SelectItem>
+                        <SelectItem value="student-visa">
+                          {language === 'hi' ? '🎓 स्टूडेंट वीसा' : '🎓 Student Visa'}
+                        </SelectItem>
+                        <SelectItem value="dependent-visa">
+                          {language === 'hi' ? '👨‍👩‍👧 डिपेंडेंट वीसा' : '👨‍👩‍👧 Dependent Visa'}
+                        </SelectItem>
+                        <SelectItem value="oci">
+                          {language === 'hi' ? '🇮🇳 OCI (भारत का विदेशी नागरिक)' : '🇮🇳 OCI (Overseas Citizen of India)'}
+                        </SelectItem>
+                        <SelectItem value="applied-for-pr">
+                          {language === 'hi' ? '📝 PR के लिए आवेदन किया' : '📝 Applied for PR'}
+                        </SelectItem>
+                        <SelectItem value="applied-for-citizenship">
+                          {language === 'hi' ? '📝 नागरिकता के लिए आवेदन किया' : '📝 Applied for Citizenship'}
+                        </SelectItem>
+                        <SelectItem value="temporary-visa">
+                          {language === 'hi' ? '⏳ अस्थायी वीसा' : '⏳ Temporary Visa'}
+                        </SelectItem>
+                        <SelectItem value="tourist-visa">
+                          {language === 'hi' ? '✈️ टूरिस्ट/विजिटर वीसा' : '✈️ Tourist/Visitor Visa'}
+                        </SelectItem>
+                        <SelectItem value="other">
+                          {language === 'hi' ? '📋 अन्य' : '📋 Other'}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'hi' 
+                        ? 'विदेश में रहने वालों के लिए निवास स्थिति बताना आवश्यक है'
+                        : 'Residential status is required for those living outside India'}
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="email">{language === 'hi' ? 'ईमेल' : 'Email'} *</Label>
@@ -2585,7 +2686,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     (formData.horoscopeMatching === 'mandatory' && (!formData.birthTime || !formData.birthPlace))
                   )) ||
                   (step === 2 && (!formData.education || !formData.occupation)) ||
-                  (step === 3 && (!formData.location || !formData.state || !formData.country || !formData.email || !formData.mobile)) ||
+                  (step === 3 && (
+                    !formData.location || 
+                    !formData.state || 
+                    !formData.country || 
+                    !formData.email || 
+                    !formData.mobile ||
+                    (formData.country !== 'India' && !formData.residentialStatus)
+                  )) ||
                   (step === 4 && (photos.length === 0 || !selfiePreview || (!isEditMode && !idProofPreview))) ||
                   (step === 5 && !formData.bio.trim())
                 }

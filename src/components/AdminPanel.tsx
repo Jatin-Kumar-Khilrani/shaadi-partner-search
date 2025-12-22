@@ -1506,7 +1506,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       {t.allDatabase}
                     </CardTitle>
                     <CardDescription>
-                      {profiles?.filter(p => !p.isDeleted).length || 0} {language === 'hi' ? 'कुल प्रोफाइल' : 'total profiles'}
+                      {profiles?.length || 0} {language === 'hi' ? 'कुल प्रोफाइल' : 'total profiles'}
+                      {(profiles?.filter(p => p.isDeleted).length || 0) > 0 && (
+                        <span className="text-red-600 ml-2">({profiles?.filter(p => p.isDeleted).length} {language === 'hi' ? 'हटाई गई' : 'deleted'})</span>
+                      )}
                     </CardDescription>
                   </div>
                   <Button 
@@ -1529,7 +1532,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 </div>
               </CardHeader>
               <CardContent>
-                {!profiles || profiles.filter(p => !p.isDeleted).length === 0 ? (
+                {!profiles || profiles.length === 0 ? (
                   <Alert>
                     <Info size={18} />
                     <AlertDescription>
@@ -1556,12 +1559,17 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           </TableRow>
                         </TableHeader>
                       <TableBody>
-                        {profiles.filter(p => !p.isDeleted).map((profile) => {
+                        {profiles.map((profile) => {
                           const creds = getUserCredentials(profile.id)
                           return (
-                            <TableRow key={profile.id}>
-                              <TableCell className="font-mono font-semibold">{profile.profileId}</TableCell>
-                              <TableCell className="font-medium">{profile.fullName}</TableCell>
+                            <TableRow key={profile.id} className={profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20' : ''}>
+                              <TableCell className={`font-mono font-semibold ${profile.isDeleted ? 'text-red-600' : ''}`}>{profile.profileId}</TableCell>
+                              <TableCell className={`font-medium ${profile.isDeleted ? 'text-red-600' : ''}`}>
+                                {profile.fullName}
+                                {profile.isDeleted && (
+                                  <Badge variant="destructive" className="ml-2 text-xs">{language === 'hi' ? 'हटाया गया' : 'Deleted'}</Badge>
+                                )}
+                              </TableCell>
                               <TableCell className="font-mono text-primary">{creds?.userId || '-'}</TableCell>
                               <TableCell className="font-mono text-accent">{creds?.password || '-'}</TableCell>
                               <TableCell className="text-sm">
@@ -1570,15 +1578,19 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               <TableCell>{profile.age}</TableCell>
                               <TableCell className="text-sm">{profile.location}</TableCell>
                               <TableCell>
-                              <Badge variant={
-                                profile.status === 'verified' ? 'default' :
-                                profile.status === 'pending' ? 'secondary' :
-                                'destructive'
-                              }>
-                                {profile.status === 'verified' ? t.verified :
-                                 profile.status === 'pending' ? t.pending :
-                                 t.rejected}
-                              </Badge>
+                              {profile.isDeleted ? (
+                                <Badge variant="destructive">{language === 'hi' ? 'हटाया गया' : 'Deleted'}</Badge>
+                              ) : (
+                                <Badge variant={
+                                  profile.status === 'verified' ? 'default' :
+                                  profile.status === 'pending' ? 'secondary' :
+                                  'destructive'
+                                }>
+                                  {profile.status === 'verified' ? t.verified :
+                                   profile.status === 'pending' ? t.pending :
+                                   t.rejected}
+                                </Badge>
+                              )}
                             </TableCell>
                             <TableCell className="text-sm">{profile.email}</TableCell>
                             <TableCell className="font-mono text-sm">{profile.mobile}</TableCell>

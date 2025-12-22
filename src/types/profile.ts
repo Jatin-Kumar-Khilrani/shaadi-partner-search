@@ -6,6 +6,18 @@ export type DrinkingHabit = 'never' | 'occasionally' | 'regularly'
 export type SmokingHabit = 'never' | 'occasionally' | 'regularly'
 export type MembershipPlan = 'free' | '6-month' | '1-year'
 export type Manglik = boolean
+export type ResidentialStatus = 
+  | 'citizen' 
+  | 'permanent-resident' 
+  | 'work-permit' 
+  | 'student-visa' 
+  | 'dependent-visa' 
+  | 'temporary-visa' 
+  | 'oci' 
+  | 'applied-for-pr' 
+  | 'applied-for-citizenship' 
+  | 'tourist-visa' 
+  | 'other'
 
 export interface Profile {
   id: string
@@ -26,6 +38,7 @@ export interface Profile {
   location: string
   state?: string
   country: string
+  residentialStatus?: ResidentialStatus  // Required when living outside India
   maritalStatus: MaritalStatus
   email: string
   mobile: string
