@@ -197,7 +197,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     approveSuccess: language === 'hi' ? 'प्रोफाइल स्वीकृत की गई!' : 'Profile approved!',
     rejectSuccess: language === 'hi' ? 'प्रोफाइल अस्वीकृत की गई!' : 'Profile rejected!',
     blockSuccess: language === 'hi' ? 'प्रोफाइल ब्लॉक की गई!' : 'Profile blocked!',
-    unblock: language === 'hi' ? 'अनब्लॉक करें' : 'Unblock',
     unblockSuccess: language === 'hi' ? 'प्रोफाइल अनब्लॉक की गई!' : 'Profile unblocked!',
     moveToPending: language === 'hi' ? 'पेंडिंग में ले जाएं' : 'Move to Pending',
     movedToPending: language === 'hi' ? 'प्रोफाइल पेंडिंग में ले जाया गया!' : 'Profile moved to pending!',
@@ -2198,7 +2197,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
             </Card>
           </TabsContent>
 
-          {/* Membership Settings Tab */}}
+          {/* Membership Settings Tab */}
           <TabsContent value="membership">
             <div className="space-y-6">
               {/* Default Plan Settings */}
