@@ -1048,7 +1048,7 @@ function App() {
           <MyProfile 
             profile={currentUserProfile}
             language={language}
-            onEdit={currentUserProfile?.returnedForEdit ? handleEditProfile : undefined}
+            onEdit={handleEditProfile}
             onDeleteProfile={handleDeleteProfile}
           />
         )}
