@@ -13,6 +13,16 @@ import type { Profile, Interest, MembershipPlan } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 import { toast } from 'sonner'
 
+// Membership settings interface for plan limits
+interface MembershipSettings {
+  freePlanChatLimit: number
+  freePlanContactLimit: number
+  sixMonthChatLimit: number
+  sixMonthContactLimit: number
+  oneYearChatLimit: number
+  oneYearContactLimit: number
+}
+
 interface ChatProps {
   currentUserProfile: Profile | null
   profiles: Profile[]
@@ -20,12 +30,21 @@ interface ChatProps {
   isAdmin?: boolean
   shouldBlur?: boolean
   membershipPlan?: MembershipPlan
+  membershipSettings?: MembershipSettings
   setProfiles?: (newValue: Profile[] | ((oldValue?: Profile[] | undefined) => Profile[])) => void
 }
 
-const FREE_CHAT_LIMIT = 2
+// Default limits if settings not provided
+const DEFAULT_SETTINGS: MembershipSettings = {
+  freePlanChatLimit: 5,
+  freePlanContactLimit: 0,
+  sixMonthChatLimit: 50,
+  sixMonthContactLimit: 20,
+  oneYearChatLimit: 120,
+  oneYearContactLimit: 50
+}
 
-export function Chat({ currentUserProfile, profiles, language, isAdmin = false, shouldBlur = false, membershipPlan, setProfiles }: ChatProps) {
+export function Chat({ currentUserProfile, profiles, language, isAdmin = false, shouldBlur = false, membershipPlan, membershipSettings, setProfiles }: ChatProps) {
   const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [conversations, setConversations] = useState<ChatConversation[]>([])
@@ -33,6 +52,25 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   const [messageInput, setMessageInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Get settings with defaults
+  const settings = { ...DEFAULT_SETTINGS, ...membershipSettings }
+
+  // Get chat limit based on current plan
+  const getChatLimit = (): number => {
+    if (!membershipPlan || membershipPlan === 'free') {
+      return settings.freePlanChatLimit
+    } else if (membershipPlan === '6-month') {
+      return settings.sixMonthChatLimit
+    } else if (membershipPlan === '1-year') {
+      return settings.oneYearChatLimit
+    }
+    return settings.freePlanChatLimit
+  }
+
+  const chatLimit = getChatLimit()
+  const chatRequestsUsed = currentUserProfile?.chatRequestsUsed || currentUserProfile?.freeChatProfiles || []
+  const remainingChats = Math.max(0, chatLimit - chatRequestsUsed.length)
 
   const t = {
     title: language === 'hi' ? 'चैट' : 'Chat',
@@ -46,18 +84,19 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     broadcast: language === 'hi' ? 'सभी को' : 'Broadcast',
     chatLocked: language === 'hi' ? 'चैट लॉक है' : 'Chat Locked',
     acceptInterestFirst: language === 'hi' ? 'चैट करने के लिए पहले रुचि स्वीकार करें' : 'Accept interest first to chat',
-    freeChatLimitReached: language === 'hi' 
-      ? `मुफ्त चैट सीमा समाप्त: आप केवल ${FREE_CHAT_LIMIT} प्रोफाइल के साथ मुफ्त में चैट कर सकते हैं` 
-      : `Free chat limit reached: You can only chat with ${FREE_CHAT_LIMIT} profiles for free`,
-    upgradeForUnlimitedChat: language === 'hi' 
-      ? 'असीमित चैट के लिए प्रीमियम सदस्यता लें' 
-      : 'Upgrade to premium membership for unlimited chats',
-    freeChatRemaining: language === 'hi' 
-      ? (n: number) => `मुफ्त चैट: ${n} प्रोफाइल शेष` 
-      : (n: number) => `Free chats: ${n} profiles remaining`,
-    lastFreeChat: language === 'hi' 
-      ? 'यह आपकी अंतिम मुफ्त चैट थी!' 
-      : 'This was your last free chat!',
+    chatLimitReached: language === 'hi' 
+      ? `चैट सीमा समाप्त: आप केवल ${chatLimit} प्रोफाइल के साथ चैट कर सकते हैं` 
+      : `Chat limit reached: You can only chat with ${chatLimit} profiles`,
+    upgradeForMoreChats: language === 'hi' 
+      ? 'और चैट के लिए सदस्यता अपग्रेड करें' 
+      : 'Upgrade membership for more chats',
+    chatRemaining: language === 'hi' 
+      ? (n: number) => `चैट शेष: ${n} प्रोफाइल` 
+      : (n: number) => `Chats remaining: ${n} profiles`,
+    lastChat: language === 'hi' 
+      ? 'यह आपकी अंतिम चैट थी!' 
+      : 'This was your last chat!',
+    remainingChats: language === 'hi' ? 'शेष चैट' : 'Chats Left',
   }
 
   const getOtherProfileIdFromConversation = (conversationId: string): string | null => {
@@ -309,7 +348,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     if (!messageInput.trim() || !selectedConversation) return
     if (!isAdmin && !currentUserProfile) return
 
-    // Check if this is admin chat (always allowed for free users)
+    // Check if this is admin chat (always allowed for all users - free feature)
     const isAdminChat = selectedConversation.startsWith('admin-')
 
     if (!isAdmin && selectedConversation.includes('-') && !isAdminChat) {
@@ -319,39 +358,39 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
         return
       }
 
-      // Check free user chat limit (only for user-to-user chats, not admin chats)
-      const isFreeUser = !membershipPlan || membershipPlan === 'free'
-      if (isFreeUser && otherProfileId && setProfiles) {
-        const chattedProfiles = currentUserProfile.freeChatProfiles || []
+      // Check chat limit for all plans (only for user-to-user chats, not admin chats)
+      if (otherProfileId && setProfiles) {
+        // Use new chatRequestsUsed or fallback to legacy freeChatProfiles
+        const chattedProfiles = currentUserProfile.chatRequestsUsed || currentUserProfile.freeChatProfiles || []
         
         // If already chatted with this profile, allow
         if (!chattedProfiles.includes(otherProfileId)) {
           // Check if limit reached
-          if (chattedProfiles.length >= FREE_CHAT_LIMIT) {
-            toast.error(t.freeChatLimitReached, {
-              description: t.upgradeForUnlimitedChat,
+          if (chattedProfiles.length >= chatLimit) {
+            toast.error(t.chatLimitReached, {
+              description: t.upgradeForMoreChats,
               duration: 6000
             })
             return
           }
 
-          // Add to chatted profiles
+          // Add to chatted profiles (use new field)
           const updatedChattedProfiles = [...chattedProfiles, otherProfileId]
           setProfiles((current) => 
             (current || []).map(p => 
               p.id === currentUserProfile.id 
-                ? { ...p, freeChatProfiles: updatedChattedProfiles }
+                ? { ...p, chatRequestsUsed: updatedChattedProfiles, freeChatProfiles: updatedChattedProfiles }
                 : p
             )
           )
 
-          // Notify user about remaining free chats
-          const remaining = FREE_CHAT_LIMIT - updatedChattedProfiles.length
+          // Notify user about remaining chats
+          const remaining = chatLimit - updatedChattedProfiles.length
           if (remaining > 0) {
-            toast.info(t.freeChatRemaining(remaining), { duration: 3000 })
+            toast.info(t.chatRemaining(remaining), { duration: 3000 })
           } else {
-            toast.warning(t.lastFreeChat, {
-              description: t.upgradeForUnlimitedChat,
+            toast.warning(t.lastChat, {
+              description: t.upgradeForMoreChats,
               duration: 5000
             })
           }
@@ -452,7 +491,18 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   return (
     <div className="container mx-auto px-4 md:px-8 py-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">{t.title}</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">{t.title}</h1>
+          {/* Live remaining chats counter */}
+          {!isAdmin && currentUserProfile && (
+            <div className="flex items-center gap-2">
+              <Badge variant={remainingChats > 3 ? "secondary" : remainingChats > 0 ? "warning" : "destructive"} className="text-sm px-3 py-1">
+                <ChatCircle size={16} className="mr-1" />
+                {t.remainingChats}: {remainingChats}/{chatLimit}
+              </Badge>
+            </div>
+          )}
+        </div>
 
         {/* Blur overlay for free/expired membership */}
         {shouldBlur && !isAdmin && (

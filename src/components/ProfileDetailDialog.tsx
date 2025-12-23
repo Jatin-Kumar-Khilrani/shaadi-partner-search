@@ -3,12 +3,32 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { MapPin, Briefcase, GraduationCap, UserCircle, Phone, Envelope, Heart, ShieldCheck, Seal, Calendar, Clock } from '@phosphor-icons/react'
+import { MapPin, Briefcase, GraduationCap, UserCircle, Phone, Envelope, Heart, ShieldCheck, Seal, Calendar, Clock, Eye } from '@phosphor-icons/react'
 import type { Profile, Interest, ContactRequest, MembershipPlan } from '@/types/profile'
 import { toast } from 'sonner'
 import { useKV } from '@/hooks/useKV'
 import { formatDateDDMMYYYY } from '@/lib/utils'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
+
+// Membership settings interface for plan limits
+interface MembershipSettings {
+  freePlanChatLimit: number
+  freePlanContactLimit: number
+  sixMonthChatLimit: number
+  sixMonthContactLimit: number
+  oneYearChatLimit: number
+  oneYearContactLimit: number
+}
+
+// Default limits if settings not provided
+const DEFAULT_SETTINGS: MembershipSettings = {
+  freePlanChatLimit: 5,
+  freePlanContactLimit: 0,
+  sixMonthChatLimit: 50,
+  sixMonthContactLimit: 20,
+  oneYearChatLimit: 120,
+  oneYearContactLimit: 50
+}
 
 interface ProfileDetailDialogProps {
   profile: Profile | null
@@ -20,12 +40,79 @@ interface ProfileDetailDialogProps {
   isAdmin?: boolean
   shouldBlur?: boolean
   membershipPlan?: MembershipPlan
+  membershipSettings?: MembershipSettings
+  setProfiles?: (newValue: Profile[] | ((oldValue?: Profile[] | undefined) => Profile[])) => void
 }
 
-export function ProfileDetailDialog({ profile, open, onClose, language, currentUserProfile, isLoggedIn = false, isAdmin = false, shouldBlur = false, membershipPlan }: ProfileDetailDialogProps) {
+export function ProfileDetailDialog({ profile, open, onClose, language, currentUserProfile, isLoggedIn = false, isAdmin = false, shouldBlur = false, membershipPlan, membershipSettings, setProfiles }: ProfileDetailDialogProps) {
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests, setContactRequests] = useKV<ContactRequest[]>('contactRequests', [])
   const { lightboxState, openLightbox, closeLightbox } = useLightbox()
+
+  // Get settings with defaults
+  const settings = { ...DEFAULT_SETTINGS, ...membershipSettings }
+
+  // Get contact view limit based on current plan
+  const getContactLimit = (): number => {
+    if (!membershipPlan || membershipPlan === 'free') {
+      return settings.freePlanContactLimit
+    } else if (membershipPlan === '6-month') {
+      return settings.sixMonthContactLimit
+    } else if (membershipPlan === '1-year') {
+      return settings.oneYearContactLimit
+    }
+    return settings.freePlanContactLimit
+  }
+
+  const contactLimit = getContactLimit()
+  const contactViewsUsed = currentUserProfile?.contactViewsUsed || []
+  const remainingContacts = Math.max(0, contactLimit - contactViewsUsed.length)
+
+  // Check if user can view contact info for a profile
+  const canViewContactFor = (profileId: string): boolean => {
+    if (isAdmin) return true
+    if (!currentUserProfile) return false
+    if (contactViewsUsed.includes(profileId)) return true // Already viewed
+    return remainingContacts > 0
+  }
+
+  // Track contact view when user views contact info
+  const trackContactView = (profileId: string) => {
+    if (!currentUserProfile || !setProfiles) return
+    if (contactViewsUsed.includes(profileId)) return // Already tracked
+    if (isAdmin) return // Admin doesn't consume quota
+
+    const updatedContactViews = [...contactViewsUsed, profileId]
+    setProfiles((current) => 
+      (current || []).map(p => 
+        p.id === currentUserProfile.id 
+          ? { ...p, contactViewsUsed: updatedContactViews }
+          : p
+      )
+    )
+
+    const remaining = contactLimit - updatedContactViews.length
+    if (remaining > 0) {
+      toast.info(
+        language === 'hi' 
+          ? `संपर्क दृश्य: ${remaining} शेष` 
+          : `Contact views: ${remaining} remaining`,
+        { duration: 3000 }
+      )
+    } else {
+      toast.warning(
+        language === 'hi' 
+          ? 'यह आपका अंतिम संपर्क दृश्य था!' 
+          : 'This was your last contact view!',
+        {
+          description: language === 'hi' 
+            ? 'अधिक संपर्क देखने के लिए अपग्रेड करें' 
+            : 'Upgrade for more contact views',
+          duration: 5000
+        }
+      )
+    }
+  }
 
   if (!profile) return null
 
@@ -136,6 +223,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
       return
     }
 
+    // Check contact view limit (allow if already requested this profile)
     const existingRequest = contactRequests?.find(
       r => r.fromUserId === currentUserProfile.id && 
            r.toUserId === profile.id
@@ -147,6 +235,39 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
       )
       return
     }
+
+    // Check if contact limit allows new request (unless already viewed this profile's contact)
+    if (!canViewContactFor(profile.profileId)) {
+      if (contactLimit === 0) {
+        toast.error(
+          language === 'hi' 
+            ? 'मुफ्त प्लान में संपर्क देखने की सुविधा नहीं है' 
+            : 'Contact viewing not available on Free plan',
+          {
+            description: language === 'hi' 
+              ? 'संपर्क देखने के लिए पेड प्लान में अपग्रेड करें' 
+              : 'Upgrade to paid plan to view contacts',
+            duration: 6000
+          }
+        )
+      } else {
+        toast.error(
+          language === 'hi' 
+            ? `संपर्क देखने की सीमा समाप्त: आप केवल ${contactLimit} संपर्क देख सकते हैं` 
+            : `Contact view limit reached: You can only view ${contactLimit} contacts`,
+          {
+            description: language === 'hi' 
+              ? 'अधिक संपर्क देखने के लिए प्लान अपग्रेड करें' 
+              : 'Upgrade your plan for more contact views',
+            duration: 6000
+          }
+        )
+      }
+      return
+    }
+
+    // Track this contact view (will be confirmed when request is approved)
+    trackContactView(profile.profileId)
 
     const newRequest: ContactRequest = {
       id: `contact-req-${Date.now()}`,
@@ -464,10 +585,19 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
 
           {currentUserProfile && currentUserProfile.id !== profile.id && (
             <section className="bg-muted/30 p-4 rounded-lg">
-              <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
-                <Phone size={22} weight="fill" />
-                {t.contactInfo}
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                  <Phone size={22} weight="fill" />
+                  {t.contactInfo}
+                </h3>
+                {isLoggedIn && !isAdmin && (
+                  <Badge variant={remainingContacts > 0 ? "outline" : "destructive"} className="text-xs">
+                    {language === 'hi' 
+                      ? `शेष: ${remainingContacts}/${contactLimit}` 
+                      : `Remaining: ${remainingContacts}/${contactLimit}`}
+                  </Badge>
+                )}
+              </div>
               {blurContent ? (
                 <div className="text-center py-4">
                   <div className="blur-sm select-none mb-3">
@@ -485,26 +615,55 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                   <p className="text-sm text-muted-foreground mb-4">
                     {t.privacyNotice}
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button 
-                      onClick={handleExpressInterest} 
-                      className="flex-1 bg-primary hover:bg-primary/90"
-                      disabled={!!existingInterest || !!hasReceivedInterestFromProfile}
-                      variant={(existingInterest || hasReceivedInterestFromProfile) ? "secondary" : "default"}
-                    >
-                      <Heart size={20} weight="fill" className="mr-2" />
-                      {existingInterest 
-                        ? (language === 'hi' ? 'रुचि भेजी गई' : 'Interest Sent')
-                        : hasReceivedInterestFromProfile
-                        ? (language === 'hi' ? 'रुचि प्राप्त' : 'Interest Received')
-                        : t.expressInterest
-                      }
-                    </Button>
-                    <Button onClick={handleRequestContact} variant="outline" className="flex-1">
-                      <Phone size={20} className="mr-2" />
-                      {t.requestContact}
-                    </Button>
-                  </div>
+                  {contactLimit === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-amber-600 mb-3">
+                        {language === 'hi' 
+                          ? 'मुफ्त प्लान में संपर्क अनुरोध उपलब्ध नहीं है। पेड प्लान में अपग्रेड करें।' 
+                          : 'Contact requests not available on Free plan. Upgrade to a paid plan.'}
+                      </p>
+                      <Button 
+                        onClick={handleExpressInterest} 
+                        className="flex-1 bg-primary hover:bg-primary/90"
+                        disabled={!!existingInterest || !!hasReceivedInterestFromProfile}
+                        variant={(existingInterest || hasReceivedInterestFromProfile) ? "secondary" : "default"}
+                      >
+                        <Heart size={20} weight="fill" className="mr-2" />
+                        {existingInterest 
+                          ? (language === 'hi' ? 'रुचि भेजी गई' : 'Interest Sent')
+                          : hasReceivedInterestFromProfile
+                          ? (language === 'hi' ? 'रुचि प्राप्त' : 'Interest Received')
+                          : t.expressInterest
+                        }
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button 
+                        onClick={handleExpressInterest} 
+                        className="flex-1 bg-primary hover:bg-primary/90"
+                        disabled={!!existingInterest || !!hasReceivedInterestFromProfile}
+                        variant={(existingInterest || hasReceivedInterestFromProfile) ? "secondary" : "default"}
+                      >
+                        <Heart size={20} weight="fill" className="mr-2" />
+                        {existingInterest 
+                          ? (language === 'hi' ? 'रुचि भेजी गई' : 'Interest Sent')
+                          : hasReceivedInterestFromProfile
+                          ? (language === 'hi' ? 'रुचि प्राप्त' : 'Interest Received')
+                          : t.expressInterest
+                        }
+                      </Button>
+                      <Button 
+                        onClick={handleRequestContact} 
+                        variant="outline" 
+                        className="flex-1"
+                        disabled={remainingContacts <= 0 && !contactViewsUsed.includes(profile.profileId)}
+                      >
+                        <Phone size={20} className="mr-2" />
+                        {t.requestContact}
+                      </Button>
+                    </div>
+                  )}
                 </>
               )}
             </section>

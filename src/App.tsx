@@ -28,7 +28,7 @@ import { sampleWeddingServices } from '@/lib/sampleData'
 
 type View = 'home' | 'search-results' | 'admin' | 'my-matches' | 'my-activity' | 'inbox' | 'chat' | 'my-profile' | 'wedding-services'
 
-// Membership settings interface for dynamic pricing
+// Membership settings interface for dynamic pricing and plan limits
 interface MembershipSettings {
   sixMonthPrice: number
   oneYearPrice: number
@@ -37,6 +37,13 @@ interface MembershipSettings {
   discountPercentage: number
   discountEnabled: boolean
   discountEndDate: string | null
+  // Plan-specific limits
+  freePlanChatLimit: number       // Free plan: chat request limit
+  freePlanContactLimit: number    // Free plan: contact view limit (0 = none)
+  sixMonthChatLimit: number       // 6-month plan: chat request limit
+  sixMonthContactLimit: number    // 6-month plan: contact view limit
+  oneYearChatLimit: number        // 1-year plan: chat request limit
+  oneYearContactLimit: number     // 1-year plan: contact view limit
 }
 
 const defaultMembershipSettings: MembershipSettings = {
@@ -46,7 +53,14 @@ const defaultMembershipSettings: MembershipSettings = {
   oneYearDuration: 12,
   discountPercentage: 0,
   discountEnabled: false,
-  discountEndDate: null
+  discountEndDate: null,
+  // Default plan limits
+  freePlanChatLimit: 5,
+  freePlanContactLimit: 0,
+  sixMonthChatLimit: 50,
+  sixMonthContactLimit: 20,
+  oneYearChatLimit: 120,
+  oneYearContactLimit: 50
 }
 
 function App() {
@@ -1039,6 +1053,7 @@ function App() {
             language={language}
             shouldBlur={currentMembershipStatus.shouldBlur}
             membershipPlan={currentUserProfile?.membershipPlan}
+            membershipSettings={membershipSettings || defaultMembershipSettings}
             setProfiles={setProfiles}
           />
         )}
@@ -1130,6 +1145,8 @@ function App() {
         isLoggedIn={!!currentUserProfile}
         shouldBlur={currentMembershipStatus.shouldBlur}
         membershipPlan={currentUserProfile?.membershipPlan}
+        membershipSettings={membershipSettings || defaultMembershipSettings}
+        setProfiles={setProfiles}
       />
 
       <RegistrationDialog

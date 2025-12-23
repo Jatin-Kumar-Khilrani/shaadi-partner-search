@@ -106,9 +106,12 @@ export interface Profile {
     country?: string
     capturedAt: string
   }
-  // Free user view/chat limits
-  freeViewedProfiles?: string[]  // Profile IDs viewed by free user (max 2)
-  freeChatProfiles?: string[]    // Profile IDs chatted by free user (max 2)
+  // Plan-based usage tracking (chat requests and contact views)
+  chatRequestsUsed?: string[]     // Profile IDs user has initiated chat with
+  contactViewsUsed?: string[]     // Profile IDs user has viewed contact info for
+  // Legacy fields (kept for backward compatibility, will migrate to new fields)
+  freeViewedProfiles?: string[]  // Profile IDs viewed by free user (deprecated)
+  freeChatProfiles?: string[]    // Profile IDs chatted by free user (deprecated)
   // Payment verification for paid plans
   paymentScreenshotUrl?: string  // URL to payment screenshot
   paymentStatus?: 'not-required' | 'pending' | 'verified' | 'rejected'

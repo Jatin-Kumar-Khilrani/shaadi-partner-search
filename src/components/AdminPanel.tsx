@@ -50,6 +50,13 @@ interface MembershipSettings {
   discountPercentage: number
   discountEnabled: boolean
   discountEndDate: string
+  // Plan-specific limits
+  freePlanChatLimit: number       // Free plan: chat request limit
+  freePlanContactLimit: number    // Free plan: contact view limit (0 = none)
+  sixMonthChatLimit: number       // 6-month plan: chat request limit
+  sixMonthContactLimit: number    // 6-month plan: contact view limit
+  oneYearChatLimit: number        // 1-year plan: chat request limit
+  oneYearContactLimit: number     // 1-year plan: contact view limit
 }
 
 export function AdminPanel({ profiles, setProfiles, users, language, onLogout, onLoginAsUser }: AdminPanelProps) {
@@ -63,7 +70,14 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     oneYearDuration: 12,
     discountPercentage: 0,
     discountEnabled: false,
-    discountEndDate: ''
+    discountEndDate: '',
+    // Default plan limits
+    freePlanChatLimit: 5,
+    freePlanContactLimit: 0,
+    sixMonthChatLimit: 50,
+    sixMonthContactLimit: 20,
+    oneYearChatLimit: 120,
+    oneYearContactLimit: 50
   })
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [selectedProfiles, setSelectedProfiles] = useState<string[]>([])
@@ -2896,6 +2910,114 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         />
                       </div>
                     </div>
+                  </div>
+                  
+                  {/* Plan Limits Settings */}
+                  <div className="mt-6 p-4 border rounded-lg bg-blue-50/50 dark:bg-blue-900/20">
+                    <h4 className="font-semibold flex items-center gap-2 mb-4">
+                      <ChatCircle size={18} />
+                      {language === 'hi' ? 'प्लान सीमाएं (चैट और संपर्क)' : 'Plan Limits (Chat & Contact)'}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {/* Free Plan Limits */}
+                      <div className="space-y-3 p-3 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <h5 className="font-medium text-sm text-gray-600 dark:text-gray-300">
+                          {language === 'hi' ? '🆓 मुफ्त प्लान' : '🆓 Free Plan'}
+                        </h5>
+                        <div className="space-y-2">
+                          <Label className="text-xs">{language === 'hi' ? 'चैट अनुरोध सीमा' : 'Chat Request Limit'}</Label>
+                          <Input 
+                            type="number" 
+                            min="0"
+                            value={membershipSettings?.freePlanChatLimit ?? 5}
+                            onChange={(e) => setMembershipSettings(prev => ({
+                              ...prev!,
+                              freePlanChatLimit: parseInt(e.target.value) || 0
+                            }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">{language === 'hi' ? 'संपर्क देखने की सीमा' : 'Contact View Limit'}</Label>
+                          <Input 
+                            type="number" 
+                            min="0"
+                            value={membershipSettings?.freePlanContactLimit ?? 0}
+                            onChange={(e) => setMembershipSettings(prev => ({
+                              ...prev!,
+                              freePlanContactLimit: parseInt(e.target.value) || 0
+                            }))}
+                          />
+                          <p className="text-xs text-muted-foreground">{language === 'hi' ? '0 = कोई संपर्क नहीं' : '0 = No contacts'}</p>
+                        </div>
+                      </div>
+                      
+                      {/* 6 Month Plan Limits */}
+                      <div className="space-y-3 p-3 border rounded-lg bg-blue-50 dark:bg-blue-900/30">
+                        <h5 className="font-medium text-sm text-blue-600 dark:text-blue-300">
+                          {language === 'hi' ? '💎 6 महीने का प्लान' : '💎 6 Month Plan'}
+                        </h5>
+                        <div className="space-y-2">
+                          <Label className="text-xs">{language === 'hi' ? 'चैट अनुरोध सीमा' : 'Chat Request Limit'}</Label>
+                          <Input 
+                            type="number" 
+                            min="0"
+                            value={membershipSettings?.sixMonthChatLimit ?? 50}
+                            onChange={(e) => setMembershipSettings(prev => ({
+                              ...prev!,
+                              sixMonthChatLimit: parseInt(e.target.value) || 0
+                            }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">{language === 'hi' ? 'संपर्क देखने की सीमा' : 'Contact View Limit'}</Label>
+                          <Input 
+                            type="number" 
+                            min="0"
+                            value={membershipSettings?.sixMonthContactLimit ?? 20}
+                            onChange={(e) => setMembershipSettings(prev => ({
+                              ...prev!,
+                              sixMonthContactLimit: parseInt(e.target.value) || 0
+                            }))}
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* 1 Year Plan Limits */}
+                      <div className="space-y-3 p-3 border rounded-lg bg-green-50 dark:bg-green-900/30">
+                        <h5 className="font-medium text-sm text-green-600 dark:text-green-300">
+                          {language === 'hi' ? '👑 1 साल का प्लान' : '👑 1 Year Plan'}
+                        </h5>
+                        <div className="space-y-2">
+                          <Label className="text-xs">{language === 'hi' ? 'चैट अनुरोध सीमा' : 'Chat Request Limit'}</Label>
+                          <Input 
+                            type="number" 
+                            min="0"
+                            value={membershipSettings?.oneYearChatLimit ?? 120}
+                            onChange={(e) => setMembershipSettings(prev => ({
+                              ...prev!,
+                              oneYearChatLimit: parseInt(e.target.value) || 0
+                            }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">{language === 'hi' ? 'संपर्क देखने की सीमा' : 'Contact View Limit'}</Label>
+                          <Input 
+                            type="number" 
+                            min="0"
+                            value={membershipSettings?.oneYearContactLimit ?? 50}
+                            onChange={(e) => setMembershipSettings(prev => ({
+                              ...prev!,
+                              oneYearContactLimit: parseInt(e.target.value) || 0
+                            }))}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      {language === 'hi' 
+                        ? '💬 सभी प्लान में एडमिन चैट मुफ्त है। ये सीमाएं केवल प्रोफाइल-टू-प्रोफाइल चैट और संपर्क देखने पर लागू होती हैं।' 
+                        : '💬 Admin chat is free for all plans. These limits apply only to profile-to-profile chats and contact views.'}
+                    </p>
                   </div>
                   
                   <div className="mt-6 flex justify-end">
