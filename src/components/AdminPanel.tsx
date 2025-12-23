@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useKV, forceRefreshFromAzure } from '@/hooks/useKV'
+import { useKV } from '@/hooks/useKV'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ShieldCheck, X, Check, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, ArrowsClockwise, User } from '@phosphor-icons/react'
+import { ShieldCheck, X, Check, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User } from '@phosphor-icons/react'
 import type { Profile, WeddingService, PaymentTransaction } from '@/types/profile'
 import type { User } from '@/types/user'
 import type { ChatMessage } from '@/types/chat'
@@ -80,7 +80,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [viewProfileDialog, setViewProfileDialog] = useState<Profile | null>(null)
   const [faceVerificationDialog, setFaceVerificationDialog] = useState<Profile | null>(null)
   const [faceVerificationResult, setFaceVerificationResult] = useState<PhotoVerificationResult | null>(null)
-  const [isRefreshing, setIsRefreshing] = useState(false)
   const [isVerifyingFace, setIsVerifyingFace] = useState(false)
   const [editMembershipDialog, setEditMembershipDialog] = useState<Profile | null>(null)
   const [returnToEditDialog, setReturnToEditDialog] = useState<Profile | null>(null)
@@ -196,11 +195,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const t = {
     title: language === 'hi' ? 'प्रशासन पैनल' : 'Admin Panel',
     description: language === 'hi' ? 'प्रोफाइल सत्यापन और प्रबंधन' : 'Profile verification and management',
-    refreshData: language === 'hi' ? 'डेटा रिफ्रेश करें' : 'Refresh Data',
-    refreshing: language === 'hi' ? 'रिफ्रेश हो रहा है...' : 'Refreshing...',
-    dataRefreshed: language === 'hi' ? 'डेटा रिफ्रेश हो गया' : 'Data refreshed',
-    resetSampleData: language === 'hi' ? 'सैंपल डेटा रीसेट करें' : 'Reset Sample Data',
-    sampleDataReset: language === 'hi' ? 'सैंपल डेटा रीसेट हो गया' : 'Sample data has been reset',
     pendingProfiles: language === 'hi' ? 'लंबित प्रोफाइल' : 'Pending Profiles',
     approvedProfiles: language === 'hi' ? 'स्वीकृत प्रोफाइल' : 'Approved Profiles',
     allDatabase: language === 'hi' ? 'पूरा डेटाबेस' : 'All Database',
@@ -1009,31 +1003,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
             </div>
             {onLogout && (
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={async () => {
-                    setIsRefreshing(true)
-                    try {
-                      // Mark that we've loaded from Azure to prevent sample data from loading
-                      localStorage.setItem('shaadi_partner_azure_loaded', 'true')
-                      // Wait a bit for any pending Azure saves to complete
-                      await new Promise(resolve => setTimeout(resolve, 500))
-                      forceRefreshFromAzure('profiles')
-                      forceRefreshFromAzure('users')
-                      forceRefreshFromAzure('weddingServices')
-                      // Wait for Azure fetch to complete
-                      await new Promise(resolve => setTimeout(resolve, 2000))
-                      toast.success(t.dataRefreshed)
-                    } finally {
-                      setIsRefreshing(false)
-                    }
-                  }}
-                  disabled={isRefreshing}
-                  className="gap-2"
-                >
-                  <ArrowsClockwise size={18} className={isRefreshing ? 'animate-spin' : ''} />
-                  {isRefreshing ? t.refreshing : t.refreshData}
-                </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => {

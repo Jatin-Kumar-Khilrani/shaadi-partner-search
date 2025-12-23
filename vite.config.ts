@@ -64,9 +64,13 @@ export default defineConfig({
           'azure-storage': ['@azure/storage-blob'],
           // React day picker for calendar
           'calendar': ['react-day-picker'],
+          // QR code
+          'qrcode': ['qrcode'],
+          // Sonner toast
+          'sonner': ['sonner'],
         },
       },
     },
-    chunkSizeWarningLimit: 700,
+    chunkSizeWarningLimit: 800,
   },
 });

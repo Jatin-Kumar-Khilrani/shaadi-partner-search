@@ -17,6 +17,7 @@ import { toast } from 'sonner'
 import type { Profile } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 import { BiodataGenerator } from './BiodataGenerator'
+import { PhotoLightbox } from './PhotoLightbox'
 
 interface MyProfileProps {
   profile: Profile | null
@@ -28,6 +29,7 @@ interface MyProfileProps {
 
 export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdateProfile }: MyProfileProps) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
+  const [showPhotoLightbox, setShowPhotoLightbox] = useState(false)
   const [showBiodataGenerator, setShowBiodataGenerator] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showEditConfirmDialog, setShowEditConfirmDialog] = useState(false)
@@ -49,15 +51,26 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
     personalInfo: language === 'hi' ? 'व्यक्तिगत जानकारी' : 'Personal Information',
     familyInfo: language === 'hi' ? 'पारिवारिक जानकारी' : 'Family Information',
     contactInfo: language === 'hi' ? 'संपर्क जानकारी' : 'Contact Information',
+    lifestyleInfo: language === 'hi' ? 'जीवनशैली' : 'Lifestyle',
     age: language === 'hi' ? 'आयु' : 'Age',
     years: language === 'hi' ? 'वर्ष' : 'years',
     height: language === 'hi' ? 'ऊंचाई' : 'Height',
     education: language === 'hi' ? 'शिक्षा' : 'Education',
     occupation: language === 'hi' ? 'व्यवसाय' : 'Occupation',
+    salary: language === 'hi' ? 'वार्षिक आय' : 'Annual Income',
     location: language === 'hi' ? 'स्थान' : 'Location',
+    state: language === 'hi' ? 'राज्य' : 'State',
+    country: language === 'hi' ? 'देश' : 'Country',
+    residentialStatus: language === 'hi' ? 'आवासीय स्थिति' : 'Residential Status',
     religion: language === 'hi' ? 'धर्म' : 'Religion',
     caste: language === 'hi' ? 'जाति' : 'Caste',
+    community: language === 'hi' ? 'समुदाय' : 'Community',
+    motherTongue: language === 'hi' ? 'मातृभाषा' : 'Mother Tongue',
     maritalStatus: language === 'hi' ? 'वैवाहिक स्थिति' : 'Marital Status',
+    manglik: language === 'hi' ? 'मांगलिक' : 'Manglik',
+    diet: language === 'hi' ? 'आहार' : 'Diet',
+    drinking: language === 'hi' ? 'शराब' : 'Drinking',
+    smoking: language === 'hi' ? 'धूम्रपान' : 'Smoking',
     aboutMe: language === 'hi' ? 'मेरे बारे में' : 'About Me',
     familyDetails: language === 'hi' ? 'पारिवारिक विवरण' : 'Family Details',
     email: language === 'hi' ? 'ईमेल' : 'Email',
@@ -87,6 +100,56 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
     confirmEdit: language === 'hi' ? 'संपादित करें' : 'Proceed to Edit',
     pendingApproval: language === 'hi' ? 'स्वीकृति लंबित' : 'Pending Approval',
     pendingApprovalDesc: language === 'hi' ? 'आपकी प्रोफ़ाइल एडमिन द्वारा समीक्षा के लिए लंबित है। स्वीकृति तक अन्य उपयोगकर्ताओं को दिखाई नहीं देगी।' : 'Your profile is pending review by admin. It will not be visible to other users until approved.',
+  }
+
+  // Helper functions for displaying lifestyle values
+  const getDietLabel = (diet: string | undefined) => {
+    const labels: Record<string, { hi: string; en: string }> = {
+      'veg': { hi: 'शाकाहारी', en: 'Vegetarian' },
+      'non-veg': { hi: 'मांसाहारी', en: 'Non-Vegetarian' },
+      'eggetarian': { hi: 'अंडाहारी', en: 'Eggetarian' },
+    }
+    return diet ? (labels[diet]?.[language] || diet) : '-'
+  }
+
+  const getHabitLabel = (habit: string | undefined) => {
+    const labels: Record<string, { hi: string; en: string }> = {
+      'never': { hi: 'कभी नहीं', en: 'Never' },
+      'occasionally': { hi: 'कभी-कभी', en: 'Occasionally' },
+      'regularly': { hi: 'नियमित', en: 'Regularly' },
+    }
+    return habit ? (labels[habit]?.[language] || habit) : '-'
+  }
+
+  const getManglikLabel = (manglik: boolean | undefined) => {
+    if (manglik === undefined) return '-'
+    return manglik ? (language === 'hi' ? 'हां' : 'Yes') : (language === 'hi' ? 'नहीं' : 'No')
+  }
+
+  const getResidentialStatusLabel = (status: string | undefined) => {
+    const labels: Record<string, { hi: string; en: string }> = {
+      'citizen': { hi: 'नागरिक', en: 'Citizen' },
+      'permanent-resident': { hi: 'स्थायी निवासी', en: 'Permanent Resident' },
+      'work-permit': { hi: 'वर्क परमिट', en: 'Work Permit' },
+      'student-visa': { hi: 'स्टूडेंट वीज़ा', en: 'Student Visa' },
+      'dependent-visa': { hi: 'आश्रित वीज़ा', en: 'Dependent Visa' },
+      'temporary-visa': { hi: 'अस्थायी वीज़ा', en: 'Temporary Visa' },
+      'oci': { hi: 'OCI', en: 'OCI' },
+      'applied-for-pr': { hi: 'PR के लिए आवेदन', en: 'Applied for PR' },
+      'applied-for-citizenship': { hi: 'नागरिकता के लिए आवेदन', en: 'Applied for Citizenship' },
+      'tourist-visa': { hi: 'टूरिस्ट वीज़ा', en: 'Tourist Visa' },
+      'other': { hi: 'अन्य', en: 'Other' },
+    }
+    return status ? (labels[status]?.[language] || status) : '-'
+  }
+
+  const getMaritalStatusLabel = (status: string) => {
+    const labels: Record<string, { hi: string; en: string }> = {
+      'never-married': { hi: 'अविवाहित', en: 'Never Married' },
+      'divorced': { hi: 'तलाकशुदा', en: 'Divorced' },
+      'widowed': { hi: 'विधवा/विधुर', en: 'Widowed' },
+    }
+    return labels[status]?.[language] || status
   }
 
   const handleEditClick = () => {
@@ -614,13 +677,24 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                 <div className="space-y-4">
                   {photos.length > 0 ? (
                     <div className="space-y-3">
-                      <div className="aspect-square rounded-lg overflow-hidden bg-muted">
+                      <button
+                        onClick={() => setShowPhotoLightbox(true)}
+                        className="aspect-square rounded-lg overflow-hidden bg-muted w-full cursor-zoom-in hover:opacity-90 transition-opacity ring-2 ring-transparent hover:ring-primary focus:ring-primary focus:outline-none relative group"
+                        title={language === 'hi' ? 'बड़ा करने के लिए क्लिक करें' : 'Click to enlarge'}
+                      >
                         <img 
                           src={photos[currentPhotoIndex]} 
                           alt={profile.fullName}
                           className="w-full h-full object-cover"
                         />
-                      </div>
+                        {/* Zoom indicator overlay */}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white px-3 py-1.5 rounded-full text-sm flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Zm112,0a8,8,0,0,1-8,8H120v24a8,8,0,0,1-16,0V120H80a8,8,0,0,1,0-16h24V80a8,8,0,0,1,16,0v24h24A8,8,0,0,1,152,112Z"></path></svg>
+                            {language === 'hi' ? 'बड़ा करें' : 'Enlarge'}
+                          </div>
+                        </div>
+                      </button>
                       {photos.length > 1 && (
                         <div className="grid grid-cols-5 gap-2">
                           {photos.map((photo, index) => (
@@ -738,13 +812,35 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                         </p>
                       </div>
 
+                      {profile.salary && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.salary}</p>
+                          <p className="font-medium flex items-center gap-2">
+                            <CurrencyInr size={16} />
+                            {profile.salary}
+                          </p>
+                        </div>
+                      )}
+
                       <div>
                         <p className="text-sm text-muted-foreground">{t.location}</p>
                         <p className="font-medium flex items-center gap-2">
                           <MapPin size={16} />
-                          {profile.location}, {profile.country}
+                          {profile.location}{profile.state ? `, ${profile.state}` : ''}
                         </p>
                       </div>
+
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.country}</p>
+                        <p className="font-medium">{profile.country || 'India'}</p>
+                      </div>
+
+                      {profile.residentialStatus && profile.country !== 'India' && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.residentialStatus}</p>
+                          <p className="font-medium">{getResidentialStatusLabel(profile.residentialStatus)}</p>
+                        </div>
+                      )}
 
                       {profile.religion && (
                         <div>
@@ -760,9 +856,48 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                         </div>
                       )}
 
+                      {profile.community && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.community}</p>
+                          <p className="font-medium">{profile.community}</p>
+                        </div>
+                      )}
+
+                      {profile.motherTongue && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.motherTongue}</p>
+                          <p className="font-medium">{profile.motherTongue}</p>
+                        </div>
+                      )}
+
                       <div>
                         <p className="text-sm text-muted-foreground">{t.maritalStatus}</p>
-                        <p className="font-medium">{profile.maritalStatus}</p>
+                        <p className="font-medium">{getMaritalStatusLabel(profile.maritalStatus)}</p>
+                      </div>
+
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.manglik}</p>
+                        <p className="font-medium">{getManglikLabel(profile.manglik)}</p>
+                      </div>
+                    </div>
+
+                    {/* Lifestyle Section */}
+                    <Separator />
+                    <h4 className="font-semibold flex items-center gap-2 text-primary">
+                      {t.lifestyleInfo}
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.diet}</p>
+                        <p className="font-medium">{getDietLabel(profile.dietPreference)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.drinking}</p>
+                        <p className="font-medium">{getHabitLabel(profile.drinkingHabit)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.smoking}</p>
+                        <p className="font-medium">{getHabitLabel(profile.smokingHabit)}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -845,6 +980,16 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
           </Card>
         </div>
       </div>
+
+      {/* Photo Lightbox for enlarged view */}
+      {photos.length > 0 && (
+        <PhotoLightbox
+          photos={photos}
+          initialIndex={currentPhotoIndex}
+          open={showPhotoLightbox}
+          onClose={() => setShowPhotoLightbox(false)}
+        />
+      )}
     </div>
   )
 }
