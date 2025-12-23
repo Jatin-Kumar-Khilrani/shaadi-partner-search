@@ -674,8 +674,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     
     // Get the amount from membership settings or use defaults
     const amount = plan === '1-year' 
-      ? (membershipSettings?.oneYearPrice || 2499)
-      : (membershipSettings?.sixMonthPrice || 1499)
+      ? (membershipSettings?.oneYearPrice || 900)
+      : (membershipSettings?.sixMonthPrice || 500)
     
     // Generate unique receipt number
     const receiptNumber = `RCP${Date.now().toString().slice(-8)}`
