@@ -1391,7 +1391,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="gender">{language === 'hi' ? 'लिंग' : 'Gender'} *</Label>
-                    <Select onValueChange={(value: Gender) => updateField('gender', value)} value={formData.gender}>
+                    <Select onValueChange={(value: Gender) => updateField('gender', value)} value={formData.gender || ''}>
                       <SelectTrigger id="gender" className="w-full">
                         <SelectValue placeholder={t.fields.select} />
                       </SelectTrigger>
@@ -1466,7 +1466,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
                   <div className="space-y-2">
                     <Label htmlFor="maritalStatus">{language === 'hi' ? 'वैवाहिक स्थिति' : 'Marital Status'} *</Label>
-                    <Select onValueChange={(value: MaritalStatus) => updateField('maritalStatus', value)} value={formData.maritalStatus}>
+                    <Select onValueChange={(value: MaritalStatus) => updateField('maritalStatus', value)} value={formData.maritalStatus || ''}>
                       <SelectTrigger id="maritalStatus" className="w-full">
                         <SelectValue placeholder={t.fields.select} />
                       </SelectTrigger>
@@ -1492,7 +1492,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 <div className="space-y-2">
                   <Label htmlFor="horoscopeMatching">{language === 'hi' ? 'कुंडली मिलान' : 'Horoscope Matching'} *</Label>
                   <Select 
-                    value={formData.horoscopeMatching} 
+                    value={formData.horoscopeMatching || 'not-mandatory'} 
                     onValueChange={(value: 'mandatory' | 'not-mandatory' | 'decide-later') => updateField('horoscopeMatching', value)}
                   >
                     <SelectTrigger id="horoscopeMatching" className="w-full">
@@ -2570,7 +2570,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   <p className="text-muted-foreground">{t.registration.affordablePricing}</p>
                 </div>
 
-                <RadioGroup value={formData.membershipPlan} onValueChange={(value: MembershipPlan) => updateField('membershipPlan', value)}>
+                <RadioGroup value={formData.membershipPlan || ''} onValueChange={(value: MembershipPlan) => updateField('membershipPlan', value)}>
                   <div className="space-y-4">
                     {/* Free Plan - Introductory Offer */}
                     <label htmlFor="free" className="cursor-pointer">
