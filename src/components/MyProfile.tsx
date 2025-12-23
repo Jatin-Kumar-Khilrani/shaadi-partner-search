@@ -221,7 +221,8 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
   const photos = profile.photos?.length > 0 ? profile.photos : []
   const isPaidUser = !!profile.membershipPlan && profile.membershipExpiry && new Date(profile.membershipExpiry) > new Date()
   const isFreePlan = profile.membershipPlan === 'free'
-  const canAccessBiodata = isPaidUser && !isFreePlan
+  const isApproved = profile.status === 'approved'
+  const canAccessBiodata = isPaidUser && !isFreePlan && isApproved
 
   return (
     <div className="container mx-auto px-4 md:px-8 py-8">
@@ -229,6 +230,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">{t.title}</h1>
           <div className="flex gap-2">
+            {isApproved && (
             <Button 
               onClick={() => {
                 if (!canAccessBiodata) {
@@ -248,6 +250,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
               {t.generateBiodata}
               {!canAccessBiodata && <Badge variant="outline" className="ml-1 text-xs">Premium</Badge>}
             </Button>
+            )}
             {onEdit && (
               <Button onClick={handleEditClick} className="gap-2">
                 <PencilSimple size={20} />
