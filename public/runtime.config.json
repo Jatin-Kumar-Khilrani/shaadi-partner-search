@@ -15,7 +15,8 @@
     },
     "faceApi": {
       "endpoint": "https://shaadipartnerface.cognitiveservices.azure.com/",
-      "description": "Azure Face API endpoint for face detection in selfies. API key should be stored in Key Vault."
+      "key": "",
+      "description": "Azure Face API endpoint and key for face detection in selfies. For local dev, add key here. In production, use Key Vault."
     }
   },
   

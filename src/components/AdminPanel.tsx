@@ -152,6 +152,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [showIdProofViewDialog, setShowIdProofViewDialog] = useState(false)
   const [idProofViewProfile, setIdProofViewProfile] = useState<Profile | null>(null)
   
+  // Payment Screenshot viewing dialog state
+  const [showPaymentViewDialog, setShowPaymentViewDialog] = useState(false)
+  const [paymentViewProfile, setPaymentViewProfile] = useState<Profile | null>(null)
+  const [paymentRejectionReason, setPaymentRejectionReason] = useState('')
+  
   // Admin Edit Profile dialog state
   const [adminEditDialog, setAdminEditDialog] = useState<Profile | null>(null)
   const [adminEditFormData, setAdminEditFormData] = useState<{
@@ -1031,6 +1036,24 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               <CurrencyCircleDollar size={16} weight="fill" className="shrink-0" />
               <span className="hidden sm:inline">{t.accounts}</span>
               <span className="sm:hidden">{language === 'hi' ? 'खाते' : 'Accounts'}</span>
+              {(() => {
+                const pendingPaymentsCount = profiles?.filter(p => 
+                  p.membershipPlan && 
+                  p.membershipPlan !== 'free' && 
+                  p.paymentScreenshotUrl && 
+                  (p.paymentStatus === 'pending' || !p.paymentStatus) &&
+                  !p.isDeleted
+                ).length || 0
+                const pendingRenewalsCount = profiles?.filter(p => 
+                  p.renewalPaymentScreenshotUrl && 
+                  p.renewalPaymentStatus === 'pending' &&
+                  !p.isDeleted
+                ).length || 0
+                const totalPending = pendingPaymentsCount + pendingRenewalsCount
+                return totalPending > 0 ? (
+                  <Badge variant="destructive" className="ml-1 text-xs">{totalPending}</Badge>
+                ) : null
+              })()}
             </TabsTrigger>
             <TabsTrigger value="chat" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
               <ChatCircle size={16} weight="fill" className="shrink-0" />
@@ -1183,6 +1206,33 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     </div>
                                   )}
                                 </div>
+                                {/* Payment Screenshot (for paid plans) */}
+                                {profile.membershipPlan && profile.membershipPlan !== 'free' && (
+                                  <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground font-medium">
+                                      {language === 'hi' ? 'भुगतान स्क्रीनशॉट' : 'Payment'}
+                                    </p>
+                                    {profile.paymentScreenshotUrl ? (
+                                      <img 
+                                        src={profile.paymentScreenshotUrl} 
+                                        alt="Payment Screenshot"
+                                        className={`w-16 h-16 object-cover rounded-md border-2 cursor-pointer hover:opacity-80 transition-opacity ${
+                                          profile.paymentStatus === 'verified' ? 'border-green-500' : 
+                                          profile.paymentStatus === 'rejected' ? 'border-red-500' : 'border-amber-400'
+                                        }`}
+                                        onClick={() => {
+                                          setPaymentViewProfile(profile)
+                                          setShowPaymentViewDialog(true)
+                                        }}
+                                        title={language === 'hi' ? 'भुगतान सत्यापित करें' : 'Verify Payment'}
+                                      />
+                                    ) : (
+                                      <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground text-center p-1">
+                                        {language === 'hi' ? 'अपलोड नहीं' : 'Not uploaded'}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                               
                               <div className="flex-1">
@@ -1198,6 +1248,27 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     </Badge>
                                   )}
                                   {profile.isBlocked && <Badge variant="destructive">{t.blocked}</Badge>}
+                                  {/* Membership Plan Badge */}
+                                  {profile.membershipPlan && (
+                                    <Badge variant={profile.membershipPlan === 'free' ? 'outline' : 'default'} 
+                                      className={profile.membershipPlan === '1-year' ? 'bg-accent text-accent-foreground' : 
+                                                 profile.membershipPlan === '6-month' ? 'bg-primary text-primary-foreground' : ''}>
+                                      {profile.membershipPlan === 'free' ? (language === 'hi' ? 'फ्री' : 'Free') :
+                                       profile.membershipPlan === '6-month' ? (language === 'hi' ? '6 महीने' : '6 Month') :
+                                       (language === 'hi' ? '1 वर्ष' : '1 Year')}
+                                    </Badge>
+                                  )}
+                                  {/* Payment Status Badge */}
+                                  {profile.paymentStatus && profile.paymentStatus !== 'not-required' && (
+                                    <Badge variant={profile.paymentStatus === 'verified' ? 'default' : 
+                                                    profile.paymentStatus === 'pending' ? 'secondary' : 'destructive'}
+                                      className={profile.paymentStatus === 'verified' ? 'bg-green-600' : 
+                                                 profile.paymentStatus === 'pending' ? 'bg-amber-500 text-white' : ''}>
+                                      {profile.paymentStatus === 'verified' ? (language === 'hi' ? '₹ सत्यापित' : '₹ Verified') :
+                                       profile.paymentStatus === 'pending' ? (language === 'hi' ? '₹ लंबित' : '₹ Pending') :
+                                       (language === 'hi' ? '₹ अस्वीकृत' : '₹ Rejected')}
+                                    </Badge>
+                                  )}
                                 </div>
                                 
                                 {/* Edit Reason Alert */}
@@ -1369,6 +1440,36 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 <IdentificationCard size={16} className="mr-1 shrink-0" />
                                 <span className="truncate">{profile.idProofVerified ? `✓ ${t.digilockerVerified}` : t.verifyIdProof}</span>
                               </Button>
+                              {/* Payment Verification Button (for paid plans) */}
+                              {profile.membershipPlan && profile.membershipPlan !== 'free' && (
+                                <Button 
+                                  onClick={() => {
+                                    setPaymentViewProfile(profile)
+                                    setPaymentRejectionReason('')
+                                    setShowPaymentViewDialog(true)
+                                  }}
+                                  variant="outline"
+                                  size="sm"
+                                  className={`w-full ${profile.paymentScreenshotUrl ? 
+                                    (profile.paymentStatus === 'verified' ? 'text-green-600 border-green-400' : 
+                                     profile.paymentStatus === 'rejected' ? 'text-red-600 border-red-400' : 
+                                     'text-amber-600 border-amber-400') : 
+                                    'text-gray-400 border-gray-300'}`}
+                                  disabled={!profile.paymentScreenshotUrl}
+                                  title={profile.paymentScreenshotUrl ? 
+                                    (language === 'hi' ? 'भुगतान सत्यापित करें' : 'Verify Payment') : 
+                                    (language === 'hi' ? 'भुगतान स्क्रीनशॉट अपलोड नहीं किया' : 'Payment screenshot not uploaded')}
+                                >
+                                  <CurrencyInr size={16} className="mr-1 shrink-0" />
+                                  <span className="truncate">
+                                    {profile.paymentStatus === 'verified' ? 
+                                      (language === 'hi' ? '✓ भुगतान सत्यापित' : '✓ Payment Verified') : 
+                                      profile.paymentStatus === 'rejected' ? 
+                                      (language === 'hi' ? '✗ भुगतान अस्वीकृत' : '✗ Payment Rejected') :
+                                      (language === 'hi' ? '₹ भुगतान सत्यापित करें' : '₹ Verify Payment')}
+                                  </span>
+                                </Button>
+                              )}
                               <Button 
                                 onClick={() => handleApprove(profile.id)} 
                                 variant="default"
@@ -2157,6 +2258,319 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Pending Payment Verification Section */}
+                {(() => {
+                  const pendingPayments = profiles?.filter(p => 
+                    p.membershipPlan && 
+                    p.membershipPlan !== 'free' && 
+                    p.paymentScreenshotUrl && 
+                    (p.paymentStatus === 'pending' || !p.paymentStatus) &&
+                    !p.isDeleted
+                  ) || []
+                  
+                  const rejectedPayments = profiles?.filter(p => 
+                    p.membershipPlan && 
+                    p.membershipPlan !== 'free' && 
+                    p.paymentStatus === 'rejected' &&
+                    !p.isDeleted
+                  ) || []
+
+                  return (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <CurrencyInr size={20} className="text-amber-600" />
+                        {language === 'hi' ? 'भुगतान सत्यापन लंबित' : 'Pending Payment Verification'}
+                        {pendingPayments.length > 0 && (
+                          <Badge variant="destructive">{pendingPayments.length}</Badge>
+                        )}
+                      </h3>
+
+                      {pendingPayments.length === 0 && rejectedPayments.length === 0 ? (
+                        <Alert className="bg-green-50 border-green-200 dark:bg-green-900/20">
+                          <CheckCircle size={16} className="text-green-600" />
+                          <AlertDescription className="text-green-700">
+                            {language === 'hi' ? 'कोई लंबित भुगतान सत्यापन नहीं!' : 'No pending payment verifications!'}
+                          </AlertDescription>
+                        </Alert>
+                      ) : (
+                        <div className="space-y-3">
+                          {/* Pending Payments */}
+                          {pendingPayments.map(profile => (
+                            <Card key={profile.id} className="border-amber-300 bg-amber-50/50 dark:bg-amber-900/10">
+                              <CardContent className="p-4">
+                                <div className="flex items-center gap-4">
+                                  {/* Payment Screenshot Thumbnail */}
+                                  <div className="shrink-0">
+                                    {profile.paymentScreenshotUrl && (
+                                      <img 
+                                        src={profile.paymentScreenshotUrl} 
+                                        alt="Payment Screenshot"
+                                        className="w-20 h-20 object-cover rounded-lg border-2 border-amber-400 cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={() => {
+                                          setPaymentViewProfile(profile)
+                                          setPaymentRejectionReason('')
+                                          setShowPaymentViewDialog(true)
+                                        }}
+                                      />
+                                    )}
+                                  </div>
+
+                                  {/* Profile Info */}
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className="font-bold">{profile.fullName}</h4>
+                                      <Badge variant="outline" className="text-xs">{profile.profileId}</Badge>
+                                      <Badge className={profile.membershipPlan === '1-year' ? 'bg-accent text-accent-foreground' : 'bg-primary'}>
+                                        {profile.membershipPlan === '6-month' ? (language === 'hi' ? '6 महीने' : '6 Month') : (language === 'hi' ? '1 वर्ष' : '1 Year')}
+                                      </Badge>
+                                      <Badge variant="secondary" className="bg-amber-500 text-white">
+                                        {language === 'hi' ? '₹ लंबित' : '₹ Pending'}
+                                      </Badge>
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      <span>{language === 'hi' ? 'राशि:' : 'Amount:'} </span>
+                                      <span className="font-semibold text-foreground">
+                                        ₹{profile.membershipPlan === '1-year' ? '2,499' : '1,499'}
+                                      </span>
+                                      <span className="mx-2">|</span>
+                                      <span>{language === 'hi' ? 'अपलोड:' : 'Uploaded:'} </span>
+                                      <span>{profile.paymentUploadedAt ? formatDateDDMMYYYY(profile.paymentUploadedAt) : '-'}</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Actions */}
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      size="sm"
+                                      className="bg-green-600 hover:bg-green-700"
+                                      onClick={() => {
+                                        const now = new Date()
+                                        const monthsToAdd = profile.membershipPlan === '1-year' ? 12 : 6
+                                        const expiryDate = new Date(now)
+                                        expiryDate.setMonth(expiryDate.getMonth() + monthsToAdd)
+                                        
+                                        setProfiles((current) => 
+                                          (current || []).map(p => 
+                                            p.id === profile.id 
+                                              ? { 
+                                                  ...p, 
+                                                  paymentStatus: 'verified' as const,
+                                                  paymentVerifiedAt: now.toISOString(),
+                                                  paymentVerifiedBy: 'Admin',
+                                                  paymentAmount: profile.membershipPlan === '1-year' ? 2499 : 1499,
+                                                  hasMembership: true,
+                                                  membershipStartDate: now.toISOString(),
+                                                  membershipEndDate: expiryDate.toISOString()
+                                                } 
+                                              : p
+                                          )
+                                        )
+                                        toast.success(language === 'hi' ? 'भुगतान सत्यापित! सदस्यता सक्रिय की गई।' : 'Payment verified! Membership activated.')
+                                      }}
+                                    >
+                                      <CheckCircle size={16} className="mr-1" />
+                                      {language === 'hi' ? 'सत्यापित करें' : 'Verify'}
+                                    </Button>
+                                    <Button 
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setPaymentViewProfile(profile)
+                                        setPaymentRejectionReason('')
+                                        setShowPaymentViewDialog(true)
+                                      }}
+                                    >
+                                      <Eye size={16} className="mr-1" />
+                                      {language === 'hi' ? 'देखें' : 'View'}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+
+                          {/* Rejected Payments */}
+                          {rejectedPayments.length > 0 && (
+                            <>
+                              <h4 className="text-md font-semibold flex items-center gap-2 mt-4">
+                                <XCircle size={18} className="text-red-600" />
+                                {language === 'hi' ? 'अस्वीकृत भुगतान' : 'Rejected Payments'}
+                                <Badge variant="destructive">{rejectedPayments.length}</Badge>
+                              </h4>
+                              {rejectedPayments.map(profile => (
+                                <Card key={profile.id} className="border-red-300 bg-red-50/50 dark:bg-red-900/10">
+                                  <CardContent className="p-4">
+                                    <div className="flex items-center gap-4">
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <h4 className="font-bold">{profile.fullName}</h4>
+                                          <Badge variant="outline" className="text-xs">{profile.profileId}</Badge>
+                                          <Badge variant="destructive">{language === 'hi' ? '₹ अस्वीकृत' : '₹ Rejected'}</Badge>
+                                        </div>
+                                        {profile.paymentRejectionReason && (
+                                          <p className="text-sm text-red-600">
+                                            <span className="font-semibold">{language === 'hi' ? 'कारण:' : 'Reason:'}</span> {profile.paymentRejectionReason}
+                                          </p>
+                                        )}
+                                      </div>
+                                      <Button 
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setPaymentViewProfile(profile)
+                                          setPaymentRejectionReason('')
+                                          setShowPaymentViewDialog(true)
+                                        }}
+                                      >
+                                        <Eye size={16} className="mr-1" />
+                                        {language === 'hi' ? 'देखें' : 'View'}
+                                      </Button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+
+                {/* Pending Renewal Payments Section */}
+                {(() => {
+                  const pendingRenewals = profiles?.filter(p => 
+                    p.renewalPaymentScreenshotUrl && 
+                    p.renewalPaymentStatus === 'pending' &&
+                    !p.isDeleted
+                  ) || []
+
+                  if (pendingRenewals.length === 0) return null
+
+                  return (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <ArrowCounterClockwise size={20} className="text-blue-600" />
+                        {language === 'hi' ? 'नवीनीकरण भुगतान लंबित' : 'Pending Renewal Payments'}
+                        <Badge variant="destructive">{pendingRenewals.length}</Badge>
+                      </h3>
+
+                      <div className="space-y-3">
+                        {pendingRenewals.map(profile => (
+                          <Card key={profile.id} className="border-blue-300 bg-blue-50/50 dark:bg-blue-900/10">
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-4">
+                                {/* Renewal Screenshot Thumbnail */}
+                                <div className="shrink-0">
+                                  <img 
+                                    src={profile.renewalPaymentScreenshotUrl} 
+                                    alt="Renewal Payment Screenshot"
+                                    className="w-20 h-20 object-cover rounded-lg border-2 border-blue-400 cursor-pointer hover:opacity-80 transition-opacity"
+                                    onClick={() => openLightbox([profile.renewalPaymentScreenshotUrl!], 0)}
+                                  />
+                                </div>
+
+                                {/* Profile Info */}
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="font-bold">{profile.fullName}</h4>
+                                    <Badge variant="outline" className="text-xs">{profile.profileId}</Badge>
+                                    <Badge className={profile.membershipPlan === '1-year' ? 'bg-accent text-accent-foreground' : 'bg-primary'}>
+                                      {profile.membershipPlan === '6-month' ? (language === 'hi' ? '6 महीने' : '6 Month') : (language === 'hi' ? '1 वर्ष' : '1 Year')}
+                                    </Badge>
+                                    <Badge variant="secondary" className="bg-blue-500 text-white">
+                                      <ArrowCounterClockwise size={12} className="mr-1" />
+                                      {language === 'hi' ? 'नवीनीकरण' : 'Renewal'}
+                                    </Badge>
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    <span>{language === 'hi' ? 'राशि:' : 'Amount:'} </span>
+                                    <span className="font-semibold text-foreground">
+                                      ₹{profile.renewalPaymentAmount?.toLocaleString('en-IN') || (profile.membershipPlan === '1-year' ? '2,499' : '1,499')}
+                                    </span>
+                                    <span className="mx-2">|</span>
+                                    <span>{language === 'hi' ? 'अपलोड:' : 'Uploaded:'} </span>
+                                    <span>{profile.renewalPaymentUploadedAt ? formatDateDDMMYYYY(profile.renewalPaymentUploadedAt) : '-'}</span>
+                                  </div>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex gap-2">
+                                  <Button 
+                                    size="sm"
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => {
+                                      const now = new Date()
+                                      const monthsToAdd = profile.membershipPlan === '1-year' ? 12 : 6
+                                      const expiryDate = new Date(now)
+                                      expiryDate.setMonth(expiryDate.getMonth() + monthsToAdd)
+                                      
+                                      setProfiles((current) => 
+                                        (current || []).map(p => 
+                                          p.id === profile.id 
+                                            ? { 
+                                                ...p, 
+                                                renewalPaymentStatus: 'verified' as const,
+                                                renewalPaymentVerifiedAt: now.toISOString(),
+                                                paymentStatus: 'verified' as const,
+                                                paymentVerifiedAt: now.toISOString(),
+                                                paymentVerifiedBy: 'Admin',
+                                                hasMembership: true,
+                                                membershipStartDate: now.toISOString(),
+                                                membershipEndDate: expiryDate.toISOString(),
+                                                membershipExpiry: expiryDate.toISOString()
+                                              } 
+                                            : p
+                                        )
+                                      )
+                                      toast.success(language === 'hi' ? 'नवीनीकरण भुगतान सत्यापित! सदस्यता नवीनीकृत।' : 'Renewal payment verified! Membership renewed.')
+                                    }}
+                                  >
+                                    <CheckCircle size={16} className="mr-1" />
+                                    {language === 'hi' ? 'सत्यापित करें' : 'Verify'}
+                                  </Button>
+                                  <Button 
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => {
+                                      const reason = prompt(language === 'hi' ? 'अस्वीकृति का कारण दर्ज करें:' : 'Enter rejection reason:')
+                                      if (reason) {
+                                        setProfiles((current) => 
+                                          (current || []).map(p => 
+                                            p.id === profile.id 
+                                              ? { 
+                                                  ...p, 
+                                                  renewalPaymentStatus: 'rejected' as const,
+                                                  renewalPaymentRejectionReason: reason
+                                                } 
+                                              : p
+                                          )
+                                        )
+                                        toast.success(language === 'hi' ? 'नवीनीकरण भुगतान अस्वीकृत।' : 'Renewal payment rejected.')
+                                      }
+                                    }}
+                                  >
+                                    <XCircle size={16} className="mr-1" />
+                                    {language === 'hi' ? 'अस्वीकार करें' : 'Reject'}
+                                  </Button>
+                                  <Button 
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => openLightbox([profile.renewalPaymentScreenshotUrl!], 0)}
+                                  >
+                                    <Eye size={16} className="mr-1" />
+                                    {language === 'hi' ? 'देखें' : 'View'}
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {/* Transactions Table */}
                 <div>
@@ -4529,6 +4943,236 @@ ShaadiPartnerSearch Team
                     {language === 'hi' 
                       ? `${idProofViewProfile.idProofVerifiedBy || 'Admin'} द्वारा ${idProofViewProfile.idProofVerifiedAt ? formatDateDDMMYYYY(idProofViewProfile.idProofVerifiedAt) : ''} को सत्यापित` 
                       : `Verified by ${idProofViewProfile.idProofVerifiedBy || 'Admin'} on ${idProofViewProfile.idProofVerifiedAt ? formatDateDDMMYYYY(idProofViewProfile.idProofVerifiedAt) : ''}`}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Verification Dialog */}
+      <Dialog open={showPaymentViewDialog} onOpenChange={setShowPaymentViewDialog}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CurrencyInr size={24} weight="fill" />
+              {language === 'hi' ? 'भुगतान सत्यापन' : 'Payment Verification'} - {paymentViewProfile?.fullName}
+            </DialogTitle>
+            <DialogDescription>
+              {paymentViewProfile?.profileId}
+            </DialogDescription>
+          </DialogHeader>
+
+          {paymentViewProfile && (
+            <div className="space-y-4">
+              {/* Plan Details */}
+              <div className="p-4 bg-muted/30 rounded-lg border">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <CurrencyInr size={18} />
+                  {language === 'hi' ? 'चयनित योजना' : 'Selected Plan'}
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">{language === 'hi' ? 'योजना प्रकार' : 'Plan Type'}</Label>
+                    <Badge variant="default" className={paymentViewProfile.membershipPlan === '1-year' ? 'bg-accent text-accent-foreground text-lg' : 'bg-primary text-lg'}>
+                      {paymentViewProfile.membershipPlan === '6-month' ? (language === 'hi' ? '6 महीने' : '6 Month') :
+                       paymentViewProfile.membershipPlan === '1-year' ? (language === 'hi' ? '1 वर्ष' : '1 Year') :
+                       (language === 'hi' ? 'फ्री' : 'Free')}
+                    </Badge>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">{language === 'hi' ? 'राशि' : 'Amount'}</Label>
+                    <p className="font-bold text-xl text-primary">
+                      ₹{paymentViewProfile.membershipPlan === '6-month' ? '1,499' : paymentViewProfile.membershipPlan === '1-year' ? '2,499' : '0'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">{language === 'hi' ? 'अपलोड तिथि' : 'Upload Date'}</Label>
+                    <p className="font-medium">{paymentViewProfile.paymentUploadedAt ? formatDateDDMMYYYY(paymentViewProfile.paymentUploadedAt) : '-'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">{language === 'hi' ? 'स्थिति' : 'Status'}</Label>
+                    <Badge variant={paymentViewProfile.paymentStatus === 'verified' ? 'default' : 
+                                    paymentViewProfile.paymentStatus === 'rejected' ? 'destructive' : 'secondary'}
+                      className={paymentViewProfile.paymentStatus === 'verified' ? 'bg-green-600' : ''}>
+                      {paymentViewProfile.paymentStatus === 'verified' ? (language === 'hi' ? '✓ सत्यापित' : '✓ Verified') :
+                       paymentViewProfile.paymentStatus === 'rejected' ? (language === 'hi' ? '✗ अस्वीकृत' : '✗ Rejected') :
+                       (language === 'hi' ? 'लंबित' : 'Pending')}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Screenshot */}
+              <div className="border rounded-lg p-3">
+                <Label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  <Receipt size={16} />
+                  {language === 'hi' ? 'भुगतान स्क्रीनशॉट' : 'Payment Screenshot'}
+                </Label>
+                <div className="bg-muted/20 rounded-lg p-2 flex items-center justify-center min-h-[300px]">
+                  {paymentViewProfile.paymentScreenshotUrl ? (
+                    <img 
+                      src={paymentViewProfile.paymentScreenshotUrl} 
+                      alt="Payment Screenshot"
+                      className="max-h-[400px] object-contain rounded cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => openLightbox([paymentViewProfile.paymentScreenshotUrl!], 0)}
+                    />
+                  ) : (
+                    <div className="text-muted-foreground text-sm text-center p-4">
+                      {language === 'hi' ? 'भुगतान स्क्रीनशॉट अपलोड नहीं किया' : 'Payment screenshot not uploaded'}
+                    </div>
+                  )}
+                </div>
+                {paymentViewProfile.paymentScreenshotUrl && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full mt-2"
+                    onClick={() => openLightbox([paymentViewProfile.paymentScreenshotUrl!], 0)}
+                  >
+                    <Eye size={14} className="mr-1" />
+                    {language === 'hi' ? 'बड़ा करके देखें' : 'View Full Size'}
+                  </Button>
+                )}
+              </div>
+
+              {/* Previous Rejection Reason (if any) */}
+              {paymentViewProfile.paymentStatus === 'rejected' && paymentViewProfile.paymentRejectionReason && (
+                <Alert variant="destructive">
+                  <XCircle size={18} />
+                  <AlertDescription>
+                    <span className="font-semibold">{language === 'hi' ? 'अस्वीकृति कारण:' : 'Rejection Reason:'}</span> {paymentViewProfile.paymentRejectionReason}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Verification Instructions */}
+              <Alert>
+                <Info size={18} />
+                <AlertDescription>
+                  {language === 'hi' 
+                    ? 'कृपया जांचें: 1) स्क्रीनशॉट में राशि सही है 2) लेन-देन सफल दिखाई देता है 3) भुगतान तिथि हाल की है' 
+                    : 'Please verify: 1) Amount in screenshot matches plan price 2) Transaction shows as successful 3) Payment date is recent'}
+                </AlertDescription>
+              </Alert>
+
+              {/* Rejection Reason Input (for rejecting) */}
+              {paymentViewProfile.paymentStatus !== 'verified' && (
+                <div className="space-y-2">
+                  <Label>{language === 'hi' ? 'अस्वीकृति कारण (यदि अस्वीकार कर रहे हैं)' : 'Rejection Reason (if rejecting)'}</Label>
+                  <Textarea
+                    placeholder={language === 'hi' ? 'अस्वीकृति का कारण दर्ज करें...' : 'Enter reason for rejection...'}
+                    value={paymentRejectionReason}
+                    onChange={(e) => setPaymentRejectionReason(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-2">
+                {paymentViewProfile.paymentStatus !== 'verified' && paymentViewProfile.paymentScreenshotUrl && (
+                  <Button 
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={() => {
+                      // Calculate membership dates
+                      const now = new Date()
+                      const monthsToAdd = paymentViewProfile.membershipPlan === '1-year' ? 12 : 6
+                      const expiryDate = new Date(now)
+                      expiryDate.setMonth(expiryDate.getMonth() + monthsToAdd)
+                      
+                      setProfiles((current) => 
+                        (current || []).map(p => 
+                          p.id === paymentViewProfile.id 
+                            ? { 
+                                ...p, 
+                                paymentStatus: 'verified' as const,
+                                paymentVerifiedAt: now.toISOString(),
+                                paymentVerifiedBy: 'Admin',
+                                paymentAmount: paymentViewProfile.membershipPlan === '1-year' ? 2499 : 1499,
+                                hasMembership: true,
+                                membershipStartDate: now.toISOString(),
+                                membershipEndDate: expiryDate.toISOString()
+                              } 
+                            : p
+                        )
+                      )
+                      setPaymentViewProfile(prev => prev ? {...prev, paymentStatus: 'verified', paymentVerifiedAt: now.toISOString(), hasMembership: true, membershipStartDate: now.toISOString(), membershipEndDate: expiryDate.toISOString()} : null)
+                      toast.success(language === 'hi' ? 'भुगतान सत्यापित! सदस्यता सक्रिय की गई।' : 'Payment verified! Membership activated.')
+                    }}
+                  >
+                    <CheckCircle size={16} className="mr-2" />
+                    {language === 'hi' ? 'भुगतान सत्यापित करें और सदस्यता सक्रिय करें' : 'Verify Payment & Activate Membership'}
+                  </Button>
+                )}
+                {paymentViewProfile.paymentStatus !== 'verified' && paymentViewProfile.paymentScreenshotUrl && (
+                  <Button 
+                    variant="destructive"
+                    size="sm"
+                    disabled={!paymentRejectionReason.trim()}
+                    onClick={() => {
+                      setProfiles((current) => 
+                        (current || []).map(p => 
+                          p.id === paymentViewProfile.id 
+                            ? { 
+                                ...p, 
+                                paymentStatus: 'rejected' as const,
+                                paymentRejectionReason: paymentRejectionReason.trim()
+                              } 
+                            : p
+                        )
+                      )
+                      setPaymentViewProfile(prev => prev ? {...prev, paymentStatus: 'rejected', paymentRejectionReason: paymentRejectionReason.trim()} : null)
+                      toast.success(language === 'hi' ? 'भुगतान अस्वीकृत। उपयोगकर्ता को नया स्क्रीनशॉट अपलोड करना होगा।' : 'Payment rejected. User will need to upload a new screenshot.')
+                    }}
+                  >
+                    <XCircle size={16} className="mr-2" />
+                    {language === 'hi' ? 'भुगतान अस्वीकार करें' : 'Reject Payment'}
+                  </Button>
+                )}
+                {paymentViewProfile.paymentStatus === 'verified' && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="text-red-600 border-red-300"
+                    onClick={() => {
+                      setProfiles((current) => 
+                        (current || []).map(p => 
+                          p.id === paymentViewProfile.id 
+                            ? { 
+                                ...p, 
+                                paymentStatus: 'pending' as const,
+                                paymentVerifiedAt: undefined,
+                                paymentVerifiedBy: undefined,
+                                hasMembership: false,
+                                membershipStartDate: undefined,
+                                membershipEndDate: undefined
+                              } 
+                            : p
+                        )
+                      )
+                      setPaymentViewProfile(prev => prev ? {...prev, paymentStatus: 'pending', paymentVerifiedAt: undefined, hasMembership: false} : null)
+                      toast.success(language === 'hi' ? 'भुगतान सत्यापन हटाया गया!' : 'Payment verification removed!')
+                    }}
+                  >
+                    <ArrowCounterClockwise size={16} className="mr-2" />
+                    {language === 'hi' ? 'सत्यापन हटाएं' : 'Remove Verification'}
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" onClick={() => setShowPaymentViewDialog(false)}>
+                  {t.cancel}
+                </Button>
+              </div>
+
+              {paymentViewProfile.paymentStatus === 'verified' && (
+                <Alert className="bg-green-50 border-green-400">
+                  <CheckCircle size={18} className="text-green-600" />
+                  <AlertDescription className="text-green-700">
+                    {language === 'hi' 
+                      ? `${paymentViewProfile.paymentVerifiedBy || 'Admin'} द्वारा ${paymentViewProfile.paymentVerifiedAt ? formatDateDDMMYYYY(paymentViewProfile.paymentVerifiedAt) : ''} को सत्यापित। सदस्यता ${paymentViewProfile.membershipEndDate ? formatDateDDMMYYYY(paymentViewProfile.membershipEndDate) : ''} तक सक्रिय।` 
+                      : `Verified by ${paymentViewProfile.paymentVerifiedBy || 'Admin'} on ${paymentViewProfile.paymentVerifiedAt ? formatDateDDMMYYYY(paymentViewProfile.paymentVerifiedAt) : ''}. Membership active until ${paymentViewProfile.membershipEndDate ? formatDateDDMMYYYY(paymentViewProfile.membershipEndDate) : ''}.`}
                   </AlertDescription>
                 </Alert>
               )}

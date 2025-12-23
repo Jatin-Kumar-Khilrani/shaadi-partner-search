@@ -109,6 +109,21 @@ export interface Profile {
   // Free user view/chat limits
   freeViewedProfiles?: string[]  // Profile IDs viewed by free user (max 2)
   freeChatProfiles?: string[]    // Profile IDs chatted by free user (max 2)
+  // Payment verification for paid plans
+  paymentScreenshotUrl?: string  // URL to payment screenshot
+  paymentStatus?: 'not-required' | 'pending' | 'verified' | 'rejected'
+  paymentAmount?: number  // Amount paid
+  paymentVerifiedAt?: string
+  paymentVerifiedBy?: string  // Admin who verified
+  paymentRejectionReason?: string  // Reason if payment rejected
+  paymentUploadedAt?: string
+  // Renewal payment (for expired memberships)
+  renewalPaymentScreenshotUrl?: string
+  renewalPaymentStatus?: 'pending' | 'verified' | 'rejected'
+  renewalPaymentAmount?: number
+  renewalPaymentUploadedAt?: string
+  renewalPaymentVerifiedAt?: string
+  renewalPaymentRejectionReason?: string
 }
 
 export interface SearchFilters {

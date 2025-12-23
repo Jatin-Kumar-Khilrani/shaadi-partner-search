@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { 
   User, MapPin, Briefcase, GraduationCap, Heart, House, PencilSimple,
-  ChatCircle, Envelope, Phone, Calendar, Warning, FilePdf, Trash
+  ChatCircle, Envelope, Phone, Calendar, Warning, FilePdf, Trash,
+  CurrencyInr, ArrowClockwise, Camera, CheckCircle
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Profile } from '@/types/profile'
@@ -22,9 +23,10 @@ interface MyProfileProps {
   language: Language
   onEdit?: () => void
   onDeleteProfile?: (profileId: string) => void
+  onUpdateProfile?: (updatedProfile: Partial<Profile>) => void
 }
 
-export function MyProfile({ profile, language, onEdit, onDeleteProfile }: MyProfileProps) {
+export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdateProfile }: MyProfileProps) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const [showBiodataGenerator, setShowBiodataGenerator] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -32,6 +34,13 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile }: MyProf
   const [deleteStep, setDeleteStep] = useState<'confirm' | 'otp'>('confirm')
   const [generatedOtp, setGeneratedOtp] = useState('')
   const [enteredOtp, setEnteredOtp] = useState('')
+  
+  // Renewal payment state
+  const [showRenewalDialog, setShowRenewalDialog] = useState(false)
+  const [renewalPlan, setRenewalPlan] = useState<'6-month' | '1-year'>('6-month')
+  const [renewalPaymentFile, setRenewalPaymentFile] = useState<File | null>(null)
+  const [renewalPaymentPreview, setRenewalPaymentPreview] = useState<string | null>(null)
+  const renewalFileInputRef = useRef<HTMLInputElement>(null)
 
   const t = {
     title: language === 'hi' ? 'मेरी प्रोफाइल' : 'My Profile',
@@ -322,6 +331,281 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile }: MyProf
             </AlertDescription>
           </Alert>
         )}
+
+        {/* Membership Status & Renewal Section */}
+        {profile.membershipPlan && profile.membershipPlan !== 'free' && (
+          (() => {
+            const now = new Date()
+            const expiryDate = profile.membershipEndDate ? new Date(profile.membershipEndDate) : 
+                               profile.membershipExpiry ? new Date(profile.membershipExpiry) : null
+            const isExpired = expiryDate ? expiryDate < now : false
+            const daysToExpiry = expiryDate ? Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0
+            const isNearExpiry = daysToExpiry > 0 && daysToExpiry <= 30
+            const renewalPending = profile.renewalPaymentStatus === 'pending'
+            const renewalRejected = profile.renewalPaymentStatus === 'rejected'
+
+            if (!isExpired && !isNearExpiry && !renewalPending && !renewalRejected) return null
+
+            return (
+              <Alert className={`mb-6 ${
+                isExpired ? 'bg-red-50 border-red-400 dark:bg-red-950/30' : 
+                renewalRejected ? 'bg-orange-50 border-orange-400 dark:bg-orange-950/30' :
+                renewalPending ? 'bg-blue-50 border-blue-400 dark:bg-blue-950/30' :
+                'bg-amber-50 border-amber-400 dark:bg-amber-950/30'
+              }`}>
+                {isExpired ? <CurrencyInr size={20} weight="fill" className="text-red-600" /> :
+                 renewalPending ? <ArrowClockwise size={20} className="text-blue-600" /> :
+                 <Warning size={20} weight="fill" className={renewalRejected ? "text-orange-600" : "text-amber-600"} />}
+                <AlertTitle className={`font-semibold ${
+                  isExpired ? 'text-red-800 dark:text-red-200' : 
+                  renewalRejected ? 'text-orange-800 dark:text-orange-200' :
+                  renewalPending ? 'text-blue-800 dark:text-blue-200' :
+                  'text-amber-800 dark:text-amber-200'
+                }`}>
+                  {isExpired ? (language === 'hi' ? 'सदस्यता समाप्त' : 'Membership Expired') :
+                   renewalPending ? (language === 'hi' ? 'नवीनीकरण भुगतान सत्यापन लंबित' : 'Renewal Payment Verification Pending') :
+                   renewalRejected ? (language === 'hi' ? 'नवीनीकरण भुगतान अस्वीकृत' : 'Renewal Payment Rejected') :
+                   (language === 'hi' ? 'सदस्यता जल्द समाप्त हो रही है' : 'Membership Expiring Soon')}
+                </AlertTitle>
+                <AlertDescription className={`${
+                  isExpired ? 'text-red-700 dark:text-red-300' : 
+                  renewalRejected ? 'text-orange-700 dark:text-orange-300' :
+                  renewalPending ? 'text-blue-700 dark:text-blue-300' :
+                  'text-amber-700 dark:text-amber-300'
+                }`}>
+                  {isExpired ? (
+                    language === 'hi' 
+                      ? `आपकी ${profile.membershipPlan === '1-year' ? '1 वर्ष' : '6 महीने'} की सदस्यता ${expiryDate?.toLocaleDateString('hi-IN')} को समाप्त हो गई। कृपया नवीनीकरण करें।`
+                      : `Your ${profile.membershipPlan === '1-year' ? '1 Year' : '6 Month'} membership expired on ${expiryDate?.toLocaleDateString()}. Please renew to continue enjoying premium features.`
+                  ) : renewalPending ? (
+                    language === 'hi'
+                      ? 'आपका नवीनीकरण भुगतान स्क्रीनशॉट सत्यापन के लिए प्रस्तुत किया गया है। कृपया प्रतीक्षा करें।'
+                      : 'Your renewal payment screenshot has been submitted for verification. Please wait for admin approval.'
+                  ) : renewalRejected ? (
+                    <>
+                      {language === 'hi' ? 'आपका नवीनीकरण भुगतान अस्वीकृत कर दिया गया।' : 'Your renewal payment was rejected.'}
+                      {profile.renewalPaymentRejectionReason && (
+                        <div className="mt-1 font-medium">
+                          {language === 'hi' ? 'कारण:' : 'Reason:'} {profile.renewalPaymentRejectionReason}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    language === 'hi'
+                      ? `आपकी सदस्यता ${daysToExpiry} दिनों में (${expiryDate?.toLocaleDateString('hi-IN')}) समाप्त हो रही है। अभी नवीनीकरण करें!`
+                      : `Your membership expires in ${daysToExpiry} days (${expiryDate?.toLocaleDateString()}). Renew now to avoid interruption!`
+                  )}
+                  
+                  {!renewalPending && (
+                    <Button 
+                      onClick={() => setShowRenewalDialog(true)}
+                      className={`mt-3 gap-2 ${
+                        isExpired || renewalRejected ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'
+                      } text-white`}
+                    >
+                      <ArrowClockwise size={20} weight="bold" />
+                      {renewalRejected 
+                        ? (language === 'hi' ? 'पुनः भुगतान स्क्रीनशॉट अपलोड करें' : 'Re-upload Payment Screenshot')
+                        : (language === 'hi' ? 'सदस्यता नवीनीकरण करें' : 'Renew Membership')}
+                    </Button>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )
+          })()
+        )}
+
+        {/* Renewal Payment Dialog */}
+        <Dialog open={showRenewalDialog} onOpenChange={setShowRenewalDialog}>
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ArrowClockwise size={24} className="text-primary" />
+                {language === 'hi' ? 'सदस्यता नवीनीकरण' : 'Renew Membership'}
+              </DialogTitle>
+              <DialogDescription>
+                {language === 'hi' 
+                  ? 'अपनी प्रीमियम सुविधाओं का आनंद लेना जारी रखने के लिए अपनी सदस्यता नवीनीकृत करें।'
+                  : 'Renew your membership to continue enjoying premium features.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Plan Selection */}
+              <div className="space-y-2">
+                <Label>{language === 'hi' ? 'नवीनीकरण योजना चुनें' : 'Select Renewal Plan'}</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    variant={renewalPlan === '6-month' ? 'default' : 'outline'}
+                    className={`h-auto py-3 flex flex-col ${renewalPlan === '6-month' ? 'bg-primary' : ''}`}
+                    onClick={() => setRenewalPlan('6-month')}
+                  >
+                    <span className="font-bold">{language === 'hi' ? '6 महीने' : '6 Months'}</span>
+                    <span className="text-lg">₹1,499</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={renewalPlan === '1-year' ? 'default' : 'outline'}
+                    className={`h-auto py-3 flex flex-col ${renewalPlan === '1-year' ? 'bg-accent text-accent-foreground' : ''}`}
+                    onClick={() => setRenewalPlan('1-year')}
+                  >
+                    <span className="font-bold">{language === 'hi' ? '1 वर्ष' : '1 Year'}</span>
+                    <span className="text-lg">₹2,499</span>
+                    <Badge variant="secondary" className="mt-1 text-xs">
+                      {language === 'hi' ? '17% बचत' : 'Save 17%'}
+                    </Badge>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Payment Details */}
+              <div className="space-y-3 p-4 bg-muted/50 rounded-lg border">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <CurrencyInr size={18} className="text-primary" />
+                  {language === 'hi' ? 'भुगतान विवरण' : 'Payment Details'}
+                </h4>
+                
+                {/* UPI */}
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">UPI ID</Label>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 p-2 bg-background rounded border text-sm font-mono">
+                      shaadipartner@upi
+                    </code>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText('shaadipartner@upi')
+                        toast.success(language === 'hi' ? 'UPI ID कॉपी किया गया!' : 'UPI ID copied!')
+                      }}
+                    >
+                      {language === 'hi' ? 'कॉपी' : 'Copy'}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Bank Details */}
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">
+                    {language === 'hi' ? 'बैंक विवरण' : 'Bank Details'}
+                  </Label>
+                  <div className="text-sm space-y-1 p-2 bg-background rounded border">
+                    <p><span className="text-muted-foreground">{language === 'hi' ? 'बैंक:' : 'Bank:'}</span> State Bank of India</p>
+                    <p><span className="text-muted-foreground">{language === 'hi' ? 'खाता नाम:' : 'Account Name:'}</span> Shaadi Partner Services</p>
+                    <p><span className="text-muted-foreground">{language === 'hi' ? 'खाता संख्या:' : 'Account No:'}</span> 1234567890</p>
+                    <p><span className="text-muted-foreground">IFSC:</span> SBIN0001234</p>
+                  </div>
+                </div>
+
+                <p className="text-sm text-primary font-medium">
+                  {language === 'hi' 
+                    ? `कृपया ₹${renewalPlan === '1-year' ? '2,499' : '1,499'} का भुगतान करें और स्क्रीनशॉट अपलोड करें।`
+                    : `Please pay ₹${renewalPlan === '1-year' ? '2,499' : '1,499'} and upload the screenshot.`}
+                </p>
+              </div>
+
+              {/* Payment Screenshot Upload */}
+              <div className="space-y-2">
+                <Label>{language === 'hi' ? 'भुगतान स्क्रीनशॉट अपलोड करें *' : 'Upload Payment Screenshot *'}</Label>
+                <input
+                  type="file"
+                  ref={renewalFileInputRef}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      setRenewalPaymentFile(file)
+                      const reader = new FileReader()
+                      reader.onload = (e) => {
+                        setRenewalPaymentPreview(e.target?.result as string)
+                      }
+                      reader.readAsDataURL(file)
+                    }
+                  }}
+                />
+                <div 
+                  onClick={() => renewalFileInputRef.current?.click()}
+                  className="border-2 border-dashed rounded-lg p-4 cursor-pointer hover:border-primary transition-colors text-center"
+                >
+                  {renewalPaymentPreview ? (
+                    <div className="space-y-2">
+                      <img 
+                        src={renewalPaymentPreview} 
+                        alt="Payment Screenshot"
+                        className="max-h-48 mx-auto rounded-lg object-contain"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'hi' ? 'दूसरी छवि चुनने के लिए क्लिक करें' : 'Click to select another image'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="py-4">
+                      <Camera size={32} className="mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'hi' ? 'स्क्रीनशॉट अपलोड करने के लिए क्लिक करें' : 'Click to upload screenshot'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowRenewalDialog(false)
+                    setRenewalPaymentFile(null)
+                    setRenewalPaymentPreview(null)
+                  }}
+                  className="flex-1"
+                >
+                  {language === 'hi' ? 'रद्द करें' : 'Cancel'}
+                </Button>
+                <Button 
+                  onClick={() => {
+                    if (!renewalPaymentPreview) {
+                      toast.error(language === 'hi' ? 'कृपया भुगतान स्क्रीनशॉट अपलोड करें' : 'Please upload payment screenshot')
+                      return
+                    }
+                    
+                    if (onUpdateProfile && profile) {
+                      onUpdateProfile({
+                        id: profile.id,
+                        renewalPaymentScreenshotUrl: renewalPaymentPreview,
+                        renewalPaymentStatus: 'pending',
+                        renewalPaymentAmount: renewalPlan === '1-year' ? 2499 : 1499,
+                        renewalPaymentUploadedAt: new Date().toISOString(),
+                        membershipPlan: renewalPlan
+                      })
+                    }
+                    
+                    toast.success(
+                      language === 'hi' ? 'नवीनीकरण अनुरोध प्रस्तुत!' : 'Renewal Request Submitted!',
+                      {
+                        description: language === 'hi' 
+                          ? 'आपका भुगतान स्क्रीनशॉट सत्यापन के लिए भेजा गया है।'
+                          : 'Your payment screenshot has been submitted for verification.'
+                      }
+                    )
+                    
+                    setShowRenewalDialog(false)
+                    setRenewalPaymentFile(null)
+                    setRenewalPaymentPreview(null)
+                  }}
+                  disabled={!renewalPaymentPreview}
+                  className="flex-1 gap-2"
+                >
+                  <CheckCircle size={20} />
+                  {language === 'hi' ? 'भुगतान प्रस्तुत करें' : 'Submit Payment'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-1">

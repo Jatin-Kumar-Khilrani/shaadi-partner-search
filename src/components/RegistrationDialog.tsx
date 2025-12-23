@@ -108,6 +108,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
   
+  // Payment screenshot state for paid plans
+  const [paymentScreenshotFile, setPaymentScreenshotFile] = useState<File | null>(null)
+  const [paymentScreenshotPreview, setPaymentScreenshotPreview] = useState<string | null>(null)
+  
   // DigiLocker verification state (OAuth flow - no Aadhaar number input)
   const [digilockerVerifying, setDigilockerVerifying] = useState(false)
   const [digilockerVerified, setDigilockerVerified] = useState(false)
@@ -340,7 +344,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   }
 
   const updateField = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value })
+    setFormData(prev => ({ ...prev, [field]: value }))
   }
 
   const getMaxDate = () => {
@@ -867,7 +871,18 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         idProofNotes: editProfile.idProofNotes
       } : {})),
       membershipExpiry: membershipExpiry.toISOString(),
-      registrationLocation: isEditMode && editProfile?.registrationLocation ? editProfile.registrationLocation : (registrationGeoLocation || undefined)
+      registrationLocation: isEditMode && editProfile?.registrationLocation ? editProfile.registrationLocation : (registrationGeoLocation || undefined),
+      // Payment data for paid plans
+      ...(formData.membershipPlan && formData.membershipPlan !== 'free' ? {
+        paymentScreenshotUrl: paymentScreenshotPreview || undefined,
+        paymentStatus: paymentScreenshotPreview ? 'pending' : undefined,
+        paymentAmount: formData.membershipPlan === '6-month' 
+          ? (membershipSettings?.sixMonthPrice || 500) 
+          : (membershipSettings?.oneYearPrice || 900),
+        paymentUploadedAt: paymentScreenshotPreview ? new Date().toISOString() : undefined
+      } : {
+        paymentStatus: 'not-required' as const
+      })
     }
 
     onSubmit(profile)
@@ -1663,19 +1678,20 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   <div className="space-y-2">
                     <Label htmlFor="country">{language === 'hi' ? 'वर्तमान में रह रहे देश' : 'Living in Country'} *</Label>
                     <Select 
-                      value={formData.country} 
+                      value={formData.country || ''} 
                       onValueChange={(value) => {
-                        updateField('country', value)
-                        // Clear residential status if switching to India
-                        if (value === 'India') {
-                          updateField('residentialStatus', '')
-                        }
+                        // Update country and clear residential status if switching to India
+                        setFormData(prev => ({
+                          ...prev,
+                          country: value,
+                          residentialStatus: value === 'India' ? '' : prev.residentialStatus
+                        }))
                       }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder={language === 'hi' ? 'देश चुनें' : 'Select Country'} />
                       </SelectTrigger>
-                      <SelectContent className="z-[9999] max-h-[300px]" position="popper" sideOffset={4}>
+                      <SelectContent className="z-[9999]" position="item-aligned">
                         <SelectItem value="India">🇮🇳 India</SelectItem>
                         <SelectItem value="United States">🇺🇸 United States</SelectItem>
                         <SelectItem value="United Kingdom">🇬🇧 United Kingdom</SelectItem>
@@ -2686,6 +2702,160 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
                 </RadioGroup>
 
+                {/* Payment Section - Only for paid plans */}
+                {formData.membershipPlan && formData.membershipPlan !== 'free' && (
+                  <Card className="border-2 border-primary/30 bg-primary/5">
+                    <CardContent className="pt-6 space-y-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CurrencyInr size={24} weight="bold" className="text-primary" />
+                        <h4 className="font-bold text-lg">
+                          {language === 'hi' ? 'भुगतान विवरण' : 'Payment Details'}
+                        </h4>
+                      </div>
+                      
+                      <Alert className="bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-800">
+                        <Info size={18} className="text-amber-600" />
+                        <AlertDescription className="text-amber-800 dark:text-amber-200">
+                          <strong>
+                            {language === 'hi' 
+                              ? `कुल राशि: ₹${formData.membershipPlan === '6-month' ? (membershipSettings?.sixMonthPrice || 500) : (membershipSettings?.oneYearPrice || 900)}`
+                              : `Total Amount: ₹${formData.membershipPlan === '6-month' ? (membershipSettings?.sixMonthPrice || 500) : (membershipSettings?.oneYearPrice || 900)}`}
+                          </strong>
+                          <span className="ml-2 text-sm">
+                            ({formData.membershipPlan === '6-month' 
+                              ? (language === 'hi' ? '6 महीने' : '6 months') 
+                              : (language === 'hi' ? '1 वर्ष' : '1 year')})
+                          </span>
+                        </AlertDescription>
+                      </Alert>
+
+                      {/* Payment Methods */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* UPI Details */}
+                        <div className="p-4 border rounded-lg bg-white dark:bg-background">
+                          <h5 className="font-semibold mb-2 flex items-center gap-2">
+                            📱 {language === 'hi' ? 'UPI से भुगतान करें' : 'Pay via UPI'}
+                          </h5>
+                          <div className="space-y-2 text-sm">
+                            <p className="font-mono bg-muted p-2 rounded text-center select-all">
+                              shaadipartner@upi
+                            </p>
+                            <p className="text-muted-foreground text-xs text-center">
+                              {language === 'hi' ? 'UPI ID कॉपी करने के लिए क्लिक करें' : 'Click to copy UPI ID'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Bank Details */}
+                        <div className="p-4 border rounded-lg bg-white dark:bg-background">
+                          <h5 className="font-semibold mb-2 flex items-center gap-2">
+                            🏦 {language === 'hi' ? 'बैंक ट्रांसफर' : 'Bank Transfer'}
+                          </h5>
+                          <div className="space-y-1 text-sm">
+                            <p><span className="text-muted-foreground">{language === 'hi' ? 'बैंक:' : 'Bank:'}</span> State Bank of India</p>
+                            <p><span className="text-muted-foreground">{language === 'hi' ? 'खाता नं:' : 'A/C:'}</span> 1234567890123</p>
+                            <p><span className="text-muted-foreground">IFSC:</span> SBIN0001234</p>
+                            <p><span className="text-muted-foreground">{language === 'hi' ? 'नाम:' : 'Name:'}</span> Shaadi Partner</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* QR Code placeholder */}
+                      <div className="flex justify-center p-4">
+                        <div className="text-center">
+                          <div className="w-32 h-32 bg-muted border-2 border-dashed rounded-lg flex items-center justify-center mx-auto mb-2">
+                            <span className="text-4xl">📲</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {language === 'hi' ? 'QR कोड स्कैन करें' : 'Scan QR Code'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Upload Payment Screenshot */}
+                      <div className="space-y-3">
+                        <Label className="text-base font-semibold flex items-center gap-2">
+                          <Upload size={18} />
+                          {language === 'hi' ? 'भुगतान स्क्रीनशॉट अपलोड करें *' : 'Upload Payment Screenshot *'}
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          {language === 'hi' 
+                            ? 'भुगतान करने के बाद, कृपया भुगतान स्क्रीनशॉट अपलोड करें। एडमिन द्वारा सत्यापन के बाद आपकी सदस्यता सक्रिय हो जाएगी।'
+                            : 'After making payment, please upload the payment screenshot. Your membership will be activated after admin verification.'}
+                        </p>
+                        
+                        {paymentScreenshotPreview ? (
+                          <div className="relative inline-block">
+                            <img 
+                              src={paymentScreenshotPreview} 
+                              alt="Payment Screenshot" 
+                              className="max-w-[200px] max-h-[200px] object-contain rounded-lg border cursor-pointer"
+                              onClick={() => openLightbox([paymentScreenshotPreview], 0)}
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute -top-2 -right-2 h-6 w-6"
+                              onClick={() => {
+                                setPaymentScreenshotFile(null)
+                                setPaymentScreenshotPreview(null)
+                              }}
+                            >
+                              <X size={14} />
+                            </Button>
+                            <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                              <CheckCircle size={14} weight="fill" />
+                              {language === 'hi' ? 'स्क्रीनशॉट अपलोड हो गया' : 'Screenshot uploaded'}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <label className="flex-1">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) {
+                                    setPaymentScreenshotFile(file)
+                                    const reader = new FileReader()
+                                    reader.onloadend = () => {
+                                      setPaymentScreenshotPreview(reader.result as string)
+                                    }
+                                    reader.readAsDataURL(file)
+                                  }
+                                }}
+                              />
+                              <div className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                                <Upload size={32} className="mx-auto mb-2 text-muted-foreground" />
+                                <p className="text-sm font-medium">
+                                  {language === 'hi' ? 'क्लिक करें या फ़ाइल खींचें' : 'Click or drag file'}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  PNG, JPG {language === 'hi' ? 'अधिकतम' : 'max'} 5MB
+                                </p>
+                              </div>
+                            </label>
+                          </div>
+                        )}
+                        
+                        {!paymentScreenshotPreview && (
+                          <p className="text-xs text-amber-600 flex items-center gap-1">
+                            <Warning size={14} />
+                            {language === 'hi' 
+                              ? 'पंजीकरण पूरा करने के लिए भुगतान स्क्रीनशॉट अपलोड करना आवश्यक है'
+                              : 'Payment screenshot is required to complete registration'}
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Terms and Conditions Checkbox */}
                 <div className="border rounded-lg p-4 bg-muted/20">
                   <div className="flex items-start gap-3">
@@ -2819,7 +2989,17 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 {t.registration.next}
               </Button>
             ) : step === 6 ? (
-              <Button size="sm" onClick={handleSubmit} disabled={!termsAccepted || !formData.membershipPlan || isSubmitting}>
+              <Button 
+                size="sm" 
+                onClick={handleSubmit} 
+                disabled={
+                  !termsAccepted || 
+                  !formData.membershipPlan || 
+                  isSubmitting ||
+                  // Require payment screenshot for paid plans
+                  (formData.membershipPlan !== 'free' && !paymentScreenshotPreview)
+                }
+              >
                 {isSubmitting ? (
                   <>
                     <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />
