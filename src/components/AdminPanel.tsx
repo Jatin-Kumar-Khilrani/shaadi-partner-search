@@ -2424,7 +2424,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                                   paymentStatus: 'verified' as const,
                                                   paymentVerifiedAt: now.toISOString(),
                                                   paymentVerifiedBy: 'Admin',
-                                                  paymentAmount: profile.membershipPlan === '1-year' ? 2499 : 1499,
+                                                  paymentAmount: profile.paymentAmount || (profile.membershipPlan === '1-year' ? (membershipSettings?.oneYearPrice || 900) : (membershipSettings?.sixMonthPrice || 500)),
                                                   hasMembership: true,
                                                   membershipStartDate: now.toISOString(),
                                                   membershipEndDate: expiryDate.toISOString()
@@ -5417,7 +5417,7 @@ ShaadiPartnerSearch Team
                                 paymentStatus: 'verified' as const,
                                 paymentVerifiedAt: now.toISOString(),
                                 paymentVerifiedBy: 'Admin',
-                                paymentAmount: paymentViewProfile.membershipPlan === '1-year' ? 2499 : 1499,
+                                paymentAmount: paymentViewProfile.paymentAmount || (paymentViewProfile.membershipPlan === '1-year' ? (membershipSettings?.oneYearPrice || 900) : (membershipSettings?.sixMonthPrice || 500)),
                                 hasMembership: true,
                                 membershipStartDate: now.toISOString(),
                                 membershipEndDate: expiryDate.toISOString()

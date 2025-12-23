@@ -640,7 +640,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                         id: profile.id,
                         renewalPaymentScreenshotUrl: renewalPaymentPreview,
                         renewalPaymentStatus: 'pending',
-                        renewalPaymentAmount: renewalPlan === '1-year' ? 2499 : 1499,
+                        renewalPaymentAmount: renewalPlan === '1-year' ? 900 : 500,
                         renewalPaymentUploadedAt: new Date().toISOString(),
                         membershipPlan: renewalPlan
                       })
