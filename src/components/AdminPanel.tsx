@@ -25,7 +25,6 @@ import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 import { toast } from 'sonner'
 import { formatDateDDMMYYYY } from '@/lib/utils'
 import { verifyPhotosWithVision, type PhotoVerificationResult } from '@/lib/visionPhotoVerification'
-import { sampleProfiles, sampleUsers } from '@/lib/sampleData'
 
 interface AdminPanelProps {
   profiles: Profile[] | undefined
@@ -1759,23 +1758,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       )}
                     </CardDescription>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      if (confirm(language === 'hi' 
-                        ? 'क्या आप वाकई सैंपल डेटा रीसेट करना चाहते हैं? यह मौजूदा डेटा को बदल देगा।' 
-                        : 'Are you sure you want to reset to sample data? This will replace existing data.'
-                      )) {
-                        setProfiles(sampleProfiles)
-                        toast.success(t.sampleDataReset)
-                      }
-                    }}
-                    className="gap-2"
-                  >
-                    <ArrowCounterClockwise size={16} />
-                    {t.resetSampleData}
-                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
