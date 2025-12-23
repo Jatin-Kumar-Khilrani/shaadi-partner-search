@@ -54,6 +54,20 @@ interface MembershipSettings {
   discountPercentage: number
   discountEnabled: boolean
   discountEndDate: string | null
+  // Plan-specific limits
+  freePlanChatLimit: number
+  freePlanContactLimit: number
+  sixMonthChatLimit: number
+  sixMonthContactLimit: number
+  oneYearChatLimit: number
+  oneYearContactLimit: number
+  // Payment details
+  upiId: string
+  bankName: string
+  accountNumber: string
+  ifscCode: string
+  accountHolderName: string
+  qrCodeImage: string
 }
 
 interface RegistrationDialogProps {
@@ -2588,6 +2602,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                     <CheckCircle size={16} weight="fill" className="text-green-500" />
                                     {language === 'hi' ? 'रुचि व्यक्त करें' : 'Express interest'}
                                   </li>
+                                  <li className="flex items-center gap-2">
+                                    <CheckCircle size={16} weight="fill" className="text-green-500" />
+                                    {language === 'hi' 
+                                      ? `चैट सीमा: ${membershipSettings?.freePlanChatLimit || 5} प्रोफाइल` 
+                                      : `Chat limit: ${membershipSettings?.freePlanChatLimit || 5} profiles`}
+                                  </li>
+                                  <li className="flex items-center gap-2 text-amber-600">
+                                    <X size={16} weight="bold" />
+                                    {language === 'hi' ? 'संपर्क देखने की सुविधा नहीं' : 'No contact view access'}
+                                  </li>
                                   <li className="flex items-center gap-2 text-amber-600">
                                     <X size={16} weight="bold" />
                                     {language === 'hi' ? 'बायोडेटा जनरेट/डाउनलोड नहीं' : 'No biodata generation/download'}
@@ -2595,10 +2619,6 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                   <li className="flex items-center gap-2 text-amber-600">
                                     <X size={16} weight="bold" />
                                     {language === 'hi' ? 'वेडिंग सर्विसेज एक्सेस नहीं' : 'No Wedding Services access'}
-                                  </li>
-                                  <li className="flex items-center gap-2 text-amber-600">
-                                    <X size={16} weight="bold" />
-                                    {language === 'hi' ? 'सीमित संपर्क सुविधाएं' : 'Limited contact features'}
                                   </li>
                                 </ul>
                               </div>
@@ -2618,7 +2638,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                 <h4 className="font-bold text-xl mb-2">{t.registration.plan6Month}</h4>
                                 <div className="flex items-baseline gap-2 mb-3">
                                   <CurrencyInr size={24} weight="bold" className="text-primary" />
-                                  <span className="text-3xl font-bold text-primary">500</span>
+                                  <span className="text-3xl font-bold text-primary">{membershipSettings?.sixMonthPrice || 500}</span>
                                   <span className="text-muted-foreground">{t.registration.perMonth}</span>
                                 </div>
                                 <ul className="space-y-2 text-sm text-muted-foreground">
@@ -2628,7 +2648,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                   </li>
                                   <li className="flex items-center gap-2">
                                     <CheckCircle size={16} weight="fill" className="text-teal" />
-                                    {t.registration.contactAccess}
+                                    {language === 'hi' 
+                                      ? `चैट सीमा: ${membershipSettings?.sixMonthChatLimit || 50} प्रोफाइल` 
+                                      : `Chat limit: ${membershipSettings?.sixMonthChatLimit || 50} profiles`}
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <CheckCircle size={16} weight="fill" className="text-teal" />
+                                    {language === 'hi' 
+                                      ? `संपर्क देखें: ${membershipSettings?.sixMonthContactLimit || 20} प्रोफाइल` 
+                                      : `Contact views: ${membershipSettings?.sixMonthContactLimit || 20} profiles`}
                                   </li>
                                   <li className="flex items-center gap-2">
                                     <CheckCircle size={16} weight="fill" className="text-teal" />
@@ -2663,7 +2691,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                 <h4 className="font-bold text-xl mb-2">{t.registration.plan1Year}</h4>
                                 <div className="flex items-baseline gap-2 mb-3">
                                   <CurrencyInr size={24} weight="bold" className="text-accent" />
-                                  <span className="text-3xl font-bold text-accent">900</span>
+                                  <span className="text-3xl font-bold text-accent">{membershipSettings?.oneYearPrice || 900}</span>
                                   <span className="text-muted-foreground">{t.registration.perYear}</span>
                                   <span className="text-sm text-teal font-medium ml-2">{t.registration.savings}</span>
                                 </div>
@@ -2674,7 +2702,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                   </li>
                                   <li className="flex items-center gap-2">
                                     <CheckCircle size={16} weight="fill" className="text-teal" />
-                                    {t.registration.contactAccess}
+                                    {language === 'hi' 
+                                      ? `चैट सीमा: ${membershipSettings?.oneYearChatLimit || 120} प्रोफाइल` 
+                                      : `Chat limit: ${membershipSettings?.oneYearChatLimit || 120} profiles`}
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <CheckCircle size={16} weight="fill" className="text-teal" />
+                                    {language === 'hi' 
+                                      ? `संपर्क देखें: ${membershipSettings?.oneYearContactLimit || 50} प्रोफाइल` 
+                                      : `Contact views: ${membershipSettings?.oneYearContactLimit || 50} profiles`}
                                   </li>
                                   <li className="flex items-center gap-2">
                                     <CheckCircle size={16} weight="fill" className="text-teal" />
@@ -2737,12 +2773,26 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                             📱 {language === 'hi' ? 'UPI से भुगतान करें' : 'Pay via UPI'}
                           </h5>
                           <div className="space-y-2 text-sm">
-                            <p className="font-mono bg-muted p-2 rounded text-center select-all">
-                              shaadipartner@upi
-                            </p>
-                            <p className="text-muted-foreground text-xs text-center">
-                              {language === 'hi' ? 'UPI ID कॉपी करने के लिए क्लिक करें' : 'Click to copy UPI ID'}
-                            </p>
+                            {membershipSettings?.upiId ? (
+                              <>
+                                <p 
+                                  className="font-mono bg-muted p-2 rounded text-center select-all cursor-pointer hover:bg-muted/80"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(membershipSettings.upiId)
+                                    toast.success(language === 'hi' ? 'UPI ID कॉपी हुई!' : 'UPI ID copied!')
+                                  }}
+                                >
+                                  {membershipSettings.upiId}
+                                </p>
+                                <p className="text-muted-foreground text-xs text-center">
+                                  {language === 'hi' ? 'UPI ID कॉपी करने के लिए क्लिक करें' : 'Click to copy UPI ID'}
+                                </p>
+                              </>
+                            ) : (
+                              <p className="text-muted-foreground text-center py-2">
+                                {language === 'hi' ? 'UPI विवरण जल्द उपलब्ध होगा' : 'UPI details coming soon'}
+                              </p>
+                            )}
                           </div>
                         </div>
 
@@ -2751,21 +2801,39 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           <h5 className="font-semibold mb-2 flex items-center gap-2">
                             🏦 {language === 'hi' ? 'बैंक ट्रांसफर' : 'Bank Transfer'}
                           </h5>
-                          <div className="space-y-1 text-sm">
-                            <p><span className="text-muted-foreground">{language === 'hi' ? 'बैंक:' : 'Bank:'}</span> State Bank of India</p>
-                            <p><span className="text-muted-foreground">{language === 'hi' ? 'खाता नं:' : 'A/C:'}</span> 1234567890123</p>
-                            <p><span className="text-muted-foreground">IFSC:</span> SBIN0001234</p>
-                            <p><span className="text-muted-foreground">{language === 'hi' ? 'नाम:' : 'Name:'}</span> Shaadi Partner</p>
-                          </div>
+                          {membershipSettings?.bankName && membershipSettings?.accountNumber ? (
+                            <div className="space-y-1 text-sm">
+                              <p><span className="text-muted-foreground">{language === 'hi' ? 'बैंक:' : 'Bank:'}</span> {membershipSettings.bankName}</p>
+                              <p><span className="text-muted-foreground">{language === 'hi' ? 'खाता नं:' : 'A/C:'}</span> {membershipSettings.accountNumber}</p>
+                              {membershipSettings.ifscCode && (
+                                <p><span className="text-muted-foreground">IFSC:</span> {membershipSettings.ifscCode}</p>
+                              )}
+                              {membershipSettings.accountHolderName && (
+                                <p><span className="text-muted-foreground">{language === 'hi' ? 'नाम:' : 'Name:'}</span> {membershipSettings.accountHolderName}</p>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-muted-foreground text-center py-2 text-sm">
+                              {language === 'hi' ? 'बैंक विवरण जल्द उपलब्ध होगा' : 'Bank details coming soon'}
+                            </p>
+                          )}
                         </div>
                       </div>
 
-                      {/* QR Code placeholder */}
+                      {/* QR Code */}
                       <div className="flex justify-center p-4">
                         <div className="text-center">
-                          <div className="w-32 h-32 bg-muted border-2 border-dashed rounded-lg flex items-center justify-center mx-auto mb-2">
-                            <span className="text-4xl">📲</span>
-                          </div>
+                          {membershipSettings?.qrCodeImage ? (
+                            <img 
+                              src={membershipSettings.qrCodeImage} 
+                              alt="Payment QR Code" 
+                              className="w-40 h-40 object-contain border rounded-lg mx-auto mb-2"
+                            />
+                          ) : (
+                            <div className="w-32 h-32 bg-muted border-2 border-dashed rounded-lg flex items-center justify-center mx-auto mb-2">
+                              <span className="text-4xl">📲</span>
+                            </div>
+                          )}
                           <p className="text-xs text-muted-foreground">
                             {language === 'hi' ? 'QR कोड स्कैन करें' : 'Scan QR Code'}
                           </p>

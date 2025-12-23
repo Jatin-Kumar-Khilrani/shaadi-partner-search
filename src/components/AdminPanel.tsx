@@ -57,6 +57,13 @@ interface MembershipSettings {
   sixMonthContactLimit: number    // 6-month plan: contact view limit
   oneYearChatLimit: number        // 1-year plan: chat request limit
   oneYearContactLimit: number     // 1-year plan: contact view limit
+  // Payment details
+  upiId: string                   // UPI ID for payments
+  bankName: string                // Bank name
+  accountNumber: string           // Bank account number
+  ifscCode: string                // IFSC code
+  accountHolderName: string       // Account holder name
+  qrCodeImage: string             // QR code image URL/base64
 }
 
 export function AdminPanel({ profiles, setProfiles, users, language, onLogout, onLoginAsUser }: AdminPanelProps) {
@@ -77,7 +84,14 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     sixMonthChatLimit: 50,
     sixMonthContactLimit: 20,
     oneYearChatLimit: 120,
-    oneYearContactLimit: 50
+    oneYearContactLimit: 50,
+    // Default payment details
+    upiId: '',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    accountHolderName: '',
+    qrCodeImage: ''
   })
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [selectedProfiles, setSelectedProfiles] = useState<string[]>([])
@@ -3018,6 +3032,150 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         ? '💬 सभी प्लान में एडमिन चैट मुफ्त है। ये सीमाएं केवल प्रोफाइल-टू-प्रोफाइल चैट और संपर्क देखने पर लागू होती हैं।' 
                         : '💬 Admin chat is free for all plans. These limits apply only to profile-to-profile chats and contact views.'}
                     </p>
+                  </div>
+
+                  {/* Payment Details Section */}
+                  <Separator className="my-6" />
+                  <div className="space-y-4">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <CreditCard size={20} />
+                      {language === 'hi' ? 'भुगतान विवरण' : 'Payment Details'}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'hi' 
+                        ? 'ये विवरण पंजीकरण के दौरान भुगतान के लिए दिखाए जाएंगे।' 
+                        : 'These details will be shown during registration for payment.'}
+                    </p>
+                    
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {/* UPI ID */}
+                      <div className="space-y-2">
+                        <Label>{language === 'hi' ? 'UPI ID' : 'UPI ID'}</Label>
+                        <Input 
+                          type="text"
+                          placeholder={language === 'hi' ? 'yourname@upi' : 'yourname@upi'}
+                          value={membershipSettings?.upiId || ''}
+                          onChange={(e) => setMembershipSettings(prev => ({
+                            ...prev!,
+                            upiId: e.target.value
+                          }))}
+                        />
+                      </div>
+                      
+                      {/* Account Holder Name */}
+                      <div className="space-y-2">
+                        <Label>{language === 'hi' ? 'खाता धारक का नाम' : 'Account Holder Name'}</Label>
+                        <Input 
+                          type="text"
+                          placeholder={language === 'hi' ? 'खाता धारक का नाम' : 'Account holder name'}
+                          value={membershipSettings?.accountHolderName || ''}
+                          onChange={(e) => setMembershipSettings(prev => ({
+                            ...prev!,
+                            accountHolderName: e.target.value
+                          }))}
+                        />
+                      </div>
+                      
+                      {/* Bank Name */}
+                      <div className="space-y-2">
+                        <Label>{language === 'hi' ? 'बैंक का नाम' : 'Bank Name'}</Label>
+                        <Input 
+                          type="text"
+                          placeholder={language === 'hi' ? 'बैंक का नाम' : 'Bank name'}
+                          value={membershipSettings?.bankName || ''}
+                          onChange={(e) => setMembershipSettings(prev => ({
+                            ...prev!,
+                            bankName: e.target.value
+                          }))}
+                        />
+                      </div>
+                      
+                      {/* Account Number */}
+                      <div className="space-y-2">
+                        <Label>{language === 'hi' ? 'खाता संख्या' : 'Account Number'}</Label>
+                        <Input 
+                          type="text"
+                          placeholder={language === 'hi' ? 'खाता संख्या' : 'Account number'}
+                          value={membershipSettings?.accountNumber || ''}
+                          onChange={(e) => setMembershipSettings(prev => ({
+                            ...prev!,
+                            accountNumber: e.target.value
+                          }))}
+                        />
+                      </div>
+                      
+                      {/* IFSC Code */}
+                      <div className="space-y-2">
+                        <Label>{language === 'hi' ? 'IFSC कोड' : 'IFSC Code'}</Label>
+                        <Input 
+                          type="text"
+                          placeholder="ABCD0123456"
+                          value={membershipSettings?.ifscCode || ''}
+                          onChange={(e) => setMembershipSettings(prev => ({
+                            ...prev!,
+                            ifscCode: e.target.value.toUpperCase()
+                          }))}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* QR Code Upload */}
+                    <div className="space-y-2 mt-4">
+                      <Label>{language === 'hi' ? 'QR कोड छवि' : 'QR Code Image'}</Label>
+                      <p className="text-xs text-muted-foreground">
+                        {language === 'hi' 
+                          ? 'भुगतान के लिए UPI QR कोड अपलोड करें' 
+                          : 'Upload UPI QR code for payment'}
+                      </p>
+                      <div className="flex items-start gap-4">
+                        {membershipSettings?.qrCodeImage ? (
+                          <div className="relative">
+                            <img 
+                              src={membershipSettings.qrCodeImage} 
+                              alt="QR Code" 
+                              className="w-32 h-32 object-contain border rounded-lg"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute -top-2 -right-2 h-6 w-6"
+                              onClick={() => setMembershipSettings(prev => ({
+                                ...prev!,
+                                qrCodeImage: ''
+                              }))}
+                            >
+                              <X size={14} />
+                            </Button>
+                          </div>
+                        ) : (
+                          <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50">
+                            <Upload size={24} className="text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground mt-1">
+                              {language === 'hi' ? 'QR अपलोड करें' : 'Upload QR'}
+                            </span>
+                            <input 
+                              type="file" 
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file) {
+                                  const reader = new FileReader()
+                                  reader.onload = () => {
+                                    setMembershipSettings(prev => ({
+                                      ...prev!,
+                                      qrCodeImage: reader.result as string
+                                    }))
+                                  }
+                                  reader.readAsDataURL(file)
+                                }
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   
                   <div className="mt-6 flex justify-end">

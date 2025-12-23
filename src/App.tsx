@@ -44,6 +44,13 @@ interface MembershipSettings {
   sixMonthContactLimit: number    // 6-month plan: contact view limit
   oneYearChatLimit: number        // 1-year plan: chat request limit
   oneYearContactLimit: number     // 1-year plan: contact view limit
+  // Payment details
+  upiId: string                   // UPI ID for payments
+  bankName: string                // Bank name
+  accountNumber: string           // Bank account number
+  ifscCode: string                // IFSC code
+  accountHolderName: string       // Account holder name
+  qrCodeImage: string             // QR code image URL/base64
 }
 
 const defaultMembershipSettings: MembershipSettings = {
@@ -60,7 +67,14 @@ const defaultMembershipSettings: MembershipSettings = {
   sixMonthChatLimit: 50,
   sixMonthContactLimit: 20,
   oneYearChatLimit: 120,
-  oneYearContactLimit: 50
+  oneYearContactLimit: 50,
+  // Default payment details
+  upiId: '',
+  bankName: '',
+  accountNumber: '',
+  ifscCode: '',
+  accountHolderName: '',
+  qrCodeImage: ''
 }
 
 function App() {
