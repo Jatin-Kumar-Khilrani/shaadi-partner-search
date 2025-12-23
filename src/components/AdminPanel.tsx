@@ -2594,11 +2594,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {profiles?.filter(p => p.status === 'verified').map((profile) => {
-                          const isExpired = profile.membershipExpiry && new Date(profile.membershipExpiry) < new Date()
-                          const isExpiringSoon = profile.membershipExpiry && 
-                            new Date(profile.membershipExpiry) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) &&
-                            new Date(profile.membershipExpiry) > new Date()
+                        {profiles?.filter(p => p.status === 'verified' && !p.isDeleted).map((profile) => {
+                          const hasMembership = profile.membershipPlan && profile.membershipPlan !== 'free' && profile.membershipExpiry
+                          const isExpired = hasMembership && new Date(profile.membershipExpiry!) < new Date()
+                          const isExpiringSoon = hasMembership && 
+                            new Date(profile.membershipExpiry!) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) &&
+                            new Date(profile.membershipExpiry!) > new Date()
+                          const isActive = hasMembership && !isExpired && !isExpiringSoon
                           
                           return (
                             <TableRow key={profile.id}>
@@ -2607,19 +2609,24 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               <TableCell>
                                 <Badge variant="outline">
                                   {profile.membershipPlan === '6-month' ? t.sixMonthPlan : 
-                                   profile.membershipPlan === '1-year' ? t.oneYearPlan : '-'}
+                                   profile.membershipPlan === '1-year' ? t.oneYearPlan : 
+                                   profile.membershipPlan === 'free' ? (language === 'hi' ? 'फ्री' : 'Free') : '-'}
                                 </Badge>
                               </TableCell>
                               <TableCell>
                                 {profile.membershipExpiry ? formatDateDDMMYYYY(profile.membershipExpiry) : '-'}
                               </TableCell>
                               <TableCell>
-                                {isExpired ? (
+                                {!hasMembership ? (
+                                  <Badge variant="outline" className="text-muted-foreground">{language === 'hi' ? 'कोई सदस्यता नहीं' : 'No Membership'}</Badge>
+                                ) : isExpired ? (
                                   <Badge variant="destructive">{t.expired}</Badge>
                                 ) : isExpiringSoon ? (
                                   <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">{t.expiringIn30Days}</Badge>
+                                ) : isActive ? (
+                                  <Badge variant="default" className="bg-green-100 text-green-800">{language === 'hi' ? 'सक्रिय' : 'Active'}</Badge>
                                 ) : (
-                                  <Badge variant="default">{language === 'hi' ? 'सक्रिय' : 'Active'}</Badge>
+                                  <Badge variant="outline" className="text-muted-foreground">{language === 'hi' ? 'कोई सदस्यता नहीं' : 'No Membership'}</Badge>
                                 )}
                               </TableCell>
                               <TableCell>
