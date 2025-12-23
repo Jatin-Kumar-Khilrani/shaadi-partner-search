@@ -21,6 +21,31 @@ import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 import { TermsAndConditions } from '@/components/TermsAndConditions'
 import { uploadPhoto, isBlobStorageAvailable, dataUrlToFile } from '@/lib/blobService'
 
+// Country code to phone length mapping
+const COUNTRY_PHONE_LENGTHS: Record<string, { min: number; max: number; display: string }> = {
+  '+91': { min: 10, max: 10, display: '10' },      // India
+  '+1': { min: 10, max: 10, display: '10' },       // USA/Canada
+  '+44': { min: 10, max: 10, display: '10' },      // UK
+  '+971': { min: 9, max: 9, display: '9' },        // UAE
+  '+65': { min: 8, max: 8, display: '8' },         // Singapore
+  '+61': { min: 9, max: 9, display: '9' },         // Australia
+  '+49': { min: 10, max: 11, display: '10-11' },   // Germany
+  '+33': { min: 9, max: 9, display: '9' },         // France
+  '+81': { min: 10, max: 10, display: '10' },      // Japan
+  '+86': { min: 11, max: 11, display: '11' },      // China
+}
+
+// Helper function to get phone length for a country code
+const getPhoneLengthInfo = (countryCode: string) => {
+  return COUNTRY_PHONE_LENGTHS[countryCode] || { min: 7, max: 15, display: '7-15' }
+}
+
+// Helper function to validate phone number length
+const isValidPhoneLength = (phone: string, countryCode: string): boolean => {
+  const lengthInfo = getPhoneLengthInfo(countryCode)
+  return phone.length >= lengthInfo.min && phone.length <= lengthInfo.max
+}
+
 interface MembershipSettings {
   sixMonthPrice: number
   oneYearPrice: number
@@ -681,12 +706,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       return
     }
 
-    // Validate mobile is 10 digits
-    if (formData.mobile.length !== 10) {
+    // Validate mobile based on country code
+    const phoneLengthInfo = getPhoneLengthInfo(formData.countryCode)
+    if (!isValidPhoneLength(formData.mobile, formData.countryCode)) {
       toast.error(
         language === 'hi' 
-          ? 'कृपया 10 अंक का मोबाइल नंबर दर्ज करें' 
-          : 'Please enter a 10 digit mobile number'
+          ? `कृपया ${phoneLengthInfo.display} अंक का मोबाइल नंबर दर्ज करें` 
+          : `Please enter a ${phoneLengthInfo.display} digit mobile number`
       )
       return
     }
@@ -1071,12 +1097,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       return
     }
     if (step === 3) {
-      // Validate mobile is 10 digits
-      if (formData.mobile.length !== 10) {
+      // Validate mobile based on country code
+      const stepPhoneLengthInfo = getPhoneLengthInfo(formData.countryCode)
+      if (!isValidPhoneLength(formData.mobile, formData.countryCode)) {
         toast.error(
           language === 'hi' 
-            ? 'कृपया 10 अंक का मोबाइल नंबर दर्ज करें' 
-            : 'Please enter a 10 digit mobile number'
+            ? `कृपया ${stepPhoneLengthInfo.display} अंक का मोबाइल नंबर दर्ज करें` 
+            : `Please enter a ${stepPhoneLengthInfo.display} digit mobile number`
         )
         return
       }
@@ -1828,13 +1855,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <Input
                       id="mobile"
                       type="tel"
-                      placeholder={language === 'hi' ? '10 अंक का मोबाइल नंबर' : '10 digit mobile number'}
+                      placeholder={language === 'hi' ? `${getPhoneLengthInfo(formData.countryCode).display} अंक का मोबाइल नंबर` : `${getPhoneLengthInfo(formData.countryCode).display} digit mobile number`}
                       value={formData.mobile}
                       onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '').slice(0, 10)
+                        const maxLength = getPhoneLengthInfo(formData.countryCode).max
+                        const value = e.target.value.replace(/\D/g, '').slice(0, maxLength)
                         updateField('mobile', value)
                       }}
-                      maxLength={10}
+                      maxLength={getPhoneLengthInfo(formData.countryCode).max}
                       required
                       disabled={isEditMode}
                       className={`flex-1 ${isEditMode ? 'bg-muted' : ''}`}
@@ -1845,9 +1873,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       {language === 'hi' ? 'मोबाइल बदलने के लिए एडमिन से संपर्क करें' : 'Contact admin to change mobile'}
                     </p>
                   )}
-                  {!isEditMode && formData.mobile && formData.mobile.length !== 10 && (
+                  {!isEditMode && formData.mobile && !isValidPhoneLength(formData.mobile, formData.countryCode) && (
                     <p className="text-xs text-destructive">
-                      {language === 'hi' ? 'कृपया 10 अंक का मोबाइल नंबर दर्ज करें' : 'Please enter a 10 digit mobile number'}
+                      {language === 'hi' ? `कृपया ${getPhoneLengthInfo(formData.countryCode).display} अंक का मोबाइल नंबर दर्ज करें` : `Please enter a ${getPhoneLengthInfo(formData.countryCode).display} digit mobile number`}
                     </p>
                   )}
                 </div>
