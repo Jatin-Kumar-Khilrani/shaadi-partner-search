@@ -609,6 +609,62 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     setSelectedProfile(null)
   }
 
+  // Helper function to create payment transaction and auto-generate invoice
+  const createPaymentTransactionForVerification = (
+    profile: Profile, 
+    isRenewal: boolean = false
+  ): void => {
+    const now = new Date()
+    const plan = profile.membershipPlan || '6-month'
+    const monthsToAdd = plan === '1-year' ? 12 : 6
+    const expiryDate = new Date(now)
+    expiryDate.setMonth(expiryDate.getMonth() + monthsToAdd)
+    
+    // Get the amount from membership settings or use defaults
+    const amount = plan === '1-year' 
+      ? (membershipSettings?.oneYearPrice || 2499)
+      : (membershipSettings?.sixMonthPrice || 1499)
+    
+    // Generate unique receipt number
+    const receiptNumber = `RCP${Date.now().toString().slice(-8)}`
+    
+    // Generate transaction ID (from screenshot upload or auto-generated)
+    const transactionId = `TXN${now.getTime().toString().slice(-10)}`
+    
+    // Create the payment transaction
+    const newTransaction: PaymentTransaction = {
+      id: `pt_${now.getTime()}`,
+      transactionId: transactionId,
+      profileId: profile.profileId,
+      profileName: profile.fullName,
+      profileMobile: profile.mobile,
+      profileEmail: profile.email,
+      plan: plan,
+      amount: amount,
+      discountAmount: 0,
+      finalAmount: amount,
+      paymentMode: 'upi', // Default to UPI since screenshot was uploaded
+      paymentDate: now.toISOString().split('T')[0],
+      expiryDate: expiryDate.toISOString().split('T')[0],
+      receiptNumber: receiptNumber,
+      notes: isRenewal 
+        ? (language === 'hi' ? 'नवीनीकरण भुगतान - स्क्रीनशॉट से सत्यापित' : 'Renewal payment - Verified from screenshot')
+        : (language === 'hi' ? 'नई सदस्यता - स्क्रीनशॉट से सत्यापित' : 'New membership - Verified from screenshot'),
+      createdAt: now.toISOString(),
+      createdBy: 'Admin'
+    }
+    
+    // Add to payment transactions
+    setPaymentTransactions((current) => [newTransaction, ...(current || [])])
+    
+    // Show success message with invoice number
+    toast.success(
+      language === 'hi' 
+        ? `रसीद #${receiptNumber} जनरेट हो गई। खाते टैब में देखें।`
+        : `Invoice #${receiptNumber} generated. View in Accounts tab.`
+    )
+  }
+
   // Open Admin Edit Profile dialog
   const handleOpenAdminEdit = (profile: Profile) => {
     setAdminEditFormData({
@@ -2366,6 +2422,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                               : p
                                           )
                                         )
+                                        // Create payment transaction and auto-generate invoice
+                                        createPaymentTransactionForVerification(profile, false)
                                         toast.success(language === 'hi' ? 'भुगतान सत्यापित! सदस्यता सक्रिय की गई।' : 'Payment verified! Membership activated.')
                                       }}
                                     >
@@ -2524,6 +2582,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                             : p
                                         )
                                       )
+                                      // Create payment transaction and auto-generate invoice for renewal
+                                      createPaymentTransactionForVerification(profile, true)
                                       toast.success(language === 'hi' ? 'नवीनीकरण भुगतान सत्यापित! सदस्यता नवीनीकृत।' : 'Renewal payment verified! Membership renewed.')
                                     }}
                                   >
@@ -5099,6 +5159,8 @@ ShaadiPartnerSearch Team
                             : p
                         )
                       )
+                      // Create payment transaction and auto-generate invoice
+                      createPaymentTransactionForVerification(paymentViewProfile, false)
                       setPaymentViewProfile(prev => prev ? {...prev, paymentStatus: 'verified', paymentVerifiedAt: now.toISOString(), hasMembership: true, membershipStartDate: now.toISOString(), membershipEndDate: expiryDate.toISOString()} : null)
                       toast.success(language === 'hi' ? 'भुगतान सत्यापित! सदस्यता सक्रिय की गई।' : 'Payment verified! Membership activated.')
                     }}
