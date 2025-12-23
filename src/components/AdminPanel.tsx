@@ -126,6 +126,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [selectedProfiles, setSelectedProfiles] = useState<string[]>([])
+  const [selectedDatabaseProfiles, setSelectedDatabaseProfiles] = useState<string[]>([])
   const [sortBy, setSortBy] = useState<'name' | 'date' | 'expiry'>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [chatMessage, setChatMessage] = useState('')
@@ -1227,10 +1228,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     </div>
                     <div className="space-y-4">
                     {[...pendingProfiles].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((profile) => (
-                      <Card key={profile.id} className={`border-2 ${selectedProfiles.includes(profile.id) ? 'border-primary bg-primary/5' : ''}`}>
-                        <CardContent className="pt-6">
+                      <Card key={profile.id} className={`border-2 overflow-hidden ${selectedProfiles.includes(profile.id) ? 'border-primary bg-primary/5' : ''}`}>
+                        <CardContent className="pt-6 overflow-hidden">
                           <div className="flex flex-col gap-4">
-                            <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-start gap-4 flex-wrap lg:flex-nowrap">
                               {/* Checkbox for selection */}
                               <div className="flex items-center shrink-0 pt-2">
                                 <Checkbox 
@@ -1318,24 +1319,24 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 )}
                               </div>
                               
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h3 className="font-bold text-lg">{profile.fullName}</h3>
-                                  <Badge variant="outline" className="text-xs">
+                              <div className="flex-1 min-w-0 overflow-hidden">
+                                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                  <h3 className="font-bold text-lg truncate max-w-[200px]">{profile.fullName}</h3>
+                                  <Badge variant="outline" className="text-xs shrink-0">
                                     {profile.relationToProfile || (language === 'hi' ? 'स्वयं' : 'Self')}
                                   </Badge>
-                                  <Badge variant="secondary">{t.pending}</Badge>
+                                  <Badge variant="secondary" className="shrink-0">{t.pending}</Badge>
                                   {profile.returnedForEdit && (
-                                    <Badge variant="outline" className="text-amber-600 border-amber-400 bg-amber-50">
+                                    <Badge variant="outline" className="text-amber-600 border-amber-400 bg-amber-50 shrink-0">
                                       {language === 'hi' ? 'संपादन हेतु लौटाया' : 'Returned for Edit'}
                                     </Badge>
                                   )}
-                                  {profile.isBlocked && <Badge variant="destructive">{t.blocked}</Badge>}
+                                  {profile.isBlocked && <Badge variant="destructive" className="shrink-0">{t.blocked}</Badge>}
                                   {/* Membership Plan Badge */}
                                   {profile.membershipPlan && (
                                     <Badge variant={profile.membershipPlan === 'free' ? 'outline' : 'default'} 
-                                      className={profile.membershipPlan === '1-year' ? 'bg-accent text-accent-foreground' : 
-                                                 profile.membershipPlan === '6-month' ? 'bg-primary text-primary-foreground' : ''}>
+                                      className={`shrink-0 ${profile.membershipPlan === '1-year' ? 'bg-accent text-accent-foreground' : 
+                                                 profile.membershipPlan === '6-month' ? 'bg-primary text-primary-foreground' : ''}`}>
                                       {profile.membershipPlan === 'free' ? (language === 'hi' ? 'फ्री' : 'Free') :
                                        profile.membershipPlan === '6-month' ? (language === 'hi' ? '6 महीने' : '6 Month') :
                                        (language === 'hi' ? '1 वर्ष' : '1 Year')}
@@ -1345,8 +1346,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   {profile.paymentStatus && profile.paymentStatus !== 'not-required' && (
                                     <Badge variant={profile.paymentStatus === 'verified' ? 'default' : 
                                                     profile.paymentStatus === 'pending' ? 'secondary' : 'destructive'}
-                                      className={profile.paymentStatus === 'verified' ? 'bg-green-600' : 
-                                                 profile.paymentStatus === 'pending' ? 'bg-amber-500 text-white' : ''}>
+                                      className={`shrink-0 ${profile.paymentStatus === 'verified' ? 'bg-green-600' : 
+                                                 profile.paymentStatus === 'pending' ? 'bg-amber-500 text-white' : ''}`}>
                                       {profile.paymentStatus === 'verified' ? (language === 'hi' ? '₹ सत्यापित' : '₹ Verified') :
                                        profile.paymentStatus === 'pending' ? (language === 'hi' ? '₹ लंबित' : '₹ Pending') :
                                        (language === 'hi' ? '₹ अस्वीकृत' : '₹ Rejected')}
@@ -1372,14 +1373,14 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   </Alert>
                                 )}
                                 
-                                <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
-                                  <div>{t.age}: {profile.age}</div>
-                                  <div>{profile.gender === 'male' ? (language === 'hi' ? 'पुरुष' : 'Male') : (language === 'hi' ? 'महिला' : 'Female')}</div>
-                                  <div>{t.location}: {profile.location}</div>
-                                  <div>{t.education}: {profile.education}</div>
-                                  <div className="col-span-2">{t.occupation}: {profile.occupation}</div>
-                                  <div className="col-span-2">{t.email}: {profile.email}</div>
-                                  <div className="col-span-2">{t.mobile}: {profile.mobile}</div>
+                                <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground overflow-hidden">
+                                  <div className="truncate">{t.age}: {profile.age}</div>
+                                  <div className="truncate">{profile.gender === 'male' ? (language === 'hi' ? 'पुरुष' : 'Male') : (language === 'hi' ? 'महिला' : 'Female')}</div>
+                                  <div className="truncate">{t.location}: {profile.location}</div>
+                                  <div className="truncate">{t.education}: {profile.education}</div>
+                                  <div className="col-span-2 truncate">{t.occupation}: {profile.occupation}</div>
+                                  <div className="col-span-2 truncate">{t.email}: {profile.email}</div>
+                                  <div className="col-span-2 truncate">{t.mobile}: {profile.mobile}</div>
                                   <div className="col-span-2 flex items-center gap-2">
                                     <ShieldCheck size={14} className={profile.digilockerVerified ? 'text-green-600' : 'text-muted-foreground'} />
                                     <span>{t.idProofVerification}:</span>
@@ -1804,7 +1805,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
           <TabsContent value="database">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-4">
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <Database size={24} weight="fill" />
@@ -1817,6 +1818,65 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       )}
                     </CardDescription>
                   </div>
+                  {/* Bulk Actions Toolbar for Database */}
+                  {selectedDatabaseProfiles.length > 0 && (
+                    <div className="flex items-center gap-2 bg-muted p-2 rounded-lg flex-wrap">
+                      <span className="text-sm font-medium">
+                        {selectedDatabaseProfiles.length} {language === 'hi' ? 'चयनित' : 'selected'}
+                      </span>
+                      <Button 
+                        size="sm" 
+                        variant="default"
+                        onClick={() => {
+                          const count = selectedDatabaseProfiles.length
+                          selectedDatabaseProfiles.forEach(id => handleApprove(id))
+                          setSelectedDatabaseProfiles([])
+                          toast.success(language === 'hi' ? `${count} प्रोफाइल स्वीकृत!` : `${count} profiles approved!`)
+                        }}
+                        className="gap-1"
+                      >
+                        <Check size={14} />
+                        {t.bulkApprove}
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        onClick={() => {
+                          const count = selectedDatabaseProfiles.length
+                          selectedDatabaseProfiles.forEach(id => handleReject(id))
+                          setSelectedDatabaseProfiles([])
+                          toast.success(language === 'hi' ? `${count} प्रोफाइल अस्वीकृत!` : `${count} profiles rejected!`)
+                        }}
+                        className="gap-1"
+                      >
+                        <X size={14} />
+                        {t.bulkReject}
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="gap-1 text-red-600 hover:text-red-700"
+                        onClick={() => {
+                          if (confirm(language === 'hi' ? `क्या आप ${selectedDatabaseProfiles.length} प्रोफाइल हटाना चाहते हैं?` : `Delete ${selectedDatabaseProfiles.length} profiles?`)) {
+                            const count = selectedDatabaseProfiles.length
+                            selectedDatabaseProfiles.forEach(id => handleDeleteProfile(id))
+                            setSelectedDatabaseProfiles([])
+                            toast.success(language === 'hi' ? `${count} प्रोफाइल हटाई गई!` : `${count} profiles deleted!`)
+                          }
+                        }}
+                      >
+                        <Trash size={14} />
+                        {language === 'hi' ? 'हटाएं' : 'Delete'}
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setSelectedDatabaseProfiles([])}
+                      >
+                        {t.close}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -1832,6 +1892,18 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       <Table className="min-w-[1200px]">
                         <TableHeader>
                           <TableRow>
+                            <TableHead className="whitespace-nowrap w-10">
+                              <Checkbox 
+                                checked={selectedDatabaseProfiles.length === profiles.length && profiles.length > 0}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedDatabaseProfiles(profiles.map(p => p.id))
+                                  } else {
+                                    setSelectedDatabaseProfiles([])
+                                  }
+                                }}
+                              />
+                            </TableHead>
                             <TableHead className="whitespace-nowrap">{t.profileId}</TableHead>
                             <TableHead className="whitespace-nowrap">{t.name}</TableHead>
                             <TableHead className="whitespace-nowrap">{t.userId}</TableHead>
@@ -1850,7 +1922,19 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         {[...profiles].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((profile) => {
                           const creds = getUserCredentials(profile.id)
                           return (
-                            <TableRow key={profile.id} className={profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20' : ''}>
+                            <TableRow key={profile.id} className={`${profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20' : ''} ${selectedDatabaseProfiles.includes(profile.id) ? 'bg-primary/5' : ''}`}>
+                              <TableCell>
+                                <Checkbox 
+                                  checked={selectedDatabaseProfiles.includes(profile.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedDatabaseProfiles(prev => [...prev, profile.id])
+                                    } else {
+                                      setSelectedDatabaseProfiles(prev => prev.filter(id => id !== profile.id))
+                                    }
+                                  }}
+                                />
+                              </TableCell>
                               <TableCell className={`font-mono font-semibold ${profile.isDeleted ? 'text-red-600' : ''}`}>{profile.profileId}</TableCell>
                               <TableCell className={`font-medium ${profile.isDeleted ? 'text-red-600' : ''}`}>
                                 {profile.fullName}
@@ -4607,8 +4691,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
 
       {/* Receipt View Dialog */}
       <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
+        <DialogContent className="max-w-xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <FilePdf size={24} className="text-red-600" />
               {t.paymentReceipt}
@@ -4616,24 +4700,25 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
           </DialogHeader>
 
           {selectedTransaction && (
-            <div id="receipt-content" className="space-y-4">
-              {/* Receipt Header */}
-              <div className="text-center border-b pb-4">
-                <h2 className="text-2xl font-bold text-primary">ShaadiPartnerSearch</h2>
-                <p className="text-muted-foreground text-sm">
-                  {language === 'hi' ? 'विश्वसनीय वैवाहिक सेवा' : 'Trusted Matrimonial Service'}
-                </p>
-                <div className="mt-2 inline-block bg-green-100 text-green-800 px-4 py-1 rounded-full text-sm font-semibold">
-                  {t.paymentReceipt}
+            <ScrollArea className="flex-1 max-h-[60vh] pr-4">
+              <div id="receipt-content" className="space-y-4">
+                {/* Receipt Header */}
+                <div className="text-center border-b pb-4">
+                  <h2 className="text-2xl font-bold text-primary">ShaadiPartnerSearch</h2>
+                  <p className="text-muted-foreground text-sm">
+                    {language === 'hi' ? 'विश्वसनीय वैवाहिक सेवा' : 'Trusted Matrimonial Service'}
+                  </p>
+                  <div className="mt-2 inline-block bg-green-100 text-green-800 px-4 py-1 rounded-full text-sm font-semibold">
+                    {t.paymentReceipt}
+                  </div>
                 </div>
-              </div>
 
-              {/* Receipt Details */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">{t.receiptNumber}</p>
-                  <p className="font-mono font-bold">{selectedTransaction.receiptNumber}</p>
-                </div>
+                {/* Receipt Details */}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">{t.receiptNumber}</p>
+                    <p className="font-mono font-bold">{selectedTransaction.receiptNumber}</p>
+                  </div>
                 <div>
                   <p className="text-muted-foreground">{t.transactionId}</p>
                   <p className="font-mono font-bold">{selectedTransaction.transactionId}</p>
@@ -4678,28 +4763,28 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               {/* Plan Details */}
               <div className="space-y-2">
                 <h4 className="font-semibold text-muted-foreground">{language === 'hi' ? 'योजना विवरण' : 'Plan Details'}</h4>
-                <div className="p-4 bg-muted rounded-lg">
-                  <div className="flex justify-between mb-2">
-                    <span>{t.membershipPlan}</span>
-                    <Badge>
+                <div className="p-4 bg-muted rounded-lg overflow-hidden">
+                  <div className="flex justify-between items-center mb-2 gap-2 flex-wrap">
+                    <span className="shrink-0">{t.membershipPlan}</span>
+                    <Badge className="shrink-0">
                       {selectedTransaction.plan === 'free' ? t.freePlan : 
                        selectedTransaction.plan === '6-month' ? t.sixMonthPlan : t.oneYearPlan}
                     </Badge>
                   </div>
-                  <div className="flex justify-between mb-2">
+                  <div className="flex justify-between items-center mb-2">
                     <span>{t.originalAmount}</span>
-                    <span>₹{selectedTransaction.amount}</span>
+                    <span className="font-mono">₹{selectedTransaction.amount}</span>
                   </div>
                   {selectedTransaction.discountAmount > 0 && (
-                    <div className="flex justify-between mb-2 text-green-600">
+                    <div className="flex justify-between items-center mb-2 text-green-600">
                       <span>{language === 'hi' ? 'छूट' : 'Discount'}</span>
-                      <span>-₹{selectedTransaction.discountAmount}</span>
+                      <span className="font-mono">-₹{selectedTransaction.discountAmount}</span>
                     </div>
                   )}
                   <Separator className="my-2" />
-                  <div className="flex justify-between font-bold text-lg">
+                  <div className="flex justify-between items-center font-bold text-lg">
                     <span>{t.finalAmount}</span>
-                    <span className="text-green-600">₹{selectedTransaction.finalAmount}</span>
+                    <span className="text-green-600 font-mono">₹{selectedTransaction.finalAmount}</span>
                   </div>
                 </div>
               </div>
@@ -4724,12 +4809,74 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 <p>{language === 'hi' ? 'यह कंप्यूटर जनित रसीद है।' : 'This is a computer generated receipt.'}</p>
                 <p>{language === 'hi' ? 'धन्यवाद!' : 'Thank you for your payment!'}</p>
               </div>
-            </div>
+              </div>
+            </ScrollArea>
           )}
 
-          <div className="flex justify-end gap-2 mt-4">
+          <div className="flex justify-end gap-2 mt-4 flex-wrap shrink-0">
             <Button variant="outline" onClick={() => setShowReceiptDialog(false)}>
               {t.close}
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => {
+                if (selectedTransaction) {
+                  // Generate receipt as text file for download
+                  const receiptText = `
+════════════════════════════════════════
+       SHAADI PARTNER SEARCH
+       PAYMENT RECEIPT
+════════════════════════════════════════
+
+Receipt No: ${selectedTransaction.receiptNumber}
+Transaction ID: ${selectedTransaction.transactionId}
+Payment Date: ${formatDateDDMMYYYY(selectedTransaction.paymentDate)}
+Payment Mode: ${selectedTransaction.paymentMode}
+
+────────────────────────────────────────
+CUSTOMER DETAILS
+────────────────────────────────────────
+Name: ${selectedTransaction.profileName}
+Profile ID: ${selectedTransaction.profileId}
+Mobile: ${selectedTransaction.profileMobile}
+Email: ${selectedTransaction.profileEmail}
+
+────────────────────────────────────────
+PLAN DETAILS
+────────────────────────────────────────
+Membership Plan: ${selectedTransaction.plan === 'free' ? 'Free Plan' : selectedTransaction.plan === '6-month' ? '6 Month Plan' : '1 Year Plan'}
+Original Amount: ₹${selectedTransaction.amount}
+Discount: ₹${selectedTransaction.discountAmount}
+────────────────────────────────────────
+FINAL AMOUNT: ₹${selectedTransaction.finalAmount}
+────────────────────────────────────────
+
+Validity Period: ${formatDateDDMMYYYY(selectedTransaction.paymentDate)} - ${formatDateDDMMYYYY(selectedTransaction.expiryDate)}
+
+${selectedTransaction.notes ? `Notes: ${selectedTransaction.notes}` : ''}
+
+════════════════════════════════════════
+This is a computer generated receipt.
+Thank you for choosing ShaadiPartnerSearch!
+════════════════════════════════════════
+                  `.trim()
+                  
+                  const blob = new Blob([receiptText], { type: 'text/plain' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `Receipt_${selectedTransaction.receiptNumber}.txt`
+                  document.body.appendChild(a)
+                  a.click()
+                  document.body.removeChild(a)
+                  URL.revokeObjectURL(url)
+                  toast.success(language === 'hi' ? 'रसीद डाउनलोड हो गई!' : 'Receipt downloaded!')
+                }
+              }}
+              className="gap-2"
+            >
+              <DownloadSimple size={16} />
+              {t.downloadReceipt}
             </Button>
             <Button 
               variant="outline"
