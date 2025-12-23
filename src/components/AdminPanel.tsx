@@ -2397,7 +2397,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     <div className="text-sm text-muted-foreground">
                                       <span>{language === 'hi' ? 'राशि:' : 'Amount:'} </span>
                                       <span className="font-semibold text-foreground">
-                                        ₹{profile.membershipPlan === '1-year' ? '2,499' : '1,499'}
+                                        ₹{profile.paymentAmount?.toLocaleString('en-IN') || (profile.membershipPlan === '1-year' ? (membershipSettings?.oneYearPrice || 900) : (membershipSettings?.sixMonthPrice || 500))}
                                       </span>
                                       <span className="mx-2">|</span>
                                       <span>{language === 'hi' ? 'अपलोड:' : 'Uploaded:'} </span>
@@ -2555,7 +2555,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   <div className="text-sm text-muted-foreground">
                                     <span>{language === 'hi' ? 'राशि:' : 'Amount:'} </span>
                                     <span className="font-semibold text-foreground">
-                                      ₹{profile.renewalPaymentAmount?.toLocaleString('en-IN') || (profile.membershipPlan === '1-year' ? '2,499' : '1,499')}
+                                      ₹{profile.renewalPaymentAmount?.toLocaleString('en-IN') || (profile.membershipPlan === '1-year' ? (membershipSettings?.oneYearPrice || 900) : (membershipSettings?.sixMonthPrice || 500))}
                                     </span>
                                     <span className="mx-2">|</span>
                                     <span>{language === 'hi' ? 'अपलोड:' : 'Uploaded:'} </span>
@@ -5310,7 +5310,7 @@ ShaadiPartnerSearch Team
                   <div>
                     <Label className="text-xs text-muted-foreground">{language === 'hi' ? 'राशि' : 'Amount'}</Label>
                     <p className="font-bold text-xl text-primary">
-                      ₹{paymentViewProfile.membershipPlan === '6-month' ? '1,499' : paymentViewProfile.membershipPlan === '1-year' ? '2,499' : '0'}
+                      ₹{paymentViewProfile.paymentAmount?.toLocaleString('en-IN') || (paymentViewProfile.membershipPlan === '6-month' ? (membershipSettings?.sixMonthPrice || 500) : paymentViewProfile.membershipPlan === '1-year' ? (membershipSettings?.oneYearPrice || 900) : '0')}
                     </p>
                   </div>
                   <div>

@@ -1078,6 +1078,7 @@ function App() {
             language={language}
             onEdit={handleEditProfile}
             onDeleteProfile={handleDeleteProfile}
+            membershipSettings={membershipSettings || defaultMembershipSettings}
           />
         )}
 

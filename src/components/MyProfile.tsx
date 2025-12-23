@@ -19,15 +19,33 @@ import type { Language } from '@/lib/translations'
 import { BiodataGenerator } from './BiodataGenerator'
 import { PhotoLightbox } from './PhotoLightbox'
 
+// Membership settings interface for pricing
+interface MembershipSettings {
+  sixMonthPrice: number
+  oneYearPrice: number
+}
+
+// Default pricing
+const DEFAULT_PRICING: MembershipSettings = {
+  sixMonthPrice: 500,
+  oneYearPrice: 900
+}
+
 interface MyProfileProps {
   profile: Profile | null
   language: Language
   onEdit?: () => void
   onDeleteProfile?: (profileId: string) => void
   onUpdateProfile?: (updatedProfile: Partial<Profile>) => void
+  membershipSettings?: MembershipSettings
 }
 
-export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdateProfile }: MyProfileProps) {
+export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdateProfile, membershipSettings }: MyProfileProps) {
+  // Get pricing from settings or defaults
+  const pricing = {
+    sixMonth: membershipSettings?.sixMonthPrice || DEFAULT_PRICING.sixMonthPrice,
+    oneYear: membershipSettings?.oneYearPrice || DEFAULT_PRICING.oneYearPrice
+  }
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const [showPhotoLightbox, setShowPhotoLightbox] = useState(false)
   const [showBiodataGenerator, setShowBiodataGenerator] = useState(false)
@@ -508,7 +526,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                     onClick={() => setRenewalPlan('6-month')}
                   >
                     <span className="font-bold">{language === 'hi' ? '6 महीने' : '6 Months'}</span>
-                    <span className="text-lg">₹1,499</span>
+                    <span className="text-lg">₹{pricing.sixMonth}</span>
                   </Button>
                   <Button
                     type="button"
@@ -517,9 +535,9 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                     onClick={() => setRenewalPlan('1-year')}
                   >
                     <span className="font-bold">{language === 'hi' ? '1 वर्ष' : '1 Year'}</span>
-                    <span className="text-lg">₹2,499</span>
+                    <span className="text-lg">₹{pricing.oneYear}</span>
                     <Badge variant="secondary" className="mt-1 text-xs">
-                      {language === 'hi' ? '17% बचत' : 'Save 17%'}
+                      {language === 'hi' ? '10% बचत' : 'Save 10%'}
                     </Badge>
                   </Button>
                 </div>
@@ -567,8 +585,8 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
 
                 <p className="text-sm text-primary font-medium">
                   {language === 'hi' 
-                    ? `कृपया ₹${renewalPlan === '1-year' ? '2,499' : '1,499'} का भुगतान करें और स्क्रीनशॉट अपलोड करें।`
-                    : `Please pay ₹${renewalPlan === '1-year' ? '2,499' : '1,499'} and upload the screenshot.`}
+                    ? `कृपया ₹${renewalPlan === '1-year' ? pricing.oneYear : pricing.sixMonth} का भुगतान करें और स्क्रीनशॉट अपलोड करें।`
+                    : `Please pay ₹${renewalPlan === '1-year' ? pricing.oneYear : pricing.sixMonth} and upload the screenshot.`}
                 </p>
               </div>
 
@@ -643,7 +661,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                         id: profile.id,
                         renewalPaymentScreenshotUrl: renewalPaymentPreview,
                         renewalPaymentStatus: 'pending',
-                        renewalPaymentAmount: renewalPlan === '1-year' ? 900 : 500,
+                        renewalPaymentAmount: renewalPlan === '1-year' ? pricing.oneYear : pricing.sixMonth,
                         renewalPaymentUploadedAt: new Date().toISOString(),
                         membershipPlan: renewalPlan
                       })
