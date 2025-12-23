@@ -953,10 +953,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   onClick={async () => {
                     setIsRefreshing(true)
                     try {
+                      // Mark that we've loaded from Azure to prevent sample data from loading
+                      localStorage.setItem('shaadi_partner_azure_loaded', 'true')
                       // Wait a bit for any pending Azure saves to complete
                       await new Promise(resolve => setTimeout(resolve, 500))
                       forceRefreshFromAzure('profiles')
                       forceRefreshFromAzure('users')
+                      forceRefreshFromAzure('weddingServices')
                       // Wait for Azure fetch to complete
                       await new Promise(resolve => setTimeout(resolve, 2000))
                       toast.success(t.dataRefreshed)

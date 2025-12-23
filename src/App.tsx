@@ -260,17 +260,38 @@ function App() {
     }
   }, [loggedInUser, currentUserProfile, language])
 
+  // Only load sample data if Azure hasn't returned any data yet
+  // Check isProfilesLoaded to ensure we don't override Azure data
   useEffect(() => {
-    if ((!profiles || profiles.length === 0) && sampleProfiles.length > 0) {
-      setProfiles(sampleProfiles)
+    // Only load sample data if Azure has loaded and returned empty (first-time setup)
+    // or if Azure is not available (offline mode)
+    const hasAzureLoaded = isProfilesLoaded
+    const isAzureEmpty = !profiles || profiles.length === 0
+    
+    // Don't load sample data if we've already loaded from Azure
+    // This prevents sample data from appearing after refresh
+    if (hasAzureLoaded && isAzureEmpty && sampleProfiles.length > 0) {
+      // Check if this is a first-time load (no localStorage marker)
+      const hasLoadedBefore = localStorage.getItem('shaadi_partner_azure_loaded')
+      if (!hasLoadedBefore) {
+        setProfiles(sampleProfiles)
+        localStorage.setItem('shaadi_partner_azure_loaded', 'true')
+      }
     }
-    if ((!users || users.length === 0) && sampleUsers.length > 0) {
-      setUsers(sampleUsers)
+    if (isUsersLoaded && (!users || users.length === 0) && sampleUsers.length > 0) {
+      const hasLoadedBefore = localStorage.getItem('shaadi_partner_azure_loaded')
+      if (!hasLoadedBefore) {
+        setUsers(sampleUsers)
+      }
     }
     if ((!weddingServices || weddingServices.length === 0) && sampleWeddingServices.length > 0) {
-      setWeddingServices(sampleWeddingServices)
+      const hasLoadedBefore = localStorage.getItem('shaadi_partner_azure_loaded')
+      if (!hasLoadedBefore) {
+        setWeddingServices(sampleWeddingServices)
+        localStorage.setItem('shaadi_partner_azure_loaded', 'true')
+      }
     }
-  }, [])
+  }, [isProfilesLoaded, isUsersLoaded])
 
   const handleSearch = (filters: SearchFilters) => {
     setSearchFilters(filters)
