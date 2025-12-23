@@ -504,21 +504,164 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
           )}
         </div>
 
-        {/* Blur overlay for free/expired membership */}
+        {/* Limited chat for free/expired membership - only admin chat allowed */}
         {shouldBlur && !isAdmin && (
-          <div className="relative mb-6">
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg">
-              <LockSimple size={48} weight="bold" className="text-amber-600 mb-4" />
-              <h3 className="text-xl font-bold text-amber-600 mb-2">
-                {language === 'hi' ? 'चैट सुविधा सीमित है' : 'Chat Feature Limited'}
-              </h3>
-              <p className="text-muted-foreground text-center max-w-md">
-                {language === 'hi' 
-                  ? 'मुफ्त या समाप्त सदस्यता पर चैट सुविधा उपलब्ध नहीं है। पूर्ण एक्सेस के लिए प्रीमियम योजना में अपग्रेड करें।' 
-                  : 'Chat feature is not available on Free or Expired membership. Upgrade to Premium for full access.'}
-              </p>
-            </div>
-            <div className="filter blur-sm pointer-events-none h-[600px] bg-muted/20 rounded-lg" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[600px]">
+            {/* Left panel - Admin Support only */}
+            <Card className="md:col-span-1">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {language === 'hi' ? 'सहायता चैट' : 'Support Chat'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {/* Admin Support Chat Option - Always visible */}
+                <div
+                  onClick={() => setSelectedConversation(`admin-${currentUserProfile?.profileId}`)}
+                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                    selectedConversation === `admin-${currentUserProfile?.profileId}` 
+                      ? 'bg-primary/10 border border-primary' 
+                      : 'hover:bg-muted'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-10 h-10 bg-primary flex items-center justify-center">
+                      <span className="text-sm font-bold text-primary-foreground">👤</span>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium">{language === 'hi' ? 'एडमिन सहायता' : 'Admin Support'}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {language === 'hi' ? 'किसी भी प्रश्न के लिए संपर्क करें' : 'Contact for any queries'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator className="my-4" />
+
+                {/* Locked message for other chats */}
+                <div className="text-center py-4">
+                  <LockSimple size={32} className="mx-auto mb-2 text-amber-600" weight="bold" />
+                  <p className="text-sm text-muted-foreground">
+                    {language === 'hi' 
+                      ? 'अन्य प्रोफाइल के साथ चैट के लिए प्रीमियम सदस्यता आवश्यक है' 
+                      : 'Premium membership required to chat with other profiles'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Right panel - Chat area */}
+            <Card className="md:col-span-2 flex flex-col">
+              {selectedConversation === `admin-${currentUserProfile?.profileId}` ? (
+                <>
+                  {/* Admin chat header */}
+                  <CardHeader className="border-b">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-10 h-10 bg-primary flex items-center justify-center">
+                        <span className="text-lg">👤</span>
+                      </Avatar>
+                      <div>
+                        <CardTitle className="text-lg">{language === 'hi' ? 'एडमिन सहायता' : 'Admin Support'}</CardTitle>
+                        <p className="text-xs text-muted-foreground">
+                          {language === 'hi' ? 'आमतौर पर 24 घंटे में जवाब' : 'Usually responds within 24 hours'}
+                        </p>
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  {/* Admin chat messages */}
+                  <ScrollArea className="flex-1 p-4">
+                    <div className="space-y-4">
+                      {messages
+                        ?.filter(m => 
+                          m.type === 'admin-to-user' && 
+                          (m.toProfileId === currentUserProfile?.profileId || m.fromProfileId === currentUserProfile?.profileId)
+                        )
+                        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+                        .map((msg) => (
+                          <div
+                            key={msg.id}
+                            className={`flex ${msg.fromProfileId === 'admin' ? 'justify-start' : 'justify-end'}`}
+                          >
+                            <div className={`max-w-[80%] p-3 rounded-lg ${
+                              msg.fromProfileId === 'admin' 
+                                ? 'bg-muted' 
+                                : 'bg-primary text-primary-foreground'
+                            }`}>
+                              <p className="text-sm">{msg.content}</p>
+                              <p className={`text-xs mt-1 ${
+                                msg.fromProfileId === 'admin' ? 'text-muted-foreground' : 'text-primary-foreground/70'
+                              }`}>
+                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  </ScrollArea>
+
+                  {/* Admin chat input */}
+                  <div className="p-4 border-t">
+                    <div className="flex gap-2">
+                      <Input
+                        value={messageInput}
+                        onChange={(e) => setMessageInput(e.target.value)}
+                        placeholder={language === 'hi' ? 'एडमिन को संदेश लिखें...' : 'Type message to admin...'}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && messageInput.trim()) {
+                            // Send message to admin
+                            const newMsg: ChatMessage = {
+                              id: `msg-${Date.now()}`,
+                              type: 'admin-to-user',
+                              fromProfileId: currentUserProfile?.profileId || '',
+                              toProfileId: 'admin',
+                              content: messageInput.trim(),
+                              timestamp: new Date().toISOString(),
+                              read: false
+                            }
+                            setMessages([...(messages || []), newMsg])
+                            setMessageInput('')
+                            toast.success(language === 'hi' ? 'संदेश भेजा गया' : 'Message sent')
+                          }
+                        }}
+                      />
+                      <Button 
+                        onClick={() => {
+                          if (messageInput.trim()) {
+                            const newMsg: ChatMessage = {
+                              id: `msg-${Date.now()}`,
+                              type: 'admin-to-user',
+                              fromProfileId: currentUserProfile?.profileId || '',
+                              toProfileId: 'admin',
+                              content: messageInput.trim(),
+                              timestamp: new Date().toISOString(),
+                              read: false
+                            }
+                            setMessages([...(messages || []), newMsg])
+                            setMessageInput('')
+                            toast.success(language === 'hi' ? 'संदेश भेजा गया' : 'Message sent')
+                          }
+                        }} 
+                        size="icon"
+                      >
+                        <PaperPlaneTilt size={20} weight="fill" />
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <CardContent className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <ChatCircle size={48} className="mx-auto mb-4 text-muted-foreground" weight="light" />
+                    <p className="text-muted-foreground">
+                      {language === 'hi' ? 'एडमिन सहायता चुनें' : 'Select Admin Support to chat'}
+                    </p>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
           </div>
         )}
 
