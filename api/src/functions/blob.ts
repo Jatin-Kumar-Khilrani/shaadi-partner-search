@@ -67,7 +67,7 @@ app.http('blobUploadUrl', {
       const blobName = `${profileId}/${timestamp}_${sanitizedFileName}`
       
       // Generate upload SAS URL (15 min expiry)
-      const uploadUrl = generateUploadSasUrl(blobName, 15)
+      const uploadUrl = await generateUploadSasUrl(blobName, 15)
       
       // Generate CDN URL for later access
       const cdnUrl = getCdnUrl(blobName)

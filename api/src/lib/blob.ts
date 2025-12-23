@@ -9,14 +9,35 @@ import {
 
 let containerClient: ContainerClient | null = null
 let sharedKeyCredential: StorageSharedKeyCredential | null = null
+let containerEnsured = false
 
 const CONTAINER_NAME = 'photos'
 
 /**
+ * Ensure the blob container exists (create if not)
+ */
+async function ensureContainerExists(client: ContainerClient): Promise<void> {
+  if (containerEnsured) return
+  
+  try {
+    await client.createIfNotExists({ access: 'blob' }) // Public blob access
+    containerEnsured = true
+    console.log(`Container '${CONTAINER_NAME}' ready`)
+  } catch (error) {
+    console.error('Error ensuring container exists:', error)
+    // Container might already exist with different settings, continue anyway
+    containerEnsured = true
+  }
+}
+
+/**
  * Get the blob container client for photo storage
  */
-export function getBlobContainerClient(): ContainerClient {
-  if (containerClient) return containerClient
+export async function getBlobContainerClient(): Promise<ContainerClient> {
+  if (containerClient) {
+    await ensureContainerExists(containerClient)
+    return containerClient
+  }
 
   const connectionString = process.env.BLOB_CONNECTION_STRING
   const accountName = process.env.BLOB_ACCOUNT_NAME
@@ -38,6 +59,7 @@ export function getBlobContainerClient(): ContainerClient {
     containerClient = blobServiceClient.getContainerClient(CONTAINER_NAME)
   }
 
+  await ensureContainerExists(containerClient)
   return containerClient
 }
 
@@ -45,7 +67,7 @@ export function getBlobContainerClient(): ContainerClient {
  * Generate a SAS URL for uploading a blob (write-only, short-lived)
  * This allows the frontend to upload directly to blob storage
  */
-export function generateUploadSasUrl(blobName: string, expiryMinutes: number = 15): string {
+export async function generateUploadSasUrl(blobName: string, expiryMinutes: number = 15): Promise<string> {
   const accountName = process.env.BLOB_ACCOUNT_NAME
   const accountKey = process.env.BLOB_ACCOUNT_KEY
 
@@ -56,6 +78,9 @@ export function generateUploadSasUrl(blobName: string, expiryMinutes: number = 1
   if (!sharedKeyCredential) {
     sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey)
   }
+
+  // Ensure container exists before generating SAS URL
+  await getBlobContainerClient()
 
   const startsOn = new Date()
   startsOn.setMinutes(startsOn.getMinutes() - 5) // Start 5 mins ago to handle clock skew
@@ -125,7 +150,7 @@ export function getCdnUrl(blobName: string): string {
  */
 export async function deleteBlob(blobName: string): Promise<boolean> {
   try {
-    const container = getBlobContainerClient()
+    const container = await getBlobContainerClient()
     const blobClient = container.getBlobClient(blobName)
     await blobClient.deleteIfExists()
     return true
@@ -140,7 +165,7 @@ export async function deleteBlob(blobName: string): Promise<boolean> {
  */
 export async function blobExists(blobName: string): Promise<boolean> {
   try {
-    const container = getBlobContainerClient()
+    const container = await getBlobContainerClient()
     const blobClient = container.getBlobClient(blobName)
     return await blobClient.exists()
   } catch (error) {
@@ -154,7 +179,7 @@ export async function blobExists(blobName: string): Promise<boolean> {
  */
 export async function listProfileBlobs(profileId: string): Promise<string[]> {
   try {
-    const container = getBlobContainerClient()
+    const container = await getBlobContainerClient()
     const blobs: string[] = []
     
     for await (const blob of container.listBlobsFlat({ prefix: `${profileId}/` })) {
