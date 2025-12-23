@@ -676,6 +676,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     })
   }
 
+  // Email format validation
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
@@ -1045,21 +1051,42 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     }
   }
 
-  const sendOtps = () => {
-    const emailOtpCode = Math.floor(100000 + Math.random() * 900000).toString()
-    const mobileOtpCode = Math.floor(100000 + Math.random() * 900000).toString()
+  const sendOtps = (emailOnly?: boolean, mobileOnly?: boolean) => {
+    let emailOtpCode = generatedEmailOtp
+    let mobileOtpCode = generatedMobileOtp
     
-    setGeneratedEmailOtp(emailOtpCode)
-    setGeneratedMobileOtp(mobileOtpCode)
+    // Only generate new OTP for channels that are not verified
+    if (!emailVerified && !mobileOnly) {
+      emailOtpCode = Math.floor(100000 + Math.random() * 900000).toString()
+      setGeneratedEmailOtp(emailOtpCode)
+    }
+    
+    if (!mobileVerified && !emailOnly) {
+      mobileOtpCode = Math.floor(100000 + Math.random() * 900000).toString()
+      setGeneratedMobileOtp(mobileOtpCode)
+    }
+    
     setShowVerification(true)
     
-    toast.success(
-      language === 'hi' ? 'OTP भेजा गया!' : 'OTPs Sent!',
-      {
-        description: `Email: ${emailOtpCode} | Mobile: ${mobileOtpCode}`,
-        duration: 30000
-      }
-    )
+    // Build message based on what was sent
+    let message = ''
+    if (!emailVerified && !mobileOnly) {
+      message += `Email: ${emailOtpCode}`
+    }
+    if (!mobileVerified && !emailOnly) {
+      if (message) message += ' | '
+      message += `Mobile: ${mobileOtpCode}`
+    }
+    
+    if (message) {
+      toast.success(
+        language === 'hi' ? 'OTP भेजा गया!' : 'OTP Sent!',
+        {
+          description: message,
+          duration: 30000
+        }
+      )
+    }
   }
 
   const verifyEmailOtp = () => {
@@ -1138,6 +1165,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       return
     }
     if (step === 3) {
+      // Validate email format first
+      if (!isValidEmail(formData.email)) {
+        toast.error(
+          language === 'hi' 
+            ? 'कृपया वैध ईमेल पता दर्ज करें (उदाहरण: example@email.com)' 
+            : 'Please enter a valid email address (e.g., example@email.com)'
+        )
+        return
+      }
+      
       // Validate mobile based on country code
       const countryCode = formData.countryCode || '+91'
       const stepPhoneLengthInfo = getPhoneLengthInfo(countryCode)
@@ -1155,6 +1192,28 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         p => p.email?.toLowerCase() === formData.email?.toLowerCase() && 
         (!isEditMode || p.id !== editProfile?.id)
       )
+      
+      // Check for duplicate mobile in database (skip if editing own profile)
+      const fullMobileCheck = `${formData.countryCode} ${formData.mobile}`
+      const duplicateMobile = existingProfiles.find(
+        p => {
+          if (isEditMode && p.id === editProfile?.id) return false
+          const existingMobile = p.mobile?.replace(/\s+/g, '') || ''
+          const newMobile = fullMobileCheck.replace(/\s+/g, '')
+          return existingMobile === newMobile || existingMobile.endsWith(formData.mobile)
+        }
+      )
+      
+      // Show errors for both if both are duplicates
+      if (duplicateEmail && duplicateMobile) {
+        toast.error(
+          language === 'hi' 
+            ? 'यह ईमेल और मोबाइल नंबर दोनों पहले से पंजीकृत हैं। कृपया दूसरा ईमेल और मोबाइल नंबर उपयोग करें।' 
+            : 'Both email and mobile number are already registered. Please use different email and mobile number.'
+        )
+        return
+      }
+      
       if (duplicateEmail) {
         toast.error(
           language === 'hi' 
@@ -1164,11 +1223,6 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         return
       }
       
-      // Check for duplicate mobile in database (skip if editing own profile)
-      const duplicateMobile = existingProfiles.find(
-        p => p.mobile === formData.mobile && 
-        (!isEditMode || p.id !== editProfile?.id)
-      )
       if (duplicateMobile) {
         toast.error(
           language === 'hi' 
@@ -1986,6 +2040,17 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <p className="text-xs text-muted-foreground">
                       {language === 'hi' ? 'भेजा गया:' : 'Sent to:'} {formData.email}
                     </p>
+                    {!emailVerified && (
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        onClick={() => sendOtps(true, false)}
+                        className="text-xs p-0 h-auto"
+                      >
+                        {language === 'hi' ? 'ईमेल OTP पुनः भेजें' : 'Resend Email OTP'}
+                      </Button>
+                    )}
                   </div>
 
                   <div className="space-y-3">
@@ -2024,6 +2089,17 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <p className="text-xs text-muted-foreground">
                       {language === 'hi' ? 'भेजा गया:' : 'Sent to:'} {formData.mobile}
                     </p>
+                    {!mobileVerified && (
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        onClick={() => sendOtps(false, true)}
+                        className="text-xs p-0 h-auto"
+                      >
+                        {language === 'hi' ? 'मोबाइल OTP पुनः भेजें' : 'Resend Mobile OTP'}
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -2038,17 +2114,20 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </Button>
                 </div>
 
-                <div className="text-center">
-                  <Button
-                    type="button"
-                    variant="link"
-                    size="sm"
-                    onClick={sendOtps}
-                    className="text-sm"
-                  >
-                    {language === 'hi' ? 'OTP पुनः भेजें' : 'Resend OTPs'}
-                  </Button>
-                </div>
+                {/* Show Resend All OTPs button only if both are not verified */}
+                {!emailVerified && !mobileVerified && (
+                  <div className="text-center">
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="sm"
+                      onClick={() => sendOtps()}
+                      className="text-sm"
+                    >
+                      {language === 'hi' ? 'दोनों OTP पुनः भेजें' : 'Resend Both OTPs'}
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 

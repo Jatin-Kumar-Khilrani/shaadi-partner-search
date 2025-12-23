@@ -1231,9 +1231,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       <Card key={profile.id} className={`border-2 overflow-hidden ${selectedProfiles.includes(profile.id) ? 'border-primary bg-primary/5' : ''}`}>
                         <CardContent className="pt-6 overflow-hidden">
                           <div className="flex flex-col gap-4">
-                            <div className="flex items-start gap-4 flex-wrap lg:flex-nowrap">
+                            {/* Main content row with checkbox */}
+                            <div className="flex items-start gap-3">
                               {/* Checkbox for selection */}
-                              <div className="flex items-center shrink-0 pt-2">
+                              <div className="flex items-center shrink-0 pt-1">
                                 <Checkbox 
                                   checked={selectedProfiles.includes(profile.id)}
                                   onCheckedChange={(checked) => {
@@ -1245,82 +1246,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   }}
                                 />
                               </div>
-                              {/* Photos and Selfie Section */}
-                              <div className="flex gap-3 shrink-0">
-                                {/* Uploaded Photos */}
-                                <div className="space-y-1">
-                                  <p className="text-xs text-muted-foreground font-medium">
-                                    {language === 'hi' ? 'अपलोड फोटो' : 'Uploaded Photos'}
-                                  </p>
-                                  <div className="flex gap-1">
-                                    {profile.photos && profile.photos.length > 0 ? (
-                                      profile.photos.slice(0, 3).map((photo, idx) => (
-                                        <img 
-                                          key={idx}
-                                          src={photo} 
-                                          alt={`Photo ${idx + 1}`}
-                                          className="w-16 h-16 object-cover rounded-md border cursor-pointer hover:opacity-80 transition-opacity"
-                                          onClick={() => openLightbox(profile.photos || [], idx)}
-                                          title={language === 'hi' ? 'बड़ा देखें' : 'View larger'}
-                                        />
-                                      ))
-                                    ) : (
-                                      <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
-                                        {language === 'hi' ? 'कोई फोटो नहीं' : 'No photo'}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                {/* Selfie */}
-                                <div className="space-y-1">
-                                  <p className="text-xs text-muted-foreground font-medium">
-                                    {language === 'hi' ? 'सेल्फी' : 'Selfie'}
-                                  </p>
-                                  {profile.selfieUrl ? (
-                                    <img 
-                                      src={profile.selfieUrl} 
-                                      alt="Selfie"
-                                      className="w-16 h-16 object-cover rounded-md border-2 border-blue-300 cursor-pointer hover:opacity-80 transition-opacity"
-                                      onClick={() => openLightbox([profile.selfieUrl!], 0)}
-                                      title={language === 'hi' ? 'बड़ा देखें' : 'View larger'}
-                                    />
-                                  ) : (
-                                    <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
-                                      {language === 'hi' ? 'कोई सेल्फी नहीं' : 'No selfie'}
-                                    </div>
-                                  )}
-                                </div>
-                                {/* Payment Screenshot (for paid plans) */}
-                                {profile.membershipPlan && profile.membershipPlan !== 'free' && (
-                                  <div className="space-y-1">
-                                    <p className="text-xs text-muted-foreground font-medium">
-                                      {language === 'hi' ? 'भुगतान स्क्रीनशॉट' : 'Payment'}
-                                    </p>
-                                    {profile.paymentScreenshotUrl ? (
-                                      <img 
-                                        src={profile.paymentScreenshotUrl} 
-                                        alt="Payment Screenshot"
-                                        className={`w-16 h-16 object-cover rounded-md border-2 cursor-pointer hover:opacity-80 transition-opacity ${
-                                          profile.paymentStatus === 'verified' ? 'border-green-500' : 
-                                          profile.paymentStatus === 'rejected' ? 'border-red-500' : 'border-amber-400'
-                                        }`}
-                                        onClick={() => {
-                                          setPaymentViewProfile(profile)
-                                          setShowPaymentViewDialog(true)
-                                        }}
-                                        title={language === 'hi' ? 'भुगतान सत्यापित करें' : 'Verify Payment'}
-                                      />
-                                    ) : (
-                                      <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground text-center p-1">
-                                        {language === 'hi' ? 'अपलोड नहीं' : 'Not uploaded'}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
                               
-                              <div className="flex-1 min-w-0 overflow-hidden">
-                                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              {/* Content grid - photos and info side by side on large screens */}
+                              <div className="flex-1 min-w-0">
+                                {/* Name and badges row */}
+                                <div className="flex items-center gap-2 mb-3 flex-wrap">
                                   <h3 className="font-bold text-lg truncate max-w-[200px]">{profile.fullName}</h3>
                                   <Badge variant="outline" className="text-xs shrink-0">
                                     {profile.relationToProfile || (language === 'hi' ? 'स्वयं' : 'Self')}
@@ -1355,101 +1285,170 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   )}
                                 </div>
                                 
-                                {/* Edit Reason Alert */}
-                                {profile.returnedForEdit && profile.editReason && (
-                                  <Alert className="mb-2 bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-800">
-                                    <Pencil size={16} className="text-amber-600" />
-                                    <AlertDescription className="text-sm">
-                                      <span className="font-semibold text-amber-700 dark:text-amber-300">
-                                        {language === 'hi' ? 'संपादन कारण:' : 'Edit Reason:'}
-                                      </span>{' '}
-                                      {profile.editReason}
-                                      {profile.returnedAt && (
-                                        <span className="block text-xs text-muted-foreground mt-1">
-                                          {language === 'hi' ? 'लौटाया गया:' : 'Returned:'} {new Date(profile.returnedAt).toLocaleDateString()}
-                                        </span>
+                                {/* Photos and Details in responsive grid */}
+                                <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-4">
+                                  {/* Photos Section */}
+                                  <div className="flex flex-wrap gap-3">
+                                    {/* Uploaded Photos */}
+                                    <div className="space-y-1">
+                                      <p className="text-xs text-muted-foreground font-medium">
+                                        {language === 'hi' ? 'अपलोड फोटो' : 'Photos'}
+                                      </p>
+                                      <div className="flex gap-1">
+                                        {profile.photos && profile.photos.length > 0 ? (
+                                          profile.photos.slice(0, 3).map((photo, idx) => (
+                                            <img 
+                                              key={idx}
+                                              src={photo} 
+                                              alt={`Photo ${idx + 1}`}
+                                              className="w-14 h-14 object-cover rounded-md border cursor-pointer hover:opacity-80 transition-opacity"
+                                              onClick={() => openLightbox(profile.photos || [], idx)}
+                                              title={language === 'hi' ? 'बड़ा देखें' : 'View larger'}
+                                            />
+                                          ))
+                                        ) : (
+                                          <div className="w-14 h-14 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
+                                            {language === 'hi' ? 'नहीं' : 'None'}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {/* Selfie */}
+                                    <div className="space-y-1">
+                                      <p className="text-xs text-muted-foreground font-medium">
+                                        {language === 'hi' ? 'सेल्फी' : 'Selfie'}
+                                      </p>
+                                      {profile.selfieUrl ? (
+                                        <img 
+                                          src={profile.selfieUrl} 
+                                          alt="Selfie"
+                                          className="w-14 h-14 object-cover rounded-md border-2 border-blue-300 cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => openLightbox([profile.selfieUrl!], 0)}
+                                          title={language === 'hi' ? 'बड़ा देखें' : 'View larger'}
+                                        />
+                                      ) : (
+                                        <div className="w-14 h-14 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
+                                          {language === 'hi' ? 'नहीं' : 'None'}
+                                        </div>
                                       )}
-                                    </AlertDescription>
-                                  </Alert>
-                                )}
-                                
-                                <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground overflow-hidden">
-                                  <div className="truncate">{t.age}: {profile.age}</div>
-                                  <div className="truncate">{profile.gender === 'male' ? (language === 'hi' ? 'पुरुष' : 'Male') : (language === 'hi' ? 'महिला' : 'Female')}</div>
-                                  <div className="truncate">{t.location}: {profile.location}</div>
-                                  <div className="truncate">{t.education}: {profile.education}</div>
-                                  <div className="col-span-2 truncate">{t.occupation}: {profile.occupation}</div>
-                                  <div className="col-span-2 truncate">{t.email}: {profile.email}</div>
-                                  <div className="col-span-2 truncate">{t.mobile}: {profile.mobile}</div>
-                                  <div className="col-span-2 flex items-center gap-2">
-                                    <ShieldCheck size={14} className={profile.digilockerVerified ? 'text-green-600' : 'text-muted-foreground'} />
-                                    <span>{t.idProofVerification}:</span>
-                                    {profile.digilockerVerified ? (
-                                      <Badge variant="outline" className="text-green-600 border-green-400">
-                                        ✓ {t.digilockerVerified}
-                                      </Badge>
-                                    ) : (
-                                      <Badge variant="outline" className="text-amber-600 border-amber-400">
-                                        {t.digilockerNotVerified}
-                                      </Badge>
+                                    </div>
+                                    {/* Payment Screenshot (for paid plans) */}
+                                    {profile.membershipPlan && profile.membershipPlan !== 'free' && (
+                                      <div className="space-y-1">
+                                        <p className="text-xs text-muted-foreground font-medium">
+                                          {language === 'hi' ? 'भुगतान' : 'Payment'}
+                                        </p>
+                                        {profile.paymentScreenshotUrl ? (
+                                          <img 
+                                            src={profile.paymentScreenshotUrl} 
+                                            alt="Payment Screenshot"
+                                            className={`w-14 h-14 object-cover rounded-md border-2 cursor-pointer hover:opacity-80 transition-opacity ${
+                                              profile.paymentStatus === 'verified' ? 'border-green-500' : 
+                                              profile.paymentStatus === 'rejected' ? 'border-red-500' : 'border-amber-400'
+                                            }`}
+                                            onClick={() => {
+                                              setPaymentViewProfile(profile)
+                                              setShowPaymentViewDialog(true)
+                                            }}
+                                            title={language === 'hi' ? 'भुगतान सत्यापित करें' : 'Verify Payment'}
+                                          />
+                                        ) : (
+                                          <div className="w-14 h-14 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground text-center p-1">
+                                            {language === 'hi' ? 'नहीं' : 'None'}
+                                          </div>
+                                        )}
+                                      </div>
                                     )}
                                   </div>
-                                </div>
-                                
-                                {/* Login Credentials */}
-                                {(() => {
-                                  const creds = getUserCredentials(profile.id)
-                                  return creds ? (
-                                    <div className="mt-2 p-2 bg-primary/5 rounded-lg border border-primary/20">
-                                      <div className="flex items-center gap-2 text-sm">
-                                        <Key size={14} weight="fill" className="text-primary" />
-                                        <span className="font-semibold">{t.userId}:</span>
-                                        <code className="bg-background px-1 rounded text-primary font-mono">{creds.userId}</code>
-                                        <span className="font-semibold ml-2">{t.password}:</span>
-                                        <code className="bg-background px-1 rounded text-accent font-mono">{creds.password}</code>
+                                  
+                                  {/* Profile Details */}
+                                  <div className="min-w-0 overflow-hidden">
+                                    {/* Edit Reason Alert */}
+                                    {profile.returnedForEdit && profile.editReason && (
+                                      <Alert className="mb-2 bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-800">
+                                        <Pencil size={16} className="text-amber-600" />
+                                        <AlertDescription className="text-sm">
+                                          <span className="font-semibold text-amber-700 dark:text-amber-300">
+                                            {language === 'hi' ? 'संपादन कारण:' : 'Edit Reason:'}
+                                          </span>{' '}
+                                          {profile.editReason}
+                                        </AlertDescription>
+                                      </Alert>
+                                    )}
+                                    
+                                    {/* Profile info grid */}
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                                      <div className="truncate">{t.age}: {profile.age}</div>
+                                      <div className="truncate">{profile.gender === 'male' ? (language === 'hi' ? 'पुरुष' : 'Male') : (language === 'hi' ? 'महिला' : 'Female')}</div>
+                                      <div className="truncate">{t.location}: {profile.location}</div>
+                                      <div className="truncate">{t.education}: {profile.education}</div>
+                                      <div className="col-span-2 truncate">{t.occupation}: {profile.occupation}</div>
+                                      <div className="col-span-2 truncate">{t.email}: {profile.email}</div>
+                                      <div className="col-span-2 truncate">{t.mobile}: {profile.mobile}</div>
+                                      <div className="col-span-2 flex items-center gap-2 flex-wrap">
+                                        <ShieldCheck size={14} className={profile.digilockerVerified ? 'text-green-600' : 'text-muted-foreground'} />
+                                        <span>{t.idProofVerification}:</span>
+                                        {profile.digilockerVerified ? (
+                                          <Badge variant="outline" className="text-green-600 border-green-400">
+                                            ✓ {t.digilockerVerified}
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="text-amber-600 border-amber-400">
+                                            {t.digilockerNotVerified}
+                                          </Badge>
+                                        )}
                                       </div>
                                     </div>
-                                  ) : null
-                                })()}
-                                
-                                {/* Registration Location */}
-                                <div className="mt-3 p-2 bg-muted/50 rounded-lg border">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <NavigationArrow size={16} weight="fill" className="text-blue-500" />
-                                    <span className="text-xs font-semibold">{t.registrationLocation}</span>
+                                    
+                                    {/* Login Credentials */}
+                                    {(() => {
+                                      const creds = getUserCredentials(profile.id)
+                                      return creds ? (
+                                        <div className="mt-2 p-2 bg-primary/5 rounded-lg border border-primary/20">
+                                          <div className="flex items-center gap-2 text-sm flex-wrap">
+                                            <Key size={14} weight="fill" className="text-primary" />
+                                            <span className="font-semibold">{t.userId}:</span>
+                                            <code className="bg-background px-1 rounded text-primary font-mono">{creds.userId}</code>
+                                            <span className="font-semibold">{t.password}:</span>
+                                            <code className="bg-background px-1 rounded text-accent font-mono">{creds.password}</code>
+                                          </div>
+                                        </div>
+                                      ) : null
+                                    })()}
+                                    
+                                    {/* Registration Location */}
+                                    <div className="mt-2 p-2 bg-muted/50 rounded-lg border">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <NavigationArrow size={16} weight="fill" className="text-blue-500" />
+                                        <span className="text-xs font-semibold">{t.registrationLocation}</span>
+                                      </div>
+                                      {profile.registrationLocation ? (
+                                        <div className="text-xs space-y-1">
+                                          <div className="flex items-center gap-1">
+                                            <MapPin size={12} className="text-muted-foreground" />
+                                            <span className="font-medium">
+                                              {profile.registrationLocation.city || 'Unknown'}, 
+                                              {profile.registrationLocation.region && ` ${profile.registrationLocation.region},`} 
+                                              {profile.registrationLocation.country || ''}
+                                            </span>
+                                          </div>
+                                          <a 
+                                            href={`https://www.google.com/maps?q=${profile.registrationLocation.latitude},${profile.registrationLocation.longitude}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                                          >
+                                            <MapPin size={12} />
+                                            {t.viewOnMap}
+                                          </a>
+                                        </div>
+                                      ) : (
+                                        <span className="text-xs text-amber-600">
+                                          ⚠️ {t.locationNotCaptured}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
-                                  {profile.registrationLocation ? (
-                                    <div className="text-xs space-y-1">
-                                      <div className="flex items-center gap-1">
-                                        <MapPin size={12} className="text-muted-foreground" />
-                                        <span className="font-medium">
-                                          {profile.registrationLocation.city || 'Unknown'}, 
-                                          {profile.registrationLocation.region && ` ${profile.registrationLocation.region},`} 
-                                          {profile.registrationLocation.country || ''}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-1 text-muted-foreground">
-                                        <Globe size={12} />
-                                        <span>
-                                          {profile.registrationLocation.latitude.toFixed(4)}, {profile.registrationLocation.longitude.toFixed(4)}
-                                          {' '}({t.accuracy}: ±{Math.round(profile.registrationLocation.accuracy)}m)
-                                        </span>
-                                      </div>
-                                      <a 
-                                        href={`https://www.google.com/maps?q=${profile.registrationLocation.latitude},${profile.registrationLocation.longitude}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 text-blue-600 hover:underline"
-                                      >
-                                        <MapPin size={12} />
-                                        {t.viewOnMap}
-                                      </a>
-                                    </div>
-                                  ) : (
-                                    <span className="text-xs text-amber-600">
-                                      ⚠️ {t.locationNotCaptured}
-                                    </span>
-                                  )}
                                 </div>
                               </div>
                             </div>
