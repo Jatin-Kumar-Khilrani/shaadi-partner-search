@@ -23,6 +23,10 @@ function emitForceRefresh(key: string) {
 
 // Export function to force refresh a key from Azure
 export function forceRefreshFromAzure(key: string) {
+  // Clear localStorage first to ensure fresh data from Azure
+  const storageKey = `${STORAGE_PREFIX}${key}`
+  localStorage.removeItem(storageKey)
+  console.log(`[forceRefreshFromAzure] Cleared localStorage for "${key}"`)
   emitForceRefresh(key)
 }
 

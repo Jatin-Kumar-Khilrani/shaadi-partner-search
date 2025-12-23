@@ -266,6 +266,45 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     )
   }
 
+  // Close/delete a conversation (admin only) - removes all messages for this conversation
+  const handleCloseConversation = (conversationId: string, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent selecting the conversation
+    if (!isAdmin) return
+    
+    if (!confirm(language === 'hi' 
+      ? 'क्या आप वाकई इस चैट को बंद करना चाहते हैं? सभी संदेश हटा दिए जाएंगे।' 
+      : 'Are you sure you want to close this chat? All messages will be deleted.'
+    )) return
+
+    // Remove all messages for this conversation
+    setMessages((current) => {
+      if (!current) return []
+      return current.filter(msg => {
+        if (conversationId === 'admin-broadcast') {
+          return msg.type !== 'admin-broadcast'
+        }
+        if (conversationId.startsWith('admin-')) {
+          const profileId = conversationId.replace('admin-', '')
+          return !(msg.type === 'admin-to-user' && 
+            (msg.fromProfileId === profileId || msg.toProfileId === profileId))
+        }
+        // User-to-user conversation
+        const [profileId1, profileId2] = conversationId.split('-')
+        return !(
+          (msg.fromProfileId === profileId1 && msg.toProfileId === profileId2) ||
+          (msg.fromProfileId === profileId2 && msg.toProfileId === profileId1)
+        )
+      })
+    })
+    
+    // Clear selection if this was selected
+    if (selectedConversation === conversationId) {
+      setSelectedConversation(null)
+    }
+    
+    toast.success(language === 'hi' ? 'चैट बंद कर दी गई' : 'Chat closed')
+  }
+
   const sendMessage = () => {
     if (!messageInput.trim() || !selectedConversation) return
     if (!isAdmin && !currentUserProfile) return
@@ -318,45 +357,6 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
           }
         }
       }
-    }
-
-    // Close/delete a conversation (admin only) - removes all messages for this conversation
-    const handleCloseConversation = (conversationId: string, e: React.MouseEvent) => {
-      e.stopPropagation() // Prevent selecting the conversation
-      if (!isAdmin) return
-      
-      if (!confirm(language === 'hi' 
-        ? 'क्या आप वाकई इस चैट को बंद करना चाहते हैं? सभी संदेश हटा दिए जाएंगे।' 
-        : 'Are you sure you want to close this chat? All messages will be deleted.'
-      )) return
-
-      // Remove all messages for this conversation
-      setMessages((current) => {
-        if (!current) return []
-        return current.filter(msg => {
-          if (conversationId === 'admin-broadcast') {
-            return msg.type !== 'admin-broadcast'
-          }
-          if (conversationId.startsWith('admin-')) {
-            const profileId = conversationId.replace('admin-', '')
-            return !(msg.type === 'admin-to-user' && 
-              (msg.fromProfileId === profileId || msg.toProfileId === profileId))
-          }
-          // User-to-user conversation
-          const [profileId1, profileId2] = conversationId.split('-')
-          return !(
-            (msg.fromProfileId === profileId1 && msg.toProfileId === profileId2) ||
-            (msg.fromProfileId === profileId2 && msg.toProfileId === profileId1)
-          )
-        })
-      })
-      
-      // Clear selection if this was selected
-      if (selectedConversation === conversationId) {
-        setSelectedConversation(null)
-      }
-      
-      toast.success(language === 'hi' ? 'चैट बंद कर दी गई' : 'Chat closed')
     }
 
     const newMessage: ChatMessage = {

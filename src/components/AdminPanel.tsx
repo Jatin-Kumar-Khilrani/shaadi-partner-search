@@ -1117,7 +1117,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       <Label className="cursor-pointer">{t.selectAll} ({pendingProfiles.length})</Label>
                     </div>
                     <div className="space-y-4">
-                    {pendingProfiles.map((profile) => (
+                    {[...pendingProfiles].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((profile) => (
                       <Card key={profile.id} className={`border-2 ${selectedProfiles.includes(profile.id) ? 'border-primary bg-primary/5' : ''}`}>
                         <CardContent className="pt-6">
                           <div className="flex flex-col gap-4">
@@ -1677,7 +1677,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           </TableRow>
                         </TableHeader>
                       <TableBody>
-                        {profiles.map((profile) => {
+                        {[...profiles].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((profile) => {
                           const creds = getUserCredentials(profile.id)
                           return (
                             <TableRow key={profile.id} className={profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20' : ''}>
@@ -1869,7 +1869,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {profiles.filter(p => p.isDeleted).map(profile => (
+                        {[...profiles.filter(p => p.isDeleted)].sort((a, b) => {
+                          const dateA = a.deletedAt ? new Date(a.deletedAt).getTime() : new Date(a.createdAt).getTime()
+                          const dateB = b.deletedAt ? new Date(b.deletedAt).getTime() : new Date(b.createdAt).getTime()
+                          return dateB - dateA
+                        }).map(profile => (
                           <TableRow key={profile.id} className="bg-red-50 dark:bg-red-950/20">
                             <TableCell className="font-mono text-sm">
                               <div className="flex items-center gap-2">
