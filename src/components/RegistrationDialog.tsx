@@ -768,6 +768,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     let photoUrls: string[] = []
     let uploadedSelfieUrl: string | undefined = selfiePreview
     let uploadedIdProofUrl: string | undefined = idProofPreview
+    let uploadedPaymentScreenshotUrl: string | undefined = paymentScreenshotPreview
 
     try {
       const blobAvailable = await isBlobStorageAvailable()
@@ -813,6 +814,17 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             uploadedIdProofUrl = cdnUrl
           } catch (err) {
             console.warn('Failed to upload ID proof:', err)
+          }
+        }
+
+        // Upload payment screenshot if it's base64
+        if (paymentScreenshotPreview && !paymentScreenshotPreview.startsWith('https://')) {
+          try {
+            const paymentFile = dataUrlToFile(paymentScreenshotPreview, 'payment-screenshot.jpg')
+            const { cdnUrl } = await uploadPhoto(tempProfileId, paymentFile)
+            uploadedPaymentScreenshotUrl = cdnUrl
+          } catch (err) {
+            console.warn('Failed to upload payment screenshot:', err)
           }
         }
       } else {
@@ -888,12 +900,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       registrationLocation: isEditMode && editProfile?.registrationLocation ? editProfile.registrationLocation : (registrationGeoLocation || undefined),
       // Payment data for paid plans
       ...(formData.membershipPlan && formData.membershipPlan !== 'free' ? {
-        paymentScreenshotUrl: paymentScreenshotPreview || undefined,
-        paymentStatus: paymentScreenshotPreview ? 'pending' : undefined,
+        paymentScreenshotUrl: uploadedPaymentScreenshotUrl || undefined,
+        paymentStatus: uploadedPaymentScreenshotUrl ? 'pending' : undefined,
         paymentAmount: formData.membershipPlan === '6-month' 
           ? (membershipSettings?.sixMonthPrice || 500) 
           : (membershipSettings?.oneYearPrice || 900),
-        paymentUploadedAt: paymentScreenshotPreview ? new Date().toISOString() : undefined
+        paymentUploadedAt: uploadedPaymentScreenshotUrl ? new Date().toISOString() : undefined
       } : {
         paymentStatus: 'not-required' as const
       })
