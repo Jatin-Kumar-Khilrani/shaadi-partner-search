@@ -1139,8 +1139,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     }
     if (step === 3) {
       // Validate mobile based on country code
-      const stepPhoneLengthInfo = getPhoneLengthInfo(formData.countryCode)
-      if (!isValidPhoneLength(formData.mobile, formData.countryCode)) {
+      const countryCode = formData.countryCode || '+91'
+      const stepPhoneLengthInfo = getPhoneLengthInfo(countryCode)
+      if (!isValidPhoneLength(formData.mobile, countryCode)) {
         toast.error(
           language === 'hi' 
             ? `कृपया ${stepPhoneLengthInfo.display} अंक का मोबाइल नंबर दर्ज करें` 
@@ -1151,7 +1152,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       
       // Check for duplicate email in database (skip if editing own profile)
       const duplicateEmail = existingProfiles.find(
-        p => p.email.toLowerCase() === formData.email.toLowerCase() && 
+        p => p.email?.toLowerCase() === formData.email?.toLowerCase() && 
         (!isEditMode || p.id !== editProfile?.id)
       )
       if (duplicateEmail) {
@@ -1750,7 +1751,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <Input
                       id="state"
                       placeholder={language === 'hi' ? 'उदाहरण: महाराष्ट्र, कैलिफोर्निया' : 'Example: Maharashtra, California'}
-                      value={formData.state}
+                      value={formData.state || ''}
                       onChange={(e) => updateField('state', e.target.value)}
                       required
                     />
@@ -1761,7 +1762,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <Input
                       id="location"
                       placeholder={language === 'hi' ? 'उदाहरण: मुंबई, न्यूयॉर्क' : 'Example: Mumbai, New York'}
-                      value={formData.location}
+                      value={formData.location || ''}
                       onChange={(e) => updateField('location', e.target.value)}
                       required
                     />
@@ -1850,7 +1851,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     id="email"
                     type="email"
                     placeholder="example@email.com"
-                    value={formData.email}
+                    value={formData.email || ''}
                     onChange={(e) => updateField('email', e.target.value)}
                     required
                     disabled={isEditMode}
@@ -1897,14 +1898,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <Input
                       id="mobile"
                       type="tel"
-                      placeholder={language === 'hi' ? `${getPhoneLengthInfo(formData.countryCode).display} अंक का मोबाइल नंबर` : `${getPhoneLengthInfo(formData.countryCode).display} digit mobile number`}
-                      value={formData.mobile}
+                      placeholder={language === 'hi' ? `${getPhoneLengthInfo(formData.countryCode || '+91').display} अंक का मोबाइल नंबर` : `${getPhoneLengthInfo(formData.countryCode || '+91').display} digit mobile number`}
+                      value={formData.mobile || ''}
                       onChange={(e) => {
-                        const maxLength = getPhoneLengthInfo(formData.countryCode).max
+                        const maxLength = getPhoneLengthInfo(formData.countryCode || '+91').max
                         const value = e.target.value.replace(/\D/g, '').slice(0, maxLength)
                         updateField('mobile', value)
                       }}
-                      maxLength={getPhoneLengthInfo(formData.countryCode).max}
+                      maxLength={getPhoneLengthInfo(formData.countryCode || '+91').max}
                       required
                       disabled={isEditMode}
                       className={`flex-1 ${isEditMode ? 'bg-muted' : ''}`}
@@ -1915,9 +1916,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       {language === 'hi' ? 'मोबाइल बदलने के लिए एडमिन से संपर्क करें' : 'Contact admin to change mobile'}
                     </p>
                   )}
-                  {!isEditMode && formData.mobile && !isValidPhoneLength(formData.mobile, formData.countryCode) && (
+                  {!isEditMode && formData.mobile && !isValidPhoneLength(formData.mobile, formData.countryCode || '+91') && (
                     <p className="text-xs text-destructive">
-                      {language === 'hi' ? `कृपया ${getPhoneLengthInfo(formData.countryCode).display} अंक का मोबाइल नंबर दर्ज करें` : `Please enter a ${getPhoneLengthInfo(formData.countryCode).display} digit mobile number`}
+                      {language === 'hi' ? `कृपया ${getPhoneLengthInfo(formData.countryCode || '+91').display} अंक का मोबाइल नंबर दर्ज करें` : `Please enter a ${getPhoneLengthInfo(formData.countryCode || '+91').display} digit mobile number`}
                     </p>
                   )}
                 </div>
