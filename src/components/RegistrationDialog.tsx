@@ -1095,7 +1095,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       toast.error(language === 'hi' ? 'कृपया प्रोफाइल किसके लिए बनाई जा रही है चुनें' : 'Please select who this profile is for')
       return
     }
-    if (step === 1 && formData.profileCreatedFor === 'Other' && !formData.otherRelation.trim()) {
+    if (step === 1 && formData.profileCreatedFor === 'Other' && !(formData.otherRelation || '').trim()) {
       toast.error(language === 'hi' ? 'कृपया रिश्ता बताएं' : 'Please specify the relation')
       return
     }
@@ -1192,7 +1192,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       return
     }
     // Step 5 - Bio is mandatory
-    if (step === 5 && !formData.bio.trim()) {
+    if (step === 5 && !(formData.bio || '').trim()) {
       toast.error(language === 'hi' ? 'कृपया अपने बारे में लिखें (अनिवार्य है)' : 'Please write about yourself (required)')
       return
     }
@@ -2535,9 +2535,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     value={formData.bio}
                     onChange={(e) => updateField('bio', e.target.value)}
                     rows={6}
-                    className={!formData.bio.trim() ? 'border-amber-500' : ''}
+                    className={!(formData.bio || '').trim() ? 'border-amber-500' : ''}
                   />
-                  {!formData.bio.trim() && (
+                  {!(formData.bio || '').trim() && (
                     <p className="text-xs text-amber-600 flex items-center gap-1">
                       <Warning size={14} />
                       {language === 'hi' ? 'यह फ़ील्ड अनिवार्य है' : 'This field is required'}
@@ -3032,13 +3032,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 onClick={nextStep}
                 disabled={
                   (step === 1 && (
-                    !formData.fullName.trim() || 
+                    !(formData.fullName || '').trim() || 
                     !formData.dateOfBirth || 
                     !formData.gender || 
-                    !formData.religion.trim() || 
+                    !(formData.religion || '').trim() || 
                     !formData.maritalStatus ||
                     !formData.profileCreatedFor ||
-                    (formData.profileCreatedFor === 'Other' && !formData.otherRelation.trim()) ||
+                    (formData.profileCreatedFor === 'Other' && !(formData.otherRelation || '').trim()) ||
                     ((formData.horoscopeMatching || 'not-mandatory') === 'mandatory' && (!formData.birthTime || !formData.birthPlace))
                   )) ||
                   (step === 2 && (!formData.education || !formData.occupation)) ||
@@ -3051,7 +3051,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     (formData.country !== 'India' && !formData.residentialStatus)
                   )) ||
                   (step === 4 && (photos.length === 0 || !selfiePreview || (!isEditMode && !idProofPreview))) ||
-                  (step === 5 && !formData.bio.trim())
+                  (step === 5 && !(formData.bio || '').trim())
                 }
               >
                 {t.registration.next}
