@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useKV } from '@/hooks/useKV'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -93,6 +93,37 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     accountHolderName: '',
     qrCodeImage: ''
   })
+  
+  // Local state for editing membership settings (only saved to Azure on Save click)
+  const [localMembershipSettings, setLocalMembershipSettings] = useState<MembershipSettings>({
+    sixMonthPrice: 500,
+    oneYearPrice: 900,
+    sixMonthDuration: 6,
+    oneYearDuration: 12,
+    discountPercentage: 0,
+    discountEnabled: false,
+    discountEndDate: '',
+    freePlanChatLimit: 5,
+    freePlanContactLimit: 0,
+    sixMonthChatLimit: 50,
+    sixMonthContactLimit: 20,
+    oneYearChatLimit: 120,
+    oneYearContactLimit: 50,
+    upiId: '',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    accountHolderName: '',
+    qrCodeImage: ''
+  })
+  
+  // Sync local state when membershipSettings loads from Azure
+  useEffect(() => {
+    if (membershipSettings) {
+      setLocalMembershipSettings(membershipSettings)
+    }
+  }, [membershipSettings])
+  
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [selectedProfiles, setSelectedProfiles] = useState<string[]>([])
   const [sortBy, setSortBy] = useState<'name' | 'date' | 'expiry'>('date')
@@ -2829,9 +2860,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Label>{t.price} (₹)</Label>
                         <Input 
                           type="number" 
-                          value={membershipSettings?.sixMonthPrice || 500}
-                          onChange={(e) => setMembershipSettings(prev => ({
-                            ...prev!,
+                          value={localMembershipSettings.sixMonthPrice}
+                          onChange={(e) => setLocalMembershipSettings(prev => ({
+                            ...prev,
                             sixMonthPrice: parseInt(e.target.value) || 0
                           }))}
                         />
@@ -2840,9 +2871,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Label>{t.duration}</Label>
                         <Input 
                           type="number" 
-                          value={membershipSettings?.sixMonthDuration || 6}
-                          onChange={(e) => setMembershipSettings(prev => ({
-                            ...prev!,
+                          value={localMembershipSettings.sixMonthDuration}
+                          onChange={(e) => setLocalMembershipSettings(prev => ({
+                            ...prev,
                             sixMonthDuration: parseInt(e.target.value) || 6
                           }))}
                         />
@@ -2859,9 +2890,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Label>{t.price} (₹)</Label>
                         <Input 
                           type="number" 
-                          value={membershipSettings?.oneYearPrice || 900}
-                          onChange={(e) => setMembershipSettings(prev => ({
-                            ...prev!,
+                          value={localMembershipSettings.oneYearPrice}
+                          onChange={(e) => setLocalMembershipSettings(prev => ({
+                            ...prev,
                             oneYearPrice: parseInt(e.target.value) || 0
                           }))}
                         />
@@ -2870,9 +2901,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Label>{t.duration}</Label>
                         <Input 
                           type="number" 
-                          value={membershipSettings?.oneYearDuration || 12}
-                          onChange={(e) => setMembershipSettings(prev => ({
-                            ...prev!,
+                          value={localMembershipSettings.oneYearDuration}
+                          onChange={(e) => setLocalMembershipSettings(prev => ({
+                            ...prev,
                             oneYearDuration: parseInt(e.target.value) || 12
                           }))}
                         />
@@ -2889,9 +2920,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="flex items-center gap-2">
                         <Checkbox 
-                          checked={membershipSettings?.discountEnabled || false}
-                          onCheckedChange={(checked) => setMembershipSettings(prev => ({
-                            ...prev!,
+                          checked={localMembershipSettings.discountEnabled}
+                          onCheckedChange={(checked) => setLocalMembershipSettings(prev => ({
+                            ...prev,
                             discountEnabled: !!checked
                           }))}
                         />
@@ -2903,24 +2934,24 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           type="number" 
                           min="0"
                           max="100"
-                          value={membershipSettings?.discountPercentage || 0}
-                          onChange={(e) => setMembershipSettings(prev => ({
-                            ...prev!,
+                          value={localMembershipSettings.discountPercentage}
+                          onChange={(e) => setLocalMembershipSettings(prev => ({
+                            ...prev,
                             discountPercentage: parseInt(e.target.value) || 0
                           }))}
-                          disabled={!membershipSettings?.discountEnabled}
+                          disabled={!localMembershipSettings.discountEnabled}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>{t.discountEndDate}</Label>
                         <Input 
                           type="date" 
-                          value={membershipSettings?.discountEndDate || ''}
-                          onChange={(e) => setMembershipSettings(prev => ({
-                            ...prev!,
+                          value={localMembershipSettings.discountEndDate}
+                          onChange={(e) => setLocalMembershipSettings(prev => ({
+                            ...prev,
                             discountEndDate: e.target.value
                           }))}
-                          disabled={!membershipSettings?.discountEnabled}
+                          disabled={!localMembershipSettings.discountEnabled}
                         />
                       </div>
                     </div>
@@ -2943,9 +2974,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <Input 
                             type="number" 
                             min="0"
-                            value={membershipSettings?.freePlanChatLimit ?? 5}
-                            onChange={(e) => setMembershipSettings(prev => ({
-                              ...prev!,
+                            value={localMembershipSettings.freePlanChatLimit}
+                            onChange={(e) => setLocalMembershipSettings(prev => ({
+                              ...prev,
                               freePlanChatLimit: parseInt(e.target.value) || 0
                             }))}
                           />
@@ -2955,9 +2986,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <Input 
                             type="number" 
                             min="0"
-                            value={membershipSettings?.freePlanContactLimit ?? 0}
-                            onChange={(e) => setMembershipSettings(prev => ({
-                              ...prev!,
+                            value={localMembershipSettings.freePlanContactLimit}
+                            onChange={(e) => setLocalMembershipSettings(prev => ({
+                              ...prev,
                               freePlanContactLimit: parseInt(e.target.value) || 0
                             }))}
                           />
@@ -2975,9 +3006,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <Input 
                             type="number" 
                             min="0"
-                            value={membershipSettings?.sixMonthChatLimit ?? 50}
-                            onChange={(e) => setMembershipSettings(prev => ({
-                              ...prev!,
+                            value={localMembershipSettings.sixMonthChatLimit}
+                            onChange={(e) => setLocalMembershipSettings(prev => ({
+                              ...prev,
                               sixMonthChatLimit: parseInt(e.target.value) || 0
                             }))}
                           />
@@ -2987,9 +3018,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <Input 
                             type="number" 
                             min="0"
-                            value={membershipSettings?.sixMonthContactLimit ?? 20}
-                            onChange={(e) => setMembershipSettings(prev => ({
-                              ...prev!,
+                            value={localMembershipSettings.sixMonthContactLimit}
+                            onChange={(e) => setLocalMembershipSettings(prev => ({
+                              ...prev,
                               sixMonthContactLimit: parseInt(e.target.value) || 0
                             }))}
                           />
@@ -3006,9 +3037,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <Input 
                             type="number" 
                             min="0"
-                            value={membershipSettings?.oneYearChatLimit ?? 120}
-                            onChange={(e) => setMembershipSettings(prev => ({
-                              ...prev!,
+                            value={localMembershipSettings.oneYearChatLimit}
+                            onChange={(e) => setLocalMembershipSettings(prev => ({
+                              ...prev,
                               oneYearChatLimit: parseInt(e.target.value) || 0
                             }))}
                           />
@@ -3018,9 +3049,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <Input 
                             type="number" 
                             min="0"
-                            value={membershipSettings?.oneYearContactLimit ?? 50}
-                            onChange={(e) => setMembershipSettings(prev => ({
-                              ...prev!,
+                            value={localMembershipSettings.oneYearContactLimit}
+                            onChange={(e) => setLocalMembershipSettings(prev => ({
+                              ...prev,
                               oneYearContactLimit: parseInt(e.target.value) || 0
                             }))}
                           />
@@ -3054,9 +3085,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Input 
                           type="text"
                           placeholder={language === 'hi' ? 'yourname@upi' : 'yourname@upi'}
-                          value={membershipSettings?.upiId || ''}
-                          onChange={(e) => setMembershipSettings(prev => ({
-                            ...prev!,
+                          value={localMembershipSettings.upiId}
+                          onChange={(e) => setLocalMembershipSettings(prev => ({
+                            ...prev,
                             upiId: e.target.value
                           }))}
                         />
@@ -3068,9 +3099,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Input 
                           type="text"
                           placeholder={language === 'hi' ? 'खाता धारक का नाम' : 'Account holder name'}
-                          value={membershipSettings?.accountHolderName || ''}
-                          onChange={(e) => setMembershipSettings(prev => ({
-                            ...prev!,
+                          value={localMembershipSettings.accountHolderName}
+                          onChange={(e) => setLocalMembershipSettings(prev => ({
+                            ...prev,
                             accountHolderName: e.target.value
                           }))}
                         />
@@ -3082,9 +3113,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Input 
                           type="text"
                           placeholder={language === 'hi' ? 'बैंक का नाम' : 'Bank name'}
-                          value={membershipSettings?.bankName || ''}
-                          onChange={(e) => setMembershipSettings(prev => ({
-                            ...prev!,
+                          value={localMembershipSettings.bankName}
+                          onChange={(e) => setLocalMembershipSettings(prev => ({
+                            ...prev,
                             bankName: e.target.value
                           }))}
                         />
@@ -3096,9 +3127,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Input 
                           type="text"
                           placeholder={language === 'hi' ? 'खाता संख्या' : 'Account number'}
-                          value={membershipSettings?.accountNumber || ''}
-                          onChange={(e) => setMembershipSettings(prev => ({
-                            ...prev!,
+                          value={localMembershipSettings.accountNumber}
+                          onChange={(e) => setLocalMembershipSettings(prev => ({
+                            ...prev,
                             accountNumber: e.target.value
                           }))}
                         />
@@ -3110,9 +3141,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Input 
                           type="text"
                           placeholder="ABCD0123456"
-                          value={membershipSettings?.ifscCode || ''}
-                          onChange={(e) => setMembershipSettings(prev => ({
-                            ...prev!,
+                          value={localMembershipSettings.ifscCode}
+                          onChange={(e) => setLocalMembershipSettings(prev => ({
+                            ...prev,
                             ifscCode: e.target.value.toUpperCase()
                           }))}
                         />
@@ -3128,10 +3159,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           : 'Upload UPI QR code for payment'}
                       </p>
                       <div className="flex items-start gap-4">
-                        {membershipSettings?.qrCodeImage ? (
+                        {localMembershipSettings.qrCodeImage ? (
                           <div className="relative">
                             <img 
-                              src={membershipSettings.qrCodeImage} 
+                              src={localMembershipSettings.qrCodeImage} 
                               alt="QR Code" 
                               className="w-32 h-32 object-contain border rounded-lg"
                             />
@@ -3140,8 +3171,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               variant="destructive"
                               size="icon"
                               className="absolute -top-2 -right-2 h-6 w-6"
-                              onClick={() => setMembershipSettings(prev => ({
-                                ...prev!,
+                              onClick={() => setLocalMembershipSettings(prev => ({
+                                ...prev,
                                 qrCodeImage: ''
                               }))}
                             >
@@ -3163,8 +3194,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 if (file) {
                                   const reader = new FileReader()
                                   reader.onload = () => {
-                                    setMembershipSettings(prev => ({
-                                      ...prev!,
+                                    setLocalMembershipSettings(prev => ({
+                                      ...prev,
                                       qrCodeImage: reader.result as string
                                     }))
                                   }
@@ -3180,7 +3211,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   
                   <div className="mt-6 flex justify-end">
                     <Button 
-                      onClick={() => toast.success(t.settingsUpdated)}
+                      onClick={() => {
+                        // Save local settings to Azure
+                        setMembershipSettings(localMembershipSettings)
+                        toast.success(t.settingsUpdated)
+                      }}
                       className="gap-2"
                     >
                       <Check size={18} />
