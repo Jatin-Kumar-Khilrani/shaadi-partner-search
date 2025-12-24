@@ -127,6 +127,15 @@ export interface Profile {
   renewalPaymentUploadedAt?: string
   renewalPaymentVerifiedAt?: string
   renewalPaymentRejectionReason?: string
+  
+  // Partner Search Readiness data (embedded for quick access)
+  selfDiscoveryCompleted?: boolean
+  eqAssessmentCompleted?: boolean
+  expectationsCompleted?: boolean
+  readinessScore?: number         // Overall readiness score 0-100
+  readinessLevel?: 'beginner' | 'developing' | 'ready' | 'highly-ready'
+  hasReadinessBadge?: boolean     // "Ready for Partnership" badge
+  aiGeneratedBioUsed?: boolean    // Whether AI bio is being used
 }
 
 export interface SearchFilters {
@@ -159,12 +168,29 @@ export interface Interest {
   blockedAt?: string
 }
 
+export type ReportReason = 
+  | 'inappropriate-messages' 
+  | 'fake-profile' 
+  | 'harassment' 
+  | 'spam' 
+  | 'offensive-content' 
+  | 'other'
+
 export interface BlockedProfile {
   id: string
   blockerProfileId: string
   blockedProfileId: string
   createdAt: string
   reason?: string
+  // Report details for admin review
+  reportedToAdmin?: boolean
+  reportReason?: ReportReason
+  reportDescription?: string
+  // Admin action tracking
+  adminReviewed?: boolean
+  adminReviewedAt?: string
+  adminAction?: 'dismissed' | 'warned' | 'removed'
+  adminNotes?: string
 }
 
 export interface ContactRequest {
@@ -256,4 +282,168 @@ export interface PaymentTransaction {
   refundReason?: string
   refundTransactionId?: string
   refundedBy?: string
+}
+
+// ============================================
+// Partner Search Readiness System Types
+// ============================================
+
+// Personality type (Big Five inspired)
+export type PersonalityDimension = 'introvert' | 'balanced' | 'extrovert'
+export type ValuesOrientation = 'traditional' | 'moderate' | 'progressive'
+export type LifestylePace = 'relaxed' | 'balanced' | 'ambitious'
+export type FamilyOrientation = 'joint-family' | 'nuclear-flexible' | 'nuclear-preferred'
+export type ConflictStyle = 'avoidant' | 'collaborative' | 'direct'
+
+// EQ Assessment types
+export type EQLevel = 'developing' | 'moderate' | 'high'
+
+// Self-Discovery Questionnaire responses
+export interface SelfDiscoveryData {
+  // Core values
+  topValues: ('family' | 'career' | 'spirituality' | 'adventure' | 'stability' | 'growth' | 'creativity' | 'service')[]
+  
+  // Personality traits
+  personalityType: PersonalityDimension
+  valuesOrientation: ValuesOrientation
+  lifestylePace: LifestylePace
+  familyOrientation: FamilyOrientation
+  conflictStyle: ConflictStyle
+  
+  // Lifestyle preferences
+  morningPerson: boolean
+  socialFrequency: 'rarely' | 'sometimes' | 'often'
+  hobbies: string[]
+  fitnessImportance: 'low' | 'medium' | 'high'
+  travelInterest: 'low' | 'medium' | 'high'
+  
+  // Growth areas (self-identified)
+  growthAreas: ('patience' | 'communication' | 'finance' | 'emotional-control' | 'time-management' | 'flexibility' | 'assertiveness')[]
+  
+  completedAt: string
+}
+
+// Emotional Intelligence Assessment
+export interface EQAssessmentData {
+  // Situational responses (1-5 scale)
+  disagreementHandling: number    // How do you handle disagreements?
+  empathyScore: number            // Understanding others' feelings
+  emotionalAwareness: number      // Recognizing own emotions
+  boundaryRespect: number         // Respecting personal boundaries
+  perfectionExpectation: number   // Accepting imperfection
+  stressManagement: number        // Handling stress in relationships
+  
+  // Calculated overall EQ level
+  overallEQ: EQLevel
+  eqScore: number  // 0-100
+  
+  completedAt: string
+}
+
+// Partner expectations and dealbreakers
+export interface PartnerExpectationsData {
+  profileId: string
+  
+  // Must-have qualities (pick 3-5)
+  mustHaveQualities: ('respectful' | 'family-oriented' | 'financially-responsible' | 'honest' | 'caring' | 'ambitious' | 'spiritual' | 'educated' | 'supportive' | 'humorous' | 'loyal' | 'patient')[]
+  
+  // Dealbreakers (pick 3-5)
+  dealbreakers: ('smoking' | 'drinking' | 'dishonesty' | 'aggression' | 'irresponsibility' | 'disrespectful' | 'short-tempered' | 'unrealistic-expectations' | 'no-family-values' | 'workaholic' | 'controlling' | 'laziness')[]
+  
+  // Future expectations
+  livingPreference: 'with-parents' | 'nearby-parents' | 'independent' | 'flexible'
+  workAfterMarriage: 'must-work' | 'prefer-work' | 'flexible' | 'prefer-homemaker' | 'flexible-homemaker'
+  childrenPreference: 'soon' | 'after-few-years' | 'flexible' | 'no-children'
+  financialPartnership: 'joint' | 'separate' | 'flexible'
+  relocateWillingness: 'willing' | 'prefer-not' | 'not-willing'
+  
+  // Relationship vision
+  relationshipVision: string  // Free text - how do you envision your marriage?
+  
+  completedAt: string
+}
+
+// Readiness score calculation
+export interface ReadinessScore {
+  profileId: string
+  
+  // Component scores (0-100)
+  selfAwarenessScore: number
+  eqScore: number
+  expectationClarityScore: number
+  communicationScore: number  // Based on activity and chat quality
+  safetyScore: number         // Based on verification level
+  
+  // Overall readiness
+  overallScore: number
+  readinessLevel: 'beginner' | 'developing' | 'ready' | 'highly-ready'
+  hasBadge: boolean           // "Ready for Partnership" badge
+  
+  // Learning progress
+  articlesRead: string[]      // Learning hub article IDs
+  videosWatched: string[]     // Learning hub video IDs
+  
+  lastCalculatedAt: string
+}
+
+// AI-generated bio
+export interface AIGeneratedBio {
+  profileId: string
+  generatedBio: string
+  generatedStrengths: string[]
+  generatedValues: string[]
+  generatedHobbies: string[]
+  isUsed: boolean             // Whether user chose to use this bio
+  generatedAt: string
+}
+
+// Compatibility calculation between two profiles
+export interface CompatibilityResult {
+  profile1Id: string
+  profile2Id: string
+  
+  // Component scores (0-100)
+  valuesAlignment: number
+  lifestyleCompatibility: number
+  emotionalCompatibility: number
+  expectationsAlignment: number
+  basicMatchScore: number      // Traditional matching (religion, location, etc.)
+  
+  // Overall
+  overallCompatibility: number
+  compatibilityLevel: 'low' | 'moderate' | 'good' | 'excellent'
+  
+  // Insights
+  strengths: string[]          // What makes this match good
+  considerations: string[]     // Areas to discuss
+  
+  calculatedAt: string
+}
+
+// Learning Hub content
+export interface LearningContent {
+  id: string
+  type: 'article' | 'video' | 'infographic'
+  category: 'self-awareness' | 'communication' | 'expectations' | 'safety' | 'family-discussions' | 'relationship-basics'
+  title: string
+  titleHi: string
+  description: string
+  descriptionHi: string
+  content?: string             // For articles
+  contentHi?: string
+  videoUrl?: string            // For videos
+  imageUrl?: string            // For infographics
+  duration?: string            // e.g., "5 min read" or "2:30"
+  order: number
+  isPublished: boolean
+  createdAt: string
+}
+
+// Smart conversation starters
+export interface ConversationStarter {
+  id: string
+  category: 'introduction' | 'values' | 'lifestyle' | 'future' | 'family' | 'interests'
+  text: string
+  textHi: string
+  isDefault: boolean
 }

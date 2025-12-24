@@ -9,10 +9,24 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Badge } from '@/components/ui/badge'
+import { Slider } from '@/components/ui/slider'
 import { ProfileCard } from './ProfileCard'
-import { MagnifyingGlass, Funnel, X } from '@phosphor-icons/react'
+import { MagnifyingGlass, Funnel, X, GraduationCap, Briefcase, MapPin, Globe, Calendar, Trophy } from '@phosphor-icons/react'
 import type { Profile, SearchFilters, BlockedProfile, MembershipPlan, ProfileStatus } from '@/types/profile'
 import type { Language } from '@/lib/translations'
+
+// Extended filters interface with additional fields
+interface ExtendedFilters extends SearchFilters {
+  educationLevel?: string
+  occupationType?: string
+  country?: string
+  city?: string
+  ageRange?: [number, number]
+  hasReadinessBadge?: boolean
+  isVerified?: boolean
+  hasPhoto?: boolean
+}
 
 interface MyMatchesProps {
   loggedInUserId: string | null
@@ -25,25 +39,48 @@ interface MyMatchesProps {
 
 export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, membershipPlan, profileStatus }: MyMatchesProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [filters, setFilters] = useState<SearchFilters>({})
+  const [filters, setFilters] = useState<ExtendedFilters>({})
   const [showFilters, setShowFilters] = useState(false)
   const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
+  const [ageRange, setAgeRange] = useState<[number, number]>([18, 60])
 
   const currentUserProfile = profiles.find(p => p.id === loggedInUserId)
   
   // Free plan users or pending approval users should have restricted access
-  // They cannot see full names (surname) or profile photos
   const isFreePlan = membershipPlan === 'free' || !membershipPlan
   const isPendingApproval = profileStatus === 'pending'
   const shouldBlurProfiles = isFreePlan || isPendingApproval
 
+  // Count active filters
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (filters.caste) count++
+    if (filters.community) count++
+    if (filters.motherTongue) count++
+    if (filters.manglik !== undefined) count++
+    if (filters.dietPreference) count++
+    if (filters.drinkingHabit) count++
+    if (filters.smokingHabit) count++
+    if (filters.educationLevel) count++
+    if (filters.occupationType) count++
+    if (filters.country) count++
+    if (filters.city) count++
+    if (filters.hasReadinessBadge) count++
+    if (filters.isVerified) count++
+    if (filters.hasPhoto) count++
+    if (filters.ageRange && (filters.ageRange[0] !== 18 || filters.ageRange[1] !== 60)) count++
+    return count
+  }, [filters])
+
   const t = {
     title: language === 'hi' ? 'मेरे मैच' : 'My Matches',
-    search: language === 'hi' ? 'खोजें' : 'Search',
+    search: language === 'hi' ? 'नाम, स्थान या प्रोफाइल ID से खोजें' : 'Search by name, location or profile ID',
     newMatches: language === 'hi' ? 'नए मैच' : 'New Matches',
     filters: language === 'hi' ? 'फ़िल्टर' : 'Filters',
     applyFilters: language === 'hi' ? 'लागू करें' : 'Apply Filters',
-    clearFilters: language === 'hi' ? 'साफ़ करें' : 'Clear Filters',
+    clearFilters: language === 'hi' ? 'साफ़ करें' : 'Clear All',
+    
+    // Basic filters
     caste: language === 'hi' ? 'जाति' : 'Caste',
     community: language === 'hi' ? 'समुदाय' : 'Community',
     motherTongue: language === 'hi' ? 'मातृभाषा' : 'Mother Tongue',
@@ -51,14 +88,66 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     diet: language === 'hi' ? 'आहार' : 'Diet',
     drinking: language === 'hi' ? 'पीने की आदत' : 'Drinking',
     smoking: language === 'hi' ? 'धूम्रपान' : 'Smoking',
+    
+    // New enhanced filters
+    education: language === 'hi' ? 'शिक्षा' : 'Education',
+    occupation: language === 'hi' ? 'व्यवसाय' : 'Occupation',
+    country: language === 'hi' ? 'देश' : 'Country',
+    city: language === 'hi' ? 'शहर' : 'City',
+    ageRange: language === 'hi' ? 'आयु सीमा' : 'Age Range',
+    readinessBadge: language === 'hi' ? 'तैयारी बैज' : 'Readiness Badge',
+    verifiedOnly: language === 'hi' ? 'केवल सत्यापित' : 'Verified Only',
+    withPhotoOnly: language === 'hi' ? 'फोटो वाले' : 'With Photo Only',
+    
+    // Values
     veg: language === 'hi' ? 'शाकाहारी' : 'Vegetarian',
     nonVeg: language === 'hi' ? 'मांसाहारी' : 'Non-Vegetarian',
+    eggetarian: language === 'hi' ? 'अंडा खाने वाले' : 'Eggetarian',
     never: language === 'hi' ? 'कभी नहीं' : 'Never',
     occasionally: language === 'hi' ? 'कभी-कभी' : 'Occasionally',
+    regularly: language === 'hi' ? 'नियमित' : 'Regularly',
     yes: language === 'hi' ? 'हाँ' : 'Yes',
     no: language === 'hi' ? 'नहीं' : 'No',
+    any: language === 'hi' ? 'कोई भी' : 'Any',
+    
+    // Education levels
+    highSchool: language === 'hi' ? 'हाई स्कूल' : 'High School',
+    graduate: language === 'hi' ? 'स्नातक' : 'Graduate',
+    postGraduate: language === 'hi' ? 'परास्नातक' : 'Post Graduate',
+    doctorate: language === 'hi' ? 'डॉक्टरेट' : 'Doctorate',
+    professional: language === 'hi' ? 'प्रोफेशनल' : 'Professional (CA/CS/MBBS/LLB)',
+    
+    // Occupation types
+    private: language === 'hi' ? 'प्राइवेट जॉब' : 'Private Job',
+    government: language === 'hi' ? 'सरकारी नौकरी' : 'Government Job',
+    business: language === 'hi' ? 'व्यापार' : 'Business',
+    selfEmployed: language === 'hi' ? 'स्वरोजगार' : 'Self Employed',
+    professional_occ: language === 'hi' ? 'प्रोफेशनल' : 'Professional',
+    student: language === 'hi' ? 'छात्र' : 'Student',
+    notWorking: language === 'hi' ? 'कार्यरत नहीं' : 'Not Working',
+    
+    // Countries
+    india: language === 'hi' ? 'भारत' : 'India',
+    usa: language === 'hi' ? 'अमेरिका' : 'USA',
+    uk: language === 'hi' ? 'यूके' : 'UK',
+    canada: language === 'hi' ? 'कनाडा' : 'Canada',
+    australia: language === 'hi' ? 'ऑस्ट्रेलिया' : 'Australia',
+    uae: language === 'hi' ? 'यूएई' : 'UAE',
+    germany: language === 'hi' ? 'जर्मनी' : 'Germany',
+    other: language === 'hi' ? 'अन्य' : 'Other',
+    
+    // Results
     matchesFound: language === 'hi' ? 'मैच मिले' : 'matches found',
-    noMatches: language === 'hi' ? 'कोई मैच नहीं मिला' : 'No matches found'
+    noMatches: language === 'hi' ? 'कोई मैच नहीं मिला' : 'No matches found',
+    adjustFilters: language === 'hi' ? 'अपने फ़िल्टर समायोजित करें' : 'Try adjusting your filters',
+    
+    // Section headers
+    basicFilters: language === 'hi' ? 'बुनियादी फ़िल्टर' : 'Basic Filters',
+    educationCareer: language === 'hi' ? 'शिक्षा और करियर' : 'Education & Career',
+    locationFilters: language === 'hi' ? 'स्थान' : 'Location',
+    lifestyleFilters: language === 'hi' ? 'जीवनशैली' : 'Lifestyle',
+    specialFilters: language === 'hi' ? 'विशेष फ़िल्टर' : 'Special Filters',
+    years: language === 'hi' ? 'वर्ष' : 'years',
   }
 
   const filteredProfiles = useMemo(() => {
@@ -87,6 +176,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
         }
       }
       
+      // Basic filters
       if (filters.caste && !profile.caste?.toLowerCase().includes(filters.caste.toLowerCase())) return false
       if (filters.community && !profile.community?.toLowerCase().includes(filters.community.toLowerCase())) return false
       if (filters.motherTongue && !profile.motherTongue?.toLowerCase().includes(filters.motherTongue.toLowerCase())) return false
@@ -95,120 +185,409 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       if (filters.drinkingHabit && profile.drinkingHabit !== filters.drinkingHabit) return false
       if (filters.smokingHabit && profile.smokingHabit !== filters.smokingHabit) return false
       
+      // Education filter
+      if (filters.educationLevel) {
+        const edu = profile.education?.toLowerCase() || ''
+        switch (filters.educationLevel) {
+          case 'high-school':
+            if (!edu.includes('10th') && !edu.includes('12th') && !edu.includes('high school') && !edu.includes('secondary')) return false
+            break
+          case 'graduate':
+            if (!edu.includes('graduate') && !edu.includes('bachelor') && !edu.includes('b.') && !edu.includes('bsc') && !edu.includes('bcom') && !edu.includes('ba') && !edu.includes('btech') && !edu.includes('be')) return false
+            break
+          case 'post-graduate':
+            if (!edu.includes('post') && !edu.includes('master') && !edu.includes('m.') && !edu.includes('msc') && !edu.includes('mcom') && !edu.includes('ma') && !edu.includes('mtech') && !edu.includes('mba')) return false
+            break
+          case 'doctorate':
+            if (!edu.includes('phd') && !edu.includes('doctorate') && !edu.includes('ph.d')) return false
+            break
+          case 'professional':
+            if (!edu.includes('ca') && !edu.includes('cs') && !edu.includes('mbbs') && !edu.includes('llb') && !edu.includes('doctor') && !edu.includes('lawyer') && !edu.includes('chartered')) return false
+            break
+        }
+      }
+      
+      // Occupation filter
+      if (filters.occupationType) {
+        const occ = profile.occupation?.toLowerCase() || ''
+        switch (filters.occupationType) {
+          case 'private':
+            if (!occ.includes('private') && !occ.includes('corporate') && !occ.includes('it') && !occ.includes('software') && !occ.includes('engineer') && !occ.includes('analyst')) return false
+            break
+          case 'government':
+            if (!occ.includes('government') && !occ.includes('govt') && !occ.includes('ias') && !occ.includes('ips') && !occ.includes('pcs') && !occ.includes('public sector')) return false
+            break
+          case 'business':
+            if (!occ.includes('business') && !occ.includes('entrepreneur') && !occ.includes('owner') && !occ.includes('shop')) return false
+            break
+          case 'self-employed':
+            if (!occ.includes('self') && !occ.includes('freelance') && !occ.includes('consultant')) return false
+            break
+          case 'professional':
+            if (!occ.includes('doctor') && !occ.includes('lawyer') && !occ.includes('ca') && !occ.includes('architect') && !occ.includes('professor')) return false
+            break
+          case 'student':
+            if (!occ.includes('student') && !occ.includes('studying')) return false
+            break
+        }
+      }
+      
+      // Country filter
+      if (filters.country) {
+        const country = profile.country?.toLowerCase() || ''
+        if (!country.includes(filters.country.toLowerCase())) return false
+      }
+      
+      // City filter
+      if (filters.city) {
+        const location = profile.location?.toLowerCase() || ''
+        if (!location.includes(filters.city.toLowerCase())) return false
+      }
+      
+      // Age range filter
+      if (filters.ageRange) {
+        const age = profile.age
+        if (age < filters.ageRange[0] || age > filters.ageRange[1]) return false
+      }
+      
+      // Readiness badge filter
+      if (filters.hasReadinessBadge && !profile.hasReadinessBadge) return false
+      
+      // Verified filter
+      if (filters.isVerified && profile.status !== 'verified') return false
+      
+      // Photo filter
+      if (filters.hasPhoto && (!profile.photos || profile.photos.length === 0)) return false
+      
       return true
     })
   }, [profiles, currentUserProfile, searchQuery, filters, blockedProfiles])
 
   const FilterPanel = () => (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <Label>{t.caste}</Label>
-        <Input 
-          placeholder={t.caste}
-          value={filters.caste || ''}
-          onChange={(e) => setFilters({ ...filters, caste: e.target.value })}
-        />
-      </div>
+    <ScrollArea className="h-[calc(100vh-200px)]">
+      <div className="space-y-6 pr-4">
+        {/* Age Range */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Calendar size={16} className="text-muted-foreground" />
+            <Label className="font-medium">{t.ageRange}</Label>
+          </div>
+          <div className="px-2">
+            <Slider
+              value={ageRange}
+              onValueChange={(value) => {
+                setAgeRange(value as [number, number])
+                setFilters({ ...filters, ageRange: value as [number, number] })
+              }}
+              min={18}
+              max={60}
+              step={1}
+            />
+            <div className="flex justify-between mt-2 text-sm text-muted-foreground">
+              <span>{ageRange[0]} {t.years}</span>
+              <span>{ageRange[1]} {t.years}</span>
+            </div>
+          </div>
+        </div>
 
-      <div className="space-y-2">
-        <Label>{t.community}</Label>
-        <Input 
-          placeholder={t.community}
-          value={filters.community || ''}
-          onChange={(e) => setFilters({ ...filters, community: e.target.value })}
-        />
-      </div>
+        <Separator />
 
-      <div className="space-y-2">
-        <Label>{t.motherTongue}</Label>
-        <Input 
-          placeholder={t.motherTongue}
-          value={filters.motherTongue || ''}
-          onChange={(e) => setFilters({ ...filters, motherTongue: e.target.value })}
-        />
-      </div>
+        {/* Education & Career */}
+        <div className="space-y-4">
+          <h4 className="font-medium text-sm flex items-center gap-2">
+            <GraduationCap size={16} />
+            {t.educationCareer}
+          </h4>
+          
+          <div className="space-y-2">
+            <Label>{t.education}</Label>
+            <Select 
+              value={filters.educationLevel || ''} 
+              onValueChange={(val) => setFilters({ ...filters, educationLevel: val || undefined })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t.any} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">{t.any}</SelectItem>
+                <SelectItem value="high-school">{t.highSchool}</SelectItem>
+                <SelectItem value="graduate">{t.graduate}</SelectItem>
+                <SelectItem value="post-graduate">{t.postGraduate}</SelectItem>
+                <SelectItem value="doctorate">{t.doctorate}</SelectItem>
+                <SelectItem value="professional">{t.professional}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-      <div className="space-y-2">
-        <Label>{t.manglik}</Label>
-        <Select 
-          value={filters.manglik !== undefined ? (filters.manglik ? 'yes' : 'no') : undefined} 
-          onValueChange={(val) => {
-            setFilters({ ...filters, manglik: val === 'yes' })
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder={t.manglik} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="yes">{t.yes}</SelectItem>
-            <SelectItem value="no">{t.no}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+          <div className="space-y-2">
+            <Label>{t.occupation}</Label>
+            <Select 
+              value={filters.occupationType || ''} 
+              onValueChange={(val) => setFilters({ ...filters, occupationType: val || undefined })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t.any} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">{t.any}</SelectItem>
+                <SelectItem value="private">{t.private}</SelectItem>
+                <SelectItem value="government">{t.government}</SelectItem>
+                <SelectItem value="business">{t.business}</SelectItem>
+                <SelectItem value="self-employed">{t.selfEmployed}</SelectItem>
+                <SelectItem value="professional">{t.professional_occ}</SelectItem>
+                <SelectItem value="student">{t.student}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-      <div className="space-y-2">
-        <Label>{t.diet}</Label>
-        <Select 
-          value={filters.dietPreference || undefined} 
-          onValueChange={(val: any) => {
-            setFilters({ ...filters, dietPreference: val })
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder={t.diet} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="veg">{t.veg}</SelectItem>
-            <SelectItem value="non-veg">{t.nonVeg}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+        <Separator />
 
-      <div className="space-y-2">
-        <Label>{t.drinking}</Label>
-        <Select 
-          value={filters.drinkingHabit || undefined} 
-          onValueChange={(val: any) => {
-            setFilters({ ...filters, drinkingHabit: val })
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder={t.drinking} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="never">{t.never}</SelectItem>
-            <SelectItem value="occasionally">{t.occasionally}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+        {/* Location */}
+        <div className="space-y-4">
+          <h4 className="font-medium text-sm flex items-center gap-2">
+            <Globe size={16} />
+            {t.locationFilters}
+          </h4>
+          
+          <div className="space-y-2">
+            <Label>{t.country}</Label>
+            <Select 
+              value={filters.country || ''} 
+              onValueChange={(val) => setFilters({ ...filters, country: val || undefined })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t.any} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">{t.any}</SelectItem>
+                <SelectItem value="india">{t.india}</SelectItem>
+                <SelectItem value="usa">{t.usa}</SelectItem>
+                <SelectItem value="uk">{t.uk}</SelectItem>
+                <SelectItem value="canada">{t.canada}</SelectItem>
+                <SelectItem value="australia">{t.australia}</SelectItem>
+                <SelectItem value="uae">{t.uae}</SelectItem>
+                <SelectItem value="germany">{t.germany}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-      <div className="space-y-2">
-        <Label>{t.smoking}</Label>
-        <Select 
-          value={filters.smokingHabit || undefined} 
-          onValueChange={(val: any) => {
-            setFilters({ ...filters, smokingHabit: val })
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder={t.smoking} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="never">{t.never}</SelectItem>
-            <SelectItem value="occasionally">{t.occasionally}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+          <div className="space-y-2">
+            <Label>{t.city}</Label>
+            <Input 
+              placeholder={t.city}
+              value={filters.city || ''}
+              onChange={(e) => setFilters({ ...filters, city: e.target.value || undefined })}
+            />
+          </div>
+        </div>
 
-      <div className="flex gap-2">
-        <Button onClick={() => setShowFilters(false)} className="flex-1">
-          {t.applyFilters}
-        </Button>
-        <Button variant="outline" onClick={() => setFilters({})} className="flex-1">
-          {t.clearFilters}
-        </Button>
+        <Separator />
+
+        {/* Community & Religion */}
+        <div className="space-y-4">
+          <h4 className="font-medium text-sm">{t.basicFilters}</h4>
+          
+          <div className="space-y-2">
+            <Label>{t.caste}</Label>
+            <Input 
+              placeholder={t.caste}
+              value={filters.caste || ''}
+              onChange={(e) => setFilters({ ...filters, caste: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>{t.community}</Label>
+            <Input 
+              placeholder={t.community}
+              value={filters.community || ''}
+              onChange={(e) => setFilters({ ...filters, community: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>{t.motherTongue}</Label>
+            <Input 
+              placeholder={t.motherTongue}
+              value={filters.motherTongue || ''}
+              onChange={(e) => setFilters({ ...filters, motherTongue: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>{t.manglik}</Label>
+            <Select 
+              value={filters.manglik !== undefined ? (filters.manglik ? 'yes' : 'no') : ''} 
+              onValueChange={(val) => {
+                if (val === 'any') {
+                  const { manglik, ...rest } = filters
+                  setFilters(rest)
+                } else {
+                  setFilters({ ...filters, manglik: val === 'yes' })
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t.any} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">{t.any}</SelectItem>
+                <SelectItem value="yes">{t.yes}</SelectItem>
+                <SelectItem value="no">{t.no}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Lifestyle */}
+        <div className="space-y-4">
+          <h4 className="font-medium text-sm">{t.lifestyleFilters}</h4>
+          
+          <div className="space-y-2">
+            <Label>{t.diet}</Label>
+            <Select 
+              value={filters.dietPreference || ''} 
+              onValueChange={(val: any) => {
+                if (val === 'any') {
+                  const { dietPreference, ...rest } = filters
+                  setFilters(rest)
+                } else {
+                  setFilters({ ...filters, dietPreference: val })
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t.any} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">{t.any}</SelectItem>
+                <SelectItem value="veg">{t.veg}</SelectItem>
+                <SelectItem value="non-veg">{t.nonVeg}</SelectItem>
+                <SelectItem value="eggetarian">{t.eggetarian}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>{t.drinking}</Label>
+            <Select 
+              value={filters.drinkingHabit || ''} 
+              onValueChange={(val: any) => {
+                if (val === 'any') {
+                  const { drinkingHabit, ...rest } = filters
+                  setFilters(rest)
+                } else {
+                  setFilters({ ...filters, drinkingHabit: val })
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t.any} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">{t.any}</SelectItem>
+                <SelectItem value="never">{t.never}</SelectItem>
+                <SelectItem value="occasionally">{t.occasionally}</SelectItem>
+                <SelectItem value="regularly">{t.regularly}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>{t.smoking}</Label>
+            <Select 
+              value={filters.smokingHabit || ''} 
+              onValueChange={(val: any) => {
+                if (val === 'any') {
+                  const { smokingHabit, ...rest } = filters
+                  setFilters(rest)
+                } else {
+                  setFilters({ ...filters, smokingHabit: val })
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t.any} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">{t.any}</SelectItem>
+                <SelectItem value="never">{t.never}</SelectItem>
+                <SelectItem value="occasionally">{t.occasionally}</SelectItem>
+                <SelectItem value="regularly">{t.regularly}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Special Filters */}
+        <div className="space-y-4">
+          <h4 className="font-medium text-sm flex items-center gap-2">
+            <Trophy size={16} />
+            {t.specialFilters}
+          </h4>
+          
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="readinessBadge"
+                checked={filters.hasReadinessBadge || false}
+                onCheckedChange={(checked) => setFilters({ ...filters, hasReadinessBadge: !!checked })}
+              />
+              <Label htmlFor="readinessBadge" className="text-sm cursor-pointer">
+                {t.readinessBadge} ⭐
+              </Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="verified"
+                checked={filters.isVerified || false}
+                onCheckedChange={(checked) => setFilters({ ...filters, isVerified: !!checked })}
+              />
+              <Label htmlFor="verified" className="text-sm cursor-pointer">
+                {t.verifiedOnly} ✓
+              </Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="hasPhoto"
+                checked={filters.hasPhoto || false}
+                onCheckedChange={(checked) => setFilters({ ...filters, hasPhoto: !!checked })}
+              />
+              <Label htmlFor="hasPhoto" className="text-sm cursor-pointer">
+                {t.withPhotoOnly} 📷
+              </Label>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 sticky bottom-0 bg-background pt-2">
+          <Button onClick={() => setShowFilters(false)} className="flex-1">
+            {t.applyFilters}
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setFilters({})
+              setAgeRange([18, 60])
+            }} 
+            className="flex-1"
+          >
+            <X size={16} className="mr-1" />
+            {t.clearFilters}
+          </Button>
+        </div>
       </div>
-    </div>
+    </ScrollArea>
   )
 
   return (
@@ -218,14 +597,25 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           <h1 className="text-3xl font-bold">{t.title}</h1>
           <Sheet open={showFilters} onOpenChange={setShowFilters}>
             <SheetTrigger asChild>
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2 relative">
                 <Funnel size={20} />
                 {t.filters}
+                {activeFilterCount > 0 && (
+                  <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    {activeFilterCount}
+                  </Badge>
+                )}
               </Button>
             </SheetTrigger>
-            <SheetContent>
+            <SheetContent className="w-[350px] sm:w-[400px]">
               <SheetHeader>
-                <SheetTitle>{t.filters}</SheetTitle>
+                <SheetTitle className="flex items-center gap-2">
+                  <Funnel size={20} />
+                  {t.filters}
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary">{activeFilterCount} active</Badge>
+                  )}
+                </SheetTitle>
               </SheetHeader>
               <div className="mt-6">
                 <FilterPanel />
@@ -246,14 +636,31 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           </div>
         </div>
 
-        <div className="mb-4 text-muted-foreground">
-          {filteredProfiles.length} {t.matchesFound}
+        <div className="mb-4 flex items-center justify-between">
+          <span className="text-muted-foreground">
+            {filteredProfiles.length} {t.matchesFound}
+          </span>
+          {activeFilterCount > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => {
+                setFilters({})
+                setAgeRange([18, 60])
+              }}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X size={14} className="mr-1" />
+              {t.clearFilters}
+            </Button>
+          )}
         </div>
 
         {filteredProfiles.length === 0 ? (
           <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              {t.noMatches}
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground text-lg">{t.noMatches}</p>
+              <p className="text-muted-foreground text-sm mt-2">{t.adjustFilters}</p>
             </CardContent>
           </Card>
         ) : (

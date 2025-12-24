@@ -15,8 +15,8 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User, CreditCard, Upload } from '@phosphor-icons/react'
-import type { Profile, WeddingService, PaymentTransaction } from '@/types/profile'
+import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User, CreditCard, Upload, ShieldWarning, Prohibit, Warning } from '@phosphor-icons/react'
+import type { Profile, WeddingService, PaymentTransaction, BlockedProfile, ReportReason } from '@/types/profile'
 import type { User } from '@/types/user'
 import type { ChatMessage } from '@/types/chat'
 import { Chat } from '@/components/Chat'
@@ -68,6 +68,7 @@ interface MembershipSettings {
 
 export function AdminPanel({ profiles, setProfiles, users, language, onLogout, onLoginAsUser }: AdminPanelProps) {
   const [blockedContacts, setBlockedContacts] = useKV<BlockedContact[]>('blockedContacts', [])
+  const [blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
   const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
   const [membershipSettings, setMembershipSettings] = useKV<MembershipSettings>('membershipSettings', {
@@ -220,6 +221,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   
   // Admin Edit Profile dialog state
   const [adminEditDialog, setAdminEditDialog] = useState<Profile | null>(null)
+  
+  // Report review state
+  const [showChatHistoryDialog, setShowChatHistoryDialog] = useState(false)
+  const [chatHistoryParticipants, setChatHistoryParticipants] = useState<{ reporter: string, reported: string } | null>(null)
+  
   const [adminEditFormData, setAdminEditFormData] = useState<{
     fullName: string
     dateOfBirth: string
@@ -469,6 +475,33 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     idProofNotUploaded: language === 'hi' ? 'पहचान प्रमाण अपलोड नहीं किया गया' : 'ID Proof not uploaded',
     idProofType: language === 'hi' ? 'दस्तावेज़ का प्रकार' : 'Document Type',
     voterId: language === 'hi' ? 'मतदाता पहचान पत्र' : 'Voter ID',
+    // Reports tab translations
+    reports: language === 'hi' ? 'रिपोर्ट्स' : 'Reports',
+    reportedUsers: language === 'hi' ? 'रिपोर्ट किए गए उपयोगकर्ता' : 'Reported Users',
+    noReports: language === 'hi' ? 'कोई रिपोर्ट नहीं।' : 'No reports.',
+    reporter: language === 'hi' ? 'रिपोर्टर' : 'Reporter',
+    reported: language === 'hi' ? 'रिपोर्ट किया गया' : 'Reported',
+    reportReason: language === 'hi' ? 'कारण' : 'Reason',
+    reportDescription: language === 'hi' ? 'विवरण' : 'Description',
+    reportDate: language === 'hi' ? 'रिपोर्ट तिथि' : 'Report Date',
+    adminAction: language === 'hi' ? 'कार्रवाई' : 'Action',
+    viewChatHistory: language === 'hi' ? 'चैट इतिहास देखें' : 'View Chat History',
+    dismissReport: language === 'hi' ? 'रिपोर्ट खारिज करें' : 'Dismiss Report',
+    warnUser: language === 'hi' ? 'उपयोगकर्ता को चेतावनी दें' : 'Warn User',
+    removeProfile: language === 'hi' ? 'प्रोफाइल हटाएं' : 'Remove Profile',
+    reportDismissed: language === 'hi' ? 'रिपोर्ट खारिज की गई' : 'Report dismissed',
+    userWarned: language === 'hi' ? 'उपयोगकर्ता को चेतावनी दी गई' : 'User warned',
+    profileRemoved: language === 'hi' ? 'प्रोफाइल हटा दी गई' : 'Profile removed',
+    pendingReview: language === 'hi' ? 'समीक्षा लंबित' : 'Pending Review',
+    reviewed: language === 'hi' ? 'समीक्षित' : 'Reviewed',
+    inappropriateMessages: language === 'hi' ? 'अनुचित संदेश' : 'Inappropriate Messages',
+    fakeProfile: language === 'hi' ? 'नकली प्रोफाइल' : 'Fake Profile',
+    harassment: language === 'hi' ? 'उत्पीड़न' : 'Harassment',
+    spam: language === 'hi' ? 'स्पैम' : 'Spam',
+    offensiveContent: language === 'hi' ? 'आपत्तिजनक सामग्री' : 'Offensive Content',
+    otherReason: language === 'hi' ? 'अन्य' : 'Other',
+    chatHistory: language === 'hi' ? 'चैट इतिहास' : 'Chat History',
+    noMessagesFound: language === 'hi' ? 'कोई संदेश नहीं मिला' : 'No messages found',
   }
 
   // Helper to get user credentials for a profile
@@ -1155,6 +1188,17 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               <ChatCircle size={16} weight="fill" className="shrink-0" />
               <span className="hidden sm:inline">{t.adminChat}</span>
               <span className="sm:hidden">{language === 'hi' ? 'चैट' : 'Chat'}</span>
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="gap-1 text-xs sm:text-sm whitespace-nowrap text-orange-600">
+              <ShieldWarning size={16} weight="fill" className="shrink-0" />
+              <span className="hidden sm:inline">{t.reports}</span>
+              <span className="sm:hidden">{language === 'hi' ? 'रिपोर्ट' : 'Reports'}</span>
+              {(() => {
+                const pendingReportsCount = blockedProfiles?.filter(b => b.reportedToAdmin && !b.adminReviewed).length || 0
+                return pendingReportsCount > 0 ? (
+                  <Badge variant="destructive" className="ml-1 text-xs animate-pulse">{pendingReportsCount}</Badge>
+                ) : null
+              })()}
             </TabsTrigger>
             <TabsTrigger value="services" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
               <Storefront size={16} weight="fill" className="shrink-0" />
@@ -2939,6 +2983,276 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Reports Tab - Admin reviews user reports */}
+          <TabsContent value="reports">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-orange-600">
+                      <ShieldWarning size={24} weight="fill" />
+                      {t.reportedUsers}
+                    </CardTitle>
+                    <CardDescription>
+                      {blockedProfiles?.filter(b => b.reportedToAdmin).length || 0} {language === 'hi' ? 'कुल रिपोर्ट' : 'total reports'}
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const reports = blockedProfiles?.filter(b => b.reportedToAdmin) || []
+                  
+                  if (reports.length === 0) {
+                    return (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <ShieldWarning size={48} className="mx-auto mb-4 opacity-50" weight="light" />
+                        <p>{t.noReports}</p>
+                      </div>
+                    )
+                  }
+
+                  // Helper to get report reason label
+                  const getReportReasonLabel = (reason: ReportReason | undefined) => {
+                    switch (reason) {
+                      case 'inappropriate-messages': return t.inappropriateMessages
+                      case 'fake-profile': return t.fakeProfile
+                      case 'harassment': return t.harassment
+                      case 'spam': return t.spam
+                      case 'offensive-content': return t.offensiveContent
+                      case 'other': return t.otherReason
+                      default: return t.otherReason
+                    }
+                  }
+
+                  // Get profile by profileId
+                  const getProfileByProfileId = (profileId: string) => 
+                    profiles?.find(p => p.profileId === profileId)
+
+                  // Handle admin actions
+                  const handleDismissReport = (reportId: string) => {
+                    setBlockedProfiles(current => 
+                      (current || []).map(b => 
+                        b.id === reportId 
+                          ? { ...b, adminReviewed: true, adminReviewedAt: new Date().toISOString(), adminAction: 'dismissed' as const }
+                          : b
+                      )
+                    )
+                    toast.success(t.reportDismissed)
+                  }
+
+                  const handleWarnUser = (reportId: string, reportedProfileId: string) => {
+                    setBlockedProfiles(current => 
+                      (current || []).map(b => 
+                        b.id === reportId 
+                          ? { ...b, adminReviewed: true, adminReviewedAt: new Date().toISOString(), adminAction: 'warned' as const }
+                          : b
+                      )
+                    )
+                    // Send warning message to reported user
+                    const warningMessage: ChatMessage = {
+                      id: `msg-${Date.now()}`,
+                      fromProfileId: 'admin',
+                      toProfileId: reportedProfileId,
+                      type: 'admin-to-user',
+                      message: language === 'hi' 
+                        ? '⚠️ चेतावनी: आपकी प्रोफाइल के बारे में एक शिकायत प्राप्त हुई है। कृपया सभी उपयोगकर्ताओं के साथ सम्मानजनक व्यवहार करें। बार-बार शिकायतों पर आपकी प्रोफाइल को हटाया जा सकता है।'
+                        : '⚠️ Warning: A complaint has been received about your profile. Please be respectful to all users. Repeated complaints may result in profile removal.',
+                      timestamp: new Date().toISOString(),
+                      createdAt: new Date().toISOString(),
+                    }
+                    setMessages(current => [...(current || []), warningMessage])
+                    toast.success(t.userWarned)
+                  }
+
+                  const handleRemoveProfile = (reportId: string, reportedProfileId: string) => {
+                    if (!confirm(t.deleteConfirm)) return
+                    
+                    setBlockedProfiles(current => 
+                      (current || []).map(b => 
+                        b.id === reportId 
+                          ? { ...b, adminReviewed: true, adminReviewedAt: new Date().toISOString(), adminAction: 'removed' as const }
+                          : b
+                      )
+                    )
+                    // Soft delete the reported profile
+                    const reportedProfile = profiles?.find(p => p.profileId === reportedProfileId)
+                    if (reportedProfile) {
+                      setProfiles(current => 
+                        (current || []).map(p => 
+                          p.profileId === reportedProfileId 
+                            ? { 
+                                ...p, 
+                                isDeleted: true, 
+                                deletedAt: new Date().toISOString(),
+                                deletedReason: language === 'hi' ? 'उपयोगकर्ता रिपोर्ट के कारण हटाया गया' : 'Removed due to user report'
+                              }
+                            : p
+                        )
+                      )
+                    }
+                    toast.success(t.profileRemoved)
+                  }
+
+                  // View chat history between two users
+                  const handleViewChatHistory = (reporterProfileId: string, reportedProfileId: string) => {
+                    setChatHistoryParticipants({ reporter: reporterProfileId, reported: reportedProfileId })
+                    setShowChatHistoryDialog(true)
+                  }
+
+                  // Sort reports: pending first, then by date
+                  const sortedReports = [...reports].sort((a, b) => {
+                    if (a.adminReviewed !== b.adminReviewed) return a.adminReviewed ? 1 : -1
+                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                  })
+
+                  return (
+                    <div className="space-y-4">
+                      {sortedReports.map(report => {
+                        const reporterProfile = getProfileByProfileId(report.blockerProfileId)
+                        const reportedProfile = getProfileByProfileId(report.blockedProfileId)
+                        
+                        return (
+                          <div 
+                            key={report.id} 
+                            className={`border rounded-lg p-4 ${
+                              report.adminReviewed 
+                                ? 'bg-muted/30 border-muted' 
+                                : 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800'
+                            }`}
+                          >
+                            <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+                              {/* Report Details */}
+                              <div className="flex-1 space-y-3">
+                                <div className="flex items-center gap-2">
+                                  {!report.adminReviewed && (
+                                    <Badge variant="destructive" className="gap-1">
+                                      <Warning size={12} weight="fill" />
+                                      {t.pendingReview}
+                                    </Badge>
+                                  )}
+                                  {report.adminReviewed && (
+                                    <Badge variant="secondary" className="gap-1">
+                                      <CheckCircle size={12} weight="fill" />
+                                      {t.reviewed} - {
+                                        report.adminAction === 'dismissed' ? t.dismissReport :
+                                        report.adminAction === 'warned' ? t.warnUser :
+                                        report.adminAction === 'removed' ? t.removeProfile : ''
+                                      }
+                                    </Badge>
+                                  )}
+                                  <Badge variant="outline" className="gap-1">
+                                    {getReportReasonLabel(report.reportReason)}
+                                  </Badge>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {/* Reporter */}
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex flex-col">
+                                      <span className="text-xs text-muted-foreground">{t.reporter}</span>
+                                      <div className="flex items-center gap-2">
+                                        {reporterProfile?.photos?.[0] ? (
+                                          <img src={reporterProfile.photos[0]} alt="" className="h-8 w-8 rounded-full object-cover" />
+                                        ) : (
+                                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
+                                            {reporterProfile?.fullName?.[0] || '?'}
+                                          </div>
+                                        )}
+                                        <span className="font-medium">{reporterProfile?.fullName || report.blockerProfileId}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Reported */}
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex flex-col">
+                                      <span className="text-xs text-muted-foreground">{t.reported}</span>
+                                      <div className="flex items-center gap-2">
+                                        {reportedProfile?.photos?.[0] ? (
+                                          <img src={reportedProfile.photos[0]} alt="" className="h-8 w-8 rounded-full object-cover" />
+                                        ) : (
+                                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
+                                            {reportedProfile?.fullName?.[0] || '?'}
+                                          </div>
+                                        )}
+                                        <span className="font-medium text-destructive">{reportedProfile?.fullName || report.blockedProfileId}</span>
+                                        {reportedProfile?.isDeleted && (
+                                          <Badge variant="destructive" className="text-xs">
+                                            {language === 'hi' ? 'हटाया गया' : 'Removed'}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {report.reportDescription && (
+                                  <div className="text-sm bg-background p-2 rounded border">
+                                    <span className="font-medium">{t.reportDescription}:</span> {report.reportDescription}
+                                  </div>
+                                )}
+
+                                <div className="text-xs text-muted-foreground">
+                                  {t.reportDate}: {formatDateDDMMYYYY(report.createdAt)}
+                                </div>
+                              </div>
+
+                              {/* Actions */}
+                              <div className="flex flex-wrap gap-2 lg:flex-col lg:min-w-[140px]">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1"
+                                  onClick={() => handleViewChatHistory(report.blockerProfileId, report.blockedProfileId)}
+                                >
+                                  <Eye size={14} />
+                                  {t.viewChatHistory}
+                                </Button>
+                                
+                                {!report.adminReviewed && (
+                                  <>
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      className="gap-1"
+                                      onClick={() => handleDismissReport(report.id)}
+                                    >
+                                      <XCircle size={14} />
+                                      {t.dismissReport}
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="gap-1 text-amber-600 border-amber-300 hover:bg-amber-50"
+                                      onClick={() => handleWarnUser(report.id, report.blockedProfileId)}
+                                    >
+                                      <Warning size={14} weight="fill" />
+                                      {t.warnUser}
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      className="gap-1"
+                                      onClick={() => handleRemoveProfile(report.id, report.blockedProfileId)}
+                                    >
+                                      <Prohibit size={14} weight="bold" />
+                                      {t.removeProfile}
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
@@ -5852,6 +6166,102 @@ ShaadiPartnerSearch Team
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Chat History Dialog - View conversation between reporter and reported */}
+      <Dialog open={showChatHistoryDialog} onOpenChange={setShowChatHistoryDialog}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ChatCircle size={20} weight="fill" />
+              {t.chatHistory}
+            </DialogTitle>
+            {chatHistoryParticipants && (
+              <DialogDescription>
+                {(() => {
+                  const reporter = profiles?.find(p => p.profileId === chatHistoryParticipants.reporter)
+                  const reported = profiles?.find(p => p.profileId === chatHistoryParticipants.reported)
+                  return `${reporter?.fullName || chatHistoryParticipants.reporter} ↔ ${reported?.fullName || chatHistoryParticipants.reported}`
+                })()}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          
+          <ScrollArea className="h-[400px] pr-4">
+            {chatHistoryParticipants && (() => {
+              // Get messages between the two users
+              const chatMessages = messages?.filter(m => 
+                m.type === 'user-to-user' && (
+                  (m.fromProfileId === chatHistoryParticipants.reporter && m.toProfileId === chatHistoryParticipants.reported) ||
+                  (m.fromProfileId === chatHistoryParticipants.reported && m.toProfileId === chatHistoryParticipants.reporter)
+                )
+              ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) || []
+
+              if (chatMessages.length === 0) {
+                return (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <ChatCircle size={48} className="mx-auto mb-4 opacity-50" weight="light" />
+                    <p>{t.noMessagesFound}</p>
+                  </div>
+                )
+              }
+
+              const reporterProfile = profiles?.find(p => p.profileId === chatHistoryParticipants.reporter)
+              const reportedProfile = profiles?.find(p => p.profileId === chatHistoryParticipants.reported)
+
+              return (
+                <div className="space-y-3">
+                  {chatMessages.map(msg => {
+                    const isFromReporter = msg.fromProfileId === chatHistoryParticipants.reporter
+                    const senderProfile = isFromReporter ? reporterProfile : reportedProfile
+                    const isReported = msg.fromProfileId === chatHistoryParticipants.reported
+
+                    return (
+                      <div 
+                        key={msg.id} 
+                        className={`flex ${isFromReporter ? 'justify-start' : 'justify-end'}`}
+                      >
+                        <div className={`max-w-[80%] p-3 rounded-lg ${
+                          isReported 
+                            ? 'bg-red-100 dark:bg-red-950/30 border border-red-300 dark:border-red-800' 
+                            : 'bg-muted'
+                        }`}>
+                          <div className="flex items-center gap-2 mb-1">
+                            {senderProfile?.photos?.[0] ? (
+                              <img src={senderProfile.photos[0]} alt="" className="h-5 w-5 rounded-full object-cover" />
+                            ) : (
+                              <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold">
+                                {senderProfile?.fullName?.[0] || '?'}
+                              </div>
+                            )}
+                            <span className={`text-xs font-medium ${isReported ? 'text-red-600 dark:text-red-400' : ''}`}>
+                              {senderProfile?.fullName || msg.fromProfileId}
+                              {isReported && (
+                                <Badge variant="destructive" className="ml-2 text-[10px] px-1 py-0">
+                                  {t.reported}
+                                </Badge>
+                              )}
+                            </span>
+                          </div>
+                          <p className="text-sm">{msg.message || (msg as any).content}</p>
+                          <span className="text-xs text-muted-foreground mt-1 block">
+                            {new Date(msg.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
+          </ScrollArea>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowChatHistoryDialog(false)}>
+              {t.close}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </section>

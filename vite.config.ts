@@ -24,53 +24,105 @@ export default defineConfig({
     minify: 'esbuild',
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Core React
-          'react-vendor': ['react', 'react-dom'],
-          // UI components
-          'radix-ui': [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-select',
-            '@radix-ui/react-popover',
-            '@radix-ui/react-tooltip',
-            '@radix-ui/react-accordion',
-            '@radix-ui/react-alert-dialog',
-            '@radix-ui/react-avatar',
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-label',
-            '@radix-ui/react-scroll-area',
-            '@radix-ui/react-separator',
-            '@radix-ui/react-switch',
-            '@radix-ui/react-slot',
-          ],
-          // Icons
-          'icons': ['@phosphor-icons/react', 'lucide-react'],
+        manualChunks: (id) => {
+          // Core React - small, frequently cached
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+            return 'react-vendor'
+          }
+          
+          // Radix UI components - common across all pages
+          if (id.includes('@radix-ui/')) {
+            return 'radix-ui'
+          }
+          
+          // Icons - large but cacheable
+          if (id.includes('@phosphor-icons/') || id.includes('lucide-react')) {
+            return 'icons'
+          }
+          
           // Charts and visualization
-          'charts': ['recharts', 'd3'],
+          if (id.includes('recharts') || id.includes('d3')) {
+            return 'charts'
+          }
+          
           // Animation
-          'animation': ['framer-motion'],
+          if (id.includes('framer-motion')) {
+            return 'animation'
+          }
+          
           // Forms
-          'forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+          if (id.includes('react-hook-form') || id.includes('@hookform/') || id.includes('zod')) {
+            return 'forms'
+          }
+          
           // Utilities
-          'utils': ['date-fns', 'clsx', 'tailwind-merge', 'class-variance-authority'],
+          if (id.includes('date-fns') || id.includes('clsx') || id.includes('tailwind-merge') || id.includes('class-variance-authority')) {
+            return 'utils'
+          }
+          
           // Azure Core
-          'azure-core': ['@azure/core-rest-pipeline', '@azure/core-auth', '@azure/core-util', '@azure/core-client'],
-          // Azure Individual Services (split for better caching)
-          'azure-cosmos': ['@azure/cosmos'],
-          'azure-identity': ['@azure/identity'],
-          'azure-keyvault': ['@azure/keyvault-secrets'],
-          'azure-storage': ['@azure/storage-blob'],
-          // React day picker for calendar
-          'calendar': ['react-day-picker'],
+          if (id.includes('@azure/core-')) {
+            return 'azure-core'
+          }
+          
+          // Azure Cosmos - large, separate chunk
+          if (id.includes('@azure/cosmos')) {
+            return 'azure-cosmos'
+          }
+          
+          // Azure Identity
+          if (id.includes('@azure/identity')) {
+            return 'azure-identity'
+          }
+          
+          // Azure KeyVault
+          if (id.includes('@azure/keyvault-')) {
+            return 'azure-keyvault'
+          }
+          
+          // Azure Storage
+          if (id.includes('@azure/storage-')) {
+            return 'azure-storage'
+          }
+          
+          // Calendar
+          if (id.includes('react-day-picker')) {
+            return 'calendar'
+          }
+          
           // QR code
-          'qrcode': ['qrcode'],
+          if (id.includes('qrcode')) {
+            return 'qrcode'
+          }
+          
           // Sonner toast
-          'sonner': ['sonner'],
+          if (id.includes('sonner')) {
+            return 'sonner'
+          }
+          
+          // Readiness components - lazy loaded feature
+          if (id.includes('/components/readiness/')) {
+            return 'readiness'
+          }
+          
+          // Admin components - only loaded for admins
+          if (id.includes('AdminPanel') || id.includes('AdminLogin')) {
+            return 'admin'
+          }
+          
+          // Chat components
+          if (id.includes('/Chat.tsx') || id.includes('/Inbox.tsx')) {
+            return 'messaging'
+          }
+          
+          // Wedding services
+          if (id.includes('WeddingServices') || id.includes('BiodataGenerator')) {
+            return 'services'
+          }
         },
       },
     },
-    chunkSizeWarningLimit: 800,
+    // Increase the warning limit since we've split chunks well
+    chunkSizeWarningLimit: 600,
   },
 });

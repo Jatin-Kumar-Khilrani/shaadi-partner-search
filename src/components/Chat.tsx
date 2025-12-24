@@ -7,12 +7,15 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
-import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks, X } from '@phosphor-icons/react'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks, X, Warning, ShieldWarning, Prohibit } from '@phosphor-icons/react'
 import type { ChatMessage, ChatConversation } from '@/types/chat'
-import type { Profile, Interest, MembershipPlan } from '@/types/profile'
+import type { Profile, Interest, MembershipPlan, BlockedProfile, ReportReason } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 import { toast } from 'sonner'
-
 // Membership settings interface for plan limits
 interface MembershipSettings {
   freePlanChatLimit: number
@@ -48,12 +51,19 @@ const DEFAULT_SETTINGS: MembershipSettings = {
 export function Chat({ currentUserProfile, profiles, language, isAdmin = false, shouldBlur = false, membershipPlan, membershipSettings, setProfiles, initialChatProfileId }: ChatProps) {
   const [messages, setMessages, refreshMessages, messagesLoaded] = useKV<ChatMessage[]>('chatMessages', [])
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
+  const [blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [conversations, setConversations] = useState<ChatConversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [messageInput, setMessageInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [hasAutoSelected, setHasAutoSelected] = useState(false)
+  
+  // Report & Block dialog state
+  const [showReportDialog, setShowReportDialog] = useState(false)
+  const [reportReason, setReportReason] = useState<ReportReason | ''>('')
+  const [reportDescription, setReportDescription] = useState('')
+  const [profileToReport, setProfileToReport] = useState<{ profileId: string, name: string } | null>(null)
 
   // Force refresh messages from Azure on mount
   useEffect(() => {
@@ -124,6 +134,28 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       ? 'यह आपकी अंतिम चैट थी!' 
       : 'This was your last chat!',
     remainingChats: language === 'hi' ? 'शेष चैट' : 'Chats Left',
+    // Report & Block translations
+    reportBlock: language === 'hi' ? 'रिपोर्ट और ब्लॉक' : 'Report & Block',
+    reportProfile: language === 'hi' ? 'प्रोफाइल रिपोर्ट करें' : 'Report Profile',
+    reportReason: language === 'hi' ? 'रिपोर्ट का कारण' : 'Reason for Report',
+    selectReason: language === 'hi' ? 'कारण चुनें' : 'Select a reason',
+    inappropriateMessages: language === 'hi' ? 'अनुचित संदेश' : 'Inappropriate Messages',
+    fakeProfile: language === 'hi' ? 'नकली प्रोफाइल' : 'Fake Profile',
+    harassment: language === 'hi' ? 'उत्पीड़न' : 'Harassment',
+    spam: language === 'hi' ? 'स्पैम' : 'Spam',
+    offensiveContent: language === 'hi' ? 'आपत्तिजनक सामग्री' : 'Offensive Content',
+    other: language === 'hi' ? 'अन्य' : 'Other',
+    additionalDetails: language === 'hi' ? 'अतिरिक्त विवरण (वैकल्पिक)' : 'Additional Details (Optional)',
+    reportWarning: language === 'hi' 
+      ? 'इस प्रोफाइल को रिपोर्ट करने से वे आपसे और आप उनसे छुप जाएंगे। एडमिन को सूचित किया जाएगा और वे चैट इतिहास की समीक्षा कर सकते हैं।' 
+      : 'Reporting this profile will hide them from you and you from them. Admin will be notified and can review chat history.',
+    cancel: language === 'hi' ? 'रद्द करें' : 'Cancel',
+    confirmReport: language === 'hi' ? 'रिपोर्ट करें और ब्लॉक करें' : 'Report & Block',
+    reportSuccess: language === 'hi' ? 'प्रोफाइल रिपोर्ट और ब्लॉक की गई' : 'Profile reported and blocked',
+    reportSuccessDesc: language === 'hi' 
+      ? 'एडमिन को सूचित कर दिया गया है और वे उचित कार्रवाई करेंगे।' 
+      : 'Admin has been notified and will take appropriate action.',
+    blockedUser: language === 'hi' ? 'यह प्रोफाइल ब्लॉक है' : 'This profile is blocked',
   }
 
   const getOtherProfileIdFromConversation = (conversationId: string): string | null => {
@@ -132,6 +164,51 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     
     const parts = conversationId.split('-')
     return parts.find(id => id !== currentUserProfile.profileId) || null
+  }
+
+  // Check if a profile is blocked (either direction)
+  const isProfileBlocked = (otherProfileId: string): boolean => {
+    if (!currentUserProfile || !blockedProfiles) return false
+    return blockedProfiles.some(
+      b => (b.blockerProfileId === currentUserProfile.profileId && b.blockedProfileId === otherProfileId) ||
+           (b.blockedProfileId === currentUserProfile.profileId && b.blockerProfileId === otherProfileId)
+    )
+  }
+
+  // Handle report and block
+  const handleReportAndBlock = () => {
+    if (!currentUserProfile || !profileToReport || !reportReason) return
+
+    const newBlock: BlockedProfile = {
+      id: `block-${Date.now()}`,
+      blockerProfileId: currentUserProfile.profileId,
+      blockedProfileId: profileToReport.profileId,
+      createdAt: new Date().toISOString(),
+      reason: reportReason,
+      reportedToAdmin: true,
+      reportReason: reportReason as ReportReason,
+      reportDescription: reportDescription || undefined,
+    }
+
+    setBlockedProfiles(current => [...(current || []), newBlock])
+    
+    // Close the conversation and reset dialog
+    setSelectedConversation(null)
+    setShowReportDialog(false)
+    setReportReason('')
+    setReportDescription('')
+    setProfileToReport(null)
+
+    toast.success(t.reportSuccess, {
+      description: t.reportSuccessDesc,
+      duration: 5000,
+    })
+  }
+
+  // Open report dialog
+  const openReportDialog = (profileId: string, name: string) => {
+    setProfileToReport({ profileId, name })
+    setShowReportDialog(true)
   }
 
   const canChatWith = (otherProfileId: string): boolean => {
@@ -320,8 +397,26 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       (a, b) => new Date(b.updatedAt || b.createdAt || '').getTime() - new Date(a.updatedAt || a.createdAt || '').getTime()
     )
 
-    setConversations(sortedConversations)
-  }, [messages, currentUserProfile, isAdmin, interests])
+    // Filter out blocked profiles from conversations (for non-admin users)
+    const filteredConversations = isAdmin ? sortedConversations : sortedConversations.filter(conv => {
+      // Don't filter admin chats or broadcast
+      if (conv.id === 'admin-broadcast' || conv.id.startsWith('admin-')) return true
+      
+      // Check if the other participant is blocked
+      const otherProfileId = conv.participants?.find(id => id !== currentUserProfile?.profileId)
+      if (!otherProfileId) return true
+      
+      // Check both directions of blocking
+      const isBlocked = blockedProfiles?.some(
+        b => (b.blockerProfileId === currentUserProfile?.profileId && b.blockedProfileId === otherProfileId) ||
+             (b.blockedProfileId === currentUserProfile?.profileId && b.blockerProfileId === otherProfileId)
+      )
+      
+      return !isBlocked
+    })
+
+    setConversations(filteredConversations)
+  }, [messages, currentUserProfile, isAdmin, interests, blockedProfiles])
 
   // Mark messages as delivered/read when conversation is opened
   useEffect(() => {
@@ -1155,6 +1250,18 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                           </p>
                         )}
                       </div>
+                      {/* Report & Block button - only for user-to-user chats, not admin chats */}
+                      {!isAdmin && !isAdminChat && otherProfileId && chatProfile && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => openReportDialog(otherProfileId, chatProfile.fullName || otherProfileId)}
+                          title={t.reportBlock}
+                        >
+                          <ShieldWarning size={20} weight="fill" />
+                        </Button>
+                      )}
                     </div>
                   </CardHeader>
                   <ScrollArea className="h-[calc(600px-180px)] p-4">
@@ -1256,6 +1363,86 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
         </div>
         )}
       </div>
+
+      {/* Report & Block Dialog */}
+      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <ShieldWarning size={24} weight="fill" />
+              {t.reportProfile}
+            </DialogTitle>
+            <DialogDescription>
+              {profileToReport?.name && (
+                <span className="font-medium text-foreground">{profileToReport.name}</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Warning message */}
+            <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+              <Warning size={20} className="text-amber-600 mt-0.5 shrink-0" weight="fill" />
+              <p className="text-sm text-amber-700 dark:text-amber-300">
+                {t.reportWarning}
+              </p>
+            </div>
+
+            {/* Report reason select */}
+            <div className="space-y-2">
+              <Label htmlFor="reportReason">{t.reportReason} *</Label>
+              <Select value={reportReason} onValueChange={(value) => setReportReason(value as ReportReason)}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t.selectReason} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inappropriate-messages">{t.inappropriateMessages}</SelectItem>
+                  <SelectItem value="fake-profile">{t.fakeProfile}</SelectItem>
+                  <SelectItem value="harassment">{t.harassment}</SelectItem>
+                  <SelectItem value="spam">{t.spam}</SelectItem>
+                  <SelectItem value="offensive-content">{t.offensiveContent}</SelectItem>
+                  <SelectItem value="other">{t.other}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Additional details textarea */}
+            <div className="space-y-2">
+              <Label htmlFor="reportDescription">{t.additionalDetails}</Label>
+              <Textarea
+                id="reportDescription"
+                value={reportDescription}
+                onChange={(e) => setReportDescription(e.target.value)}
+                placeholder={language === 'hi' ? 'कृपया और विवरण प्रदान करें...' : 'Please provide more details...'}
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowReportDialog(false)
+                setReportReason('')
+                setReportDescription('')
+                setProfileToReport(null)
+              }}
+            >
+              {t.cancel}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleReportAndBlock}
+              disabled={!reportReason}
+              className="gap-2"
+            >
+              <Prohibit size={18} weight="bold" />
+              {t.confirmReport}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

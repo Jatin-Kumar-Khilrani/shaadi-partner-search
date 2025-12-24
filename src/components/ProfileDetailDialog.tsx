@@ -1,9 +1,10 @@
+import { useState } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { MapPin, Briefcase, GraduationCap, UserCircle, Phone, Envelope, Heart, ShieldCheck, Seal, Calendar, Clock, Eye } from '@phosphor-icons/react'
+import { MapPin, Briefcase, GraduationCap, UserCircle, Phone, Envelope, Heart, ShieldCheck, Seal, Calendar, Clock, Eye, CheckCircle, XCircle, ClockCountdown } from '@phosphor-icons/react'
 import type { Profile, Interest, ContactRequest, MembershipPlan } from '@/types/profile'
 import { toast } from 'sonner'
 import { useKV } from '@/hooks/useKV'
@@ -47,6 +48,7 @@ interface ProfileDetailDialogProps {
 export function ProfileDetailDialog({ profile, open, onClose, language, currentUserProfile, isLoggedIn = false, isAdmin = false, shouldBlur = false, membershipPlan, membershipSettings, setProfiles }: ProfileDetailDialogProps) {
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests, setContactRequests] = useKV<ContactRequest[]>('contactRequests', [])
+  const [showContactInfo, setShowContactInfo] = useState(false)
   const { lightboxState, openLightbox, closeLightbox } = useLightbox()
 
   // Get settings with defaults
@@ -158,6 +160,15 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     i => i.fromProfileId === profile.profileId && 
          i.toProfileId === currentUserProfile.profileId
   )
+
+  // Find existing contact request from current user to this profile
+  const existingContactRequest = currentUserProfile && contactRequests?.find(
+    r => r.fromUserId === currentUserProfile.id && 
+         r.toUserId === profile.id
+  )
+
+  // Check the status of the contact request
+  const contactRequestStatus = existingContactRequest?.status // 'pending' | 'approved' | 'declined' | undefined
 
   const handleExpressInterest = () => {
     if (!currentUserProfile) {
@@ -323,6 +334,9 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
       : 'For privacy and security, contact details are shared only after volunteer approval.',
     expressInterest: language === 'hi' ? 'रुचि दर्ज करें' : 'Express Interest',
     requestContact: language === 'hi' ? 'संपर्क अनुरोध करें' : 'Request Contact',
+    requestSent: language === 'hi' ? 'अनुरोध भेजा गया' : 'Request Sent',
+    viewContact: language === 'hi' ? 'संपर्क देखें' : 'View Contact',
+    requestDeclined: language === 'hi' ? 'अनुरोध अस्वीकृत' : 'Request Declined',
     profileId: language === 'hi' ? 'प्रोफाइल ID' : 'Profile ID',
     createdOn: language === 'hi' ? 'बनाया गया' : 'Created on',
     // Admin labels
@@ -653,15 +667,64 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                           : t.expressInterest
                         }
                       </Button>
-                      <Button 
-                        onClick={handleRequestContact} 
-                        variant="outline" 
-                        className="flex-1"
-                        disabled={remainingContacts <= 0 && !contactViewsUsed.includes(profile.profileId)}
-                      >
-                        <Phone size={20} className="mr-2" />
-                        {t.requestContact}
-                      </Button>
+                      {/* Contact Request Button - Shows different states based on request status */}
+                      {contactRequestStatus === 'pending' ? (
+                        <Button 
+                          variant="secondary" 
+                          className="flex-1"
+                          disabled
+                        >
+                          <ClockCountdown size={20} className="mr-2" />
+                          {t.requestSent}
+                        </Button>
+                      ) : contactRequestStatus === 'approved' ? (
+                        <Button 
+                          onClick={() => setShowContactInfo(!showContactInfo)}
+                          variant="default"
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle size={20} weight="fill" className="mr-2" />
+                          {t.viewContact}
+                        </Button>
+                      ) : contactRequestStatus === 'declined' ? (
+                        <Button 
+                          variant="secondary" 
+                          className="flex-1 text-red-600 dark:text-red-400"
+                          disabled
+                        >
+                          <XCircle size={20} weight="fill" className="mr-2" />
+                          {t.requestDeclined}
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={handleRequestContact} 
+                          variant="outline" 
+                          className="flex-1"
+                          disabled={remainingContacts <= 0 && !contactViewsUsed.includes(profile.profileId)}
+                        >
+                          <Phone size={20} className="mr-2" />
+                          {t.requestContact}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  {/* Show contact info when approved and button clicked */}
+                  {contactRequestStatus === 'approved' && showContactInfo && (
+                    <div className="mt-4 p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+                      <h4 className="font-semibold text-green-700 dark:text-green-300 mb-3 flex items-center gap-2">
+                        <CheckCircle size={18} weight="fill" />
+                        {t.contactInfo}
+                      </h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Phone size={16} className="text-muted-foreground" />
+                          <span className="font-medium">{(profile as any).mobile || (profile as any).phoneNumber || t.notProvided}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Envelope size={16} className="text-muted-foreground" />
+                          <span className="font-medium">{(profile as any).email || t.notProvided}</span>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </>

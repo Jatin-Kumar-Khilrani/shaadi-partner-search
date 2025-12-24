@@ -3,6 +3,8 @@
  * Provides AI capabilities for bio generation and face analysis
  */
 
+import type { Profile, SelfDiscoveryData } from '@/types/profile'
+
 // Azure OpenAI configuration - loaded from environment variables
 const getConfig = () => ({
   endpoint: import.meta.env.VITE_AZURE_OPENAI_ENDPOINT || 'https://eastus2.api.cognitive.microsoft.com/',
@@ -205,6 +207,237 @@ function generateDemoBio(params: BioGenerationParams): GeneratedBioResult {
     bio: `${firstName} is a well-educated and cultured ${gender === 'male' ? 'young man' : 'young woman'} residing in ${location}. At ${age} years of age, ${pronounHe.toLowerCase()} has completed ${pronounHis.toLowerCase()} ${education} and is currently working as a ${occupation}.${religion ? ` Coming from a ${religion} family` : ''}${caste ? ` of ${caste} community` : ''}, ${firstName} believes in traditional values while maintaining a modern outlook. ${pronounHe} is looking for a life partner who is understanding, educated, and committed to family values. ${pronounHis} ideal match would be someone who shares ${pronounHis.toLowerCase()} vision of building a happy and harmonious family life together.`,
     success: true,
     message: 'Demo mode - AI generated bio'
+  }
+}
+
+// ============================================
+// Advanced Bio Generation (for AI Bio Assistant)
+// ============================================
+
+export interface AdvancedBioParams {
+  profile: Profile
+  tone: 'warm' | 'professional' | 'traditional' | 'casual'
+  highlights: string[]
+  hobbies: string[]
+  additionalInfo?: string
+  selfDiscoveryData?: SelfDiscoveryData
+  language: 'en' | 'hi'
+}
+
+/**
+ * Generate an advanced matrimonial bio using Azure OpenAI
+ * This function is used by the AI Bio Assistant with more customization options
+ */
+export async function generateAdvancedBio(params: AdvancedBioParams): Promise<GeneratedBioResult> {
+  const { profile, tone, highlights, hobbies, additionalInfo, selfDiscoveryData, language } = params
+  const config = getConfig()
+
+  // If no API key configured, use fallback mode
+  if (!config.apiKey) {
+    return generateAdvancedDemoBio(params)
+  }
+
+  const toneDescriptions: Record<string, { en: string; hi: string }> = {
+    warm: { en: 'warm, friendly and approachable', hi: 'गर्मजोश, मैत्रीपूर्ण और सुलभ' },
+    professional: { en: 'professional, polished and sophisticated', hi: 'पेशेवर, परिष्कृत और आधुनिक' },
+    traditional: { en: 'traditional, respectful and family-oriented', hi: 'पारंपरिक, सम्मानजनक और परिवार-केंद्रित' },
+    casual: { en: 'casual, relaxed and genuine', hi: 'आकस्मिक, शांत और वास्तविक' }
+  }
+
+  const highlightLabels: Record<string, { en: string; hi: string }> = {
+    career: { en: 'career achievements', hi: 'करियर उपलब्धियां' },
+    education: { en: 'educational background', hi: 'शैक्षिक पृष्ठभूमि' },
+    family: { en: 'family values', hi: 'पारिवारिक मूल्य' },
+    hobbies: { en: 'hobbies and interests', hi: 'शौक और रुचियां' },
+    personality: { en: 'personality traits', hi: 'व्यक्तित्व लक्षण' },
+    goals: { en: 'future goals', hi: 'भविष्य के लक्ष्य' },
+    spirituality: { en: 'spiritual side', hi: 'आध्यात्मिक पक्ष' },
+    lifestyle: { en: 'lifestyle preferences', hi: 'जीवनशैली' }
+  }
+
+  const hobbyLabels: Record<string, { en: string; hi: string }> = {
+    travel: { en: 'traveling', hi: 'यात्रा' },
+    reading: { en: 'reading', hi: 'पढ़ना' },
+    music: { en: 'music', hi: 'संगीत' },
+    cooking: { en: 'cooking', hi: 'खाना बनाना' },
+    sports: { en: 'sports and fitness', hi: 'खेल और फिटनेस' },
+    photography: { en: 'photography', hi: 'फोटोग्राफी' },
+    movies: { en: 'movies', hi: 'फिल्में' },
+    gaming: { en: 'gaming', hi: 'गेमिंग' },
+    art: { en: 'art and crafts', hi: 'कला और शिल्प' },
+    dancing: { en: 'dancing', hi: 'नृत्य' }
+  }
+
+  const toneDesc = toneDescriptions[tone]?.[language] || toneDescriptions.warm[language]
+  const highlightTexts = highlights.map(h => highlightLabels[h]?.[language] || h).join(', ')
+  const hobbyTexts = hobbies.map(h => hobbyLabels[h]?.[language] || h).join(', ')
+
+  // Build personality context from self-discovery data
+  let personalityContext = ''
+  if (selfDiscoveryData) {
+    const personalityTypes: Record<string, { en: string; hi: string }> = {
+      introvert: { en: 'introverted and thoughtful', hi: 'अंतर्मुखी और विचारशील' },
+      balanced: { en: 'balanced and adaptable', hi: 'संतुलित और अनुकूलनशील' },
+      extrovert: { en: 'extroverted and sociable', hi: 'बहिर्मुखी और मिलनसार' }
+    }
+    const valuesOrientations: Record<string, { en: string; hi: string }> = {
+      traditional: { en: 'traditional values', hi: 'पारंपरिक मूल्य' },
+      moderate: { en: 'moderate outlook', hi: 'संतुलित दृष्टिकोण' },
+      progressive: { en: 'progressive thinking', hi: 'प्रगतिशील सोच' }
+    }
+    personalityContext = language === 'en'
+      ? `Personality: ${personalityTypes[selfDiscoveryData.personalityType]?.en || 'balanced'}, with ${valuesOrientations[selfDiscoveryData.valuesOrientation]?.en || 'moderate outlook'}.`
+      : `व्यक्तित्व: ${personalityTypes[selfDiscoveryData.personalityType]?.hi || 'संतुलित'}, ${valuesOrientations[selfDiscoveryData.valuesOrientation]?.hi || 'संतुलित दृष्टिकोण'} के साथ।`
+  }
+
+  const systemPrompt = language === 'hi'
+    ? `आप एक पेशेवर वैवाहिक प्रोफाइल लेखक हैं। एक आकर्षक और सम्मानजनक परिचय लिखें जो ${toneDesc} हो। परिचय 150-200 शब्दों का, प्रथम पुरुष में होना चाहिए।`
+    : `You are a professional matrimonial profile writer. Write an attractive and respectful bio that is ${toneDesc}. The bio should be 150-200 words, written in first person.`
+
+  const userPrompt = language === 'hi'
+    ? `कृपया निम्नलिखित विवरण के आधार पर एक वैवाहिक प्रोफाइल परिचय लिखें:
+
+नाम: ${profile.firstName}
+आयु: ${profile.age} वर्ष
+लिंग: ${profile.gender === 'male' ? 'पुरुष' : 'महिला'}
+शिक्षा: ${profile.education}
+व्यवसाय: ${profile.occupation}
+स्थान: ${profile.location}
+${profile.religion ? `धर्म: ${profile.religion}` : ''}
+${profile.caste ? `जाति: ${profile.caste}` : ''}
+
+हाइलाइट करें: ${highlightTexts}
+शौक: ${hobbyTexts}
+${personalityContext}
+${additionalInfo ? `अतिरिक्त जानकारी: ${additionalInfo}` : ''}
+
+शैली: ${toneDesc}
+कृपया प्रथम पुरुष में लिखें (मैं, मेरा, मुझे)।`
+    : `Please write a matrimonial profile bio based on the following details:
+
+Name: ${profile.firstName}
+Age: ${profile.age} years
+Gender: ${profile.gender}
+Education: ${profile.education}
+Occupation: ${profile.occupation}
+Location: ${profile.location}
+${profile.religion ? `Religion: ${profile.religion}` : ''}
+${profile.caste ? `Caste: ${profile.caste}` : ''}
+
+Highlight: ${highlightTexts}
+Hobbies: ${hobbyTexts}
+${personalityContext}
+${additionalInfo ? `Additional info: ${additionalInfo}` : ''}
+
+Style: ${toneDesc}
+Please write in first person (I, my, me).`
+
+  try {
+    const response = await fetch(`${config.endpoint}openai/deployments/${config.deployment}/chat/completions?api-version=2024-08-01-preview`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': config.apiKey
+      },
+      body: JSON.stringify({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        max_tokens: 600,
+        temperature: 0.8
+      })
+    })
+
+    if (!response.ok) {
+      console.error('Azure OpenAI error:', await response.text())
+      return generateAdvancedDemoBio(params)
+    }
+
+    const data = await response.json()
+    const generatedBio = data.choices?.[0]?.message?.content?.trim()
+
+    if (generatedBio) {
+      return {
+        bio: generatedBio,
+        success: true
+      }
+    }
+
+    return generateAdvancedDemoBio(params)
+  } catch (error) {
+    console.error('Advanced bio generation error:', error)
+    return generateAdvancedDemoBio(params)
+  }
+}
+
+/**
+ * Demo mode for advanced bio generation
+ */
+function generateAdvancedDemoBio(params: AdvancedBioParams): GeneratedBioResult {
+  const { profile, tone, highlights, hobbies, additionalInfo, language } = params
+
+  const toneIntros: Record<string, { en: string; hi: string }> = {
+    warm: {
+      en: `Hello! I'm ${profile.firstName}, a ${profile.occupation} based in ${profile.location}.`,
+      hi: `नमस्ते! मैं ${profile.firstName} हूं, ${profile.location} में ${profile.occupation} के रूप में कार्यरत।`
+    },
+    professional: {
+      en: `I am ${profile.firstName}, a dedicated ${profile.occupation} residing in ${profile.location}.`,
+      hi: `मैं ${profile.firstName} हूं, ${profile.location} में रहने वाला समर्पित ${profile.occupation}।`
+    },
+    traditional: {
+      en: `Namaste! I am ${profile.firstName} from ${profile.location}, working as a ${profile.occupation}.`,
+      hi: `नमस्ते! मैं ${profile.location} से ${profile.firstName} हूं, ${profile.occupation} के रूप में कार्यरत।`
+    },
+    casual: {
+      en: `Hey there! I'm ${profile.firstName}, ${profile.occupation} from ${profile.location}.`,
+      hi: `नमस्ते! मैं ${profile.firstName}, ${profile.location} से ${profile.occupation}।`
+    }
+  }
+
+  let bioText = language === 'en' 
+    ? (toneIntros[tone]?.en || toneIntros.warm.en) 
+    : (toneIntros[tone]?.hi || toneIntros.warm.hi)
+
+  // Add education if highlighted
+  if (highlights.includes('education') && profile.education) {
+    bioText += language === 'en'
+      ? ` I completed my ${profile.education} and believe in continuous learning.`
+      : ` मैंने ${profile.education} की शिक्षा प्राप्त की है और निरंतर सीखने में विश्वास करता हूं।`
+  }
+
+  // Add family values if highlighted
+  if (highlights.includes('family')) {
+    bioText += language === 'en'
+      ? ` Family is at the center of my life, and I believe in maintaining strong bonds with loved ones.`
+      : ` परिवार मेरे जीवन के केंद्र में है, और मैं प्रियजनों के साथ मजबूत बंधन बनाए रखने में विश्वास करता हूं।`
+  }
+
+  // Add hobbies
+  if (highlights.includes('hobbies') && hobbies.length > 0) {
+    const hobbyNames = hobbies.join(', ')
+    bioText += language === 'en'
+      ? ` In my free time, I enjoy ${hobbyNames}.`
+      : ` अपने खाली समय में, मुझे ${hobbyNames} पसंद है।`
+  }
+
+  // Add goals
+  if (highlights.includes('goals')) {
+    bioText += language === 'en'
+      ? ` Looking forward to finding a partner to build a meaningful life together based on mutual respect and understanding.`
+      : ` आपसी सम्मान और समझ के आधार पर एक साथ सार्थक जीवन बनाने के लिए एक साथी खोजने की उम्मीद है।`
+  }
+
+  // Add additional info
+  if (additionalInfo) {
+    bioText += ` ${additionalInfo}`
+  }
+
+  return {
+    bio: bioText,
+    success: true,
+    message: 'Generated using fallback mode'
   }
 }
 

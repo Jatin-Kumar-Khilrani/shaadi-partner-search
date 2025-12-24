@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise, CaretDown, User, IdentificationCard } from '@phosphor-icons/react'
+import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise, CaretDown, User, IdentificationCard, Trophy } from '@phosphor-icons/react'
 import { HeroSearch } from '@/components/HeroSearch'
 import { ProfileCard } from '@/components/ProfileCard'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
@@ -18,6 +18,7 @@ import { Chat } from '@/components/Chat'
 import { MyProfile } from '@/components/MyProfile'
 import { Settings } from '@/components/Settings'
 import { WeddingServices } from '@/components/WeddingServicesPage'
+import { ReadinessDashboard } from '@/components/readiness'
 import type { Profile, SearchFilters, WeddingService, BlockedProfile } from '@/types/profile'
 import type { User } from '@/types/user'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -28,7 +29,7 @@ import { useTranslation, type Language } from '@/lib/translations'
 import { toast } from 'sonner'
 import { sampleWeddingServices } from '@/lib/sampleData'
 
-type View = 'home' | 'search-results' | 'admin' | 'my-matches' | 'my-activity' | 'inbox' | 'chat' | 'my-profile' | 'wedding-services'
+type View = 'home' | 'search-results' | 'admin' | 'my-matches' | 'my-activity' | 'inbox' | 'chat' | 'my-profile' | 'wedding-services' | 'readiness'
 
 // Membership settings interface for dynamic pricing and plan limits
 interface MembershipSettings {
@@ -633,6 +634,14 @@ function App() {
                   <ChatCircle size={20} />
                   {t.chat}
                 </Button>
+                <Button
+                  variant={currentView === 'readiness' ? 'default' : 'ghost'}
+                  onClick={() => setCurrentView('readiness')}
+                  className="gap-2"
+                >
+                  <Trophy size={20} weight="fill" />
+                  {language === 'hi' ? 'तत्परता' : 'Readiness'}
+                </Button>
               </>
             )}
             <Button
@@ -819,6 +828,17 @@ function App() {
                     >
                       <UserCircle size={20} />
                       {t.myProfile}
+                    </Button>
+                    <Button
+                      variant={currentView === 'readiness' ? 'default' : 'ghost'}
+                      onClick={() => {
+                        setCurrentView('readiness')
+                        setMobileMenuOpen(false)
+                      }}
+                      className="justify-start gap-2"
+                    >
+                      <Trophy size={20} weight="fill" />
+                      {language === 'hi' ? 'तत्परता' : 'Readiness'}
                     </Button>
                     <Button
                       variant="ghost"
@@ -1152,6 +1172,28 @@ function App() {
             shouldBlur={currentMembershipStatus.shouldBlur}
             membershipPlan={currentUserProfile?.membershipPlan}
           />
+        )}
+
+        {currentView === 'readiness' && currentUserProfile && (
+          <section className="container mx-auto px-4 md:px-8 py-8">
+            <div className="max-w-5xl mx-auto">
+              <ReadinessDashboard 
+                language={language}
+                profile={currentUserProfile}
+                onProfileUpdate={(updates) => {
+                  if (currentUserProfile) {
+                    setProfiles((current) => 
+                      (current || []).map(p => 
+                        p.profileId === currentUserProfile.profileId 
+                          ? { ...p, ...updates } 
+                          : p
+                      )
+                    )
+                  }
+                }}
+              />
+            </div>
+          </section>
         )}
       </main>
 
