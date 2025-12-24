@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ShieldCheck, X, Check, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User, CreditCard, Upload } from '@phosphor-icons/react'
+import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User, CreditCard, Upload } from '@phosphor-icons/react'
 import type { Profile, WeddingService, PaymentTransaction } from '@/types/profile'
 import type { User } from '@/types/user'
 import type { ChatMessage } from '@/types/chat'
@@ -3464,30 +3464,104 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
       </div>
 
       <Dialog open={showChatDialog} onOpenChange={setShowChatDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ChatCircle size={24} />
               {t.chat} - {selectedProfile?.profileId}
             </DialogTitle>
             <DialogDescription>
-              {language === 'hi' ? 'प्रोफाइल धारक को संदेश भेजें' : 'Send message to profile owner'}
+              {selectedProfile?.fullName} • {language === 'hi' ? 'चैट इतिहास और नया संदेश' : 'Chat history and new message'}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4">
+          {/* Chat History */}
+          <ScrollArea className="flex-1 max-h-[300px] border rounded-lg p-3 bg-muted/20">
+            <div className="space-y-3">
+              {(() => {
+                const profileMessages = messages?.filter(m => 
+                  m.type === 'admin-to-user' && 
+                  (m.toProfileId === selectedProfile?.profileId || m.fromProfileId === selectedProfile?.profileId)
+                ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) || []
+                
+                if (profileMessages.length === 0) {
+                  return (
+                    <div className="text-center text-muted-foreground py-8">
+                      <ChatCircle size={32} className="mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">{language === 'hi' ? 'कोई पिछले संदेश नहीं' : 'No previous messages'}</p>
+                    </div>
+                  )
+                }
+                
+                return profileMessages.map(msg => {
+                  const isFromAdmin = msg.fromProfileId === 'admin'
+                  const messageText = msg.message || (msg as any).content || ''
+                  const getMessageStatus = () => {
+                    if (msg.status) return msg.status
+                    if (msg.read || msg.readAt) return 'read'
+                    if (msg.delivered || msg.deliveredAt) return 'delivered'
+                    return 'sent'
+                  }
+                  const messageStatus = getMessageStatus()
+                  
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`flex ${isFromAdmin ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`max-w-[80%] p-2 rounded-lg ${
+                        isFromAdmin 
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-background border'
+                      }`}>
+                        {!isFromAdmin && (
+                          <p className="text-xs text-muted-foreground mb-1">
+                            {selectedProfile?.fullName}
+                          </p>
+                        )}
+                        <p className="text-sm">{messageText}</p>
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <span className={`text-xs ${isFromAdmin ? 'opacity-70' : 'text-muted-foreground'}`}>
+                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          {isFromAdmin && (
+                            <span className={`flex items-center ${
+                              messageStatus === 'read' 
+                                ? 'text-blue-400' 
+                                : messageStatus === 'delivered' 
+                                  ? 'text-gray-400' 
+                                  : 'text-gray-300'
+                            }`}>
+                              {messageStatus === 'sent' ? (
+                                <Check size={12} weight="bold" />
+                              ) : (
+                                <Checks size={12} weight="bold" />
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
+              })()}
+            </div>
+          </ScrollArea>
+          
+          {/* New Message Input */}
+          <div className="space-y-3 pt-2">
             <Textarea
               placeholder={t.typeMessage}
               value={chatMessage}
               onChange={(e) => setChatMessage(e.target.value)}
-              rows={5}
+              rows={3}
             />
             
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowChatDialog(false)}>
                 {t.close}
               </Button>
-              <Button onClick={handleSendMessage}>
+              <Button onClick={handleSendMessage} disabled={!chatMessage.trim()}>
                 <PaperPlaneTilt size={16} className="mr-1" />
                 {t.sendMessage}
               </Button>
