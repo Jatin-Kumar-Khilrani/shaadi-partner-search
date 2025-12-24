@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchableSelect, EDUCATION_OPTIONS, OCCUPATION_OPTIONS } from '@/components/ui/searchable-select'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -1812,58 +1813,29 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="education">{language === 'hi' ? 'शिक्षा' : 'Education'} *</Label>
-                  <Input
-                    id="education"
-                    placeholder={language === 'hi' ? 'उदाहरण: B.Tech, MBA, M.Com' : 'Example: B.Tech, MBA, M.Com'}
-                    value={formData.education}
-                    onChange={(e) => updateField('education', e.target.value)}
-                    required
+                  <SearchableSelect
+                    options={EDUCATION_OPTIONS}
+                    value={formData.education || ''}
+                    onValueChange={(value) => updateField('education', value)}
+                    placeholder={language === 'hi' ? 'शिक्षा चुनें' : 'Select Education'}
+                    searchPlaceholder={language === 'hi' ? 'शिक्षा खोजें...' : 'Search education...'}
+                    emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="occupation">{language === 'hi' ? 'व्यवसाय' : 'Occupation'} *</Label>
-                  <Input
-                    id="occupation"
-                    placeholder={language === 'hi' ? 'उदाहरण: सॉफ्टवेयर इंजीनियर, डॉक्टर, व्यवसायी' : 'Example: Software Engineer, Doctor, Business'}
-                    value={formData.occupation}
-                    onChange={(e) => updateField('occupation', e.target.value)}
-                    required
+                  <SearchableSelect
+                    options={OCCUPATION_OPTIONS}
+                    value={formData.occupation || ''}
+                    onValueChange={(value) => updateField('occupation', value)}
+                    placeholder={language === 'hi' ? 'व्यवसाय चुनें' : 'Select Occupation'}
+                    searchPlaceholder={language === 'hi' ? 'व्यवसाय खोजें...' : 'Search occupation...'}
+                    emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="profession">{language === 'hi' ? 'पेशा (वैकल्पिक)' : 'Profession (Optional)'}</Label>
-                    <Select 
-                      value={formData.profession} 
-                      onValueChange={(value) => updateField('profession', value)}
-                    >
-                      <SelectTrigger id="profession" className="w-full">
-                        <SelectValue placeholder={t.fields.select} />
-                      </SelectTrigger>
-                      <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
-                        <SelectItem value="business">{language === 'hi' ? 'व्यापार' : 'Business'}</SelectItem>
-                        <SelectItem value="self-employed">{language === 'hi' ? 'स्व-रोज़गार' : 'Self-Employed'}</SelectItem>
-                        <SelectItem value="govt-service">{language === 'hi' ? 'सरकारी नौकरी' : 'Govt. Service'}</SelectItem>
-                        <SelectItem value="pvt-service">{language === 'hi' ? 'प्राइवेट नौकरी' : 'Pvt. Service'}</SelectItem>
-                        <SelectItem value="defence">{language === 'hi' ? 'रक्षा सेवा' : 'Defence'}</SelectItem>
-                        <SelectItem value="civil-services">{language === 'hi' ? 'सिविल सर्विसेज़' : 'Civil Services'}</SelectItem>
-                        <SelectItem value="doctor">{language === 'hi' ? 'डॉक्टर' : 'Doctor'}</SelectItem>
-                        <SelectItem value="engineer">{language === 'hi' ? 'इंजीनियर' : 'Engineer'}</SelectItem>
-                        <SelectItem value="teacher">{language === 'hi' ? 'शिक्षक' : 'Teacher/Professor'}</SelectItem>
-                        <SelectItem value="lawyer">{language === 'hi' ? 'वकील' : 'Lawyer'}</SelectItem>
-                        <SelectItem value="ca-cs">{language === 'hi' ? 'CA/CS' : 'CA/CS'}</SelectItem>
-                        <SelectItem value="banker">{language === 'hi' ? 'बैंकर' : 'Banker'}</SelectItem>
-                        <SelectItem value="it-professional">{language === 'hi' ? 'IT प्रोफेशनल' : 'IT Professional'}</SelectItem>
-                        <SelectItem value="student">{language === 'hi' ? 'विद्यार्थी' : 'Student'}</SelectItem>
-                        <SelectItem value="homemaker">{language === 'hi' ? 'गृहिणी' : 'Homemaker'}</SelectItem>
-                        <SelectItem value="not-working">{language === 'hi' ? 'काम नहीं कर रहे' : 'Not Working'}</SelectItem>
-                        <SelectItem value="other">{language === 'hi' ? 'अन्य' : 'Other'}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="position">{language === 'hi' ? 'पद (वैकल्पिक)' : 'Position/Designation (Optional)'}</Label>
                     <Input

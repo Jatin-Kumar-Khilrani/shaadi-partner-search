@@ -8,7 +8,7 @@ import { MapPin, Briefcase, GraduationCap, UserCircle, Phone, Envelope, Heart, S
 import type { Profile, Interest, ContactRequest, MembershipPlan } from '@/types/profile'
 import { toast } from 'sonner'
 import { useKV } from '@/hooks/useKV'
-import { formatDateDDMMYYYY } from '@/lib/utils'
+import { formatDateDDMMYYYY, formatEducation, formatOccupation } from '@/lib/utils'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 
 // Membership settings interface for plan limits
@@ -417,8 +417,8 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InfoItem icon={<MapPin size={18} />} label={t.location} value={`${profile.location}, ${profile.country}`} />
               <InfoItem icon={<Calendar size={18} />} label={t.dateOfBirth} value={formatDateDDMMYYYY(profile.dateOfBirth)} />
-              <InfoItem icon={<GraduationCap size={18} />} label={t.education} value={profile.education} />
-              <InfoItem icon={<Briefcase size={18} />} label={t.occupation} value={profile.occupation} />
+              <InfoItem icon={<GraduationCap size={18} />} label={t.education} value={formatEducation(profile.education, language)} />
+              <InfoItem icon={<Briefcase size={18} />} label={t.occupation} value={formatOccupation(profile.occupation, language)} />
               {profile.religion && (
                 <InfoItem icon={<UserCircle size={18} />} label={t.religion} value={profile.religion} />
               )}

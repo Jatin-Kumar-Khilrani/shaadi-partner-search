@@ -7,21 +7,44 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Heart, Check, X, Eye, Clock, ChatCircle, ProhibitInset, Phone, Envelope as EnvelopeIcon } from '@phosphor-icons/react'
+import { Heart, Check, X, Eye, Clock, ChatCircle, ProhibitInset, Phone, Envelope as EnvelopeIcon, Warning } from '@phosphor-icons/react'
 import { toast } from 'sonner'
-import type { Interest, ContactRequest, Profile, BlockedProfile } from '@/types/profile'
+import type { Interest, ContactRequest, Profile, BlockedProfile, MembershipPlan } from '@/types/profile'
 import type { ChatMessage } from '@/types/chat'
 import type { Language } from '@/lib/translations'
 import { formatDateDDMMYYYY } from '@/lib/utils'
+
+// Membership settings interface for plan limits
+interface MembershipSettings {
+  freePlanChatLimit: number
+  freePlanContactLimit: number
+  sixMonthChatLimit: number
+  sixMonthContactLimit: number
+  oneYearChatLimit: number
+  oneYearContactLimit: number
+}
+
+// Default limits if settings not provided
+const DEFAULT_SETTINGS: MembershipSettings = {
+  freePlanChatLimit: 5,
+  freePlanContactLimit: 0,
+  sixMonthChatLimit: 50,
+  sixMonthContactLimit: 20,
+  oneYearChatLimit: 120,
+  oneYearContactLimit: 50
+}
 
 interface InboxProps {
   loggedInUserId: string | null
   profiles: Profile[]
   language: Language
   onNavigateToChat?: (profileId?: string) => void
+  membershipPlan?: MembershipPlan
+  membershipSettings?: MembershipSettings
+  setProfiles?: (newValue: Profile[] | ((oldValue?: Profile[] | undefined) => Profile[])) => void
 }
 
-export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: InboxProps) {
+export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, membershipPlan, membershipSettings, setProfiles }: InboxProps) {
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests, setContactRequests] = useKV<ContactRequest[]>('contactRequests', [])
   const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
@@ -31,6 +54,25 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
   const [viewContactProfile, setViewContactProfile] = useState<Profile | null>(null)
 
   const currentUserProfile = profiles.find(p => p.id === loggedInUserId)
+
+  // Get settings with defaults
+  const settings = { ...DEFAULT_SETTINGS, ...membershipSettings }
+
+  // Get chat limit based on current plan
+  const getChatLimit = (): number => {
+    if (!membershipPlan || membershipPlan === 'free') {
+      return settings.freePlanChatLimit
+    } else if (membershipPlan === '6-month') {
+      return settings.sixMonthChatLimit
+    } else if (membershipPlan === '1-year') {
+      return settings.oneYearChatLimit
+    }
+    return settings.freePlanChatLimit
+  }
+
+  const chatLimit = getChatLimit()
+  const chatRequestsUsed = currentUserProfile?.chatRequestsUsed || currentUserProfile?.freeChatProfiles || []
+  const remainingChats = Math.max(0, chatLimit - chatRequestsUsed.length)
 
   const t = {
     title: language === 'hi' ? 'इनबॉक्स' : 'Inbox',
@@ -65,6 +107,19 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
     email: language === 'hi' ? 'ईमेल' : 'Email',
     notProvided: language === 'hi' ? 'उपलब्ध नहीं' : 'Not Provided',
     close: language === 'hi' ? 'बंद करें' : 'Close',
+    chatLimitReached: language === 'hi' 
+      ? `चैट सीमा समाप्त: आप केवल ${chatLimit} प्रोफाइल के साथ चैट कर सकते हैं` 
+      : `Chat limit reached: You can only chat with ${chatLimit} profiles`,
+    upgradeForMoreChats: language === 'hi' 
+      ? 'और चैट के लिए सदस्यता अपग्रेड करें' 
+      : 'Upgrade membership for more chats',
+    chatRemaining: language === 'hi' 
+      ? (n: number) => `चैट शेष: ${n} प्रोफाइल` 
+      : (n: number) => `Chats remaining: ${n} profiles`,
+    lastChat: language === 'hi' 
+      ? 'यह आपकी अंतिम चैट थी!' 
+      : 'This was your last chat!',
+    remainingChats: language === 'hi' ? 'शेष चैट' : 'Chats Left',
   }
 
   const receivedInterests = interests?.filter(
@@ -87,6 +142,43 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
   const handleAcceptInterest = (interestId: string) => {
     const interest = interests?.find(i => i.id === interestId)
     if (!interest || !currentUserProfile) return
+
+    const senderProfileId = interest.fromProfileId
+
+    // Check if already chatted with this profile (already counted)
+    const alreadyChatted = chatRequestsUsed.includes(senderProfileId)
+
+    // Check chat limit before accepting (if not already chatted)
+    if (!alreadyChatted && setProfiles) {
+      if (chatRequestsUsed.length >= chatLimit) {
+        toast.error(t.chatLimitReached, {
+          description: t.upgradeForMoreChats,
+          duration: 6000
+        })
+        return
+      }
+
+      // Add to chatted profiles for the acceptor (uses one chat slot)
+      const updatedChattedProfiles = [...chatRequestsUsed, senderProfileId]
+      setProfiles((current) => 
+        (current || []).map(p => 
+          p.id === currentUserProfile.id 
+            ? { ...p, chatRequestsUsed: updatedChattedProfiles, freeChatProfiles: updatedChattedProfiles }
+            : p
+        )
+      )
+
+      // Notify user about remaining chats
+      const remaining = chatLimit - updatedChattedProfiles.length
+      if (remaining > 0) {
+        toast.info(t.chatRemaining(remaining), { duration: 3000 })
+      } else {
+        toast.warning(t.lastChat, {
+          description: t.upgradeForMoreChats,
+          duration: 5000
+        })
+      }
+    }
 
     setInterests(current => 
       (current || []).map(i => 
@@ -214,6 +306,25 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
           </TabsList>
 
           <TabsContent value="received" className="space-y-4">
+            {/* Show remaining chats info */}
+            {setProfiles && (
+              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg mb-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <ChatCircle size={18} />
+                  <span>
+                    {language === 'hi' 
+                      ? 'रुचि स्वीकार करने पर चैट सीमा से एक घटेगी' 
+                      : 'Accepting an interest uses 1 chat slot'}
+                  </span>
+                </div>
+                <Badge variant={remainingChats > 0 ? "outline" : "destructive"}>
+                  {language === 'hi' 
+                    ? `शेष चैट: ${remainingChats}/${chatLimit}` 
+                    : `Chats: ${remainingChats}/${chatLimit}`}
+                </Badge>
+              </div>
+            )}
+            
             {receivedInterests.length === 0 ? (
               <Alert>
                 <AlertDescription>{t.noInterests}</AlertDescription>
@@ -222,6 +333,11 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
               receivedInterests.map(interest => {
                 const profile = getProfileByProfileId(interest.fromProfileId)
                 if (!profile) return null
+                
+                // Check if already chatted with this profile
+                const alreadyChatted = chatRequestsUsed.includes(interest.fromProfileId)
+                // Can accept if already chatted OR if remaining chats available
+                const canAccept = alreadyChatted || remainingChats > 0
                 
                 return (
                   <Card key={interest.id}>
@@ -250,24 +366,35 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
                             </p>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleAcceptInterest(interest.id)}
-                            className="gap-2"
-                          >
-                            <Check size={16} />
-                            {t.accept}
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleDeclineInterest(interest.id)}
-                            className="gap-2"
-                          >
-                            <X size={16} />
-                            {t.decline}
-                          </Button>
+                        <div className="flex flex-col gap-2">
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleAcceptInterest(interest.id)}
+                              disabled={!canAccept}
+                              className="gap-2"
+                              title={!canAccept ? (language === 'hi' ? 'चैट सीमा समाप्त' : 'Chat limit reached') : ''}
+                            >
+                              <Check size={16} />
+                              {t.accept}
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleDeclineInterest(interest.id)}
+                              className="gap-2"
+                            >
+                              <X size={16} />
+                              {t.decline}
+                            </Button>
+                          </div>
+                          {!canAccept && (
+                            <p className="text-xs text-destructive text-right">
+                              {language === 'hi' 
+                                ? 'चैट सीमा समाप्त - अपग्रेड करें' 
+                                : 'Chat limit reached - Upgrade'}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </CardContent>

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchableSelect, EDUCATION_OPTIONS, OCCUPATION_OPTIONS } from '@/components/ui/searchable-select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
@@ -185,51 +186,14 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       if (filters.drinkingHabit && profile.drinkingHabit !== filters.drinkingHabit) return false
       if (filters.smokingHabit && profile.smokingHabit !== filters.smokingHabit) return false
       
-      // Education filter
-      if (filters.educationLevel) {
-        const edu = profile.education?.toLowerCase() || ''
-        switch (filters.educationLevel) {
-          case 'high-school':
-            if (!edu.includes('10th') && !edu.includes('12th') && !edu.includes('high school') && !edu.includes('secondary')) return false
-            break
-          case 'graduate':
-            if (!edu.includes('graduate') && !edu.includes('bachelor') && !edu.includes('b.') && !edu.includes('bsc') && !edu.includes('bcom') && !edu.includes('ba') && !edu.includes('btech') && !edu.includes('be')) return false
-            break
-          case 'post-graduate':
-            if (!edu.includes('post') && !edu.includes('master') && !edu.includes('m.') && !edu.includes('msc') && !edu.includes('mcom') && !edu.includes('ma') && !edu.includes('mtech') && !edu.includes('mba')) return false
-            break
-          case 'doctorate':
-            if (!edu.includes('phd') && !edu.includes('doctorate') && !edu.includes('ph.d')) return false
-            break
-          case 'professional':
-            if (!edu.includes('ca') && !edu.includes('cs') && !edu.includes('mbbs') && !edu.includes('llb') && !edu.includes('doctor') && !edu.includes('lawyer') && !edu.includes('chartered')) return false
-            break
-        }
+      // Education filter - exact match with standardized values
+      if (filters.educationLevel && filters.educationLevel !== 'any') {
+        if (profile.education !== filters.educationLevel) return false
       }
       
-      // Occupation filter
-      if (filters.occupationType) {
-        const occ = profile.occupation?.toLowerCase() || ''
-        switch (filters.occupationType) {
-          case 'private':
-            if (!occ.includes('private') && !occ.includes('corporate') && !occ.includes('it') && !occ.includes('software') && !occ.includes('engineer') && !occ.includes('analyst')) return false
-            break
-          case 'government':
-            if (!occ.includes('government') && !occ.includes('govt') && !occ.includes('ias') && !occ.includes('ips') && !occ.includes('pcs') && !occ.includes('public sector')) return false
-            break
-          case 'business':
-            if (!occ.includes('business') && !occ.includes('entrepreneur') && !occ.includes('owner') && !occ.includes('shop')) return false
-            break
-          case 'self-employed':
-            if (!occ.includes('self') && !occ.includes('freelance') && !occ.includes('consultant')) return false
-            break
-          case 'professional':
-            if (!occ.includes('doctor') && !occ.includes('lawyer') && !occ.includes('ca') && !occ.includes('architect') && !occ.includes('professor')) return false
-            break
-          case 'student':
-            if (!occ.includes('student') && !occ.includes('studying')) return false
-            break
-        }
+      // Occupation filter - exact match with standardized values
+      if (filters.occupationType && filters.occupationType !== 'any') {
+        if (profile.occupation !== filters.occupationType) return false
       }
       
       // Country filter
@@ -301,43 +265,26 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           
           <div className="space-y-2">
             <Label>{t.education}</Label>
-            <Select 
-              value={filters.educationLevel || ''} 
-              onValueChange={(val) => setFilters({ ...filters, educationLevel: val || undefined })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t.any} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">{t.any}</SelectItem>
-                <SelectItem value="high-school">{t.highSchool}</SelectItem>
-                <SelectItem value="graduate">{t.graduate}</SelectItem>
-                <SelectItem value="post-graduate">{t.postGraduate}</SelectItem>
-                <SelectItem value="doctorate">{t.doctorate}</SelectItem>
-                <SelectItem value="professional">{t.professional}</SelectItem>
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              options={[{ value: 'any', label: t.any }, ...EDUCATION_OPTIONS]}
+              value={filters.educationLevel || 'any'}
+              onValueChange={(val) => setFilters({ ...filters, educationLevel: val === 'any' ? undefined : val })}
+              placeholder={t.any}
+              searchPlaceholder={language === 'hi' ? 'शिक्षा खोजें...' : 'Search education...'}
+              emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
+            />
           </div>
 
           <div className="space-y-2">
             <Label>{t.occupation}</Label>
-            <Select 
-              value={filters.occupationType || ''} 
-              onValueChange={(val) => setFilters({ ...filters, occupationType: val || undefined })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t.any} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">{t.any}</SelectItem>
-                <SelectItem value="private">{t.private}</SelectItem>
-                <SelectItem value="government">{t.government}</SelectItem>
-                <SelectItem value="business">{t.business}</SelectItem>
-                <SelectItem value="self-employed">{t.selfEmployed}</SelectItem>
-                <SelectItem value="professional">{t.professional_occ}</SelectItem>
-                <SelectItem value="student">{t.student}</SelectItem>
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              options={[{ value: 'any', label: t.any }, ...OCCUPATION_OPTIONS]}
+              value={filters.occupationType || 'any'}
+              onValueChange={(val) => setFilters({ ...filters, occupationType: val === 'any' ? undefined : val })}
+              placeholder={t.any}
+              searchPlaceholder={language === 'hi' ? 'व्यवसाय खोजें...' : 'Search occupation...'}
+              emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
+            />
           </div>
         </div>
 

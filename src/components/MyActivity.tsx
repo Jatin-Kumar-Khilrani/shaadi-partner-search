@@ -5,24 +5,65 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useKV } from '@/hooks/useKV'
 import { Eye, Heart, ChatCircle, Clock, Check, X } from '@phosphor-icons/react'
-import type { Interest, ContactRequest, Profile } from '@/types/profile'
+import type { Interest, ContactRequest, Profile, MembershipPlan } from '@/types/profile'
 import type { ChatMessage } from '@/types/chat'
 import type { Language } from '@/lib/translations'
 import { toast } from 'sonner'
+
+// Membership settings interface for plan limits
+interface MembershipSettings {
+  freePlanChatLimit: number
+  freePlanContactLimit: number
+  sixMonthChatLimit: number
+  sixMonthContactLimit: number
+  oneYearChatLimit: number
+  oneYearContactLimit: number
+}
+
+// Default limits if settings not provided
+const DEFAULT_SETTINGS: MembershipSettings = {
+  freePlanChatLimit: 5,
+  freePlanContactLimit: 0,
+  sixMonthChatLimit: 50,
+  sixMonthContactLimit: 20,
+  oneYearChatLimit: 120,
+  oneYearContactLimit: 50
+}
 
 interface MyActivityProps {
   loggedInUserId: string | null
   profiles: Profile[]
   language: Language
   onViewProfile?: (profile: Profile) => void
+  membershipPlan?: MembershipPlan
+  membershipSettings?: MembershipSettings
+  setProfiles?: (newValue: Profile[] | ((oldValue?: Profile[] | undefined) => Profile[])) => void
 }
 
-export function MyActivity({ loggedInUserId, profiles, language, onViewProfile }: MyActivityProps) {
+export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, membershipPlan, membershipSettings, setProfiles }: MyActivityProps) {
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests] = useKV<ContactRequest[]>('contactRequests', [])
   const [messages] = useKV<ChatMessage[]>('chatMessages', [])
 
   const currentUserProfile = profiles.find(p => p.id === loggedInUserId)
+
+  // Get settings with defaults
+  const settings = { ...DEFAULT_SETTINGS, ...membershipSettings }
+
+  // Get chat limit based on current plan
+  const getChatLimit = (): number => {
+    if (!membershipPlan || membershipPlan === 'free') {
+      return settings.freePlanChatLimit
+    } else if (membershipPlan === '6-month') {
+      return settings.sixMonthChatLimit
+    } else if (membershipPlan === '1-year') {
+      return settings.oneYearChatLimit
+    }
+    return settings.freePlanChatLimit
+  }
+
+  const chatLimit = getChatLimit()
+  const chatRequestsUsed = currentUserProfile?.chatRequestsUsed || currentUserProfile?.freeChatProfiles || []
 
   const t = {
     title: language === 'hi' ? 'मेरी गतिविधि' : 'My Activity',
@@ -74,6 +115,63 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile }
   }
 
   const handleAcceptInterest = (interestId: string) => {
+    const interest = interests?.find(i => i.id === interestId)
+    if (!interest || !currentUserProfile) return
+
+    const senderProfileId = interest.fromProfileId
+
+    // Check if already chatted with this profile (already counted)
+    const alreadyChatted = chatRequestsUsed.includes(senderProfileId)
+
+    // Check chat limit before accepting (if not already chatted)
+    if (!alreadyChatted && setProfiles) {
+      if (chatRequestsUsed.length >= chatLimit) {
+        toast.error(
+          language === 'hi' 
+            ? `चैट सीमा समाप्त: आप केवल ${chatLimit} प्रोफाइल के साथ चैट कर सकते हैं` 
+            : `Chat limit reached: You can only chat with ${chatLimit} profiles`,
+          {
+            description: language === 'hi' 
+              ? 'और चैट के लिए सदस्यता अपग्रेड करें' 
+              : 'Upgrade membership for more chats',
+            duration: 6000
+          }
+        )
+        return
+      }
+
+      // Add to chatted profiles for the acceptor
+      const updatedChattedProfiles = [...chatRequestsUsed, senderProfileId]
+      setProfiles((current) => 
+        (current || []).map(p => 
+          p.id === currentUserProfile.id 
+            ? { ...p, chatRequestsUsed: updatedChattedProfiles, freeChatProfiles: updatedChattedProfiles }
+            : p
+        )
+      )
+
+      // Notify user about remaining chats
+      const remaining = chatLimit - updatedChattedProfiles.length
+      if (remaining > 0) {
+        toast.info(
+          language === 'hi' 
+            ? `चैट शेष: ${remaining} प्रोफाइल` 
+            : `Chats remaining: ${remaining} profiles`,
+          { duration: 3000 }
+        )
+      } else {
+        toast.warning(
+          language === 'hi' ? 'यह आपकी अंतिम चैट थी!' : 'This was your last chat!',
+          {
+            description: language === 'hi' 
+              ? 'और चैट के लिए सदस्यता अपग्रेड करें' 
+              : 'Upgrade membership for more chats',
+            duration: 5000
+          }
+        )
+      }
+    }
+
     setInterests((current) => 
       (current || []).map(interest => 
         interest.id === interestId 

@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchableSelect, EDUCATION_OPTIONS, OCCUPATION_OPTIONS } from '@/components/ui/searchable-select'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User, CreditCard, Upload, ShieldWarning, Prohibit, Warning } from '@phosphor-icons/react'
@@ -4717,19 +4718,25 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 
                 <div className="space-y-2">
                   <Label htmlFor="adminEditEducation">{language === 'hi' ? 'शिक्षा' : 'Education'}</Label>
-                  <Input
-                    id="adminEditEducation"
+                  <SearchableSelect
+                    options={EDUCATION_OPTIONS}
                     value={adminEditFormData.education}
-                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, education: e.target.value }))}
+                    onValueChange={(value) => setAdminEditFormData(prev => ({ ...prev, education: value }))}
+                    placeholder={language === 'hi' ? 'शिक्षा चुनें' : 'Select Education'}
+                    searchPlaceholder={language === 'hi' ? 'शिक्षा खोजें...' : 'Search education...'}
+                    emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                   />
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="adminEditOccupation">{language === 'hi' ? 'व्यवसाय' : 'Occupation'}</Label>
-                  <Input
-                    id="adminEditOccupation"
+                  <SearchableSelect
+                    options={OCCUPATION_OPTIONS}
                     value={adminEditFormData.occupation}
-                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, occupation: e.target.value }))}
+                    onValueChange={(value) => setAdminEditFormData(prev => ({ ...prev, occupation: value }))}
+                    placeholder={language === 'hi' ? 'व्यवसाय चुनें' : 'Select Occupation'}
+                    searchPlaceholder={language === 'hi' ? 'व्यवसाय खोजें...' : 'Search occupation...'}
+                    emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                   />
                 </div>
                 

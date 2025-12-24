@@ -1128,6 +1128,9 @@ function App() {
             profiles={profiles || []}
             language={language}
             onViewProfile={handleViewProfile}
+            membershipPlan={currentUserProfile?.membershipPlan}
+            membershipSettings={membershipSettings || defaultMembershipSettings}
+            setProfiles={setProfiles}
           />
         )}
 
@@ -1140,6 +1143,9 @@ function App() {
               setChatTargetProfileId(profileId || null)
               setCurrentView('chat')
             }}
+            membershipPlan={currentUserProfile?.membershipPlan}
+            membershipSettings={membershipSettings || defaultMembershipSettings}
+            setProfiles={setProfiles}
           />
         )}
 

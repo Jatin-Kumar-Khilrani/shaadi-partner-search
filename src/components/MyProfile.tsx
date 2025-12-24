@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { formatEducation, formatOccupation } from '@/lib/utils'
 import { 
   User, MapPin, Briefcase, GraduationCap, Heart, House, PencilSimple,
   ChatCircle, Envelope, Phone, Calendar, Warning, FilePdf, Trash,
@@ -829,7 +830,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                         <p className="text-sm text-muted-foreground">{t.education}</p>
                         <p className="font-medium flex items-center gap-2">
                           <GraduationCap size={16} />
-                          {profile.education}
+                          {formatEducation(profile.education, language)}
                         </p>
                       </div>
 
@@ -837,7 +838,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                         <p className="text-sm text-muted-foreground">{t.occupation}</p>
                         <p className="font-medium flex items-center gap-2">
                           <Briefcase size={16} />
-                          {profile.occupation}
+                          {formatOccupation(profile.occupation, language)}
                         </p>
                       </div>
 
