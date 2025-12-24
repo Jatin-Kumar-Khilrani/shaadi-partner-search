@@ -3,7 +3,9 @@ import { useKV } from '@/hooks/useKV'
 import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise } from '@phosphor-icons/react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise, CaretDown, User, IdentificationCard } from '@phosphor-icons/react'
 import { HeroSearch } from '@/components/HeroSearch'
 import { ProfileCard } from '@/components/ProfileCard'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
@@ -544,11 +546,11 @@ function App() {
     login: language === 'hi' ? 'लॉगिन करें' : 'Login',
     logout: language === 'hi' ? 'लॉगआउट' : 'Logout',
     adminButton: language === 'hi' ? 'एडमिन' : 'Admin',
-    myMatches: language === 'hi' ? 'मेरे मैच' : 'My Matches',
-    myActivity: language === 'hi' ? 'मेरी गतिविधि' : 'My Activity',
+    myMatches: language === 'hi' ? 'मैच' : 'Matches',
+    myActivity: language === 'hi' ? 'गतिविधि' : 'Activity',
     inbox: language === 'hi' ? 'इनबॉक्स' : 'Inbox',
     chat: language === 'hi' ? 'चैट' : 'Chat',
-    myProfile: language === 'hi' ? 'मेरी प्रोफाइल' : 'My Profile',
+    myProfile: language === 'hi' ? 'प्रोफाइल' : 'Profile',
     settings: language === 'hi' ? 'सेटिंग्स' : 'Settings',
     weddingServices: language === 'hi' ? 'विवाह सेवाएं' : 'Wedding Services',
     searchResults: language === 'hi' ? 'खोज परिणाम' : 'Search Results',
@@ -557,7 +559,19 @@ function App() {
     noProfiles: language === 'hi' ? 'कोई प्रोफाइल नहीं मिली। कृपया अपने खोज मानदंड बदलें या बाद में पुनः प्रयास करें।' : 'No profiles found. Please change your search criteria or try again later.',
     subtitle: language === 'hi' ? 'मॅट्रिमोनी सेवा' : 'Matrimony Service',
     footerText: language === 'hi' ? 'सभी समुदायों के लिए — विवाह एक पवित्र बंधन है।' : 'For all communities — Marriage is a sacred bond.',
-    footerCopyright: language === 'hi' ? '© 2024 ShaadiPartnerSearch. एक निःस्वार्थ समुदाय सेवा।' : '© 2024 ShaadiPartnerSearch. A selfless community service.'
+    footerCopyright: language === 'hi' ? '© 2024 ShaadiPartnerSearch. एक निःस्वार्थ समुदाय सेवा।' : '© 2024 ShaadiPartnerSearch. A selfless community service.',
+    welcome: language === 'hi' ? 'स्वागत है' : 'Welcome',
+    viewProfile: language === 'hi' ? 'प्रोफाइल देखें' : 'View Profile',
+  }
+
+  // Get user's first name for personalized display
+  const userFirstName = currentUserProfile?.fullName?.split(' ')[0] || ''
+  const userProfileId = currentUserProfile?.profileId || ''
+  const userPhoto = currentUserProfile?.photos?.[0] || ''
+
+  // Get initials for avatar fallback
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
   return (
@@ -617,14 +631,6 @@ function App() {
                   <ChatCircle size={20} />
                   {t.chat}
                 </Button>
-                <Button
-                  variant={currentView === 'my-profile' ? 'default' : 'ghost'}
-                  onClick={() => setCurrentView('my-profile')}
-                  className="gap-2"
-                >
-                  <UserCircle size={20} />
-                  {t.myProfile}
-                </Button>
               </>
             )}
             <Button
@@ -658,16 +664,6 @@ function App() {
             >
               {language === 'hi' ? 'A' : 'अ'}
             </Button>
-            {loggedInUser && (
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => setShowSettings(true)}
-                title={t.settings}
-              >
-                <Gear size={20} weight="bold" />
-              </Button>
-            )}
             {!loggedInUser ? (
               <>
                 <Button onClick={() => setShowLogin(true)} variant="ghost" className="gap-2">
@@ -680,10 +676,53 @@ function App() {
                 </Button>
               </>
             ) : (
-              <Button onClick={handleLogout} variant="ghost" className="gap-2">
-                <SignOut size={20} weight="bold" />
-                {t.logout}
-              </Button>
+              /* Logged-in User Profile Dropdown */
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="gap-2 px-2">
+                    <Avatar className="h-8 w-8 border-2 border-primary/20">
+                      <AvatarImage src={userPhoto} alt={userFirstName} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                        {getInitials(currentUserProfile?.fullName || 'U')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="hidden lg:flex flex-col items-start text-left">
+                      <span className="text-sm font-medium leading-tight">{userFirstName}</span>
+                      <span className="text-xs text-muted-foreground leading-tight">{userProfileId}</span>
+                    </div>
+                    <CaretDown size={16} className="text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-2 border-b">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 border-2 border-primary/20">
+                        <AvatarImage src={userPhoto} alt={userFirstName} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                          {getInitials(currentUserProfile?.fullName || 'U')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">{currentUserProfile?.fullName}</p>
+                        <p className="text-xs text-muted-foreground">{userProfileId}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <DropdownMenuItem onClick={() => setCurrentView('my-profile')} className="gap-2 cursor-pointer">
+                    <User size={18} />
+                    {t.viewProfile}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowSettings(true)} className="gap-2 cursor-pointer">
+                    <Gear size={18} />
+                    {t.settings}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="gap-2 cursor-pointer text-destructive focus:text-destructive">
+                    <SignOut size={18} />
+                    {t.logout}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </nav>
 
@@ -694,7 +733,22 @@ function App() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right">
-              <nav className="flex flex-col gap-2 mt-8">
+              {/* Mobile User Profile Header */}
+              {loggedInUser && currentUserProfile && (
+                <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-lg mb-4 mt-4">
+                  <Avatar className="h-12 w-12 border-2 border-primary/20">
+                    <AvatarImage src={userPhoto} alt={userFirstName} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                      {getInitials(currentUserProfile?.fullName || 'U')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <p className="font-medium">{currentUserProfile.fullName}</p>
+                    <p className="text-xs text-muted-foreground">{userProfileId}</p>
+                  </div>
+                </div>
+              )}
+              <nav className="flex flex-col gap-2">
                 <Button
                   variant={currentView === 'home' ? 'default' : 'ghost'}
                   onClick={() => {
