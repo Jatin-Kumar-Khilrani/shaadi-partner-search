@@ -166,6 +166,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     countryCode: '+91',
     mobile: '',
     height: '',
+    weight: '',
     bio: '',
     familyDetails: '',
     membershipPlan: undefined as MembershipPlan | undefined
@@ -210,6 +211,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         countryCode: countryCode,
         mobile: mobileNumber,
         height: editProfile.height || '',
+        weight: editProfile.weight || '',
         bio: editProfile.bio || '',
         familyDetails: editProfile.familyDetails || '',
         membershipPlan: editProfile.membershipPlan
@@ -687,7 +689,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
-    if (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.religion || !formData.motherTongue || !formData.maritalStatus || !formData.horoscopeMatching || !formData.email || !formData.mobile || !formData.membershipPlan) {
+    if (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.religion || !formData.motherTongue || !formData.height || !formData.maritalStatus || !formData.horoscopeMatching || !formData.email || !formData.mobile || !formData.membershipPlan) {
       toast.error(t.registration.fillAllFields)
       return
     }
@@ -988,6 +990,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       countryCode: '+91',
       mobile: '',
       height: '',
+      weight: '',
       bio: '',
       familyDetails: '',
       membershipPlan: undefined
@@ -1129,7 +1132,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
   const nextStep = () => {
     // Validate step 1 fields
-    if (step === 1 && (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.religion || !formData.motherTongue || !formData.maritalStatus)) {
+    if (step === 1 && (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.religion || !formData.motherTongue || !formData.height || !formData.maritalStatus)) {
       toast.error(t.registration.fillAllFields)
       return
     }
@@ -1599,38 +1602,107 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="height">{language === 'hi' ? 'ऊंचाई (वैकल्पिक)' : 'Height (Optional)'}</Label>
-                    <Input
-                      id="height"
-                      placeholder={language === 'hi' ? 'उदाहरण: 5\'8" या 172 cm' : 'Example: 5\'8" or 172 cm'}
-                      value={formData.height}
-                      onChange={(e) => updateField('height', e.target.value)}
-                    />
+                    <Label htmlFor="height">{language === 'hi' ? 'ऊंचाई' : 'Height'} *</Label>
+                    <Select onValueChange={(value) => updateField('height', value)} value={formData.height || ''}>
+                      <SelectTrigger id="height" className="w-full">
+                        <SelectValue placeholder={language === 'hi' ? 'ऊंचाई चुनें' : 'Select Height'} />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999] max-h-60" position="popper" sideOffset={4}>
+                        <SelectItem value="4'0&quot; (122 cm)">4'0" (122 cm)</SelectItem>
+                        <SelectItem value="4'1&quot; (124 cm)">4'1" (124 cm)</SelectItem>
+                        <SelectItem value="4'2&quot; (127 cm)">4'2" (127 cm)</SelectItem>
+                        <SelectItem value="4'3&quot; (130 cm)">4'3" (130 cm)</SelectItem>
+                        <SelectItem value="4'4&quot; (132 cm)">4'4" (132 cm)</SelectItem>
+                        <SelectItem value="4'5&quot; (135 cm)">4'5" (135 cm)</SelectItem>
+                        <SelectItem value="4'6&quot; (137 cm)">4'6" (137 cm)</SelectItem>
+                        <SelectItem value="4'7&quot; (140 cm)">4'7" (140 cm)</SelectItem>
+                        <SelectItem value="4'8&quot; (142 cm)">4'8" (142 cm)</SelectItem>
+                        <SelectItem value="4'9&quot; (145 cm)">4'9" (145 cm)</SelectItem>
+                        <SelectItem value="4'10&quot; (147 cm)">4'10" (147 cm)</SelectItem>
+                        <SelectItem value="4'11&quot; (150 cm)">4'11" (150 cm)</SelectItem>
+                        <SelectItem value="5'0&quot; (152 cm)">5'0" (152 cm)</SelectItem>
+                        <SelectItem value="5'1&quot; (155 cm)">5'1" (155 cm)</SelectItem>
+                        <SelectItem value="5'2&quot; (157 cm)">5'2" (157 cm)</SelectItem>
+                        <SelectItem value="5'3&quot; (160 cm)">5'3" (160 cm)</SelectItem>
+                        <SelectItem value="5'4&quot; (163 cm)">5'4" (163 cm)</SelectItem>
+                        <SelectItem value="5'5&quot; (165 cm)">5'5" (165 cm)</SelectItem>
+                        <SelectItem value="5'6&quot; (168 cm)">5'6" (168 cm)</SelectItem>
+                        <SelectItem value="5'7&quot; (170 cm)">5'7" (170 cm)</SelectItem>
+                        <SelectItem value="5'8&quot; (173 cm)">5'8" (173 cm)</SelectItem>
+                        <SelectItem value="5'9&quot; (175 cm)">5'9" (175 cm)</SelectItem>
+                        <SelectItem value="5'10&quot; (178 cm)">5'10" (178 cm)</SelectItem>
+                        <SelectItem value="5'11&quot; (180 cm)">5'11" (180 cm)</SelectItem>
+                        <SelectItem value="6'0&quot; (183 cm)">6'0" (183 cm)</SelectItem>
+                        <SelectItem value="6'1&quot; (185 cm)">6'1" (185 cm)</SelectItem>
+                        <SelectItem value="6'2&quot; (188 cm)">6'2" (188 cm)</SelectItem>
+                        <SelectItem value="6'3&quot; (191 cm)">6'3" (191 cm)</SelectItem>
+                        <SelectItem value="6'4&quot; (193 cm)">6'4" (193 cm)</SelectItem>
+                        <SelectItem value="6'5&quot; (196 cm)">6'5" (196 cm)</SelectItem>
+                        <SelectItem value="6'6&quot; (198 cm)">6'6" (198 cm)</SelectItem>
+                        <SelectItem value="6'7&quot; (201 cm)">6'7" (201 cm)</SelectItem>
+                        <SelectItem value="6'8&quot; (203 cm)">6'8" (203 cm)</SelectItem>
+                        <SelectItem value="6'9&quot; (206 cm)">6'9" (206 cm)</SelectItem>
+                        <SelectItem value="6'10&quot; (208 cm)">6'10" (208 cm)</SelectItem>
+                        <SelectItem value="6'11&quot; (211 cm)">6'11" (211 cm)</SelectItem>
+                        <SelectItem value="7'0&quot; (213 cm)">7'0" (213 cm)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="horoscopeMatching">{language === 'hi' ? 'कुंडली मिलान' : 'Horoscope Matching'} *</Label>
-                  <Select 
-                    value={formData.horoscopeMatching || 'not-mandatory'} 
-                    onValueChange={(value: 'mandatory' | 'not-mandatory' | 'decide-later') => updateField('horoscopeMatching', value)}
-                  >
-                    <SelectTrigger id="horoscopeMatching" className="w-full">
-                      <SelectValue placeholder={t.fields.select} />
-                    </SelectTrigger>
-                    <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
-                      <SelectItem value="mandatory">{language === 'hi' ? 'अनिवार्य' : 'Mandatory'}</SelectItem>
-                      <SelectItem value="not-mandatory">{language === 'hi' ? 'अनिवार्य नहीं' : 'Not Mandatory'}</SelectItem>
-                      <SelectItem value="decide-later">{language === 'hi' ? 'बाद में तय करेंगे' : 'Decide Later'}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {formData.horoscopeMatching === 'mandatory' && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                      {language === 'hi' 
-                        ? '⚠️ कुंडली मिलान अनिवार्य है - जन्म समय और जन्म स्थान आवश्यक है'
-                        : '⚠️ Horoscope matching is mandatory - Birth Time and Birth Place are required'}
-                    </p>
-                  )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="weight">{language === 'hi' ? 'वजन (वैकल्पिक)' : 'Weight (Optional)'}</Label>
+                    <Select onValueChange={(value) => updateField('weight', value)} value={formData.weight || ''}>
+                      <SelectTrigger id="weight" className="w-full">
+                        <SelectValue placeholder={language === 'hi' ? 'वजन चुनें' : 'Select Weight'} />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999] max-h-60" position="popper" sideOffset={4}>
+                        <SelectItem value="40 kg (88 lbs)">40 kg (88 lbs)</SelectItem>
+                        <SelectItem value="45 kg (99 lbs)">45 kg (99 lbs)</SelectItem>
+                        <SelectItem value="50 kg (110 lbs)">50 kg (110 lbs)</SelectItem>
+                        <SelectItem value="55 kg (121 lbs)">55 kg (121 lbs)</SelectItem>
+                        <SelectItem value="60 kg (132 lbs)">60 kg (132 lbs)</SelectItem>
+                        <SelectItem value="65 kg (143 lbs)">65 kg (143 lbs)</SelectItem>
+                        <SelectItem value="70 kg (154 lbs)">70 kg (154 lbs)</SelectItem>
+                        <SelectItem value="75 kg (165 lbs)">75 kg (165 lbs)</SelectItem>
+                        <SelectItem value="80 kg (176 lbs)">80 kg (176 lbs)</SelectItem>
+                        <SelectItem value="85 kg (187 lbs)">85 kg (187 lbs)</SelectItem>
+                        <SelectItem value="90 kg (198 lbs)">90 kg (198 lbs)</SelectItem>
+                        <SelectItem value="95 kg (209 lbs)">95 kg (209 lbs)</SelectItem>
+                        <SelectItem value="100 kg (220 lbs)">100 kg (220 lbs)</SelectItem>
+                        <SelectItem value="105 kg (231 lbs)">105 kg (231 lbs)</SelectItem>
+                        <SelectItem value="110 kg (243 lbs)">110 kg (243 lbs)</SelectItem>
+                        <SelectItem value="115 kg (254 lbs)">115 kg (254 lbs)</SelectItem>
+                        <SelectItem value="120 kg (265 lbs)">120 kg (265 lbs)</SelectItem>
+                        <SelectItem value="125+ kg (275+ lbs)">125+ kg (275+ lbs)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="horoscopeMatching">{language === 'hi' ? 'कुंडली मिलान' : 'Horoscope Matching'} *</Label>
+                    <Select 
+                      value={formData.horoscopeMatching || 'not-mandatory'} 
+                      onValueChange={(value: 'mandatory' | 'not-mandatory' | 'decide-later') => updateField('horoscopeMatching', value)}
+                    >
+                      <SelectTrigger id="horoscopeMatching" className="w-full">
+                        <SelectValue placeholder={t.fields.select} />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
+                        <SelectItem value="mandatory">{language === 'hi' ? 'अनिवार्य' : 'Mandatory'}</SelectItem>
+                        <SelectItem value="not-mandatory">{language === 'hi' ? 'अनिवार्य नहीं' : 'Not Mandatory'}</SelectItem>
+                        <SelectItem value="decide-later">{language === 'hi' ? 'बाद में तय करेंगे' : 'Decide Later'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {formData.horoscopeMatching === 'mandatory' && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                        {language === 'hi' 
+                          ? '⚠️ कुंडली मिलान अनिवार्य है - जन्म समय और जन्म स्थान आवश्यक है'
+                          : '⚠️ Horoscope matching is mandatory - Birth Time and Birth Place are required'}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -326,6 +326,8 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     religion: language === 'hi' ? 'धर्म' : 'Religion',
     caste: language === 'hi' ? 'जाति' : 'Caste',
     height: language === 'hi' ? 'ऊंचाई' : 'Height',
+    weight: language === 'hi' ? 'वजन' : 'Weight',
+    motherTongue: language === 'hi' ? 'मातृभाषा' : 'Mother Tongue',
     bio: language === 'hi' ? 'परिचय' : 'About',
     familyDetails: language === 'hi' ? 'पारिवारिक विवरण' : 'Family Details',
     contactInfo: language === 'hi' ? 'संपर्क जानकारी' : 'Contact Information',
@@ -425,6 +427,12 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
               )}
               {profile.height && (
                 <InfoItem icon={<UserCircle size={18} />} label={t.height} value={profile.height} />
+              )}
+              {profile.weight && (
+                <InfoItem icon={<UserCircle size={18} />} label={t.weight} value={profile.weight} />
+              )}
+              {profile.motherTongue && (
+                <InfoItem icon={<UserCircle size={18} />} label={t.motherTongue} value={profile.motherTongue} />
               )}
               {/* Show last login for logged in users */}
               {canSeeFullDetails && (

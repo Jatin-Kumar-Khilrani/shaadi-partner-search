@@ -49,6 +49,7 @@ export interface Profile {
   selfieUrl?: string
   bio?: string
   height?: string
+  weight?: string
   familyDetails?: string
   dietPreference?: DietPreference
   manglik?: Manglik

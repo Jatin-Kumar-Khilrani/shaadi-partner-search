@@ -232,6 +232,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     email: string
     mobile: string
     height: string
+    weight: string
+    motherTongue: string
     education: string
     occupation: string
     salary: string
@@ -248,6 +250,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     email: '',
     mobile: '',
     height: '',
+    weight: '',
+    motherTongue: '',
     education: '',
     occupation: '',
     salary: '',
@@ -769,6 +773,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
       email: profile.email || '',
       mobile: profile.mobile || '',
       height: profile.height || '',
+      weight: profile.weight || '',
+      motherTongue: profile.motherTongue || '',
       education: profile.education || '',
       occupation: profile.occupation || '',
       salary: profile.salary || '',
@@ -799,6 +805,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               email: adminEditFormData.email,
               mobile: adminEditFormData.mobile,
               height: adminEditFormData.height,
+              weight: adminEditFormData.weight,
+              motherTongue: adminEditFormData.motherTongue,
               education: adminEditFormData.education,
               occupation: adminEditFormData.occupation,
               salary: adminEditFormData.salary,
@@ -4685,6 +4693,25 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     value={adminEditFormData.height}
                     onChange={(e) => setAdminEditFormData(prev => ({ ...prev, height: e.target.value }))}
                     placeholder="5 ft 8 in"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="adminEditWeight">{language === 'hi' ? 'वजन' : 'Weight'}</Label>
+                  <Input
+                    id="adminEditWeight"
+                    value={adminEditFormData.weight}
+                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, weight: e.target.value }))}
+                    placeholder="70 kg"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="adminEditMotherTongue">{language === 'hi' ? 'मातृभाषा' : 'Mother Tongue'}</Label>
+                  <Input
+                    id="adminEditMotherTongue"
+                    value={adminEditFormData.motherTongue}
+                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, motherTongue: e.target.value }))}
                   />
                 </div>
                 

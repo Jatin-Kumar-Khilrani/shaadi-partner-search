@@ -73,6 +73,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
     age: language === 'hi' ? 'आयु' : 'Age',
     years: language === 'hi' ? 'वर्ष' : 'years',
     height: language === 'hi' ? 'ऊंचाई' : 'Height',
+    weight: language === 'hi' ? 'वजन' : 'Weight',
     education: language === 'hi' ? 'शिक्षा' : 'Education',
     occupation: language === 'hi' ? 'व्यवसाय' : 'Occupation',
     salary: language === 'hi' ? 'वार्षिक आय' : 'Annual Income',
@@ -814,6 +815,13 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                         <div>
                           <p className="text-sm text-muted-foreground">{t.height}</p>
                           <p className="font-medium">{profile.height}</p>
+                        </div>
+                      )}
+
+                      {profile.weight && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.weight}</p>
+                          <p className="font-medium">{profile.weight}</p>
                         </div>
                       )}
 
