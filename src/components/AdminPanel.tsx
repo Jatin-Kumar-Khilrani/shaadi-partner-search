@@ -129,6 +129,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [selectedDatabaseProfiles, setSelectedDatabaseProfiles] = useState<string[]>([])
   const [sortBy, setSortBy] = useState<'name' | 'date' | 'expiry'>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  // All Database table sorting
+  const [dbSortBy, setDbSortBy] = useState<'profileId' | 'name' | 'gender' | 'plan' | 'userId' | 'relation' | 'age' | 'location' | 'status' | 'email' | 'mobile' | 'createdAt'>('createdAt')
+  const [dbSortOrder, setDbSortOrder] = useState<'asc' | 'desc'>('desc')
   const [chatMessage, setChatMessage] = useState('')
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([])
   const [isLoadingAI, setIsLoadingAI] = useState(false)
@@ -1898,23 +1901,129 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 }}
                               />
                             </TableHead>
-                            <TableHead className="whitespace-nowrap">{t.profileId}</TableHead>
-                            <TableHead className="whitespace-nowrap">{t.name}</TableHead>
-                            <TableHead className="whitespace-nowrap">{t.gender}</TableHead>
-                            <TableHead className="whitespace-nowrap">{t.planType}</TableHead>
-                            <TableHead className="whitespace-nowrap">{t.userId}</TableHead>
-                            <TableHead className="whitespace-nowrap">{t.relation}</TableHead>
-                            <TableHead className="whitespace-nowrap">{t.age}</TableHead>
-                            <TableHead className="whitespace-nowrap">{t.location}</TableHead>
-                            <TableHead className="whitespace-nowrap">{t.status}</TableHead>
-                            <TableHead className="whitespace-nowrap">{t.email}</TableHead>
-                            <TableHead className="whitespace-nowrap">{t.mobile}</TableHead>
-                            <TableHead className="whitespace-nowrap">{t.createdAt}</TableHead>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('profileId'); setDbSortOrder(prev => dbSortBy === 'profileId' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                              <div className="flex items-center gap-1">
+                                {t.profileId}
+                                {dbSortBy === 'profileId' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </div>
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('name'); setDbSortOrder(prev => dbSortBy === 'name' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                              <div className="flex items-center gap-1">
+                                {t.name}
+                                {dbSortBy === 'name' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </div>
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('gender'); setDbSortOrder(prev => dbSortBy === 'gender' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                              <div className="flex items-center gap-1">
+                                {t.gender}
+                                {dbSortBy === 'gender' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </div>
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('plan'); setDbSortOrder(prev => dbSortBy === 'plan' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                              <div className="flex items-center gap-1">
+                                {t.planType}
+                                {dbSortBy === 'plan' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </div>
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('userId'); setDbSortOrder(prev => dbSortBy === 'userId' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                              <div className="flex items-center gap-1">
+                                {t.userId}
+                                {dbSortBy === 'userId' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </div>
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('relation'); setDbSortOrder(prev => dbSortBy === 'relation' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                              <div className="flex items-center gap-1">
+                                {t.relation}
+                                {dbSortBy === 'relation' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </div>
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('age'); setDbSortOrder(prev => dbSortBy === 'age' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                              <div className="flex items-center gap-1">
+                                {t.age}
+                                {dbSortBy === 'age' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </div>
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('location'); setDbSortOrder(prev => dbSortBy === 'location' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                              <div className="flex items-center gap-1">
+                                {t.location}
+                                {dbSortBy === 'location' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </div>
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('status'); setDbSortOrder(prev => dbSortBy === 'status' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                              <div className="flex items-center gap-1">
+                                {t.status}
+                                {dbSortBy === 'status' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </div>
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('email'); setDbSortOrder(prev => dbSortBy === 'email' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                              <div className="flex items-center gap-1">
+                                {t.email}
+                                {dbSortBy === 'email' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </div>
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('mobile'); setDbSortOrder(prev => dbSortBy === 'mobile' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                              <div className="flex items-center gap-1">
+                                {t.mobile}
+                                {dbSortBy === 'mobile' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </div>
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('createdAt'); setDbSortOrder(prev => dbSortBy === 'createdAt' ? (prev === 'asc' ? 'desc' : 'asc') : 'desc') }}>
+                              <div className="flex items-center gap-1">
+                                {t.createdAt}
+                                {dbSortBy === 'createdAt' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </div>
+                            </TableHead>
                             <TableHead className="whitespace-nowrap">{t.actions}</TableHead>
                           </TableRow>
                         </TableHeader>
                       <TableBody>
-                        {[...profiles].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((profile) => {
+                        {[...profiles].sort((a, b) => {
+                          let comparison = 0
+                          const aUserId = users?.find(u => u.profileId === a.id)?.userId || ''
+                          const bUserId = users?.find(u => u.profileId === b.id)?.userId || ''
+                          
+                          switch (dbSortBy) {
+                            case 'profileId':
+                              comparison = (a.profileId || '').localeCompare(b.profileId || '')
+                              break
+                            case 'name':
+                              comparison = (a.fullName || '').localeCompare(b.fullName || '')
+                              break
+                            case 'gender':
+                              comparison = (a.gender || '').localeCompare(b.gender || '')
+                              break
+                            case 'plan':
+                              const planOrder = { 'free': 0, '6-month': 1, '1-year': 2 }
+                              comparison = (planOrder[a.membershipPlan || 'free'] || 0) - (planOrder[b.membershipPlan || 'free'] || 0)
+                              break
+                            case 'userId':
+                              comparison = aUserId.localeCompare(bUserId)
+                              break
+                            case 'relation':
+                              comparison = (a.profileCreatedBy || '').localeCompare(b.profileCreatedBy || '')
+                              break
+                            case 'age':
+                              comparison = (a.age || 0) - (b.age || 0)
+                              break
+                            case 'location':
+                              comparison = (a.location || '').localeCompare(b.location || '')
+                              break
+                            case 'status':
+                              comparison = (a.status || '').localeCompare(b.status || '')
+                              break
+                            case 'email':
+                              comparison = (a.email || '').localeCompare(b.email || '')
+                              break
+                            case 'mobile':
+                              comparison = (a.mobile || '').localeCompare(b.mobile || '')
+                              break
+                            case 'createdAt':
+                            default:
+                              comparison = new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+                              break
+                          }
+                          return dbSortOrder === 'asc' ? comparison : -comparison
+                        }).map((profile) => {
                           const creds = getUserCredentials(profile.id)
                           return (
                             <TableRow key={profile.id} className={`${profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20' : ''} ${selectedDatabaseProfiles.includes(profile.id) ? 'bg-primary/5' : ''}`}>
