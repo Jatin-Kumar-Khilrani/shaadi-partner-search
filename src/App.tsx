@@ -451,10 +451,11 @@ function App() {
     setCurrentView('home')
     
     // Update last login time for the profile
+    // Note: profileId from User type is actually the profile's id (UUID), not profileId (M1234567)
     setProfiles(current => {
       if (!current) return []
       return current.map(p => {
-        if (p.profileId === profileId) {
+        if (p.id === profileId) {
           return { ...p, lastLoginAt: new Date().toISOString() }
         }
         return p
