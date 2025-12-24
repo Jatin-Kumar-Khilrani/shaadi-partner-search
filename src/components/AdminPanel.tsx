@@ -1827,20 +1827,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       </span>
                       <Button 
                         size="sm" 
-                        variant="default"
-                        onClick={() => {
-                          const count = selectedDatabaseProfiles.length
-                          selectedDatabaseProfiles.forEach(id => handleApprove(id))
-                          setSelectedDatabaseProfiles([])
-                          toast.success(language === 'hi' ? `${count} प्रोफाइल स्वीकृत!` : `${count} profiles approved!`)
-                        }}
-                        className="gap-1"
-                      >
-                        <Check size={14} />
-                        {t.bulkApprove}
-                      </Button>
-                      <Button 
-                        size="sm" 
                         variant="destructive"
                         onClick={() => {
                           const count = selectedDatabaseProfiles.length
@@ -2003,17 +1989,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 >
                                   <ShieldCheck size={16} />
                                 </Button>
-                                {profile.status !== 'verified' && (
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={() => handleApprove(profile.id)}
-                                    className="text-teal hover:text-teal"
-                                    title={t.approve}
-                                  >
-                                    <Check size={16} />
-                                  </Button>
-                                )}
                                 {/* View ID Proof button */}
                                 <Button 
                                   variant="ghost" 
