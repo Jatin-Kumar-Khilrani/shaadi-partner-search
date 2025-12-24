@@ -126,6 +126,37 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     return hasAcceptedInterest
   }
 
+  // Mark messages as delivered when user/admin loads the chat
+  useEffect(() => {
+    if (!messages) return
+    if (!isAdmin && !currentUserProfile) return
+    
+    const currentProfileId = isAdmin ? 'admin' : currentUserProfile?.profileId
+    let hasUpdates = false
+    
+    const updatedMessages = messages.map(msg => {
+      // Mark as delivered if message is TO current user and not yet delivered
+      const isToCurrentUser = (msg.toProfileId === currentProfileId) ||
+        (isAdmin && msg.toProfileId === 'admin') ||
+        (!isAdmin && msg.fromProfileId === 'admin' && msg.toProfileId === currentProfileId)
+      
+      if (isToCurrentUser && !msg.delivered && msg.fromProfileId !== currentProfileId) {
+        hasUpdates = true
+        return {
+          ...msg,
+          delivered: true,
+          deliveredAt: new Date().toISOString(),
+          status: msg.read ? 'read' : 'delivered' as const
+        }
+      }
+      return msg
+    })
+    
+    if (hasUpdates) {
+      setMessages(updatedMessages)
+    }
+  }, [messages?.length, currentUserProfile, isAdmin])
+
   useEffect(() => {
     if (!messages) return
     if (!isAdmin && !currentUserProfile) return
@@ -156,12 +187,22 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
           if (!msg.read) conv.unreadCount++
         }
       } else if (msg.type === 'admin-to-user') {
-        if (isAdmin || msg.toProfileId === currentUserProfile?.profileId) {
-          const convId = `admin-${msg.toProfileId}`
+        // Determine the user's profileId in this admin-user conversation
+        // Admin sends TO user (toProfileId = userProfileId, fromProfileId = 'admin')
+        // User sends TO admin (toProfileId = 'admin', fromProfileId = userProfileId)
+        const userProfileId = msg.fromProfileId === 'admin' ? msg.toProfileId : msg.fromProfileId
+        
+        // Check if this message is relevant to current viewer
+        const isRelevant = isAdmin || 
+          msg.toProfileId === currentUserProfile?.profileId || 
+          msg.fromProfileId === currentUserProfile?.profileId
+        
+        if (isRelevant && userProfileId) {
+          const convId = `admin-${userProfileId}`
           if (!convMap.has(convId)) {
             convMap.set(convId, {
               id: convId,
-              participants: ['admin', msg.toProfileId!],
+              participants: ['admin', userProfileId],
               lastMessage: msg,
               timestamp: msg.timestamp,
               unreadCount: msg.read ? 0 : 1,
@@ -176,6 +217,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
               conv.timestamp = msg.timestamp
               conv.updatedAt = msg.timestamp
             }
+            // Count unread: for admin, count unread from user; for user, count unread from admin
             if (!msg.read && (isAdmin ? msg.fromProfileId !== 'admin' : msg.fromProfileId === 'admin')) {
               conv.unreadCount++
             }
@@ -226,32 +268,51 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
 
   // Mark messages as delivered/read when conversation is opened
   useEffect(() => {
-    if (!selectedConversation || !messages || isAdmin) return
-    if (!currentUserProfile) return
+    if (!selectedConversation || !messages) return
+    if (!isAdmin && !currentUserProfile) return
 
-    const currentProfileId = currentUserProfile.profileId
+    const currentProfileId = isAdmin ? 'admin' : currentUserProfile?.profileId
     let hasUpdates = false
     
     const updatedMessages = messages.map(msg => {
-      // Only update messages sent TO the current user
-      if (msg.toProfileId === currentProfileId && msg.fromProfileId !== currentProfileId) {
-        // Check if message belongs to selected conversation
-        const convId = [msg.fromProfileId, msg.toProfileId].sort().join('-')
-        const isAdminConv = msg.type === 'admin-to-user' || msg.type === 'admin-broadcast'
-        const matchesConversation = isAdminConv 
-          ? selectedConversation.startsWith('admin-')
-          : convId === selectedConversation || selectedConversation.includes(msg.fromProfileId)
-        
-        if (matchesConversation && !msg.read) {
-          hasUpdates = true
-          return { 
-            ...msg, 
-            read: true, 
-            readAt: new Date().toISOString(),
-            status: 'read' as const,
-            delivered: true,
-            deliveredAt: msg.deliveredAt || new Date().toISOString()
+      // Only update messages sent TO the current user (not from current user)
+      if (msg.fromProfileId === currentProfileId) return msg
+      
+      // Check if this message belongs to the selected conversation
+      let matchesConversation = false
+      
+      if (selectedConversation === 'admin-broadcast') {
+        matchesConversation = msg.type === 'admin-broadcast'
+      } else if (selectedConversation.startsWith('admin-')) {
+        const userProfileId = selectedConversation.replace('admin-', '')
+        // For admin-user conversations
+        if (msg.type === 'admin-to-user') {
+          if (isAdmin) {
+            // Admin viewing: mark user's messages as read
+            matchesConversation = msg.fromProfileId === userProfileId && msg.toProfileId === 'admin'
+          } else {
+            // User viewing: mark admin's messages as read
+            matchesConversation = msg.fromProfileId === 'admin' && msg.toProfileId === userProfileId
           }
+        }
+      } else {
+        // User-to-user conversation
+        const [profileId1, profileId2] = selectedConversation.split('-')
+        matchesConversation = msg.type === 'user-to-user' && (
+          (msg.fromProfileId === profileId1 && msg.toProfileId === profileId2) ||
+          (msg.fromProfileId === profileId2 && msg.toProfileId === profileId1)
+        )
+      }
+      
+      if (matchesConversation && !msg.read) {
+        hasUpdates = true
+        return { 
+          ...msg, 
+          read: true, 
+          readAt: new Date().toISOString(),
+          status: 'read' as const,
+          delivered: true,
+          deliveredAt: msg.deliveredAt || new Date().toISOString()
         }
       }
       return msg
@@ -260,7 +321,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     if (hasUpdates) {
       setMessages(updatedMessages)
     }
-  }, [selectedConversation, currentUserProfile])
+  }, [selectedConversation, currentUserProfile, isAdmin])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -275,13 +336,20 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     }
 
     if (convId.startsWith('admin-')) {
-      const profileId = convId.replace('admin-', '')
+      const userProfileId = convId.replace('admin-', '')
       return messages.filter(m => {
         if (m.type === 'admin-to-user') {
+          // Messages in this conversation:
+          // - Admin to user: fromProfileId='admin', toProfileId=userProfileId
+          // - User to admin: fromProfileId=userProfileId, toProfileId='admin'
           if (isAdmin) {
-            return m.toProfileId === profileId || m.fromProfileId === profileId
+            // Admin sees all messages involving this user
+            return (m.fromProfileId === 'admin' && m.toProfileId === userProfileId) ||
+                   (m.fromProfileId === userProfileId && m.toProfileId === 'admin')
           } else {
-            return m.toProfileId === profileId || m.fromProfileId === 'admin'
+            // User sees messages from/to admin involving themselves
+            return (m.fromProfileId === 'admin' && m.toProfileId === userProfileId) ||
+                   (m.fromProfileId === userProfileId && m.toProfileId === 'admin')
           }
         }
         return false
@@ -323,9 +391,11 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
           return msg.type !== 'admin-broadcast'
         }
         if (conversationId.startsWith('admin-')) {
-          const profileId = conversationId.replace('admin-', '')
+          const userProfileId = conversationId.replace('admin-', '')
+          // Delete all admin-user messages involving this user
           return !(msg.type === 'admin-to-user' && 
-            (msg.fromProfileId === profileId || msg.toProfileId === profileId))
+            ((msg.fromProfileId === 'admin' && msg.toProfileId === userProfileId) ||
+             (msg.fromProfileId === userProfileId && msg.toProfileId === 'admin')))
         }
         // User-to-user conversation
         const [profileId1, profileId2] = conversationId.split('-')
@@ -419,11 +489,13 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       newMessage.type = 'admin-to-user'
       const targetProfileId = selectedConversation.replace('admin-', '')
       if (isAdmin) {
+        // Admin sending to user
         newMessage.fromProfileId = 'admin'
         newMessage.toProfileId = targetProfileId
       } else {
+        // User replying to admin - toProfileId should be 'admin', not the user's own ID
         newMessage.fromProfileId = currentUserProfile!.profileId
-        newMessage.toProfileId = targetProfileId
+        newMessage.toProfileId = 'admin'
       }
     } else {
       newMessage.type = 'user-to-user'
@@ -459,6 +531,66 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     return `${day}/${month}/${year}`
   }
 
+  // WhatsApp-style relative date formatting
+  const formatRelativeDate = (timestamp: string) => {
+    const date = new Date(timestamp)
+    if (isNaN(date.getTime())) return ''
+    
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    
+    const isToday = date.toDateString() === today.toDateString()
+    const isYesterday = date.toDateString() === yesterday.toDateString()
+    
+    if (isToday) {
+      return formatTime(timestamp)
+    } else if (isYesterday) {
+      return language === 'hi' ? 'कल' : 'Yesterday'
+    } else {
+      return formatDate(timestamp)
+    }
+  }
+
+  // Get profile for a conversation
+  const getConversationProfile = (conv: ChatConversation): Profile | undefined => {
+    if (conv.id === 'admin-broadcast') return undefined
+    if (conv.id.startsWith('admin-')) {
+      const profileId = conv.id.replace('admin-', '')
+      return isAdmin ? profiles.find(p => p.profileId === profileId) : undefined
+    }
+    const otherProfileId = conv.participants?.find(id => id !== currentUserProfile?.profileId && id !== 'admin')
+    return profiles.find(p => p.profileId === otherProfileId)
+  }
+
+  // Get initials from name for avatar
+  const getInitials = (name: string) => {
+    if (!name) return '?'
+    const parts = name.split(' ').filter(Boolean)
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
+
+  // Get message preview with sender prefix
+  const getMessagePreview = (conv: ChatConversation) => {
+    const lastMsg = conv.lastMessage
+    if (!lastMsg?.message) return ''
+    
+    const isSentByCurrentUser = isAdmin 
+      ? lastMsg.fromProfileId === 'admin'
+      : lastMsg.fromProfileId === currentUserProfile?.profileId
+    
+    const prefix = isSentByCurrentUser ? `${t.you}: ` : ''
+    const maxLength = 30
+    const message = lastMsg.message.length > maxLength 
+      ? lastMsg.message.substring(0, maxLength) + '...' 
+      : lastMsg.message
+    
+    return prefix + message
+  }
+
   const getConversationTitle = (conv: ChatConversation) => {
     if (conv.id === 'admin-broadcast') return t.broadcast
     if (conv.id.startsWith('admin-')) {
@@ -488,11 +620,22 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     return title.includes(searchQuery.toLowerCase())
   })
 
+  // Calculate total unread messages
+  const totalUnread = conversations.reduce((acc, conv) => acc + (conv.unreadCount || 0), 0)
+
   return (
     <div className="container mx-auto px-4 md:px-8 py-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">{t.title}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold">{t.title}</h1>
+            {/* Total unread badge */}
+            {totalUnread > 0 && (
+              <span className="min-w-[24px] h-6 px-2 bg-green-500 text-white text-sm font-bold rounded-full flex items-center justify-center shadow-md">
+                {totalUnread > 99 ? '99+' : totalUnread}
+              </span>
+            )}
+          </div>
           {/* Live remaining chats counter */}
           {!isAdmin && currentUserProfile && (
             <div className="flex items-center gap-2">
@@ -516,26 +659,56 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
               </CardHeader>
               <CardContent className="space-y-2">
                 {/* Admin Support Chat Option - Always visible */}
-                <div
-                  onClick={() => setSelectedConversation(`admin-${currentUserProfile?.profileId}`)}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    selectedConversation === `admin-${currentUserProfile?.profileId}` 
-                      ? 'bg-primary/10 border border-primary' 
-                      : 'hover:bg-muted'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-10 h-10 bg-primary flex items-center justify-center">
-                      <span className="text-sm font-bold text-primary-foreground">👤</span>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium">{language === 'hi' ? 'एडमिन सहायता' : 'Admin Support'}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {language === 'hi' ? 'किसी भी प्रश्न के लिए संपर्क करें' : 'Contact for any queries'}
-                      </p>
+                {(() => {
+                  const adminConvId = `admin-${currentUserProfile?.profileId}`
+                  const adminConv = conversations.find(c => c.id === adminConvId)
+                  const adminUnread = adminConv?.unreadCount || 0
+                  const hasAdminUnread = adminUnread > 0
+                  
+                  return (
+                    <div
+                      onClick={() => setSelectedConversation(adminConvId)}
+                      className={`p-3 rounded-lg cursor-pointer transition-all ${
+                        selectedConversation === adminConvId 
+                          ? 'bg-primary/10 border border-primary shadow-sm' 
+                          : hasAdminUnread 
+                            ? 'bg-green-50 dark:bg-green-950/30 border-l-4 border-green-500 hover:bg-green-100 dark:hover:bg-green-950/50'
+                            : 'hover:bg-muted'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-sm">
+                            <span className="text-lg text-primary-foreground">👤</span>
+                          </div>
+                          {/* Unread badge - WhatsApp style */}
+                          {hasAdminUnread && (
+                            <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 bg-green-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md animate-pulse">
+                              {adminUnread > 99 ? '99+' : adminUnread}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className={`font-semibold ${hasAdminUnread ? 'text-green-700 dark:text-green-400' : ''}`}>
+                              {language === 'hi' ? 'एडमिन सहायता' : 'Admin Support'}
+                            </p>
+                            {adminConv?.lastMessage && (
+                              <span className={`text-xs ${hasAdminUnread ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
+                                {formatRelativeDate(adminConv.lastMessage.timestamp)}
+                              </span>
+                            )}
+                          </div>
+                          <p className={`text-sm truncate ${hasAdminUnread ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                            {adminConv?.lastMessage 
+                              ? getMessagePreview(adminConv) 
+                              : (language === 'hi' ? 'किसी भी प्रश्न के लिए संपर्क करें' : 'Contact for any queries')}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  )
+                })()}
 
                 <Separator className="my-4" />
 
@@ -579,25 +752,54 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                           (m.toProfileId === currentUserProfile?.profileId || m.fromProfileId === currentUserProfile?.profileId)
                         )
                         .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-                        .map((msg) => (
-                          <div
-                            key={msg.id}
-                            className={`flex ${msg.fromProfileId === 'admin' ? 'justify-start' : 'justify-end'}`}
-                          >
-                            <div className={`max-w-[80%] p-3 rounded-lg ${
-                              msg.fromProfileId === 'admin' 
-                                ? 'bg-muted' 
-                                : 'bg-primary text-primary-foreground'
-                            }`}>
-                              <p className="text-sm">{msg.content}</p>
-                              <p className={`text-xs mt-1 ${
-                                msg.fromProfileId === 'admin' ? 'text-muted-foreground' : 'text-primary-foreground/70'
+                        .map((msg) => {
+                          const isFromUser = msg.fromProfileId !== 'admin'
+                          // Determine message status for tick marks
+                          const getMessageStatus = () => {
+                            if (msg.status) return msg.status
+                            if (msg.read || msg.readAt) return 'read'
+                            if (msg.delivered || msg.deliveredAt) return 'delivered'
+                            return 'sent'
+                          }
+                          const messageStatus = getMessageStatus()
+
+                          return (
+                            <div
+                              key={msg.id}
+                              className={`flex ${isFromUser ? 'justify-end' : 'justify-start'}`}
+                            >
+                              <div className={`max-w-[80%] p-3 rounded-lg ${
+                                isFromUser 
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted'
                               }`}>
-                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </p>
+                                <p className="text-sm">{msg.message}</p>
+                                <div className="flex items-center justify-end gap-1 mt-1">
+                                  <span className={`text-xs ${
+                                    isFromUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                                  }`}>
+                                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                  {isFromUser && (
+                                    <span className={`flex items-center ${
+                                      messageStatus === 'read' 
+                                        ? 'text-blue-400' 
+                                        : messageStatus === 'delivered' 
+                                          ? 'text-gray-400' 
+                                          : 'text-gray-300'
+                                    }`}>
+                                      {messageStatus === 'sent' ? (
+                                        <Check size={14} weight="bold" />
+                                      ) : (
+                                        <Checks size={14} weight="bold" />
+                                      )}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       <div ref={messagesEndRef} />
                     </div>
                   </ScrollArea>
@@ -617,9 +819,12 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                               type: 'admin-to-user',
                               fromProfileId: currentUserProfile?.profileId || '',
                               toProfileId: 'admin',
-                              content: messageInput.trim(),
+                              message: messageInput.trim(),
                               timestamp: new Date().toISOString(),
-                              read: false
+                              createdAt: new Date().toISOString(),
+                              read: false,
+                              status: 'sent',
+                              delivered: false
                             }
                             setMessages([...(messages || []), newMsg])
                             setMessageInput('')
@@ -635,9 +840,12 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                               type: 'admin-to-user',
                               fromProfileId: currentUserProfile?.profileId || '',
                               toProfileId: 'admin',
-                              content: messageInput.trim(),
+                              message: messageInput.trim(),
                               timestamp: new Date().toISOString(),
-                              read: false
+                              createdAt: new Date().toISOString(),
+                              read: false,
+                              status: 'sent',
+                              delivered: false
                             }
                             setMessages([...(messages || []), newMsg])
                             setMessageInput('')
@@ -686,64 +894,126 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                     {t.noConversations}
                   </p>
                 ) : (
-                  filteredConversations.map(conv => (
-                    <div
-                      key={conv.id}
-                      onClick={() => setSelectedConversation(conv.id)}
-                      className={`p-3 rounded-lg cursor-pointer transition-colors relative group ${
-                        selectedConversation === conv.id
-                          ? 'bg-primary text-primary-foreground'
-                          : 'hover:bg-muted'
-                      }`}
-                    >
-                      {/* Close button for admin */}
-                      {isAdmin && (
-                        <button
-                          onClick={(e) => handleCloseConversation(conv.id, e)}
-                          className={`absolute top-1 right-1 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 ${
-                            selectedConversation === conv.id 
-                              ? 'hover:bg-primary-foreground/20 text-primary-foreground' 
-                              : 'hover:bg-destructive/10 text-destructive'
-                          }`}
-                          title={language === 'hi' ? 'चैट बंद करें' : 'Close chat'}
-                        >
-                          <X size={16} weight="bold" />
-                        </button>
-                      )}
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-sm font-bold">
-                          <ChatCircle size={20} weight="fill" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <p className="font-semibold truncate">{getConversationTitle(conv)}</p>
-                            {conv.unreadCount > 0 && (
-                              <Badge variant="destructive" className="ml-2">{conv.unreadCount}</Badge>
+                  filteredConversations.map(conv => {
+                    const profile = getConversationProfile(conv)
+                    const hasUnread = conv.unreadCount > 0
+                    const isAdminChat = conv.id.startsWith('admin-') || conv.id === 'admin-broadcast'
+                    
+                    return (
+                      <div
+                        key={conv.id}
+                        onClick={() => setSelectedConversation(conv.id)}
+                        className={`p-3 rounded-lg cursor-pointer transition-all relative group ${
+                          selectedConversation === conv.id
+                            ? 'bg-primary text-primary-foreground shadow-md'
+                            : hasUnread 
+                              ? 'bg-primary/5 hover:bg-primary/10 border-l-4 border-primary' 
+                              : 'hover:bg-muted'
+                        }`}
+                      >
+                        {/* Close button for admin */}
+                        {isAdmin && (
+                          <button
+                            onClick={(e) => handleCloseConversation(conv.id, e)}
+                            className={`absolute top-1 right-1 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 ${
+                              selectedConversation === conv.id 
+                                ? 'hover:bg-primary-foreground/20 text-primary-foreground' 
+                                : 'hover:bg-destructive/10 text-destructive'
+                            }`}
+                            title={language === 'hi' ? 'चैट बंद करें' : 'Close chat'}
+                          >
+                            <X size={16} weight="bold" />
+                          </button>
+                        )}
+                        <div className="flex items-center gap-3">
+                          {/* Avatar with photo or initials */}
+                          <div className="relative">
+                            {profile?.photos?.[0] ? (
+                              <img 
+                                src={profile.photos[0]} 
+                                alt="" 
+                                className="h-12 w-12 rounded-full object-cover border-2 border-background shadow-sm"
+                              />
+                            ) : (
+                              <div className={`h-12 w-12 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
+                                isAdminChat 
+                                  ? 'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground' 
+                                  : 'bg-gradient-to-br from-muted to-muted/80 text-muted-foreground'
+                              }`}>
+                                {isAdminChat && !isAdmin ? (
+                                  <span className="text-lg">👤</span>
+                                ) : profile ? (
+                                  getInitials(profile.fullName || '')
+                                ) : (
+                                  <ChatCircle size={20} weight="fill" />
+                                )}
+                              </div>
+                            )}
+                            {/* Unread count badge - WhatsApp style on avatar */}
+                            {hasUnread && (
+                              <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 bg-green-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md animate-pulse">
+                                {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
+                              </span>
+                            )}
+                            {/* Verified badge for verified profiles */}
+                            {profile?.status === 'verified' && (
+                              <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center border-2 border-background">
+                                <Check size={10} weight="bold" className="text-white" />
+                              </span>
                             )}
                           </div>
-                          <p className="text-xs truncate opacity-70">
-                            {conv.lastMessage?.message || ''}
-                          </p>
-                          <p className="text-xs opacity-50">
-                            {formatDate((conv.lastMessage?.timestamp || conv.timestamp || conv.createdAt) || '')} {formatTime((conv.lastMessage?.timestamp || conv.timestamp || conv.createdAt) || '')}
-                          </p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-0.5">
+                              <p className={`font-semibold truncate ${
+                                hasUnread && selectedConversation !== conv.id ? 'text-foreground' : ''
+                              }`}>
+                                {getConversationTitle(conv)}
+                              </p>
+                              <span className={`text-xs whitespace-nowrap ml-2 ${
+                                hasUnread && selectedConversation !== conv.id 
+                                  ? 'text-green-600 font-medium' 
+                                  : 'opacity-60'
+                              }`}>
+                                {formatRelativeDate((conv.lastMessage?.timestamp || conv.timestamp || conv.createdAt) || '')}
+                              </span>
+                            </div>
+                            <p className={`text-sm truncate ${
+                              hasUnread && selectedConversation !== conv.id 
+                                ? 'font-medium opacity-90' 
+                                : 'opacity-60'
+                            }`}>
+                              {getMessagePreview(conv)}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    )
+                  })
                 )}
               </CardContent>
             </ScrollArea>
           </Card>
 
-          <Card className="md:col-span-2">
+          <Card className="md:col-span-2 flex flex-col">
             {!selectedConversation ? (
-              <div className="h-full flex items-center justify-center text-muted-foreground">
-                {t.selectConversation}
+              <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-8">
+                <div className="w-24 h-24 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                  <ChatCircle size={48} weight="light" className="text-muted-foreground/50" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">
+                  {language === 'hi' ? 'अपनी बातचीत शुरू करें' : 'Start a conversation'}
+                </h3>
+                <p className="text-sm text-center max-w-xs">
+                  {language === 'hi' 
+                    ? 'बाईं ओर से किसी बातचीत का चयन करें या रुचि भेजकर नई बातचीत शुरू करें' 
+                    : 'Select a conversation from the left or start a new one by sending an interest'}
+                </p>
               </div>
             ) : (() => {
               const conv = conversations.find(c => c.id === selectedConversation)
               const otherProfileId = getOtherProfileIdFromConversation(selectedConversation)
+              const chatProfile = getConversationProfile(conv!)
+              const isAdminChat = selectedConversation.startsWith('admin-') || selectedConversation === 'admin-broadcast'
               const isChatAllowed = isAdmin || 
                                    selectedConversation.startsWith('admin-') || 
                                    selectedConversation === 'admin-broadcast' ||
@@ -751,18 +1021,59 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
 
               return (
                 <>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      {getConversationTitle(conv!)}
-                      {!isChatAllowed && !isAdmin && (
-                        <Badge variant="secondary" className="gap-1">
-                          <LockSimple size={14} weight="fill" />
-                          {t.chatLocked}
-                        </Badge>
+                  {/* Enhanced Chat Header with Profile Info */}
+                  <CardHeader className="border-b bg-muted/30">
+                    <div className="flex items-center gap-3">
+                      {/* Profile Avatar */}
+                      {chatProfile?.photos?.[0] ? (
+                        <img 
+                          src={chatProfile.photos[0]} 
+                          alt="" 
+                          className="h-10 w-10 rounded-full object-cover border-2 border-background shadow-sm"
+                        />
+                      ) : (
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold ${
+                          isAdminChat 
+                            ? 'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground' 
+                            : 'bg-gradient-to-br from-muted to-muted/80 text-muted-foreground'
+                        }`}>
+                          {isAdminChat && !isAdmin ? (
+                            <span className="text-lg">👤</span>
+                          ) : chatProfile ? (
+                            getInitials(chatProfile.fullName || '')
+                          ) : (
+                            <ChatCircle size={20} weight="fill" />
+                          )}
+                        </div>
                       )}
-                    </CardTitle>
+                      <div className="flex-1">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          {getConversationTitle(conv!)}
+                          {chatProfile?.status === 'verified' && (
+                            <span className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                              <Check size={10} weight="bold" className="text-white" />
+                            </span>
+                          )}
+                          {!isChatAllowed && !isAdmin && (
+                            <Badge variant="secondary" className="gap-1 text-xs">
+                              <LockSimple size={12} weight="fill" />
+                              {t.chatLocked}
+                            </Badge>
+                          )}
+                        </CardTitle>
+                        {chatProfile && (
+                          <p className="text-xs text-muted-foreground">
+                            {chatProfile.location}{chatProfile.age ? `, ${chatProfile.age} ${language === 'hi' ? 'वर्ष' : 'yrs'}` : ''}
+                          </p>
+                        )}
+                        {isAdminChat && !isAdmin && (
+                          <p className="text-xs text-muted-foreground">
+                            {language === 'hi' ? 'आमतौर पर 24 घंटे में जवाब' : 'Usually responds within 24 hours'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </CardHeader>
-                  <Separator />
                   <ScrollArea className="h-[calc(600px-180px)] p-4">
                     <div className="space-y-4">
                       {getConversationMessages(selectedConversation).map(msg => {

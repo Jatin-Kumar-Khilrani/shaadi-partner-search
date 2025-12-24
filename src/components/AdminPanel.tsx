@@ -959,6 +959,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
       createdAt: new Date().toISOString(),
       read: false,
       type: 'admin-to-user',
+      status: 'sent',
+      delivered: false
     }
 
     setMessages((current) => [...(current || []), newMessage])
