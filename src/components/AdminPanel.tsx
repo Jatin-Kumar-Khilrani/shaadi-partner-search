@@ -282,6 +282,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     profileId: language === 'hi' ? 'प्रोफाइल ID' : 'Profile ID',
     userId: language === 'hi' ? 'यूज़र ID' : 'User ID',
     password: language === 'hi' ? 'पासवर्ड' : 'Password',
+    gender: language === 'hi' ? 'लिंग' : 'Gender',
+    planType: language === 'hi' ? 'प्लान' : 'Plan',
+    male: language === 'hi' ? 'पुरुष' : 'Male',
+    female: language === 'hi' ? 'महिला' : 'Female',
+    freePlanLabel: language === 'hi' ? 'मुफ्त' : 'Free',
+    sixMonthPlanLabel: language === 'hi' ? '6 माह' : '6 Month',
+    oneYearPlanLabel: language === 'hi' ? '1 वर्ष' : '1 Year',
     email: language === 'hi' ? 'ईमेल' : 'Email',
     mobile: language === 'hi' ? 'मोबाइल' : 'Mobile',
     name: language === 'hi' ? 'नाम' : 'Name',
@@ -1893,8 +1900,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             </TableHead>
                             <TableHead className="whitespace-nowrap">{t.profileId}</TableHead>
                             <TableHead className="whitespace-nowrap">{t.name}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t.gender}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t.planType}</TableHead>
                             <TableHead className="whitespace-nowrap">{t.userId}</TableHead>
-                            <TableHead className="whitespace-nowrap">{t.password}</TableHead>
                             <TableHead className="whitespace-nowrap">{t.relation}</TableHead>
                             <TableHead className="whitespace-nowrap">{t.age}</TableHead>
                             <TableHead className="whitespace-nowrap">{t.location}</TableHead>
@@ -1929,8 +1937,27 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   <Badge variant="destructive" className="ml-2 text-xs">{language === 'hi' ? 'हटाया गया' : 'Deleted'}</Badge>
                                 )}
                               </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={profile.gender === 'male' ? 'border-blue-500 text-blue-600' : 'border-pink-500 text-pink-600'}>
+                                  {profile.gender === 'male' ? t.male : t.female}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  profile.membershipPlan === '1-year' ? 'default' :
+                                  profile.membershipPlan === '6-month' ? 'secondary' :
+                                  'outline'
+                                } className={
+                                  profile.membershipPlan === '1-year' ? 'bg-green-600' :
+                                  profile.membershipPlan === '6-month' ? 'bg-blue-500 text-white' :
+                                  ''
+                                }>
+                                  {profile.membershipPlan === '1-year' ? t.oneYearPlanLabel :
+                                   profile.membershipPlan === '6-month' ? t.sixMonthPlanLabel :
+                                   t.freePlanLabel}
+                                </Badge>
+                              </TableCell>
                               <TableCell className="font-mono text-primary">{creds?.userId || '-'}</TableCell>
-                              <TableCell className="font-mono text-accent">{creds?.password || '-'}</TableCell>
                               <TableCell className="text-sm">
                                 {profile.relationToProfile || (language === 'hi' ? 'स्वयं' : 'Self')}
                               </TableCell>
