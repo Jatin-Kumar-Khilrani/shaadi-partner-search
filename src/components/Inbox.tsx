@@ -18,7 +18,7 @@ interface InboxProps {
   loggedInUserId: string | null
   profiles: Profile[]
   language: Language
-  onNavigateToChat?: () => void
+  onNavigateToChat?: (profileId?: string) => void
 }
 
 export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: InboxProps) {
@@ -304,7 +304,7 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
                         </div>
                         <div className="flex gap-2">
                           <Button 
-                            onClick={() => onNavigateToChat && onNavigateToChat()}
+                            onClick={() => onNavigateToChat && onNavigateToChat(otherProfileId)}
                             className="gap-2 flex-1"
                           >
                             <ChatCircle size={18} weight="fill" />

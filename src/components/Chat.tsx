@@ -32,6 +32,7 @@ interface ChatProps {
   membershipPlan?: MembershipPlan
   membershipSettings?: MembershipSettings
   setProfiles?: (newValue: Profile[] | ((oldValue?: Profile[] | undefined) => Profile[])) => void
+  initialChatProfileId?: string | null // Profile ID to auto-select for chat
 }
 
 // Default limits if settings not provided
@@ -44,7 +45,7 @@ const DEFAULT_SETTINGS: MembershipSettings = {
   oneYearContactLimit: 50
 }
 
-export function Chat({ currentUserProfile, profiles, language, isAdmin = false, shouldBlur = false, membershipPlan, membershipSettings, setProfiles }: ChatProps) {
+export function Chat({ currentUserProfile, profiles, language, isAdmin = false, shouldBlur = false, membershipPlan, membershipSettings, setProfiles, initialChatProfileId }: ChatProps) {
   const [messages, setMessages, refreshMessages, messagesLoaded] = useKV<ChatMessage[]>('chatMessages', [])
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [conversations, setConversations] = useState<ChatConversation[]>([])
@@ -52,11 +53,32 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   const [messageInput, setMessageInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [hasAutoSelected, setHasAutoSelected] = useState(false)
 
   // Force refresh messages from Azure on mount
   useEffect(() => {
     refreshMessages()
   }, [])
+
+  // Auto-select conversation when initialChatProfileId is provided
+  useEffect(() => {
+    if (!initialChatProfileId || !currentUserProfile || hasAutoSelected) return
+    if (conversations.length === 0) return
+    
+    // Find or create the conversation ID
+    const convId = [currentUserProfile.profileId, initialChatProfileId].sort().join('-')
+    
+    // Check if conversation exists
+    const conv = conversations.find(c => c.id === convId)
+    if (conv) {
+      setSelectedConversation(convId)
+      setHasAutoSelected(true)
+    } else {
+      // Create a new conversation for this accepted interest
+      setSelectedConversation(convId)
+      setHasAutoSelected(true)
+    }
+  }, [initialChatProfileId, currentUserProfile, conversations, hasAutoSelected])
 
   // Get settings with defaults
   const settings = { ...DEFAULT_SETTINGS, ...membershipSettings }
@@ -264,12 +286,42 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       }
     })
 
+    // Also create conversations for accepted interests that don't have messages yet
+    if (!isAdmin && currentUserProfile && interests) {
+      const currentProfileId = currentUserProfile.profileId
+      const acceptedInterests = interests.filter(i => 
+        i.status === 'accepted' && 
+        (i.fromProfileId === currentProfileId || i.toProfileId === currentProfileId)
+      )
+      
+      acceptedInterests.forEach(interest => {
+        const otherProfileId = interest.fromProfileId === currentProfileId 
+          ? interest.toProfileId 
+          : interest.fromProfileId
+        
+        const convId = [currentProfileId, otherProfileId].sort().join('-')
+        
+        // Only add if no conversation exists yet
+        if (!convMap.has(convId)) {
+          convMap.set(convId, {
+            id: convId,
+            participants: [currentProfileId, otherProfileId],
+            lastMessage: undefined,
+            timestamp: interest.createdAt,
+            unreadCount: 0,
+            createdAt: interest.createdAt,
+            updatedAt: interest.createdAt,
+          })
+        }
+      })
+    }
+
     const sortedConversations = Array.from(convMap.values()).sort(
       (a, b) => new Date(b.updatedAt || b.createdAt || '').getTime() - new Date(a.updatedAt || a.createdAt || '').getTime()
     )
 
     setConversations(sortedConversations)
-  }, [messages, currentUserProfile, isAdmin])
+  }, [messages, currentUserProfile, isAdmin, interests])
 
   // Mark messages as delivered/read when conversation is opened
   useEffect(() => {

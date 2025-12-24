@@ -101,6 +101,7 @@ function App() {
   const [showAdminLogin, setShowAdminLogin] = useState(false)
   
   const [currentView, setCurrentView] = useState<View>('home')
+  const [chatTargetProfileId, setChatTargetProfileId] = useState<string | null>(null)
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({})
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [showRegistration, setShowRegistration] = useState(false)
@@ -625,7 +626,7 @@ function App() {
                 </Button>
                 <Button
                   variant={currentView === 'chat' ? 'default' : 'ghost'}
-                  onClick={() => setCurrentView('chat')}
+                  onClick={() => { setChatTargetProfileId(null); setCurrentView('chat'); }}
                   className="gap-2"
                 >
                   <ChatCircle size={20} />
@@ -798,6 +799,7 @@ function App() {
                     <Button
                       variant={currentView === 'chat' ? 'default' : 'ghost'}
                       onClick={() => {
+                        setChatTargetProfileId(null)
                         setCurrentView('chat')
                         setMobileMenuOpen(false)
                       }}
@@ -1113,7 +1115,10 @@ function App() {
             loggedInUserId={currentUserProfile?.id || null}
             profiles={profiles || []}
             language={language}
-            onNavigateToChat={() => setCurrentView('chat')}
+            onNavigateToChat={(profileId) => {
+              setChatTargetProfileId(profileId || null)
+              setCurrentView('chat')
+            }}
           />
         )}
 
@@ -1126,6 +1131,7 @@ function App() {
             membershipPlan={currentUserProfile?.membershipPlan}
             membershipSettings={membershipSettings || defaultMembershipSettings}
             setProfiles={setProfiles}
+            initialChatProfileId={chatTargetProfileId}
           />
         )}
 
@@ -1180,7 +1186,7 @@ function App() {
             </Button>
             <Button
               variant={currentView === 'chat' ? 'default' : 'ghost'}
-              onClick={() => setCurrentView('chat')}
+              onClick={() => { setChatTargetProfileId(null); setCurrentView('chat'); }}
               className="flex-col h-auto py-2 px-1"
               size="sm"
             >
