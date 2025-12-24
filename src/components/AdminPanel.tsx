@@ -3493,12 +3493,25 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
       <Dialog open={showChatDialog} onOpenChange={setShowChatDialog}>
         <DialogContent className="max-w-xl max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ChatCircle size={24} />
-              {t.chat} - {selectedProfile?.profileId}
+            <DialogTitle className="flex items-center gap-3">
+              {selectedProfile?.photos?.[0] ? (
+                <img 
+                  src={selectedProfile.photos[0]} 
+                  alt={selectedProfile.fullName} 
+                  className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-lg font-bold border-2 border-primary/20">
+                  {selectedProfile?.firstName?.[0]}{selectedProfile?.lastName?.[0]}
+                </div>
+              )}
+              <div className="flex flex-col">
+                <span className="text-lg">{selectedProfile?.fullName}</span>
+                <span className="text-sm font-normal text-muted-foreground">{selectedProfile?.profileId}</span>
+              </div>
             </DialogTitle>
             <DialogDescription>
-              {selectedProfile?.fullName} • {language === 'hi' ? 'चैट इतिहास और नया संदेश' : 'Chat history and new message'}
+              {selectedProfile?.membershipPlan || 'free'} {selectedProfile?.membershipPlan !== 'free' && selectedProfile?.membershipPlan ? '' : ''} • {language === 'hi' ? 'चैट इतिहास और नया संदेश' : 'Chat history and new message'}
             </DialogDescription>
           </DialogHeader>
           
