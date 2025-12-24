@@ -722,7 +722,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const handleOpenAdminEdit = (profile: Profile) => {
     setAdminEditFormData({
       fullName: profile.fullName || '',
-      dateOfBirth: profile.dateOfBirth || '',
+      dateOfBirth: profile.dateOfBirth ? formatDateDDMMYYYY(profile.dateOfBirth) : '',
       email: profile.email || '',
       mobile: profile.mobile || '',
       height: profile.height || '',
