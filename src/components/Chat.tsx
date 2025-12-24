@@ -747,13 +747,26 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                   {/* Admin chat messages */}
                   <ScrollArea className="flex-1 p-4">
                     <div className="space-y-4">
-                      {messages
-                        ?.filter(m => 
-                          m.type === 'admin-to-user' && 
-                          (m.toProfileId === currentUserProfile?.profileId || m.fromProfileId === currentUserProfile?.profileId)
-                        )
-                        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-                        .map((msg) => {
+                      {(() => {
+                        const filteredMessages = messages
+                          ?.filter(m => 
+                            m.type === 'admin-to-user' && 
+                            (m.toProfileId === currentUserProfile?.profileId || m.fromProfileId === currentUserProfile?.profileId)
+                          )
+                          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) || []
+                        
+                        if (filteredMessages.length === 0) {
+                          return (
+                            <div className="text-center text-muted-foreground py-8">
+                              <ChatCircle size={48} className="mx-auto mb-3 opacity-40" weight="light" />
+                              <p className="text-sm">
+                                {language === 'hi' ? 'अभी कोई संदेश नहीं। एडमिन को संदेश भेजें!' : 'No messages yet. Send a message to admin!'}
+                              </p>
+                            </div>
+                          )
+                        }
+                        
+                        return filteredMessages.map((msg) => {
                           const isFromUser = msg.fromProfileId !== 'admin'
                           // Determine message status for tick marks
                           const getMessageStatus = () => {
@@ -800,7 +813,8 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                               </div>
                             </div>
                           )
-                        })}
+                        })
+                      })()}
                       <div ref={messagesEndRef} />
                     </div>
                   </ScrollArea>
