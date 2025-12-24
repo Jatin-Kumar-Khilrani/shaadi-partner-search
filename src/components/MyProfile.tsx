@@ -241,8 +241,10 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
   const photos = profile.photos?.length > 0 ? profile.photos : []
   const isPaidUser = !!profile.membershipPlan && profile.membershipExpiry && new Date(profile.membershipExpiry) > new Date()
   const isFreePlan = profile.membershipPlan === 'free'
-  const isApproved = profile.status === 'approved'
-  const canAccessBiodata = isPaidUser && !isFreePlan && isApproved
+  const isVerifiedOrApproved = profile.status === 'verified' || profile.status === 'approved'
+  // Free users can generate biodata with watermark, premium users without watermark
+  const canGenerateBiodata = isVerifiedOrApproved
+  const canDownloadWithoutWatermark = isPaidUser && !isFreePlan && isVerifiedOrApproved
 
   return (
     <div className="container mx-auto px-4 md:px-8 py-8">
@@ -250,25 +252,15 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">{t.title}</h1>
           <div className="flex gap-2">
-            {isApproved && (
+            {canGenerateBiodata && (
             <Button 
-              onClick={() => {
-                if (!canAccessBiodata) {
-                  toast.error(
-                    language === 'hi' 
-                      ? 'बायोडाटा जनरेटर मुफ्त योजना पर उपलब्ध नहीं है। कृपया प्रीमियम में अपग्रेड करें।' 
-                      : 'Biodata generator is not available on Free Plan. Please upgrade to Premium.'
-                  )
-                  return
-                }
-                setShowBiodataGenerator(true)
-              }} 
+              onClick={() => setShowBiodataGenerator(true)} 
               variant="outline"
-              className={`gap-2 ${canAccessBiodata ? 'text-red-600 border-red-300 hover:bg-red-50' : 'text-muted-foreground border-muted'}`}
+              className="gap-2 text-red-600 border-red-300 hover:bg-red-50"
             >
               <FilePdf size={20} weight="fill" />
               {t.generateBiodata}
-              {!canAccessBiodata && <Badge variant="outline" className="ml-1 text-xs">Premium</Badge>}
+              {isFreePlan && <Badge variant="secondary" className="ml-1 text-xs">{language === 'hi' ? 'वॉटरमार्क' : 'Watermark'}</Badge>}
             </Button>
             )}
             {onEdit && (
