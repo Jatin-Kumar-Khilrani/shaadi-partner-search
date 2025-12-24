@@ -128,13 +128,33 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile }
                             <CardContent className="pt-6">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
-                                  <Heart size={24} weight="fill" className="text-primary" />
+                                  {/* Profile Photo */}
+                                  {profile?.photos?.[0] ? (
+                                    <img 
+                                      src={profile.photos[0]} 
+                                      alt={profile.fullName || ''}
+                                      className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
+                                    />
+                                  ) : (
+                                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                      <Heart size={24} weight="fill" className="text-primary" />
+                                    </div>
+                                  )}
                                   <div>
-                                    <p className="font-semibold">{t.to}: {profile?.profileId || 'Unknown'}</p>
-                                    <p className="text-sm text-muted-foreground">{formatDate(interest.createdAt)}</p>
+                                    <p className="font-semibold">{profile?.fullName || 'Unknown'}</p>
+                                    <p className="text-sm text-muted-foreground">{profile?.profileId || interest.toProfileId}</p>
+                                    <p className="text-xs text-muted-foreground">{formatDate(interest.createdAt)}</p>
                                   </div>
                                 </div>
-                                {getStatusBadge(interest.status)}
+                                <div className="flex items-center gap-2">
+                                  {getStatusBadge(interest.status)}
+                                  {profile && onViewProfile && (
+                                    <Button variant="outline" size="sm" onClick={() => onViewProfile(profile)}>
+                                      <Eye size={16} className="mr-1" />
+                                      {t.viewProfile}
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             </CardContent>
                           </Card>

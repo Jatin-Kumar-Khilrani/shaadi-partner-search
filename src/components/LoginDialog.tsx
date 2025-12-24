@@ -132,6 +132,7 @@ export function LoginDialog({ open, onClose, onLogin, onUpdatePassword, users, p
       onLogin(user.userId, user.profileId, keepLoggedIn)
       toast.success(t.loginSuccess)
       resetState()
+      onClose()
     } else {
       toast.error(t.loginError)
     }

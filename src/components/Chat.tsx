@@ -45,13 +45,18 @@ const DEFAULT_SETTINGS: MembershipSettings = {
 }
 
 export function Chat({ currentUserProfile, profiles, language, isAdmin = false, shouldBlur = false, membershipPlan, membershipSettings, setProfiles }: ChatProps) {
-  const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
+  const [messages, setMessages, refreshMessages, messagesLoaded] = useKV<ChatMessage[]>('chatMessages', [])
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [conversations, setConversations] = useState<ChatConversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [messageInput, setMessageInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Force refresh messages from Azure on mount
+  useEffect(() => {
+    refreshMessages()
+  }, [])
 
   // Get settings with defaults
   const settings = { ...DEFAULT_SETTINGS, ...membershipSettings }
@@ -748,6 +753,17 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                   <ScrollArea className="flex-1 p-4">
                     <div className="space-y-4">
                       {(() => {
+                        if (!messagesLoaded) {
+                          return (
+                            <div className="text-center text-muted-foreground py-8">
+                              <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-3" />
+                              <p className="text-sm">
+                                {language === 'hi' ? 'संदेश लोड हो रहे हैं...' : 'Loading messages...'}
+                              </p>
+                            </div>
+                          )
+                        }
+                        
                         const filteredMessages = messages
                           ?.filter(m => 
                             m.type === 'admin-to-user' && 
