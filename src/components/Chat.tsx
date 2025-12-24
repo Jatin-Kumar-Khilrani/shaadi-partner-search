@@ -576,17 +576,18 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   // Get message preview with sender prefix
   const getMessagePreview = (conv: ChatConversation) => {
     const lastMsg = conv.lastMessage
-    if (!lastMsg?.message) return ''
+    const msgText = lastMsg?.message || (lastMsg as any)?.content || ''
+    if (!msgText) return ''
     
     const isSentByCurrentUser = isAdmin 
-      ? lastMsg.fromProfileId === 'admin'
-      : lastMsg.fromProfileId === currentUserProfile?.profileId
+      ? lastMsg?.fromProfileId === 'admin'
+      : lastMsg?.fromProfileId === currentUserProfile?.profileId
     
     const prefix = isSentByCurrentUser ? `${t.you}: ` : ''
     const maxLength = 30
-    const message = lastMsg.message.length > maxLength 
-      ? lastMsg.message.substring(0, maxLength) + '...' 
-      : lastMsg.message
+    const message = msgText.length > maxLength 
+      ? msgText.substring(0, maxLength) + '...' 
+      : msgText
     
     return prefix + message
   }
@@ -773,7 +774,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-muted'
                               }`}>
-                                <p className="text-sm">{msg.message}</p>
+                                <p className="text-sm">{msg.message || (msg as any).content}</p>
                                 <div className="flex items-center justify-end gap-1 mt-1">
                                   <span className={`text-xs ${
                                     isFromUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
@@ -1112,7 +1113,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                                     : 'bg-muted'
                                 }`}
                               >
-                                <p className="text-sm">{msg.message}</p>
+                                <p className="text-sm">{msg.message || (msg as any).content}</p>
                                 <div className="flex items-center justify-end gap-1 mt-1">
                                   <span className="text-xs opacity-70">
                                     {formatTime(msg.timestamp)}
