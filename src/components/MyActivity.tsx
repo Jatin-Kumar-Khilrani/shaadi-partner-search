@@ -186,10 +186,22 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile }
                               <div className="flex flex-col gap-4">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-4">
-                                    <Heart size={24} weight="fill" className="text-accent" />
+                                    {/* Profile Photo */}
+                                    {profile?.photos?.[0] ? (
+                                      <img 
+                                        src={profile.photos[0]} 
+                                        alt={profile.fullName || ''}
+                                        className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
+                                      />
+                                    ) : (
+                                      <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                                        <Heart size={24} weight="fill" className="text-accent" />
+                                      </div>
+                                    )}
                                     <div>
-                                      <p className="font-semibold">{t.from}: {profile?.profileId || 'Unknown'}</p>
-                                      <p className="text-sm text-muted-foreground">{formatDate(interest.createdAt)}</p>
+                                      <p className="font-semibold">{profile?.fullName || 'Unknown'}</p>
+                                      <p className="text-sm text-muted-foreground">{profile?.profileId || interest.fromProfileId}</p>
+                                      <p className="text-xs text-muted-foreground">{formatDate(interest.createdAt)}</p>
                                     </div>
                                   </div>
                                   {getStatusBadge(interest.status)}
@@ -266,10 +278,22 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile }
                                 <CardContent className="pt-6">
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-4">
-                                      <Eye size={24} weight="fill" className="text-teal" />
+                                      {/* Profile Photo */}
+                                      {profile?.photos?.[0] ? (
+                                        <img 
+                                          src={profile.photos[0]} 
+                                          alt={profile.fullName || ''}
+                                          className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
+                                        />
+                                      ) : (
+                                        <div className="w-12 h-12 rounded-full bg-teal/10 flex items-center justify-center">
+                                          <Eye size={24} weight="fill" className="text-teal" />
+                                        </div>
+                                      )}
                                       <div>
-                                        <p className="font-semibold">{t.to}: {profile?.profileId || 'Unknown'}</p>
-                                        <p className="text-sm text-muted-foreground">{formatDate(request.createdAt)}</p>
+                                        <p className="font-semibold">{profile?.fullName || 'Unknown'}</p>
+                                        <p className="text-sm text-muted-foreground">{profile?.profileId || 'Unknown'}</p>
+                                        <p className="text-xs text-muted-foreground">{formatDate(request.createdAt)}</p>
                                       </div>
                                     </div>
                                     {getStatusBadge(request.status)}
@@ -297,10 +321,22 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile }
                                   <div className="flex flex-col gap-4">
                                     <div className="flex items-center justify-between">
                                       <div className="flex items-center gap-4">
-                                        <Eye size={24} weight="fill" className="text-accent" />
+                                        {/* Profile Photo */}
+                                        {profile?.photos?.[0] ? (
+                                          <img 
+                                            src={profile.photos[0]} 
+                                            alt={profile.fullName || ''}
+                                            className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
+                                          />
+                                        ) : (
+                                          <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                                            <Eye size={24} weight="fill" className="text-accent" />
+                                          </div>
+                                        )}
                                         <div>
-                                          <p className="font-semibold">{t.from}: {profile?.profileId || 'Unknown'}</p>
-                                          <p className="text-sm text-muted-foreground">{formatDate(request.createdAt)}</p>
+                                          <p className="font-semibold">{profile?.fullName || 'Unknown'}</p>
+                                          <p className="text-sm text-muted-foreground">{profile?.profileId || 'Unknown'}</p>
+                                          <p className="text-xs text-muted-foreground">{formatDate(request.createdAt)}</p>
                                         </div>
                                       </div>
                                       {getStatusBadge(request.status)}
@@ -334,22 +370,43 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile }
                         const isMyMessage = msg.fromProfileId === currentUserProfile?.profileId
                         const otherProfileId = isMyMessage ? msg.toProfileId : msg.fromProfileId
                         const otherProfile = profiles.find(p => p.profileId === otherProfileId)
+                        const isAdminMessage = msg.type === 'admin-broadcast' || msg.type === 'admin-to-user' || msg.type === 'admin'
                         
                         return (
                           <Card key={msg.id}>
                             <CardContent className="pt-6">
                               <div className="flex items-start gap-4">
-                                <ChatCircle size={24} weight="fill" className={isMyMessage ? 'text-primary' : 'text-accent'} />
+                                {/* Profile Photo */}
+                                {isAdminMessage ? (
+                                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <ChatCircle size={24} weight="fill" className="text-primary" />
+                                  </div>
+                                ) : otherProfile?.photos?.[0] ? (
+                                  <img 
+                                    src={otherProfile.photos[0]} 
+                                    alt={otherProfile.fullName || ''}
+                                    className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                                    <ChatCircle size={24} weight="fill" className={isMyMessage ? 'text-primary' : 'text-accent'} />
+                                  </div>
+                                )}
                                 <div className="flex-1">
                                   <div className="flex items-center justify-between mb-2">
-                                    <p className="font-semibold">
-                                      {isMyMessage ? t.to : t.from}: {msg.type === 'admin-broadcast' || msg.type === 'admin-to-user' || msg.type === 'admin' ? 'Admin' : (otherProfile?.profileId || 'Unknown')}
-                                    </p>
+                                    <div>
+                                      <p className="font-semibold">
+                                        {isAdminMessage ? 'Admin' : (otherProfile?.fullName || 'Unknown')}
+                                      </p>
+                                      {!isAdminMessage && (
+                                        <p className="text-xs text-muted-foreground">{otherProfile?.profileId || otherProfileId}</p>
+                                      )}
+                                    </div>
                                     <p className="text-xs text-muted-foreground">
                                       {new Date(msg.timestamp || msg.createdAt).toLocaleString(language === 'hi' ? 'hi-IN' : 'en-IN')}
                                     </p>
                                   </div>
-                                  <p className="text-sm text-muted-foreground">{msg.message}</p>
+                                  <p className="text-sm text-muted-foreground line-clamp-2">{msg.message}</p>
                                 </div>
                               </div>
                             </CardContent>

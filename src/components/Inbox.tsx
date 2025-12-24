@@ -228,11 +228,20 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold">
-                            {profile.firstName[0]}{profile.lastName[0]}
-                          </div>
+                          {profile.photos?.[0] ? (
+                            <img 
+                              src={profile.photos[0]} 
+                              alt={profile.fullName}
+                              className="h-16 w-16 rounded-full object-cover border-2 border-primary/20"
+                            />
+                          ) : (
+                            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold">
+                              {profile.firstName[0]}{profile.lastName[0]}
+                            </div>
+                          )}
                           <div>
                             <h3 className="font-bold text-lg">{profile.fullName}</h3>
+                            <p className="text-sm text-muted-foreground">{profile.profileId}</p>
                             <p className="text-sm text-muted-foreground">
                               {profile.age} {language === 'hi' ? 'वर्ष' : 'years'} • {profile.location}
                             </p>
@@ -287,11 +296,20 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
                       <div className="flex flex-col gap-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
-                            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold">
-                              {profile.firstName[0]}{profile.lastName[0]}
-                            </div>
+                            {profile.photos?.[0] ? (
+                              <img 
+                                src={profile.photos[0]} 
+                                alt={profile.fullName}
+                                className="h-16 w-16 rounded-full object-cover border-2 border-primary/20"
+                              />
+                            ) : (
+                              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold">
+                                {profile.firstName[0]}{profile.lastName[0]}
+                              </div>
+                            )}
                             <div>
                               <h3 className="font-bold text-lg">{profile.fullName}</h3>
+                              <p className="text-sm text-muted-foreground">{profile.profileId}</p>
                               <p className="text-sm text-muted-foreground">
                                 {profile.age} {language === 'hi' ? 'वर्ष' : 'years'} • {profile.location}
                               </p>
@@ -350,11 +368,20 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat }: 
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold">
-                            {profile.firstName[0]}{profile.lastName[0]}
-                          </div>
+                          {profile.photos?.[0] ? (
+                            <img 
+                              src={profile.photos[0]} 
+                              alt={profile.fullName}
+                              className="h-16 w-16 rounded-full object-cover border-2 border-primary/20"
+                            />
+                          ) : (
+                            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold">
+                              {profile.firstName[0]}{profile.lastName[0]}
+                            </div>
+                          )}
                           <div>
                             <h3 className="font-bold text-lg">{profile.fullName}</h3>
+                            <p className="text-sm text-muted-foreground">{profile.profileId}</p>
                             <p className="text-sm text-muted-foreground">
                               {profile.age} {language === 'hi' ? 'वर्ष' : 'years'} • {profile.location}
                             </p>
