@@ -154,6 +154,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     gender: undefined as Gender | undefined,
     religion: '',
     caste: '',
+    motherTongue: '',
     education: '',
     occupation: '',
     location: '',
@@ -197,6 +198,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         gender: editProfile.gender,
         religion: editProfile.religion || '',
         caste: editProfile.caste || '',
+        motherTongue: editProfile.motherTongue || '',
         education: editProfile.education || '',
         occupation: editProfile.occupation || '',
         location: editProfile.location || '',
@@ -685,7 +687,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
-    if (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.religion || !formData.maritalStatus || !formData.horoscopeMatching || !formData.email || !formData.mobile || !formData.membershipPlan) {
+    if (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.religion || !formData.motherTongue || !formData.maritalStatus || !formData.horoscopeMatching || !formData.email || !formData.mobile || !formData.membershipPlan) {
       toast.error(t.registration.fillAllFields)
       return
     }
@@ -976,6 +978,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       gender: undefined,
       religion: '',
       caste: '',
+      motherTongue: '',
       education: '',
       occupation: '',
       location: '',
@@ -1126,7 +1129,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
   const nextStep = () => {
     // Validate step 1 fields
-    if (step === 1 && (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.religion || !formData.maritalStatus)) {
+    if (step === 1 && (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.religion || !formData.motherTongue || !formData.maritalStatus)) {
       toast.error(t.registration.fillAllFields)
       return
     }
@@ -1512,13 +1515,63 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="religion">{language === 'hi' ? 'धर्म' : 'Religion'} *</Label>
-                    <Input
-                      id="religion"
-                      placeholder={language === 'hi' ? 'उदाहरण: हिंदू, मुस्लिम, सिख, ईसाई' : 'Example: Hindu, Muslim, Sikh, Christian'}
-                      value={formData.religion}
-                      onChange={(e) => updateField('religion', e.target.value)}
-                      required
-                    />
+                    <Select onValueChange={(value) => updateField('religion', value)} value={formData.religion || ''}>
+                      <SelectTrigger id="religion" className="w-full">
+                        <SelectValue placeholder={language === 'hi' ? 'धर्म चुनें' : 'Select Religion'} />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
+                        <SelectItem value="Hindu">{language === 'hi' ? 'हिंदू' : 'Hindu'}</SelectItem>
+                        <SelectItem value="Muslim">{language === 'hi' ? 'मुस्लिम' : 'Muslim'}</SelectItem>
+                        <SelectItem value="Sikh">{language === 'hi' ? 'सिख' : 'Sikh'}</SelectItem>
+                        <SelectItem value="Christian">{language === 'hi' ? 'ईसाई' : 'Christian'}</SelectItem>
+                        <SelectItem value="Jain">{language === 'hi' ? 'जैन' : 'Jain'}</SelectItem>
+                        <SelectItem value="Buddhist">{language === 'hi' ? 'बौद्ध' : 'Buddhist'}</SelectItem>
+                        <SelectItem value="Parsi">{language === 'hi' ? 'पारसी' : 'Parsi'}</SelectItem>
+                        <SelectItem value="Jewish">{language === 'hi' ? 'यहूदी' : 'Jewish'}</SelectItem>
+                        <SelectItem value="Bahai">{language === 'hi' ? 'बहाई' : 'Bahai'}</SelectItem>
+                        <SelectItem value="Spiritual">{language === 'hi' ? 'आध्यात्मिक' : 'Spiritual'}</SelectItem>
+                        <SelectItem value="No Religion">{language === 'hi' ? 'कोई धर्म नहीं' : 'No Religion'}</SelectItem>
+                        <SelectItem value="Other">{language === 'hi' ? 'अन्य' : 'Other'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="motherTongue">{language === 'hi' ? 'मातृभाषा' : 'Mother Tongue'} *</Label>
+                    <Select onValueChange={(value) => updateField('motherTongue', value)} value={formData.motherTongue || ''}>
+                      <SelectTrigger id="motherTongue" className="w-full">
+                        <SelectValue placeholder={language === 'hi' ? 'मातृभाषा चुनें' : 'Select Mother Tongue'} />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
+                        <SelectItem value="Hindi">{language === 'hi' ? 'हिंदी' : 'Hindi'}</SelectItem>
+                        <SelectItem value="English">{language === 'hi' ? 'अंग्रेज़ी' : 'English'}</SelectItem>
+                        <SelectItem value="Punjabi">{language === 'hi' ? 'पंजाबी' : 'Punjabi'}</SelectItem>
+                        <SelectItem value="Gujarati">{language === 'hi' ? 'गुजराती' : 'Gujarati'}</SelectItem>
+                        <SelectItem value="Marathi">{language === 'hi' ? 'मराठी' : 'Marathi'}</SelectItem>
+                        <SelectItem value="Tamil">{language === 'hi' ? 'तमिल' : 'Tamil'}</SelectItem>
+                        <SelectItem value="Telugu">{language === 'hi' ? 'तेलुगु' : 'Telugu'}</SelectItem>
+                        <SelectItem value="Kannada">{language === 'hi' ? 'कन्नड़' : 'Kannada'}</SelectItem>
+                        <SelectItem value="Malayalam">{language === 'hi' ? 'मलयालम' : 'Malayalam'}</SelectItem>
+                        <SelectItem value="Bengali">{language === 'hi' ? 'बंगाली' : 'Bengali'}</SelectItem>
+                        <SelectItem value="Odia">{language === 'hi' ? 'ओड़िया' : 'Odia'}</SelectItem>
+                        <SelectItem value="Assamese">{language === 'hi' ? 'असमिया' : 'Assamese'}</SelectItem>
+                        <SelectItem value="Kashmiri">{language === 'hi' ? 'कश्मीरी' : 'Kashmiri'}</SelectItem>
+                        <SelectItem value="Konkani">{language === 'hi' ? 'कोंकणी' : 'Konkani'}</SelectItem>
+                        <SelectItem value="Manipuri">{language === 'hi' ? 'मणिपुरी' : 'Manipuri'}</SelectItem>
+                        <SelectItem value="Nepali">{language === 'hi' ? 'नेपाली' : 'Nepali'}</SelectItem>
+                        <SelectItem value="Sanskrit">{language === 'hi' ? 'संस्कृत' : 'Sanskrit'}</SelectItem>
+                        <SelectItem value="Sindhi">{language === 'hi' ? 'सिंधी' : 'Sindhi'}</SelectItem>
+                        <SelectItem value="Urdu">{language === 'hi' ? 'उर्दू' : 'Urdu'}</SelectItem>
+                        <SelectItem value="Bhojpuri">{language === 'hi' ? 'भोजपुरी' : 'Bhojpuri'}</SelectItem>
+                        <SelectItem value="Rajasthani">{language === 'hi' ? 'राजस्थानी' : 'Rajasthani'}</SelectItem>
+                        <SelectItem value="Haryanvi">{language === 'hi' ? 'हरियाणवी' : 'Haryanvi'}</SelectItem>
+                        <SelectItem value="Maithili">{language === 'hi' ? 'मैथिली' : 'Maithili'}</SelectItem>
+                        <SelectItem value="Dogri">{language === 'hi' ? 'डोगरी' : 'Dogri'}</SelectItem>
+                        <SelectItem value="Santali">{language === 'hi' ? 'संथाली' : 'Santali'}</SelectItem>
+                        <SelectItem value="Bodo">{language === 'hi' ? 'बोडो' : 'Bodo'}</SelectItem>
+                        <SelectItem value="Other">{language === 'hi' ? 'अन्य' : 'Other'}</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">
