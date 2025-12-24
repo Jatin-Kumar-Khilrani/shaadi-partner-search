@@ -27,6 +27,7 @@ interface ExtendedFilters extends SearchFilters {
   hasReadinessBadge?: boolean
   isVerified?: boolean
   hasPhoto?: boolean
+  disability?: string
 }
 
 interface MyMatchesProps {
@@ -69,6 +70,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     if (filters.hasReadinessBadge) count++
     if (filters.isVerified) count++
     if (filters.hasPhoto) count++
+    if (filters.disability) count++
     if (filters.ageRange && (filters.ageRange[0] !== 18 || filters.ageRange[1] !== 60)) count++
     return count
   }, [filters])
@@ -149,6 +151,17 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     lifestyleFilters: language === 'hi' ? 'जीवनशैली' : 'Lifestyle',
     specialFilters: language === 'hi' ? 'विशेष फ़िल्टर' : 'Special Filters',
     years: language === 'hi' ? 'वर्ष' : 'years',
+    
+    // Disability
+    disability: language === 'hi' ? 'दिव्यांगता' : 'Disability',
+    disabilityNone: language === 'hi' ? 'कोई नहीं' : 'None',
+    disabilityPhysical: language === 'hi' ? 'शारीरिक' : 'Physical',
+    disabilityVisual: language === 'hi' ? 'दृष्टि संबंधी' : 'Visual',
+    disabilityHearing: language === 'hi' ? 'श्रवण संबंधी' : 'Hearing',
+    disabilitySpeech: language === 'hi' ? 'वाक् संबंधी' : 'Speech',
+    disabilityIntellectual: language === 'hi' ? 'बौद्धिक' : 'Intellectual',
+    disabilityMultiple: language === 'hi' ? 'एकाधिक' : 'Multiple',
+    disabilityOther: language === 'hi' ? 'अन्य' : 'Other',
   }
 
   const filteredProfiles = useMemo(() => {
@@ -222,6 +235,11 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       
       // Photo filter
       if (filters.hasPhoto && (!profile.photos || profile.photos.length === 0)) return false
+      
+      // Disability filter
+      if (filters.disability && filters.disability !== 'any') {
+        if (profile.disability !== filters.disability) return false
+      }
       
       return true
     })
@@ -467,6 +485,32 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        <Separator />
+
+        {/* Disability Filter */}
+        <div className="space-y-3">
+          <Label className="font-medium">{t.disability}</Label>
+          <Select
+            value={filters.disability || ''}
+            onValueChange={(value) => setFilters({ ...filters, disability: value || undefined })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={t.any} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="any">{t.any}</SelectItem>
+              <SelectItem value="none">{t.disabilityNone}</SelectItem>
+              <SelectItem value="physical">{t.disabilityPhysical}</SelectItem>
+              <SelectItem value="visual">{t.disabilityVisual}</SelectItem>
+              <SelectItem value="hearing">{t.disabilityHearing}</SelectItem>
+              <SelectItem value="speech">{t.disabilitySpeech}</SelectItem>
+              <SelectItem value="intellectual">{t.disabilityIntellectual}</SelectItem>
+              <SelectItem value="multiple">{t.disabilityMultiple}</SelectItem>
+              <SelectItem value="other">{t.disabilityOther}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <Separator />

@@ -71,10 +71,12 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
     familyInfo: language === 'hi' ? 'पारिवारिक जानकारी' : 'Family Information',
     contactInfo: language === 'hi' ? 'संपर्क जानकारी' : 'Contact Information',
     lifestyleInfo: language === 'hi' ? 'जीवनशैली' : 'Lifestyle',
+    gender: language === 'hi' ? 'लिंग' : 'Gender',
     age: language === 'hi' ? 'आयु' : 'Age',
     years: language === 'hi' ? 'वर्ष' : 'years',
     height: language === 'hi' ? 'ऊंचाई' : 'Height',
     weight: language === 'hi' ? 'वजन' : 'Weight',
+    disability: language === 'hi' ? 'दिव्यांगता' : 'Disability',
     education: language === 'hi' ? 'शिक्षा' : 'Education',
     occupation: language === 'hi' ? 'व्यवसाय' : 'Occupation',
     salary: language === 'hi' ? 'वार्षिक आय' : 'Annual Income',
@@ -170,6 +172,28 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
       'widowed': { hi: 'विधवा/विधुर', en: 'Widowed' },
     }
     return labels[status]?.[language] || status
+  }
+
+  const getGenderLabel = (gender: string | undefined) => {
+    const labels: Record<string, { hi: string; en: string }> = {
+      'male': { hi: 'पुरुष', en: 'Male' },
+      'female': { hi: 'महिला', en: 'Female' },
+    }
+    return gender ? (labels[gender]?.[language] || gender) : '-'
+  }
+
+  const getDisabilityLabel = (disability: string | undefined) => {
+    const labels: Record<string, { hi: string; en: string }> = {
+      'none': { hi: 'कोई नहीं', en: 'None' },
+      'physical': { hi: 'शारीरिक', en: 'Physical' },
+      'visual': { hi: 'दृष्टि संबंधी', en: 'Visual' },
+      'hearing': { hi: 'श्रवण संबंधी', en: 'Hearing' },
+      'speech': { hi: 'वाक् संबंधी', en: 'Speech' },
+      'intellectual': { hi: 'बौद्धिक', en: 'Intellectual' },
+      'multiple': { hi: 'एकाधिक', en: 'Multiple' },
+      'other': { hi: 'अन्य', en: 'Other' },
+    }
+    return disability ? (labels[disability]?.[language] || disability) : '-'
   }
 
   const handleEditClick = () => {
@@ -797,6 +821,14 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
+                        <p className="text-sm text-muted-foreground">{t.gender}</p>
+                        <p className="font-medium flex items-center gap-2">
+                          <User size={16} />
+                          {getGenderLabel(profile.gender)}
+                        </p>
+                      </div>
+
+                      <div>
                         <p className="text-sm text-muted-foreground">{t.age}</p>
                         <p className="font-medium flex items-center gap-2">
                           <Calendar size={16} />
@@ -817,6 +849,16 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                           <p className="font-medium">{profile.weight}</p>
                         </div>
                       )}
+
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.disability}</p>
+                        <p className="font-medium">
+                          {getDisabilityLabel(profile.disability)}
+                          {profile.disability !== 'none' && profile.disabilityDetails && (
+                            <span className="text-muted-foreground text-sm ml-2">({profile.disabilityDetails})</span>
+                          )}
+                        </p>
+                      </div>
 
                       <div>
                         <p className="text-sm text-muted-foreground">{t.education}</p>

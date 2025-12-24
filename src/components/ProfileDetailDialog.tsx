@@ -361,6 +361,15 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     preferred: language === 'hi' ? 'वांछित' : 'Preferred',
     notRequired: language === 'hi' ? 'आवश्यक नहीं' : 'Not Required',
     lastLogin: language === 'hi' ? 'अंतिम लॉगिन' : 'Last Login',
+    disability: language === 'hi' ? 'दिव्यांगता' : 'Disability',
+    disabilityNone: language === 'hi' ? 'कोई नहीं' : 'None',
+    disabilityPhysical: language === 'hi' ? 'शारीरिक' : 'Physical',
+    disabilityVisual: language === 'hi' ? 'दृष्टि संबंधी' : 'Visual',
+    disabilityHearing: language === 'hi' ? 'श्रवण संबंधी' : 'Hearing',
+    disabilitySpeech: language === 'hi' ? 'वाक् संबंधी' : 'Speech',
+    disabilityIntellectual: language === 'hi' ? 'बौद्धिक' : 'Intellectual',
+    disabilityMultiple: language === 'hi' ? 'एकाधिक' : 'Multiple',
+    disabilityOther: language === 'hi' ? 'अन्य' : 'Other',
   }
 
   // Format last login time
@@ -430,6 +439,22 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
               )}
               {profile.weight && (
                 <InfoItem icon={<UserCircle size={18} />} label={t.weight} value={profile.weight} />
+              )}
+              {profile.disability && (
+                <InfoItem 
+                  icon={<UserCircle size={18} />} 
+                  label={t.disability} 
+                  value={
+                    profile.disability === 'none' ? t.disabilityNone :
+                    profile.disability === 'physical' ? t.disabilityPhysical :
+                    profile.disability === 'visual' ? t.disabilityVisual :
+                    profile.disability === 'hearing' ? t.disabilityHearing :
+                    profile.disability === 'speech' ? t.disabilitySpeech :
+                    profile.disability === 'intellectual' ? t.disabilityIntellectual :
+                    profile.disability === 'multiple' ? t.disabilityMultiple :
+                    t.disabilityOther
+                  } 
+                />
               )}
               {profile.motherTongue && (
                 <InfoItem icon={<UserCircle size={18} />} label={t.motherTongue} value={profile.motherTongue} />

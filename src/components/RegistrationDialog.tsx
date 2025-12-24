@@ -15,7 +15,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Checkbox } from '@/components/ui/checkbox'
 import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, ArrowDown, FloppyDisk, Sparkle, Warning, SpinnerGap, Gift, ShieldCheck, IdentificationCard, ArrowCounterClockwise, Upload } from '@phosphor-icons/react'
 import { toast } from 'sonner'
-import type { Gender, MaritalStatus, Profile, MembershipPlan } from '@/types/profile'
+import type { Gender, MaritalStatus, Profile, MembershipPlan, DisabilityStatus, DietPreference, DrinkingHabit, SmokingHabit } from '@/types/profile'
 import { useTranslation, type Language } from '@/lib/translations'
 import { generateBio, type BioGenerationParams } from '@/lib/aiFoundryService'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
@@ -168,9 +168,29 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     mobile: '',
     height: '',
     weight: '',
+    disability: 'none' as DisabilityStatus,
+    disabilityDetails: '',
     bio: '',
     familyDetails: '',
-    membershipPlan: undefined as MembershipPlan | undefined
+    membershipPlan: undefined as MembershipPlan | undefined,
+    // Partner Preferences
+    partnerAgeMin: undefined as number | undefined,
+    partnerAgeMax: undefined as number | undefined,
+    partnerHeightMin: '',
+    partnerHeightMax: '',
+    partnerEducation: [] as string[],
+    partnerOccupation: [] as string[],
+    partnerLocation: [] as string[],
+    partnerCountry: [] as string[],
+    partnerReligion: [] as string[],
+    partnerCaste: [] as string[],
+    partnerMotherTongue: [] as string[],
+    partnerMaritalStatus: [] as MaritalStatus[],
+    partnerDiet: [] as DietPreference[],
+    partnerDrinking: [] as DrinkingHabit[],
+    partnerSmoking: [] as SmokingHabit[],
+    partnerManglik: 'doesnt-matter' as 'yes' | 'no' | 'doesnt-matter',
+    partnerDisability: [] as DisabilityStatus[]
   })
 
   const STORAGE_KEY = 'registration_draft'
@@ -213,9 +233,29 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         mobile: mobileNumber,
         height: editProfile.height || '',
         weight: editProfile.weight || '',
+        disability: editProfile.disability || 'none',
+        disabilityDetails: editProfile.disabilityDetails || '',
         bio: editProfile.bio || '',
         familyDetails: editProfile.familyDetails || '',
-        membershipPlan: editProfile.membershipPlan
+        membershipPlan: editProfile.membershipPlan,
+        // Partner Preferences
+        partnerAgeMin: editProfile.partnerPreferences?.ageMin,
+        partnerAgeMax: editProfile.partnerPreferences?.ageMax,
+        partnerHeightMin: editProfile.partnerPreferences?.heightMin || '',
+        partnerHeightMax: editProfile.partnerPreferences?.heightMax || '',
+        partnerEducation: editProfile.partnerPreferences?.education || [],
+        partnerOccupation: editProfile.partnerPreferences?.occupation || [],
+        partnerLocation: editProfile.partnerPreferences?.location || [],
+        partnerCountry: editProfile.partnerPreferences?.country || [],
+        partnerReligion: editProfile.partnerPreferences?.religion || [],
+        partnerCaste: editProfile.partnerPreferences?.caste || [],
+        partnerMotherTongue: editProfile.partnerPreferences?.motherTongue || [],
+        partnerMaritalStatus: editProfile.partnerPreferences?.maritalStatus || [],
+        partnerDiet: editProfile.partnerPreferences?.dietPreference || [],
+        partnerDrinking: editProfile.partnerPreferences?.drinkingHabit || [],
+        partnerSmoking: editProfile.partnerPreferences?.smokingHabit || [],
+        partnerManglik: editProfile.partnerPreferences?.manglik || 'doesnt-matter',
+        partnerDisability: editProfile.partnerPreferences?.disability || []
       })
       
       // Load existing photos
@@ -919,7 +959,30 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         paymentUploadedAt: uploadedPaymentScreenshotUrl ? new Date().toISOString() : undefined
       } : {
         paymentStatus: 'not-required' as const
-      })
+      }),
+      // Disability information
+      disability: formData.disability!,
+      disabilityDetails: formData.disability !== 'none' ? formData.disabilityDetails : undefined,
+      // Partner Preferences
+      partnerPreferences: {
+        ageMin: formData.partnerAgeMin,
+        ageMax: formData.partnerAgeMax,
+        heightMin: formData.partnerHeightMin,
+        heightMax: formData.partnerHeightMax,
+        education: formData.partnerEducation?.length ? formData.partnerEducation : undefined,
+        occupation: formData.partnerOccupation?.length ? formData.partnerOccupation : undefined,
+        location: formData.partnerLocation?.length ? formData.partnerLocation : undefined,
+        country: formData.partnerCountry?.length ? formData.partnerCountry : undefined,
+        religion: formData.partnerReligion?.length ? formData.partnerReligion : undefined,
+        caste: formData.partnerCaste?.length ? formData.partnerCaste : undefined,
+        motherTongue: formData.partnerMotherTongue?.length ? formData.partnerMotherTongue : undefined,
+        maritalStatus: formData.partnerMaritalStatus?.length ? formData.partnerMaritalStatus : undefined,
+        dietPreference: formData.partnerDiet?.length ? formData.partnerDiet : undefined,
+        drinkingHabit: formData.partnerDrinking?.length ? formData.partnerDrinking : undefined,
+        smokingHabit: formData.partnerSmoking?.length ? formData.partnerSmoking : undefined,
+        manglik: formData.partnerManglik,
+        disability: formData.partnerDisability?.length ? formData.partnerDisability : undefined
+      }
     }
 
     onSubmit(profile)
@@ -1293,8 +1356,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         </DialogHeader>
 
         <div className="overflow-y-auto flex-1 px-1">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            {[1, 2, 3, 4, 5, 6].map((s) => {
+          <div className="flex items-center justify-center gap-1 md:gap-2 mb-6">
+            {[1, 2, 3, 4, 5, 6, 7].map((s) => {
               const isCompleted = s < step || (s === 3 && emailVerified && mobileVerified)
               const isCurrent = s === step
               const canClick = isCompleted && !showVerification // Can click on completed steps
@@ -1305,7 +1368,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     type="button"
                     onClick={() => canClick && setStep(s)}
                     disabled={!canClick}
-                    className={`relative w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold transition-all text-sm border-0 ${
+                    className={`relative w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center font-bold transition-all text-xs md:text-sm border-0 ${
                       isCurrent ? 'bg-primary text-primary-foreground scale-110' :
                       isCompleted ? 'bg-teal text-teal-foreground cursor-pointer hover:scale-110 hover:ring-2 hover:ring-teal/50' : 'bg-muted text-muted-foreground cursor-default'
                     }`}
@@ -1320,7 +1383,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       />
                     )}
                   </button>
-                  {s < 6 && <div className={`w-6 md:w-10 h-1 ${isCompleted ? 'bg-teal' : 'bg-muted'}`} />}
+                  {s < 7 && <div className={`w-4 md:w-8 h-1 ${isCompleted ? 'bg-teal' : 'bg-muted'}`} />}
                 </div>
               )
             })}
@@ -1335,7 +1398,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               {step === 3 && showVerification && (language === 'hi' ? 'कृपया अपने ईमेल और मोबाइल पर भेजे गए OTP को सत्यापित करें।' : 'Please verify the OTPs sent to your email and mobile.')}
               {step === 4 && (language === 'hi' ? 'अपनी फ़ोटो और लाइव सेल्फी अपलोड करें। चेहरा फ्रेम का 50% होना चाहिए।' : 'Upload your photos and capture a live selfie. Face must cover 50% of frame.')}
               {step === 5 && (language === 'hi' ? 'अपने बारे में और परिवार की जानकारी दें। यह आवश्यक है।' : 'Tell us about yourself and your family. This is required.')}
-              {step === 6 && t.registration.step5}
+              {step === 6 && (language === 'hi' ? 'अपने साथी की पसंद बताएं - यह आपको बेहतर मैच खोजने में मदद करेगा।' : 'Tell us your partner preferences - this will help find better matches for you.')}
+              {step === 7 && t.registration.step5}
             </AlertDescription>
           </Alert>
 
@@ -1681,6 +1745,46 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     </Select>
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="disability">{language === 'hi' ? 'विकलांगता' : 'Disability'} *</Label>
+                    <Select 
+                      value={formData.disability || 'none'} 
+                      onValueChange={(value: DisabilityStatus) => updateField('disability', value)}
+                    >
+                      <SelectTrigger id="disability" className="w-full">
+                        <SelectValue placeholder={language === 'hi' ? 'विकलांगता स्थिति चुनें' : 'Select Disability Status'} />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
+                        <SelectItem value="none">{language === 'hi' ? 'कोई नहीं' : 'None'}</SelectItem>
+                        <SelectItem value="physical">{language === 'hi' ? 'शारीरिक' : 'Physical'}</SelectItem>
+                        <SelectItem value="visual">{language === 'hi' ? 'दृष्टि संबंधी' : 'Visual'}</SelectItem>
+                        <SelectItem value="hearing">{language === 'hi' ? 'श्रवण संबंधी' : 'Hearing'}</SelectItem>
+                        <SelectItem value="speech">{language === 'hi' ? 'वाणी संबंधी' : 'Speech'}</SelectItem>
+                        <SelectItem value="intellectual">{language === 'hi' ? 'बौद्धिक' : 'Intellectual'}</SelectItem>
+                        <SelectItem value="multiple">{language === 'hi' ? 'एकाधिक' : 'Multiple'}</SelectItem>
+                        <SelectItem value="other">{language === 'hi' ? 'अन्य' : 'Other'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Disability Details - show only if disability is not 'none' */}
+                {formData.disability && formData.disability !== 'none' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="disabilityDetails">
+                      {language === 'hi' ? 'विकलांगता विवरण (वैकल्पिक)' : 'Disability Details (Optional)'}
+                    </Label>
+                    <Textarea
+                      id="disabilityDetails"
+                      placeholder={language === 'hi' ? 'यदि आप साझा करना चाहें तो अधिक विवरण दें' : 'Provide more details if you wish to share'}
+                      value={formData.disabilityDetails}
+                      onChange={(e) => updateField('disabilityDetails', e.target.value)}
+                      className="min-h-[60px]"
+                    />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="horoscopeMatching">{language === 'hi' ? 'कुंडली मिलान' : 'Horoscope Matching'} *</Label>
                     <Select 
@@ -2752,7 +2856,194 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               </div>
             )}
 
+            {/* Step 6 - Partner Preferences */}
             {step === 6 && (
+              <div className="space-y-6">
+                <div className="text-center mb-4">
+                  <h3 className="text-2xl font-bold mb-2">
+                    {language === 'hi' ? 'साथी की पसंद' : 'Partner Preferences'}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {language === 'hi' 
+                      ? 'अपने आदर्श साथी के बारे में बताएं - यह आपको बेहतर मैच खोजने में मदद करेगा' 
+                      : 'Tell us about your ideal partner - this helps us find better matches for you'}
+                  </p>
+                </div>
+
+                {/* Age Range */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'न्यूनतम आयु' : 'Minimum Age'}</Label>
+                    <Select 
+                      value={formData.partnerAgeMin?.toString() || ''} 
+                      onValueChange={(v) => updateField('partnerAgeMin', v ? parseInt(v) : undefined)}
+                    >
+                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'चुनें' : 'Select'} /></SelectTrigger>
+                      <SelectContent className="z-[9999] max-h-60" position="popper">
+                        {Array.from({ length: 43 }, (_, i) => 18 + i).map(age => (
+                          <SelectItem key={age} value={age.toString()}>{age} {language === 'hi' ? 'वर्ष' : 'years'}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'अधिकतम आयु' : 'Maximum Age'}</Label>
+                    <Select 
+                      value={formData.partnerAgeMax?.toString() || ''} 
+                      onValueChange={(v) => updateField('partnerAgeMax', v ? parseInt(v) : undefined)}
+                    >
+                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'चुनें' : 'Select'} /></SelectTrigger>
+                      <SelectContent className="z-[9999] max-h-60" position="popper">
+                        {Array.from({ length: 43 }, (_, i) => 18 + i).map(age => (
+                          <SelectItem key={age} value={age.toString()}>{age} {language === 'hi' ? 'वर्ष' : 'years'}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Height Range */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'न्यूनतम ऊंचाई' : 'Minimum Height'}</Label>
+                    <Select value={formData.partnerHeightMin || ''} onValueChange={(v) => updateField('partnerHeightMin', v)}>
+                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'चुनें' : 'Select'} /></SelectTrigger>
+                      <SelectContent className="z-[9999] max-h-60" position="popper">
+                        <SelectItem value="4'6&quot;">4'6" (137 cm)</SelectItem>
+                        <SelectItem value="4'8&quot;">4'8" (142 cm)</SelectItem>
+                        <SelectItem value="4'10&quot;">4'10" (147 cm)</SelectItem>
+                        <SelectItem value="5'0&quot;">5'0" (152 cm)</SelectItem>
+                        <SelectItem value="5'2&quot;">5'2" (157 cm)</SelectItem>
+                        <SelectItem value="5'4&quot;">5'4" (163 cm)</SelectItem>
+                        <SelectItem value="5'6&quot;">5'6" (168 cm)</SelectItem>
+                        <SelectItem value="5'8&quot;">5'8" (173 cm)</SelectItem>
+                        <SelectItem value="5'10&quot;">5'10" (178 cm)</SelectItem>
+                        <SelectItem value="6'0&quot;">6'0" (183 cm)</SelectItem>
+                        <SelectItem value="6'2&quot;">6'2" (188 cm)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'अधिकतम ऊंचाई' : 'Maximum Height'}</Label>
+                    <Select value={formData.partnerHeightMax || ''} onValueChange={(v) => updateField('partnerHeightMax', v)}>
+                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'चुनें' : 'Select'} /></SelectTrigger>
+                      <SelectContent className="z-[9999] max-h-60" position="popper">
+                        <SelectItem value="5'0&quot;">5'0" (152 cm)</SelectItem>
+                        <SelectItem value="5'2&quot;">5'2" (157 cm)</SelectItem>
+                        <SelectItem value="5'4&quot;">5'4" (163 cm)</SelectItem>
+                        <SelectItem value="5'6&quot;">5'6" (168 cm)</SelectItem>
+                        <SelectItem value="5'8&quot;">5'8" (173 cm)</SelectItem>
+                        <SelectItem value="5'10&quot;">5'10" (178 cm)</SelectItem>
+                        <SelectItem value="6'0&quot;">6'0" (183 cm)</SelectItem>
+                        <SelectItem value="6'2&quot;">6'2" (188 cm)</SelectItem>
+                        <SelectItem value="6'4&quot;">6'4" (193 cm)</SelectItem>
+                        <SelectItem value="6'6&quot;">6'6" (198 cm)</SelectItem>
+                        <SelectItem value="7'0&quot;">7'0" (213 cm)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Marital Status & Religion */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'वैवाहिक स्थिति' : 'Marital Status'}</Label>
+                    <Select 
+                      value={formData.partnerMaritalStatus?.[0] || ''} 
+                      onValueChange={(v) => updateField('partnerMaritalStatus', v ? [v as MaritalStatus] : [])}
+                    >
+                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
+                      <SelectContent className="z-[9999]" position="popper">
+                        <SelectItem value="never-married">{language === 'hi' ? 'अविवाहित' : 'Never Married'}</SelectItem>
+                        <SelectItem value="divorced">{language === 'hi' ? 'तलाकशुदा' : 'Divorced'}</SelectItem>
+                        <SelectItem value="widowed">{language === 'hi' ? 'विधुर/विधवा' : 'Widowed'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'धर्म' : 'Religion'}</Label>
+                    <Select 
+                      value={formData.partnerReligion?.[0] || ''} 
+                      onValueChange={(v) => updateField('partnerReligion', v ? [v] : [])}
+                    >
+                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
+                      <SelectContent className="z-[9999]" position="popper">
+                        <SelectItem value="Hindu">{language === 'hi' ? 'हिंदू' : 'Hindu'}</SelectItem>
+                        <SelectItem value="Muslim">{language === 'hi' ? 'मुस्लिम' : 'Muslim'}</SelectItem>
+                        <SelectItem value="Sikh">{language === 'hi' ? 'सिख' : 'Sikh'}</SelectItem>
+                        <SelectItem value="Christian">{language === 'hi' ? 'ईसाई' : 'Christian'}</SelectItem>
+                        <SelectItem value="Buddhist">{language === 'hi' ? 'बौद्ध' : 'Buddhist'}</SelectItem>
+                        <SelectItem value="Jain">{language === 'hi' ? 'जैन' : 'Jain'}</SelectItem>
+                        <SelectItem value="Other">{language === 'hi' ? 'अन्य' : 'Other'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Diet & Lifestyle */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'आहार पसंद' : 'Diet Preference'}</Label>
+                    <Select 
+                      value={formData.partnerDiet?.[0] || ''} 
+                      onValueChange={(v) => updateField('partnerDiet', v ? [v as DietPreference] : [])}
+                    >
+                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
+                      <SelectContent className="z-[9999]" position="popper">
+                        <SelectItem value="veg">{language === 'hi' ? 'शाकाहारी' : 'Vegetarian'}</SelectItem>
+                        <SelectItem value="non-veg">{language === 'hi' ? 'मांसाहारी' : 'Non-Vegetarian'}</SelectItem>
+                        <SelectItem value="eggetarian">{language === 'hi' ? 'अंडाहारी' : 'Eggetarian'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'मांगलिक' : 'Manglik'}</Label>
+                    <Select 
+                      value={formData.partnerManglik || 'doesnt-matter'} 
+                      onValueChange={(v) => updateField('partnerManglik', v as 'yes' | 'no' | 'doesnt-matter')}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent className="z-[9999]" position="popper">
+                        <SelectItem value="doesnt-matter">{language === 'hi' ? 'कोई फर्क नहीं' : "Doesn't Matter"}</SelectItem>
+                        <SelectItem value="yes">{language === 'hi' ? 'हां' : 'Yes'}</SelectItem>
+                        <SelectItem value="no">{language === 'hi' ? 'नहीं' : 'No'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Disability Acceptance */}
+                <div className="space-y-2">
+                  <Label>{language === 'hi' ? 'विकलांगता स्वीकार्य' : 'Disability Acceptance'}</Label>
+                  <Select 
+                    value={formData.partnerDisability?.includes('none') ? 'none-only' : formData.partnerDisability?.length ? 'accept' : ''} 
+                    onValueChange={(v) => {
+                      if (v === 'none-only') updateField('partnerDisability', ['none'] as DisabilityStatus[])
+                      else if (v === 'accept') updateField('partnerDisability', ['none', 'physical', 'visual', 'hearing', 'speech', 'other'] as DisabilityStatus[])
+                      else updateField('partnerDisability', [])
+                    }}
+                  >
+                    <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'चुनें' : 'Select'} /></SelectTrigger>
+                    <SelectContent className="z-[9999]" position="popper">
+                      <SelectItem value="none-only">{language === 'hi' ? 'केवल बिना विकलांगता वाले' : 'Only without disability'}</SelectItem>
+                      <SelectItem value="accept">{language === 'hi' ? 'विकलांगता स्वीकार्य' : 'Open to disability'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Alert>
+                  <Info size={18} />
+                  <AlertDescription>
+                    {language === 'hi' 
+                      ? 'आप बाद में अपनी प्रोफाइल से इन प्राथमिकताओं को अपडेट कर सकते हैं। ये प्राथमिकताएं आपको बेहतर मैच खोजने में मदद करेंगी।'
+                      : 'You can update these preferences later from your profile. These preferences will help you find better matches.'}
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+
+            {/* Step 7 - Membership Plan */}
+            {step === 7 && (
               <div className="space-y-6">
                 <div className="text-center mb-6">
                   <h3 className="text-2xl font-bold mb-2">{t.registration.choosePlan}</h3>
@@ -3215,7 +3506,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               <span className="hidden sm:inline text-sm">{language === 'hi' ? 'सेव' : 'Save'}</span>
             </Button>
             
-            {step < 6 && !showVerification ? (
+            {step < 7 && !showVerification ? (
               <Button 
                 size="sm"
                 onClick={nextStep}
@@ -3228,7 +3519,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     !formData.maritalStatus ||
                     !formData.profileCreatedFor ||
                     (formData.profileCreatedFor === 'Other' && !(formData.otherRelation || '').trim()) ||
-                    ((formData.horoscopeMatching || 'not-mandatory') === 'mandatory' && (!formData.birthTime || !formData.birthPlace))
+                    ((formData.horoscopeMatching || 'not-mandatory') === 'mandatory' && (!formData.birthTime || !formData.birthPlace)) ||
+                    !formData.disability
                   )) ||
                   (step === 2 && (!formData.education || !formData.occupation)) ||
                   (step === 3 && (
@@ -3245,7 +3537,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               >
                 {t.registration.next}
               </Button>
-            ) : step === 6 ? (
+            ) : step === 7 ? (
               <Button 
                 size="sm" 
                 onClick={handleSubmit} 

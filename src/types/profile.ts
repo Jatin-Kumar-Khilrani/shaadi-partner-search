@@ -6,6 +6,7 @@ export type DrinkingHabit = 'never' | 'occasionally' | 'regularly'
 export type SmokingHabit = 'never' | 'occasionally' | 'regularly'
 export type MembershipPlan = 'free' | '6-month' | '1-year'
 export type Manglik = boolean
+export type DisabilityStatus = 'none' | 'physical' | 'visual' | 'hearing' | 'speech' | 'intellectual' | 'multiple' | 'other'
 export type ResidentialStatus = 
   | 'citizen' 
   | 'permanent-resident' 
@@ -50,6 +51,8 @@ export interface Profile {
   bio?: string
   height?: string
   weight?: string
+  disability: DisabilityStatus  // Mandatory field
+  disabilityDetails?: string    // Optional details about the disability
   familyDetails?: string
   dietPreference?: DietPreference
   manglik?: Manglik
@@ -137,6 +140,27 @@ export interface Profile {
   readinessLevel?: 'beginner' | 'developing' | 'ready' | 'highly-ready'
   hasReadinessBadge?: boolean     // "Ready for Partnership" badge
   aiGeneratedBioUsed?: boolean    // Whether AI bio is being used
+  
+  // Partner Preferences (captured during registration)
+  partnerPreferences?: {
+    ageMin?: number
+    ageMax?: number
+    heightMin?: string
+    heightMax?: string
+    education?: string[]          // Preferred education levels
+    occupation?: string[]         // Preferred occupations
+    location?: string[]           // Preferred cities
+    country?: string[]            // Preferred countries
+    religion?: string[]           // Preferred religions
+    caste?: string[]              // Preferred castes
+    motherTongue?: string[]       // Preferred mother tongues
+    maritalStatus?: MaritalStatus[] // Preferred marital status
+    dietPreference?: DietPreference[]
+    drinkingHabit?: DrinkingHabit[]
+    smokingHabit?: SmokingHabit[]
+    manglik?: 'yes' | 'no' | 'doesnt-matter'
+    disability?: DisabilityStatus[] // Accepted disability status
+  }
 }
 
 export interface SearchFilters {
