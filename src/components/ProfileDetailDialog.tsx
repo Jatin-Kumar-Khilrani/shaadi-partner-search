@@ -322,7 +322,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     location: language === 'hi' ? 'स्थान' : 'Location',
     dateOfBirth: language === 'hi' ? 'जन्म तिथि' : 'Date of Birth',
     education: language === 'hi' ? 'शिक्षा' : 'Education',
-    occupation: language === 'hi' ? 'व्यवसाय' : 'Occupation',
+    occupation: language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status',
     religion: language === 'hi' ? 'धर्म' : 'Religion',
     caste: language === 'hi' ? 'जाति' : 'Caste',
     height: language === 'hi' ? 'ऊंचाई' : 'Height',

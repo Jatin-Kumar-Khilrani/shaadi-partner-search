@@ -94,7 +94,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     
     // New enhanced filters
     education: language === 'hi' ? 'शिक्षा' : 'Education',
-    occupation: language === 'hi' ? 'व्यवसाय' : 'Occupation',
+    occupation: language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status',
     country: language === 'hi' ? 'देश' : 'Country',
     city: language === 'hi' ? 'शहर' : 'City',
     ageRange: language === 'hi' ? 'आयु सीमा' : 'Age Range',
@@ -300,7 +300,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               value={filters.occupationType || 'any'}
               onValueChange={(val) => setFilters({ ...filters, occupationType: val === 'any' ? undefined : val })}
               placeholder={t.any}
-              searchPlaceholder={language === 'hi' ? 'व्यवसाय खोजें...' : 'Search occupation...'}
+              searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
               emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
             />
           </div>

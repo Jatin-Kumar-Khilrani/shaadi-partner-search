@@ -133,30 +133,14 @@ export const EDUCATION_OPTIONS: SearchableSelectOption[] = [
   { value: "other", label: "Other" },
 ]
 
-// Pre-defined occupation options for reuse
+// Pre-defined employment status options for reuse (simplified from occupation list)
 export const OCCUPATION_OPTIONS: SearchableSelectOption[] = [
-  { value: "software-it", label: "Software/IT Professional" },
-  { value: "engineer", label: "Engineer (Non-IT)" },
-  { value: "doctor", label: "Doctor/Medical Professional" },
-  { value: "teacher-professor", label: "Teacher/Professor" },
-  { value: "govt-employee", label: "Government Employee" },
-  { value: "private-job", label: "Private Sector Employee" },
+  { value: "employed", label: "Employed" },
+  { value: "self-employed", label: "Self-Employed" },
   { value: "business-owner", label: "Business Owner" },
-  { value: "self-employed", label: "Self Employed" },
-  { value: "banker", label: "Banker/Finance" },
-  { value: "ca-accountant", label: "CA/Accountant" },
-  { value: "lawyer", label: "Lawyer/Legal" },
-  { value: "civil-services", label: "Civil Services (IAS/IPS/IFS)" },
-  { value: "defense", label: "Defense/Armed Forces" },
-  { value: "scientist", label: "Scientist/Researcher" },
-  { value: "architect", label: "Architect" },
-  { value: "pilot", label: "Pilot/Aviation" },
-  { value: "media-journalist", label: "Media/Journalist" },
-  { value: "artist-designer", label: "Artist/Designer" },
-  { value: "healthcare", label: "Healthcare Professional" },
-  { value: "consultant", label: "Consultant" },
+  { value: "govt-employee", label: "Government Employee" },
   { value: "student", label: "Student" },
   { value: "homemaker", label: "Homemaker" },
-  { value: "not-working", label: "Not Working Currently" },
-  { value: "other", label: "Other" },
+  { value: "retired", label: "Retired" },
+  { value: "not-working", label: "Not Working" },
 ]

@@ -2036,23 +2036,23 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="occupation">{language === 'hi' ? 'व्यवसाय' : 'Occupation'} *</Label>
+                  <Label htmlFor="occupation">{language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status'} *</Label>
                   <SearchableSelect
                     options={OCCUPATION_OPTIONS}
                     value={formData.occupation || ''}
                     onValueChange={(value) => updateField('occupation', value)}
-                    placeholder={language === 'hi' ? 'व्यवसाय चुनें' : 'Select Occupation'}
-                    searchPlaceholder={language === 'hi' ? 'व्यवसाय खोजें...' : 'Search occupation...'}
+                    placeholder={language === 'hi' ? 'रोजगार स्थिति चुनें' : 'Select Employment Status'}
+                    searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                     emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="position">{language === 'hi' ? 'पद (वैकल्पिक)' : 'Position/Designation (Optional)'}</Label>
+                    <Label htmlFor="position">{language === 'hi' ? 'व्यवसाय/पेशा (वैकल्पिक)' : 'Occupation/Profession (Optional)'}</Label>
                     <Input
                       id="position"
-                      placeholder={language === 'hi' ? 'उदाहरण: मैनेजर, डायरेक्टर, टीम लीड' : 'Example: Manager, Director, Team Lead'}
+                      placeholder={language === 'hi' ? 'उदाहरण: सॉफ्टवेयर इंजीनियर, डॉक्टर, वकील' : 'Example: Software Engineer, Doctor, Lawyer'}
                       value={formData.position}
                       onChange={(e) => updateField('position', e.target.value)}
                     />

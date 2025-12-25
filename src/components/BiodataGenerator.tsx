@@ -114,7 +114,7 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
     country: language === 'hi' ? 'देश' : 'Country',
     residentialStatus: language === 'hi' ? 'आवासीय स्थिति' : 'Residential Status',
     education: language === 'hi' ? 'शिक्षा' : 'Education',
-    occupation: language === 'hi' ? 'व्यवसाय' : 'Occupation',
+    occupation: language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status',
     salary: language === 'hi' ? 'वार्षिक आय' : 'Annual Income',
     email: language === 'hi' ? 'ईमेल' : 'Email',
     mobile: language === 'hi' ? 'मोबाइल' : 'Mobile',

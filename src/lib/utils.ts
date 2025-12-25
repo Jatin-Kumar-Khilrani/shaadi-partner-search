@@ -42,32 +42,37 @@ export function formatEducation(value: string | undefined, language: 'hi' | 'en'
 }
 
 /**
- * Format occupation value to human-readable label
+ * Format employment status value to human-readable label
  */
 export function formatOccupation(value: string | undefined, language: 'hi' | 'en' = 'en'): string {
   if (!value) return ''
   const occupationLabels: Record<string, { hi: string; en: string }> = {
-    'software-it': { hi: 'सॉफ्टवेयर/IT प्रोफेशनल', en: 'Software/IT Professional' },
-    'engineer': { hi: 'इंजीनियर', en: 'Engineer' },
-    'doctor': { hi: 'डॉक्टर/मेडिकल प्रोफेशनल', en: 'Doctor/Medical Professional' },
-    'teacher-professor': { hi: 'शिक्षक/प्रोफेसर', en: 'Teacher/Professor' },
+    'employed': { hi: 'नौकरीपेशा', en: 'Employed' },
+    'self-employed': { hi: 'स्व-रोजगार', en: 'Self-Employed' },
+    'business-owner': { hi: 'व्यापारी/उद्यमी', en: 'Business Owner' },
     'govt-employee': { hi: 'सरकारी कर्मचारी', en: 'Government Employee' },
-    'private-job': { hi: 'प्राइवेट नौकरी', en: 'Private Job' },
-    'business-owner': { hi: 'व्यापारी/उद्यमी', en: 'Business Owner/Entrepreneur' },
-    'self-employed': { hi: 'स्व-रोजगार', en: 'Self Employed' },
-    'banker': { hi: 'बैंकिंग प्रोफेशनल', en: 'Banking Professional' },
-    'ca-accountant': { hi: 'सीए/अकाउंटेंट', en: 'CA/Accountant' },
-    'lawyer': { hi: 'वकील', en: 'Lawyer' },
-    'civil-services': { hi: 'सिविल सर्विसेज (IAS/IPS/IFS)', en: 'Civil Services (IAS/IPS/IFS)' },
-    'defense': { hi: 'रक्षा सेवा', en: 'Defense/Armed Forces' },
-    'scientist': { hi: 'वैज्ञानिक/शोधकर्ता', en: 'Scientist/Researcher' },
-    'architect': { hi: 'आर्किटेक्ट', en: 'Architect' },
-    'pilot': { hi: 'पायलट', en: 'Pilot' },
-    'media-journalist': { hi: 'मीडिया/पत्रकार', en: 'Media/Journalist' },
-    'artist-designer': { hi: 'कलाकार/डिज़ाइनर', en: 'Artist/Designer' },
     'student': { hi: 'विद्यार्थी', en: 'Student' },
     'homemaker': { hi: 'गृहिणी', en: 'Homemaker' },
+    'retired': { hi: 'सेवानिवृत्त', en: 'Retired' },
     'not-working': { hi: 'कार्यरत नहीं', en: 'Not Working' },
+    // Legacy values mapping for backward compatibility
+    'software-it': { hi: 'नौकरीपेशा', en: 'Employed' },
+    'engineer': { hi: 'नौकरीपेशा', en: 'Employed' },
+    'doctor': { hi: 'नौकरीपेशा', en: 'Employed' },
+    'teacher-professor': { hi: 'नौकरीपेशा', en: 'Employed' },
+    'private-job': { hi: 'नौकरीपेशा', en: 'Employed' },
+    'banker': { hi: 'नौकरीपेशा', en: 'Employed' },
+    'ca-accountant': { hi: 'नौकरीपेशा', en: 'Employed' },
+    'lawyer': { hi: 'नौकरीपेशा', en: 'Employed' },
+    'civil-services': { hi: 'सरकारी कर्मचारी', en: 'Government Employee' },
+    'defense': { hi: 'सरकारी कर्मचारी', en: 'Government Employee' },
+    'scientist': { hi: 'नौकरीपेशा', en: 'Employed' },
+    'architect': { hi: 'नौकरीपेशा', en: 'Employed' },
+    'pilot': { hi: 'नौकरीपेशा', en: 'Employed' },
+    'media-journalist': { hi: 'नौकरीपेशा', en: 'Employed' },
+    'artist-designer': { hi: 'नौकरीपेशा', en: 'Employed' },
+    'healthcare': { hi: 'नौकरीपेशा', en: 'Employed' },
+    'consultant': { hi: 'स्व-रोजगार', en: 'Self-Employed' },
     'other': { hi: 'अन्य', en: 'Other' }
   }
   const label = occupationLabels[value]

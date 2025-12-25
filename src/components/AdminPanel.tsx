@@ -294,7 +294,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     age: language === 'hi' ? 'आयु' : 'Age',
     location: language === 'hi' ? 'स्थान' : 'Location',
     education: language === 'hi' ? 'शिक्षा' : 'Education',
-    occupation: language === 'hi' ? 'व्यवसाय' : 'Occupation',
+    occupation: language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status',
     profileId: language === 'hi' ? 'प्रोफाइल ID' : 'Profile ID',
     userId: language === 'hi' ? 'यूज़र ID' : 'User ID',
     password: language === 'hi' ? 'पासवर्ड' : 'Password',
@@ -4534,13 +4534,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="adminEditOccupation">{language === 'hi' ? 'व्यवसाय' : 'Occupation'}</Label>
+                  <Label htmlFor="adminEditOccupation">{language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status'}</Label>
                   <SearchableSelect
                     options={OCCUPATION_OPTIONS}
                     value={adminEditFormData.occupation}
                     onValueChange={(value) => setAdminEditFormData(prev => ({ ...prev, occupation: value }))}
-                    placeholder={language === 'hi' ? 'व्यवसाय चुनें' : 'Select Occupation'}
-                    searchPlaceholder={language === 'hi' ? 'व्यवसाय खोजें...' : 'Search occupation...'}
+                    placeholder={language === 'hi' ? 'रोजगार स्थिति चुनें' : 'Select Employment Status'}
+                    searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                     emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                   />
                 </div>

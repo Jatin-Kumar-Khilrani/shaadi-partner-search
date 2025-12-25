@@ -78,7 +78,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
     weight: language === 'hi' ? 'वजन' : 'Weight',
     disability: language === 'hi' ? 'दिव्यांगता' : 'Disability',
     education: language === 'hi' ? 'शिक्षा' : 'Education',
-    occupation: language === 'hi' ? 'व्यवसाय' : 'Occupation',
+    occupation: language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status',
     salary: language === 'hi' ? 'वार्षिक आय' : 'Annual Income',
     location: language === 'hi' ? 'स्थान' : 'Location',
     state: language === 'hi' ? 'राज्य' : 'State',
