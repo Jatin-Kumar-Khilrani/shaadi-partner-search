@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { FilePdf, Download, Eye, Lock, CheckCircle, CurrencyInr, Star, Heart, Flower, Sun } from '@phosphor-icons/react'
+import { FilePdf, Download, Eye, Lock, CheckCircle, CurrencyInr, Star, Heart, Flower, Sun, Users } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import QRCode from 'qrcode'
 import type { Profile } from '@/types/profile'
@@ -128,6 +128,31 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
     close: language === 'hi' ? 'बंद करें' : 'Close',
     biodataTitle: language === 'hi' ? 'विवाह बायोडाटा' : 'Marriage Biodata',
     profileId: language === 'hi' ? 'प्रोफाइल ID' : 'Profile ID',
+    weight: language === 'hi' ? 'वजन' : 'Weight',
+    position: language === 'hi' ? 'पद' : 'Position',
+    birthTime: language === 'hi' ? 'जन्म समय' : 'Birth Time',
+    birthPlace: language === 'hi' ? 'जन्म स्थान' : 'Birth Place',
+    horoscopeMatching: language === 'hi' ? 'कुंडली मिलान' : 'Horoscope Matching',
+    disability: language === 'hi' ? 'विकलांगता' : 'Disability',
+    relationToProfile: language === 'hi' ? 'प्रोफ़ाइल भरने वाला' : 'Profile Created By',
+    horoscopeInfo: language === 'hi' ? 'कुंडली जानकारी' : 'Horoscope Information',
+    partnerPreferences: language === 'hi' ? 'जीवनसाथी की पसंद' : 'Partner Preferences',
+    preferredAge: language === 'hi' ? 'आयु' : 'Age',
+    preferredHeight: language === 'hi' ? 'ऊंचाई' : 'Height',
+    preferredEducation: language === 'hi' ? 'शिक्षा' : 'Education',
+    preferredOccupation: language === 'hi' ? 'पेशा' : 'Occupation',
+    preferredLocation: language === 'hi' ? 'स्थान' : 'Location',
+    preferredReligion: language === 'hi' ? 'धर्म' : 'Religion',
+    preferredCaste: language === 'hi' ? 'जाति' : 'Caste',
+    preferredMotherTongue: language === 'hi' ? 'मातृभाषा' : 'Mother Tongue',
+    preferredMaritalStatus: language === 'hi' ? 'वैवाहिक स्थिति' : 'Marital Status',
+    preferredDiet: language === 'hi' ? 'आहार' : 'Diet',
+    preferredManglik: language === 'hi' ? 'मांगलिक' : 'Manglik',
+    preferredIncome: language === 'hi' ? 'वार्षिक आय' : 'Annual Income',
+    preferredCountry: language === 'hi' ? 'देश' : 'Country',
+    anyOrFlexible: language === 'hi' ? 'कोई भी / लचीला' : 'Any / Flexible',
+    to: language === 'hi' ? 'से' : 'to',
+    years: language === 'hi' ? 'वर्ष' : 'years',
   }
 
   const maritalStatusLabels: Record<string, { hi: string; en: string }> = {
@@ -147,6 +172,61 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
     'never': { hi: 'कभी नहीं', en: 'Never' },
     'occasionally': { hi: 'कभी-कभी', en: 'Occasionally' },
     'regularly': { hi: 'नियमित', en: 'Regularly' },
+  }
+
+  const horoscopeMatchingLabels: Record<string, { hi: string; en: string }> = {
+    'mandatory': { hi: 'अनिवार्य', en: 'Mandatory' },
+    'not-mandatory': { hi: 'अनिवार्य नहीं', en: 'Not Mandatory' },
+    'decide-later': { hi: 'बाद में तय करेंगे', en: 'Decide Later' },
+    'preferred': { hi: 'पसंदीदा', en: 'Preferred' },
+  }
+
+  const disabilityLabels: Record<string, { hi: string; en: string }> = {
+    'no': { hi: 'नहीं', en: 'No' },
+    'yes': { hi: 'हां', en: 'Yes' },
+  }
+
+  const residentialStatusLabels: Record<string, { hi: string; en: string }> = {
+    'citizen': { hi: 'नागरिक', en: 'Citizen' },
+    'permanent-resident': { hi: 'स्थायी निवासी', en: 'Permanent Resident' },
+    'work-permit': { hi: 'वर्क परमिट', en: 'Work Permit' },
+    'student-visa': { hi: 'स्टूडेंट वीसा', en: 'Student Visa' },
+    'dependent-visa': { hi: 'डिपेंडेंट वीसा', en: 'Dependent Visa' },
+    'temporary-visa': { hi: 'अस्थायी वीसा', en: 'Temporary Visa' },
+    'oci': { hi: 'OCI', en: 'OCI' },
+    'applied-for-pr': { hi: 'PR के लिए आवेदन', en: 'Applied for PR' },
+    'applied-for-citizenship': { hi: 'नागरिकता के लिए आवेदन', en: 'Applied for Citizenship' },
+    'tourist-visa': { hi: 'टूरिस्ट वीसा', en: 'Tourist Visa' },
+    'other': { hi: 'अन्य', en: 'Other' },
+  }
+
+  const manglikPreferenceLabels: Record<string, { hi: string; en: string }> = {
+    'yes': { hi: 'हां', en: 'Yes' },
+    'no': { hi: 'नहीं', en: 'No' },
+    'doesnt-matter': { hi: 'कोई फर्क नहीं', en: "Doesn't Matter" },
+  }
+
+  // Helper function to format array values
+  const formatArrayValues = (arr: string[] | undefined, fallback?: string): string => {
+    if (!arr || arr.length === 0) return fallback || (language === 'hi' ? 'कोई भी' : 'Any')
+    return arr.join(', ')
+  }
+
+  // Helper to check if partner preferences have any meaningful data
+  const hasPartnerPreferences = (): boolean => {
+    const pp = profile.partnerPreferences
+    if (!pp) return false
+    return !!(pp.ageMin || pp.ageMax || pp.heightMin || pp.heightMax || 
+              (pp.education && pp.education.length > 0) ||
+              (pp.occupation && pp.occupation.length > 0) ||
+              (pp.location && pp.location.length > 0) ||
+              (pp.livingCountry && pp.livingCountry.length > 0) ||
+              (pp.religion && pp.religion.length > 0) ||
+              (pp.caste && pp.caste.length > 0) ||
+              (pp.motherTongue && pp.motherTongue.length > 0) ||
+              (pp.maritalStatus && pp.maritalStatus.length > 0) ||
+              (pp.dietPreference && pp.dietPreference.length > 0) ||
+              pp.manglik || pp.annualIncomeMin || pp.annualIncomeMax)
   }
 
   const getManglikLabel = (manglik: boolean | undefined) => {
@@ -330,19 +410,49 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
       const maritalLabel = maritalStatusLabels[profile.maritalStatus]?.[language] || profile.maritalStatus
       drawFieldRow(t.name, profile.fullName, t.age, `${profile.age} ${language === 'hi' ? 'वर्ष' : 'years'}`)
       drawFieldRow(t.dob, profile.dateOfBirth ? formatDateDDMMYYYY(profile.dateOfBirth) : '-', t.height, profile.height || '-')
+      if (profile.weight) {
+        drawFieldRow(t.weight, profile.weight)
+      }
       drawFieldRow(t.religion, profile.religion || '-', t.caste, profile.caste || '-')
       if (profile.community || profile.motherTongue) {
         drawFieldRow(t.community, profile.community || '-', t.motherTongue, profile.motherTongue || '-')
       }
       drawFieldRow(t.maritalStatus, maritalLabel, t.manglik, getManglikLabel(profile.manglik))
       drawFieldRow(t.location, `${profile.location}${profile.state ? ', ' + profile.state : ''}`, t.country, profile.country || 'India')
+      if (profile.residentialStatus) {
+        const residentialLabel = residentialStatusLabels[profile.residentialStatus]?.[language] || profile.residentialStatus
+        drawFieldRow(t.residentialStatus, residentialLabel)
+      }
+      if (profile.disability === 'yes') {
+        drawFieldRow(t.disability, profile.disabilityDetails || (language === 'hi' ? 'हां' : 'Yes'))
+      }
+      if (profile.relationToProfile) {
+        drawFieldRow(t.relationToProfile, profile.relationToProfile)
+      }
       yPos += sectionGap
       
       // Education & Career Section
       drawSectionHeader(t.educationCareer)
       drawFieldRow(t.education, profile.education, t.occupation, profile.occupation)
+      if (profile.position) {
+        drawFieldRow(t.position, profile.position)
+      }
       if (profile.salary) {
         drawFieldRow(t.salary, profile.salary)
+      }
+      yPos += sectionGap
+      
+      // Horoscope Information Section (if available)
+      if (profile.birthTime || profile.birthPlace || profile.horoscopeMatching) {
+        drawSectionHeader(t.horoscopeInfo)
+        if (profile.birthTime || profile.birthPlace) {
+          drawFieldRow(t.birthTime, profile.birthTime || '-', t.birthPlace, profile.birthPlace || '-')
+        }
+        if (profile.horoscopeMatching) {
+          const horoscopeLabel = horoscopeMatchingLabels[profile.horoscopeMatching]?.[language] || profile.horoscopeMatching
+          drawFieldRow(t.horoscopeMatching, horoscopeLabel)
+        }
+        yPos += sectionGap
       }
       yPos += sectionGap
       
@@ -397,6 +507,60 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
           }
         }
         ctx.fillText(line, leftMargin, yPos)
+        yPos += sectionGap + 10
+      }
+      
+      // Partner Preferences Section (if space permits and data exists)
+      if (hasPartnerPreferences() && yPos < canvas.height - 180) {
+        drawSectionHeader(t.partnerPreferences)
+        const pp = profile.partnerPreferences!
+        
+        // Age Range
+        if (pp.ageMin || pp.ageMax) {
+          drawFieldRow(t.preferredAge, `${pp.ageMin || '18'} ${t.to} ${pp.ageMax || '60'} ${t.years}`)
+        }
+        // Height Range
+        if (pp.heightMin || pp.heightMax) {
+          drawFieldRow(t.preferredHeight, `${pp.heightMin || '-'} ${t.to} ${pp.heightMax || '-'}`)
+        }
+        // Education
+        if (pp.education && pp.education.length > 0 && yPos < canvas.height - 150) {
+          drawFieldRow(t.preferredEducation, formatArrayValues(pp.education))
+        }
+        // Religion & Caste
+        if ((pp.religion && pp.religion.length > 0) || (pp.caste && pp.caste.length > 0)) {
+          if (yPos < canvas.height - 150) {
+            drawFieldRow(
+              t.preferredReligion, 
+              formatArrayValues(pp.religion), 
+              t.preferredCaste, 
+              formatArrayValues(pp.caste)
+            )
+          }
+        }
+        // Location
+        if ((pp.location && pp.location.length > 0) || (pp.livingCountry && pp.livingCountry.length > 0)) {
+          if (yPos < canvas.height - 150) {
+            const locations = [...(pp.location || []), ...(pp.livingCountry || [])]
+            drawFieldRow(t.preferredLocation, formatArrayValues(locations))
+          }
+        }
+        // Marital Status & Diet
+        if ((pp.maritalStatus && pp.maritalStatus.length > 0) || (pp.dietPreference && pp.dietPreference.length > 0)) {
+          if (yPos < canvas.height - 150) {
+            const maritalValues = pp.maritalStatus?.map(s => maritalStatusLabels[s]?.[language] || s).join(', ') || '-'
+            const dietValues = pp.dietPreference?.map(d => dietLabels[d]?.[language] || d).join(', ') || '-'
+            drawFieldRow(t.preferredMaritalStatus, maritalValues, t.preferredDiet, dietValues)
+          }
+        }
+        // Manglik & Income
+        if (pp.manglik || pp.annualIncomeMin || pp.annualIncomeMax) {
+          if (yPos < canvas.height - 150) {
+            const manglikValue = pp.manglik ? (manglikPreferenceLabels[pp.manglik]?.[language] || pp.manglik) : '-'
+            const incomeValue = (pp.annualIncomeMin || pp.annualIncomeMax) ? `${pp.annualIncomeMin || '-'} ${t.to} ${pp.annualIncomeMax || '-'}` : '-'
+            drawFieldRow(t.preferredManglik, manglikValue, t.preferredIncome, incomeValue)
+          }
+        }
       }
       
       // Contact Section at bottom
@@ -655,6 +819,7 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
                     <div><span className="font-semibold text-gray-600">{t.age}:</span> {profile.age} {language === 'hi' ? 'वर्ष' : 'years'}</div>
                     <div><span className="font-semibold text-gray-600">{t.dob}:</span> {profile.dateOfBirth ? formatDateDDMMYYYY(profile.dateOfBirth) : '-'}</div>
                     <div><span className="font-semibold text-gray-600">{t.height}:</span> {profile.height || '-'}</div>
+                    {profile.weight && <div><span className="font-semibold text-gray-600">{t.weight}:</span> {profile.weight}</div>}
                     <div><span className="font-semibold text-gray-600">{t.religion}:</span> {profile.religion || '-'}</div>
                     <div><span className="font-semibold text-gray-600">{t.caste}:</span> {profile.caste || '-'}</div>
                     {profile.community && <div><span className="font-semibold text-gray-600">{t.community}:</span> {profile.community}</div>}
@@ -663,6 +828,9 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
                     <div><span className="font-semibold text-gray-600">{t.manglik}:</span> {getManglikLabel(profile.manglik)}</div>
                     <div><span className="font-semibold text-gray-600">{t.location}:</span> {profile.location}{profile.state ? `, ${profile.state}` : ''}</div>
                     <div><span className="font-semibold text-gray-600">{t.country}:</span> {profile.country || 'India'}</div>
+                    {profile.residentialStatus && <div><span className="font-semibold text-gray-600">{t.residentialStatus}:</span> {residentialStatusLabels[profile.residentialStatus]?.[language] || profile.residentialStatus}</div>}
+                    {profile.disability === 'yes' && <div className="col-span-2"><span className="font-semibold text-gray-600">{t.disability}:</span> {profile.disabilityDetails || (language === 'hi' ? 'हां' : 'Yes')}</div>}
+                    {profile.relationToProfile && <div><span className="font-semibold text-gray-600">{t.relationToProfile}:</span> {profile.relationToProfile}</div>}
                   </div>
                 </CardContent>
               </Card>
@@ -688,10 +856,38 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div><span className="font-semibold text-gray-600">{t.education}:</span> {profile.education}</div>
                     <div><span className="font-semibold text-gray-600">{t.occupation}:</span> {profile.occupation}</div>
-                    {profile.salary && <div className="col-span-2"><span className="font-semibold text-gray-600">{t.salary}:</span> {profile.salary}</div>}
+                    {profile.position && <div><span className="font-semibold text-gray-600">{t.position}:</span> {profile.position}</div>}
+                    {profile.salary && <div><span className="font-semibold text-gray-600">{t.salary}:</span> {profile.salary}</div>}
                   </div>
                 </CardContent>
               </Card>
+              
+              {/* Horoscope Information */}
+              {(profile.birthTime || profile.birthPlace || profile.horoscopeMatching) && (
+                <Card 
+                  className="mb-3 shadow-sm"
+                  style={{ borderColor: theme.accent }}
+                >
+                  <CardHeader 
+                    className="py-2"
+                    style={{ background: theme.secondary }}
+                  >
+                    <CardTitle 
+                      className="text-sm font-bold flex items-center gap-2"
+                      style={{ color: theme.primary }}
+                    >
+                      ✨ {t.horoscopeInfo}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {profile.birthTime && <div><span className="font-semibold text-gray-600">{t.birthTime}:</span> {profile.birthTime}</div>}
+                      {profile.birthPlace && <div><span className="font-semibold text-gray-600">{t.birthPlace}:</span> {profile.birthPlace}</div>}
+                      {profile.horoscopeMatching && <div><span className="font-semibold text-gray-600">{t.horoscopeMatching}:</span> {horoscopeMatchingLabels[profile.horoscopeMatching]?.[language] || profile.horoscopeMatching}</div>}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
               
               {/* Lifestyle */}
               <Card 
@@ -766,6 +962,116 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
                 </Card>
               )}
               
+              {/* Partner Preferences */}
+              {hasPartnerPreferences() && (
+                <Card 
+                  className="mb-3 shadow-sm"
+                  style={{ borderColor: theme.accent }}
+                >
+                  <CardHeader 
+                    className="py-2"
+                    style={{ background: theme.secondary }}
+                  >
+                    <CardTitle 
+                      className="text-sm font-bold flex items-center gap-2"
+                      style={{ color: theme.primary }}
+                    >
+                      <Users size={16} weight="fill" />
+                      {t.partnerPreferences}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {/* Age Range */}
+                      {(profile.partnerPreferences?.ageMin || profile.partnerPreferences?.ageMax) && (
+                        <div>
+                          <span className="font-semibold text-gray-600">{t.preferredAge}:</span>{' '}
+                          {profile.partnerPreferences?.ageMin || '18'} {t.to} {profile.partnerPreferences?.ageMax || '60'} {t.years}
+                        </div>
+                      )}
+                      {/* Height Range */}
+                      {(profile.partnerPreferences?.heightMin || profile.partnerPreferences?.heightMax) && (
+                        <div>
+                          <span className="font-semibold text-gray-600">{t.preferredHeight}:</span>{' '}
+                          {profile.partnerPreferences?.heightMin || '-'} {t.to} {profile.partnerPreferences?.heightMax || '-'}
+                        </div>
+                      )}
+                      {/* Education */}
+                      {profile.partnerPreferences?.education && profile.partnerPreferences.education.length > 0 && (
+                        <div className="col-span-2">
+                          <span className="font-semibold text-gray-600">{t.preferredEducation}:</span>{' '}
+                          {formatArrayValues(profile.partnerPreferences.education)}
+                        </div>
+                      )}
+                      {/* Occupation */}
+                      {profile.partnerPreferences?.occupation && profile.partnerPreferences.occupation.length > 0 && (
+                        <div className="col-span-2">
+                          <span className="font-semibold text-gray-600">{t.preferredOccupation}:</span>{' '}
+                          {formatArrayValues(profile.partnerPreferences.occupation)}
+                        </div>
+                      )}
+                      {/* Location/Country */}
+                      {((profile.partnerPreferences?.location && profile.partnerPreferences.location.length > 0) || 
+                        (profile.partnerPreferences?.livingCountry && profile.partnerPreferences.livingCountry.length > 0)) && (
+                        <div className="col-span-2">
+                          <span className="font-semibold text-gray-600">{t.preferredLocation}:</span>{' '}
+                          {formatArrayValues([...(profile.partnerPreferences?.location || []), ...(profile.partnerPreferences?.livingCountry || [])])}
+                        </div>
+                      )}
+                      {/* Religion */}
+                      {profile.partnerPreferences?.religion && profile.partnerPreferences.religion.length > 0 && (
+                        <div>
+                          <span className="font-semibold text-gray-600">{t.preferredReligion}:</span>{' '}
+                          {formatArrayValues(profile.partnerPreferences.religion)}
+                        </div>
+                      )}
+                      {/* Caste */}
+                      {profile.partnerPreferences?.caste && profile.partnerPreferences.caste.length > 0 && (
+                        <div>
+                          <span className="font-semibold text-gray-600">{t.preferredCaste}:</span>{' '}
+                          {formatArrayValues(profile.partnerPreferences.caste)}
+                        </div>
+                      )}
+                      {/* Mother Tongue */}
+                      {profile.partnerPreferences?.motherTongue && profile.partnerPreferences.motherTongue.length > 0 && (
+                        <div>
+                          <span className="font-semibold text-gray-600">{t.preferredMotherTongue}:</span>{' '}
+                          {formatArrayValues(profile.partnerPreferences.motherTongue)}
+                        </div>
+                      )}
+                      {/* Marital Status */}
+                      {profile.partnerPreferences?.maritalStatus && profile.partnerPreferences.maritalStatus.length > 0 && (
+                        <div>
+                          <span className="font-semibold text-gray-600">{t.preferredMaritalStatus}:</span>{' '}
+                          {profile.partnerPreferences.maritalStatus.map(s => maritalStatusLabels[s]?.[language] || s).join(', ')}
+                        </div>
+                      )}
+                      {/* Diet */}
+                      {profile.partnerPreferences?.dietPreference && profile.partnerPreferences.dietPreference.length > 0 && (
+                        <div>
+                          <span className="font-semibold text-gray-600">{t.preferredDiet}:</span>{' '}
+                          {profile.partnerPreferences.dietPreference.map(d => dietLabels[d]?.[language] || d).join(', ')}
+                        </div>
+                      )}
+                      {/* Manglik */}
+                      {profile.partnerPreferences?.manglik && (
+                        <div>
+                          <span className="font-semibold text-gray-600">{t.preferredManglik}:</span>{' '}
+                          {manglikPreferenceLabels[profile.partnerPreferences.manglik]?.[language] || profile.partnerPreferences.manglik}
+                        </div>
+                      )}
+                      {/* Income */}
+                      {(profile.partnerPreferences?.annualIncomeMin || profile.partnerPreferences?.annualIncomeMax) && (
+                        <div className="col-span-2">
+                          <span className="font-semibold text-gray-600">{t.preferredIncome}:</span>{' '}
+                          {profile.partnerPreferences?.annualIncomeMin || '-'} {t.to} {profile.partnerPreferences?.annualIncomeMax || '-'}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
               {/* Contact Info with QR Code */}
               <Card 
                 className="shadow-sm"
@@ -826,14 +1132,14 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
           </div>
         </ScrollArea>
         
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="outline" onClick={onClose}>
+        <div className="flex justify-end gap-3 pt-4 border-t bg-white sticky bottom-0 pb-2">
+          <Button variant="outline" onClick={onClose} className="min-w-[100px]">
             {t.close}
           </Button>
           <Button 
             onClick={handleDownload}
             disabled={isGenerating || !isPaidUser}
-            className="gap-2"
+            className="gap-2 min-w-[130px]"
             style={{ 
               background: theme.primary,
               color: 'white'
