@@ -471,6 +471,12 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     verificationNotes: language === 'hi' ? 'सत्यापन नोट्स' : 'Verification Notes',
     markAsVerified: language === 'hi' ? 'सत्यापित के रूप में चिह्नित करें' : 'Mark as Verified',
     removeVerification: language === 'hi' ? 'सत्यापन हटाएं' : 'Remove Verification',
+    markFaceVerified: language === 'hi' ? 'चेहरा सत्यापित चिह्नित करें' : 'Mark Face Verified',
+    markFaceNotVerified: language === 'hi' ? 'चेहरा असत्यापित चिह्नित करें' : 'Mark Face Not Verified',
+    faceVerifiedSuccess: language === 'hi' ? 'चेहरा सत्यापित के रूप में चिह्नित!' : 'Marked as Face Verified!',
+    faceNotVerifiedSuccess: language === 'hi' ? 'चेहरा असत्यापित के रूप में चिह्नित!' : 'Marked as Face Not Verified!',
+    photoVerifiedBadge: language === 'hi' ? 'फोटो सत्यापित' : 'Photo Verified',
+    photoNotVerified: language === 'hi' ? 'फोटो असत्यापित' : 'Photo Not Verified',
     digilockerVerifySuccess: language === 'hi' ? 'पहचान सत्यापित!' : 'ID Verified!',
     digilockerVerifyRemoved: language === 'hi' ? 'सत्यापन हटाया गया!' : 'Verification removed!',
     idProofVerification: language === 'hi' ? 'पहचान प्रमाण सत्यापन' : 'ID Proof Verification',
@@ -921,6 +927,34 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
       })
     } finally {
       setIsVerifyingFace(false)
+    }
+  }
+
+  // Handle marking photo as verified/not verified (manual admin action)
+  const handleMarkPhotoVerified = async (profile: Profile, isVerified: boolean) => {
+    try {
+      const updatedProfile = {
+        ...profile,
+        photoVerified: isVerified,
+        photoVerifiedAt: new Date().toISOString(),
+        photoVerifiedBy: 'Admin',
+        photoVerificationNotes: isVerified ? 'Manually verified by admin' : 'Manually marked as not verified by admin',
+        photoVerificationConfidence: isVerified ? 100 : 0
+      }
+      
+      await saveProfile(updatedProfile)
+      
+      // Update local state
+      setProfiles(prev => prev.map(p => p.id === profile.id ? updatedProfile : p))
+      setFaceVerificationDialog(updatedProfile)
+      
+      if (isVerified) {
+        toast.success(t.faceVerifiedSuccess)
+      } else {
+        toast.warning(t.faceNotVerifiedSuccess)
+      }
+    } catch (error) {
+      toast.error(language === 'hi' ? 'अपडेट विफल' : 'Update failed')
     }
   }
 
@@ -4298,20 +4332,62 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
             </div>
           ) : null}
 
-          <div className="flex justify-end gap-2 mt-4">
+          {/* Photo Verification Status Badge */}
+          {faceVerificationDialog?.photoVerified !== undefined && (
+            <div className={`p-3 rounded-lg border ${faceVerificationDialog.photoVerified 
+              ? 'bg-green-50 border-green-300 dark:bg-green-950/30 dark:border-green-800' 
+              : 'bg-red-50 border-red-300 dark:bg-red-950/30 dark:border-red-800'}`}
+            >
+              <div className="flex items-center gap-2">
+                {faceVerificationDialog.photoVerified ? (
+                  <CheckCircle size={20} weight="fill" className="text-green-600" />
+                ) : (
+                  <XCircle size={20} weight="fill" className="text-red-600" />
+                )}
+                <span className={`font-medium ${faceVerificationDialog.photoVerified ? 'text-green-700' : 'text-red-700'}`}>
+                  {faceVerificationDialog.photoVerified ? t.photoVerifiedBadge : t.photoNotVerified}
+                </span>
+                {faceVerificationDialog.photoVerifiedAt && (
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {new Date(faceVerificationDialog.photoVerifiedAt).toLocaleDateString()}
+                    {faceVerificationDialog.photoVerifiedBy && ` (${faceVerificationDialog.photoVerifiedBy})`}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-wrap justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setFaceVerificationDialog(null)}>
               {t.close}
             </Button>
             {faceVerificationDialog && (
-              <Button 
-                onClick={() => handleAIFaceVerification(faceVerificationDialog)}
-                disabled={isVerifyingFace}
-                variant="outline"
-                className="gap-2"
-              >
-                <ScanSmiley size={16} />
-                {isVerifyingFace ? t.verifying : t.verifyWithAI}
-              </Button>
+              <>
+                <Button 
+                  onClick={() => handleAIFaceVerification(faceVerificationDialog)}
+                  disabled={isVerifyingFace}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <ScanSmiley size={16} />
+                  {isVerifyingFace ? t.verifying : t.verifyWithAI}
+                </Button>
+                <Button 
+                  onClick={() => handleMarkPhotoVerified(faceVerificationDialog, false)}
+                  variant="outline"
+                  className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <XCircle size={16} />
+                  {t.markFaceNotVerified}
+                </Button>
+                <Button 
+                  onClick={() => handleMarkPhotoVerified(faceVerificationDialog, true)}
+                  className="gap-2 bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle size={16} />
+                  {t.markFaceVerified}
+                </Button>
+              </>
             )}
           </div>
         </DialogContent>

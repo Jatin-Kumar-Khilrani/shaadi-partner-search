@@ -105,6 +105,12 @@ export interface Profile {
   idProofVerifiedAt?: string
   idProofVerifiedBy?: string  // Admin who verified
   idProofNotes?: string  // Admin notes about ID verification
+  // Photo/Face verification (selfie matches uploaded photos)
+  photoVerified?: boolean
+  photoVerifiedAt?: string
+  photoVerifiedBy?: string  // Admin who verified or 'AI' for automatic verification
+  photoVerificationNotes?: string  // Notes about photo verification
+  photoVerificationConfidence?: number  // AI confidence score if verified by AI
   // Geolocation data captured during registration
   registrationLocation?: {
     latitude: number
