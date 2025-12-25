@@ -1516,6 +1516,24 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                           </Badge>
                                         )}
                                       </div>
+                                      {/* Face/Photo Verification Status */}
+                                      <div className="col-span-2 flex items-center gap-2 flex-wrap">
+                                        <ScanSmiley size={14} className={profile.photoVerified ? 'text-green-600' : 'text-muted-foreground'} />
+                                        <span>{t.faceVerification}:</span>
+                                        {profile.photoVerified === true ? (
+                                          <Badge variant="outline" className="text-green-600 border-green-400">
+                                            ✓ {t.photoVerifiedBadge}
+                                          </Badge>
+                                        ) : profile.photoVerified === false ? (
+                                          <Badge variant="outline" className="text-red-600 border-red-400">
+                                            ✗ {t.photoNotVerified}
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="text-amber-600 border-amber-400">
+                                            {language === 'hi' ? 'लंबित' : 'Pending'}
+                                          </Badge>
+                                        )}
+                                      </div>
                                     </div>
                                     
                                     {/* Login Credentials */}
