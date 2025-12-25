@@ -11,11 +11,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks, X, Warning, ShieldWarning, Prohibit } from '@phosphor-icons/react'
+import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks, X, Warning, ShieldWarning, Prohibit, MagnifyingGlassPlus } from '@phosphor-icons/react'
 import type { ChatMessage, ChatConversation } from '@/types/chat'
 import type { Profile, Interest, MembershipPlan, BlockedProfile, ReportReason } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 import { toast } from 'sonner'
+import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 // Membership settings interface for plan limits
 interface MembershipSettings {
   freePlanChatLimit: number
@@ -58,6 +59,9 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   const [searchQuery, setSearchQuery] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [hasAutoSelected, setHasAutoSelected] = useState(false)
+  
+  // Lightbox for photo zoom
+  const { lightboxState, openLightbox, closeLightbox } = useLightbox()
   
   // Report & Block dialog state
   const [showReportDialog, setShowReportDialog] = useState(false)
@@ -1107,11 +1111,23 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                           {/* Avatar with photo or initials */}
                           <div className="relative">
                             {profile?.photos?.[0] ? (
-                              <img 
-                                src={profile.photos[0]} 
-                                alt="" 
-                                className="h-12 w-12 rounded-full object-cover border-2 border-background shadow-sm"
-                              />
+                              <div 
+                                className="relative cursor-pointer group"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  openLightbox(profile.photos || [], 0)
+                                }}
+                                title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                              >
+                                <img 
+                                  src={profile.photos[0]} 
+                                  alt="" 
+                                  className="h-12 w-12 rounded-full object-cover border-2 border-background shadow-sm group-hover:ring-2 group-hover:ring-primary/50 transition-all"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                  <MagnifyingGlassPlus size={16} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                              </div>
                             ) : (
                               <div className={`h-12 w-12 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
                                 isAdminChat 
@@ -1204,11 +1220,20 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                     <div className="flex items-center gap-3">
                       {/* Profile Avatar */}
                       {chatProfile?.photos?.[0] ? (
-                        <img 
-                          src={chatProfile.photos[0]} 
-                          alt="" 
-                          className="h-10 w-10 rounded-full object-cover border-2 border-background shadow-sm"
-                        />
+                        <div 
+                          className="relative cursor-pointer group"
+                          onClick={() => openLightbox(chatProfile.photos || [], 0)}
+                          title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                        >
+                          <img 
+                            src={chatProfile.photos[0]} 
+                            alt="" 
+                            className="h-10 w-10 rounded-full object-cover border-2 border-background shadow-sm group-hover:ring-2 group-hover:ring-primary/50 transition-all"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                            <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </div>
                       ) : (
                         <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold ${
                           isAdminChat 
@@ -1443,6 +1468,14 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Photo Lightbox for viewing photos in full size */}
+      <PhotoLightbox
+        photos={lightboxState.photos}
+        initialIndex={lightboxState.initialIndex}
+        open={lightboxState.open}
+        onClose={closeLightbox}
+      />
     </div>
   )
 }

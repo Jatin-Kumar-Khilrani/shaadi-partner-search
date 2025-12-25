@@ -4,11 +4,12 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useKV } from '@/hooks/useKV'
-import { Eye, Heart, ChatCircle, Clock, Check, X } from '@phosphor-icons/react'
+import { Eye, Heart, ChatCircle, Clock, Check, X, MagnifyingGlassPlus } from '@phosphor-icons/react'
 import type { Interest, ContactRequest, Profile, MembershipPlan } from '@/types/profile'
 import type { ChatMessage } from '@/types/chat'
 import type { Language } from '@/lib/translations'
 import { toast } from 'sonner'
+import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 
 // Membership settings interface for plan limits
 interface MembershipSettings {
@@ -44,6 +45,9 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests] = useKV<ContactRequest[]>('contactRequests', [])
   const [messages] = useKV<ChatMessage[]>('chatMessages', [])
+  
+  // Lightbox for photo zoom
+  const { lightboxState, openLightbox, closeLightbox } = useLightbox()
 
   const currentUserProfile = profiles.find(p => p.id === loggedInUserId)
 
@@ -228,11 +232,20 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                 <div className="flex items-center gap-4">
                                   {/* Profile Photo */}
                                   {profile?.photos?.[0] ? (
-                                    <img 
-                                      src={profile.photos[0]} 
-                                      alt={profile.fullName || ''}
-                                      className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
-                                    />
+                                    <div 
+                                      className="relative cursor-pointer group"
+                                      onClick={() => openLightbox(profile.photos || [], 0)}
+                                      title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                    >
+                                      <img 
+                                        src={profile.photos[0]} 
+                                        alt={profile.fullName || ''}
+                                        className="w-12 h-12 rounded-full object-cover border-2 border-primary/20 group-hover:ring-2 group-hover:ring-primary/50 transition-all"
+                                      />
+                                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                        <MagnifyingGlassPlus size={16} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                      </div>
+                                    </div>
                                   ) : (
                                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                                       <Heart size={24} weight="fill" className="text-primary" />
@@ -286,11 +299,20 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                   <div className="flex items-center gap-4">
                                     {/* Profile Photo */}
                                     {profile?.photos?.[0] ? (
-                                      <img 
-                                        src={profile.photos[0]} 
-                                        alt={profile.fullName || ''}
-                                        className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
-                                      />
+                                      <div 
+                                        className="relative cursor-pointer group"
+                                        onClick={() => openLightbox(profile.photos || [], 0)}
+                                        title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                      >
+                                        <img 
+                                          src={profile.photos[0]} 
+                                          alt={profile.fullName || ''}
+                                          className="w-12 h-12 rounded-full object-cover border-2 border-primary/20 group-hover:ring-2 group-hover:ring-primary/50 transition-all"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                          <MagnifyingGlassPlus size={16} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </div>
+                                      </div>
                                     ) : (
                                       <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
                                         <Heart size={24} weight="fill" className="text-accent" />
@@ -378,11 +400,20 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                     <div className="flex items-center gap-4">
                                       {/* Profile Photo */}
                                       {profile?.photos?.[0] ? (
-                                        <img 
-                                          src={profile.photos[0]} 
-                                          alt={profile.fullName || ''}
-                                          className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
-                                        />
+                                        <div 
+                                          className="relative cursor-pointer group"
+                                          onClick={() => openLightbox(profile.photos || [], 0)}
+                                          title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                        >
+                                          <img 
+                                            src={profile.photos[0]} 
+                                            alt={profile.fullName || ''}
+                                            className="w-12 h-12 rounded-full object-cover border-2 border-primary/20 group-hover:ring-2 group-hover:ring-primary/50 transition-all"
+                                          />
+                                          <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                            <MagnifyingGlassPlus size={16} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                          </div>
+                                        </div>
                                       ) : (
                                         <div className="w-12 h-12 rounded-full bg-teal/10 flex items-center justify-center">
                                           <Eye size={24} weight="fill" className="text-teal" />
@@ -421,11 +452,20 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       <div className="flex items-center gap-4">
                                         {/* Profile Photo */}
                                         {profile?.photos?.[0] ? (
-                                          <img 
-                                            src={profile.photos[0]} 
-                                            alt={profile.fullName || ''}
-                                            className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
-                                          />
+                                          <div 
+                                            className="relative cursor-pointer group"
+                                            onClick={() => openLightbox(profile.photos || [], 0)}
+                                            title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                          >
+                                            <img 
+                                              src={profile.photos[0]} 
+                                              alt={profile.fullName || ''}
+                                              className="w-12 h-12 rounded-full object-cover border-2 border-primary/20 group-hover:ring-2 group-hover:ring-primary/50 transition-all"
+                                            />
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                              <MagnifyingGlassPlus size={16} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </div>
+                                          </div>
                                         ) : (
                                           <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
                                             <Eye size={24} weight="fill" className="text-accent" />
@@ -480,11 +520,20 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                     <ChatCircle size={24} weight="fill" className="text-primary" />
                                   </div>
                                 ) : otherProfile?.photos?.[0] ? (
-                                  <img 
-                                    src={otherProfile.photos[0]} 
-                                    alt={otherProfile.fullName || ''}
-                                    className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
-                                  />
+                                  <div 
+                                    className="relative cursor-pointer group"
+                                    onClick={() => openLightbox(otherProfile.photos || [], 0)}
+                                    title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                  >
+                                    <img 
+                                      src={otherProfile.photos[0]} 
+                                      alt={otherProfile.fullName || ''}
+                                      className="w-12 h-12 rounded-full object-cover border-2 border-primary/20 group-hover:ring-2 group-hover:ring-primary/50 transition-all"
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                      <MagnifyingGlassPlus size={16} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </div>
+                                  </div>
                                 ) : (
                                   <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                                     <ChatCircle size={24} weight="fill" className={isMyMessage ? 'text-primary' : 'text-accent'} />
@@ -519,6 +568,14 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Photo Lightbox for viewing photos in full size */}
+      <PhotoLightbox
+        photos={lightboxState.photos}
+        initialIndex={lightboxState.initialIndex}
+        open={lightboxState.open}
+        onClose={closeLightbox}
+      />
     </section>
   )
 }

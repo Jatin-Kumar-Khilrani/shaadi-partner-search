@@ -433,19 +433,37 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     })
   }
 
+  // Paid verified user (not admin, not free, not expired, verified)
+  const isPaidVerifiedUser = isLoggedIn && !shouldBlur && !isAdmin
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start gap-4 mb-4">
-            <Avatar className={`w-24 h-24 border-4 border-background shadow-xl ${(!canSeeFullDetails || blurContent) ? 'blur-sm' : ''}`}>
-              {canSeeFullDetails && !blurContent ? (
-                <AvatarImage src={profile.photos?.[0]} alt={displayName} />
-              ) : null}
-              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            <div 
+              className={`relative ${canSeeFullDetails && !blurContent && profile.photos && profile.photos.length > 0 ? 'cursor-pointer group' : ''}`}
+              onClick={() => {
+                if (canSeeFullDetails && !blurContent && profile.photos && profile.photos.length > 0) {
+                  openLightbox(profile.photos, 0)
+                }
+              }}
+              title={canSeeFullDetails && !blurContent && profile.photos && profile.photos.length > 0 ? (language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge') : ''}
+            >
+              <Avatar className={`w-24 h-24 border-4 border-background shadow-xl ${(!canSeeFullDetails || blurContent) ? 'blur-sm' : ''} ${canSeeFullDetails && !blurContent && profile.photos && profile.photos.length > 0 ? 'group-hover:ring-4 group-hover:ring-primary/50 transition-all' : ''}`}>
+                {canSeeFullDetails && !blurContent ? (
+                  <AvatarImage src={profile.photos?.[0]} alt={displayName} />
+                ) : null}
+                <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              {canSeeFullDetails && !blurContent && profile.photos && profile.photos.length > 0 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                  <Eye size={24} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              )}
+            </div>
             <div className="flex-1">
               <DialogTitle className="text-3xl mb-2">
                 {displayName}
@@ -514,8 +532,8 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                   value={formatLastLogin(profile.lastLoginAt)} 
                 />
               )}
-              {/* Admin sees all additional fields */}
-              {isAdmin && (
+              {/* Paid verified users and Admin see all additional fields */}
+              {(isAdmin || isPaidVerifiedUser) && (
                 <>
                   {/* State */}
                   {profile.state && (
@@ -677,8 +695,8 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
             </div>
           </section>
 
-          {/* Admin: Show all photos and selfie */}
-          {isAdmin && (
+          {/* Paid verified users and Admin: Show all photos */}
+          {(isAdmin || isPaidVerifiedUser) && profile.photos && profile.photos.length > 0 && (
             <>
               <Separator />
               <section>
@@ -703,23 +721,27 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                   )}
                 </div>
               </section>
-              <section>
-                <h3 className="font-bold text-lg mb-3">{t.selfiePhoto}</h3>
-                <div className="flex gap-3">
-                  {profile.selfieUrl ? (
-                    <img 
-                      src={profile.selfieUrl} 
-                      alt="Selfie" 
-                      className="w-24 h-24 object-cover rounded-lg border-2 border-blue-500 shadow cursor-pointer hover:opacity-80 transition-opacity hover:ring-2 hover:ring-primary"
-                      onClick={() => openLightbox([profile.selfieUrl!], 0)}
-                      title={language === 'hi' ? 'बड़ा देखें' : 'View larger'}
-                    />
-                  ) : (
-                    <span className="text-muted-foreground">{t.notProvided}</span>
-                  )}
-                </div>
-              </section>
             </>
+          )}
+
+          {/* Admin only: Show selfie photo (for verification purposes) */}
+          {isAdmin && (
+            <section>
+              <h3 className="font-bold text-lg mb-3">{t.selfiePhoto}</h3>
+              <div className="flex gap-3">
+                {profile.selfieUrl ? (
+                  <img 
+                    src={profile.selfieUrl} 
+                    alt="Selfie" 
+                    className="w-24 h-24 object-cover rounded-lg border-2 border-blue-500 shadow cursor-pointer hover:opacity-80 transition-opacity hover:ring-2 hover:ring-primary"
+                    onClick={() => openLightbox([profile.selfieUrl!], 0)}
+                    title={language === 'hi' ? 'बड़ा देखें' : 'View larger'}
+                  />
+                ) : (
+                  <span className="text-muted-foreground">{t.notProvided}</span>
+                )}
+              </div>
+            </section>
           )}
 
           {/* Admin: Show contact information */}
@@ -752,8 +774,8 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
             </>
           )}
 
-          {/* Admin: Show Partner Preferences */}
-          {isAdmin && profile.partnerPreferences && (
+          {/* Paid verified users and Admin: Show Partner Preferences */}
+          {(isAdmin || isPaidVerifiedUser) && profile.partnerPreferences && (
             <>
               <Separator />
               <section className="bg-purple-50 dark:bg-purple-950/30 p-4 rounded-lg">

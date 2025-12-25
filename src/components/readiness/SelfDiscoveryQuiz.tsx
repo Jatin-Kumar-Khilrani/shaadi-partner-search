@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
 import { 
   Brain, 
   Heart, 
@@ -23,7 +24,14 @@ import {
   Mountains,
   House,
   Briefcase,
-  Star
+  Star,
+  Trophy,
+  Target,
+  Confetti,
+  Rocket,
+  Crown,
+  Compass,
+  Gauge
 } from '@phosphor-icons/react'
 import type { SelfDiscoveryData, PersonalityDimension, ValuesOrientation, LifestylePace, FamilyOrientation, ConflictStyle } from '@/types/profile'
 
@@ -160,7 +168,46 @@ const translations = {
     },
     
     completedMessage: 'Great job! Your self-discovery profile is complete.',
-    completedDesc: 'This helps us understand you better and find more compatible matches.'
+    completedDesc: 'This helps us understand you better and find more compatible matches.',
+    
+    // Completion screen translations
+    congratulations: 'Congratulations!',
+    profileComplete: 'Your Self-Discovery Profile is Complete',
+    yourPersonality: 'Your Personality Snapshot',
+    yourValues: 'Your Core Values',
+    yourStyle: 'Your Style',
+    nextSteps: 'Recommended Next Steps',
+    eqAssessment: 'Take EQ Assessment',
+    eqAssessmentDesc: 'Measure your emotional intelligence for relationships',
+    partnerExpectations: 'Define Partner Expectations',
+    partnerExpectationsDesc: 'Clarify what you\'re looking for in a partner',
+    viewDashboard: 'View Full Dashboard',
+    saveAndContinue: 'Save & Continue',
+    personalityInsights: {
+      introvert: 'You prefer meaningful one-on-one connections over large gatherings',
+      balanced: 'You adapt well to both social settings and personal time',
+      extrovert: 'You thrive in social environments and energize through interaction'
+    },
+    valuesInsights: {
+      traditional: 'You value heritage, customs, and time-tested wisdom',
+      moderate: 'You blend traditional values with modern perspectives',
+      progressive: 'You embrace change and innovative approaches to life'
+    },
+    lifestyleInsights: {
+      relaxed: 'You prioritize balance, peace, and quality of life',
+      balanced: 'You work hard while maintaining meaningful relationships',
+      ambitious: 'You\'re driven to achieve and constantly push boundaries'
+    },
+    conflictInsights: {
+      avoidant: 'You prefer to let tensions settle before addressing issues',
+      collaborative: 'You seek mutual understanding and compromise',
+      direct: 'You believe in addressing issues head-on for quick resolution'
+    },
+    familyInsights: {
+      'joint-family': 'You value close family ties and shared living',
+      'nuclear-flexible': 'You\'re adaptable to different family arrangements',
+      'nuclear-preferred': 'You prefer independence while maintaining family bonds'
+    }
   },
   hi: {
     title: 'आत्म-खोज प्रश्नावली',
@@ -288,7 +335,46 @@ const translations = {
     },
     
     completedMessage: 'बहुत बढ़िया! आपकी आत्म-खोज प्रोफ़ाइल पूर्ण है।',
-    completedDesc: 'यह हमें आपको बेहतर समझने और अधिक संगत मैच खोजने में मदद करता है।'
+    completedDesc: 'यह हमें आपको बेहतर समझने और अधिक संगत मैच खोजने में मदद करता है।',
+    
+    // Completion screen translations
+    congratulations: 'बधाई हो!',
+    profileComplete: 'आपकी आत्म-खोज प्रोफ़ाइल पूर्ण है',
+    yourPersonality: 'आपका व्यक्तित्व स्नैपशॉट',
+    yourValues: 'आपके मूल मूल्य',
+    yourStyle: 'आपकी शैली',
+    nextSteps: 'अनुशंसित अगले कदम',
+    eqAssessment: 'EQ मूल्यांकन लें',
+    eqAssessmentDesc: 'रिश्तों के लिए अपनी भावनात्मक बुद्धिमत्ता मापें',
+    partnerExpectations: 'साथी की अपेक्षाएं परिभाषित करें',
+    partnerExpectationsDesc: 'स्पष्ट करें कि आप साथी में क्या खोज रहे हैं',
+    viewDashboard: 'पूर्ण डैशबोर्ड देखें',
+    saveAndContinue: 'सहेजें और जारी रखें',
+    personalityInsights: {
+      introvert: 'आप बड़ी सभाओं की तुलना में सार्थक एक-से-एक संबंध पसंद करते हैं',
+      balanced: 'आप सामाजिक सेटिंग्स और व्यक्तिगत समय दोनों में अच्छी तरह से अनुकूलित हैं',
+      extrovert: 'आप सामाजिक वातावरण में फलते-फूलते हैं और बातचीत से ऊर्जा प्राप्त करते हैं'
+    },
+    valuesInsights: {
+      traditional: 'आप विरासत, रीति-रिवाजों और समय-परीक्षित ज्ञान को महत्व देते हैं',
+      moderate: 'आप पारंपरिक मूल्यों को आधुनिक दृष्टिकोणों के साथ मिलाते हैं',
+      progressive: 'आप जीवन में बदलाव और नवीन दृष्टिकोणों को अपनाते हैं'
+    },
+    lifestyleInsights: {
+      relaxed: 'आप संतुलन, शांति और जीवन की गुणवत्ता को प्राथमिकता देते हैं',
+      balanced: 'आप कड़ी मेहनत करते हैं जबकि सार्थक रिश्ते बनाए रखते हैं',
+      ambitious: 'आप हासिल करने के लिए प्रेरित हैं और लगातार सीमाओं को आगे बढ़ाते हैं'
+    },
+    conflictInsights: {
+      avoidant: 'आप मुद्दों को संबोधित करने से पहले तनाव को शांत होने देना पसंद करते हैं',
+      collaborative: 'आप आपसी समझ और समझौते की तलाश करते हैं',
+      direct: 'आप त्वरित समाधान के लिए मुद्दों को सीधे संबोधित करने में विश्वास करते हैं'
+    },
+    familyInsights: {
+      'joint-family': 'आप घनिष्ठ पारिवारिक संबंधों और साझा जीवन को महत्व देते हैं',
+      'nuclear-flexible': 'आप विभिन्न पारिवारिक व्यवस्थाओं के लिए अनुकूलनीय हैं',
+      'nuclear-preferred': 'आप पारिवारिक बंधन बनाए रखते हुए स्वतंत्रता पसंद करते हैं'
+    }
   }
 }
 
@@ -299,6 +385,8 @@ const allGrowthAreas = ['patience', 'communication', 'finance', 'emotional-contr
 export function SelfDiscoveryQuiz({ language, onComplete, existingData }: SelfDiscoveryQuizProps) {
   const t = translations[language]
   const [currentStep, setCurrentStep] = useState(1)
+  const [showResults, setShowResults] = useState(false)
+  const [completedData, setCompletedData] = useState<SelfDiscoveryData | null>(null)
   const totalSteps = 10
   
   // Form state
@@ -365,7 +453,221 @@ export function SelfDiscoveryQuiz({ language, onComplete, existingData }: SelfDi
       growthAreas: growthAreas as SelfDiscoveryData['growthAreas'],
       completedAt: new Date().toISOString()
     }
-    onComplete(data)
+    setCompletedData(data)
+    setShowResults(true)
+  }
+  
+  const handleSaveAndContinue = () => {
+    if (completedData) {
+      onComplete(completedData)
+    }
+  }
+  
+  // Render completion results screen
+  const renderResultsScreen = () => {
+    if (!completedData) return null
+    
+    const getPersonalityIcon = () => {
+      switch (personalityType) {
+        case 'introvert': return <Moon size={20} weight="fill" />
+        case 'extrovert': return <Sun size={20} weight="fill" />
+        default: return <Users size={20} weight="fill" />
+      }
+    }
+    
+    const getLifestyleIcon = () => {
+      switch (lifestylePace) {
+        case 'relaxed': return <Heart size={20} weight="fill" />
+        case 'ambitious': return <Rocket size={20} weight="fill" />
+        default: return <Gauge size={20} weight="fill" />
+      }
+    }
+    
+    return (
+      <Card className="w-full max-w-2xl mx-auto overflow-hidden">
+        {/* Celebration Header */}
+        <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 p-6 text-white relative overflow-hidden">
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-2 left-4"><Confetti size={24} /></div>
+            <div className="absolute top-8 right-8"><Star size={20} weight="fill" /></div>
+            <div className="absolute bottom-4 left-1/4"><Sparkle size={18} weight="fill" /></div>
+            <div className="absolute top-4 right-1/3"><Trophy size={22} weight="fill" /></div>
+          </div>
+          <div className="relative z-10 text-center">
+            <div className="flex justify-center mb-3">
+              <div className="p-3 bg-white/20 rounded-full backdrop-blur-sm">
+                <Trophy size={40} weight="fill" className="text-yellow-300" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold mb-1">{t.congratulations}</h2>
+            <p className="text-white/90">{t.profileComplete}</p>
+          </div>
+        </div>
+        
+        <CardContent className="p-6 space-y-6">
+          <ScrollArea className="h-[350px] pr-4">
+            {/* Personality Snapshot */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <Crown size={20} className="text-primary" weight="fill" />
+                {t.yourPersonality}
+              </h3>
+              
+              {/* Core Values */}
+              <div className="bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-950/30 dark:to-rose-950/30 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Heart size={18} className="text-pink-500" weight="fill" />
+                  <span className="font-medium text-sm">{t.yourValues}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {topValues.map(value => (
+                    <Badge key={value} variant="secondary" className="bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300">
+                      {t.values[value]}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Personality Traits Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Social Style */}
+                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    {getPersonalityIcon()}
+                    <span className="font-medium text-sm text-blue-700 dark:text-blue-300">
+                      {t.personality[personalityType].split(' - ')[0]}
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-600/80 dark:text-blue-400/80">
+                    {t.personalityInsights[personalityType]}
+                  </p>
+                </div>
+                
+                {/* Values Orientation */}
+                <div className="bg-purple-50 dark:bg-purple-950/30 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Compass size={20} weight="fill" className="text-purple-500" />
+                    <span className="font-medium text-sm text-purple-700 dark:text-purple-300">
+                      {t.valuesOrientation[valuesOrientation].split(' - ')[0]}
+                    </span>
+                  </div>
+                  <p className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                    {t.valuesInsights[valuesOrientation]}
+                  </p>
+                </div>
+                
+                {/* Lifestyle Pace */}
+                <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    {getLifestyleIcon()}
+                    <span className="font-medium text-sm text-amber-700 dark:text-amber-300">
+                      {t.lifestyle[lifestylePace].split(' - ')[0]}
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-600/80 dark:text-amber-400/80">
+                    {t.lifestyleInsights[lifestylePace]}
+                  </p>
+                </div>
+                
+                {/* Conflict Style */}
+                <div className="bg-teal-50 dark:bg-teal-950/30 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Handshake size={20} weight="fill" className="text-teal-500" />
+                    <span className="font-medium text-sm text-teal-700 dark:text-teal-300">
+                      {t.conflict[conflictStyle].split(' - ')[0]?.replace('I prefer to ', '').replace('I like to ', '')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-teal-600/80 dark:text-teal-400/80">
+                    {t.conflictInsights[conflictStyle]}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Family Orientation */}
+              <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <House size={20} weight="fill" className="text-green-600" />
+                  <span className="font-medium text-sm text-green-700 dark:text-green-300">
+                    {t.family[familyOrientation].split(' - ')[0]}
+                  </span>
+                </div>
+                <p className="text-xs text-green-600/80 dark:text-green-400/80">
+                  {t.familyInsights[familyOrientation]}
+                </p>
+              </div>
+              
+              {/* Growth Areas */}
+              <div className="bg-orange-50 dark:bg-orange-950/30 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Brain size={18} className="text-orange-500" weight="fill" />
+                  <span className="font-medium text-sm">{t.growthTitle}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {growthAreas.map(area => (
+                    <Badge key={area} variant="outline" className="border-orange-300 text-orange-700 dark:border-orange-700 dark:text-orange-300">
+                      {t.growth[area]}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              
+              <Separator className="my-4" />
+              
+              {/* Next Steps */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <Target size={20} className="text-primary" weight="fill" />
+                  {t.nextSteps}
+                </h3>
+                
+                <div className="grid gap-3">
+                  <div className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer">
+                    <div className="p-2 bg-rose-100 dark:bg-rose-900/30 rounded-full">
+                      <Heart size={20} className="text-rose-500" weight="fill" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{t.eqAssessment}</p>
+                      <p className="text-xs text-muted-foreground">{t.eqAssessmentDesc}</p>
+                    </div>
+                    <ArrowRight size={16} className="text-muted-foreground" />
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                      <Target size={20} className="text-blue-500" weight="fill" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{t.partnerExpectations}</p>
+                      <p className="text-xs text-muted-foreground">{t.partnerExpectationsDesc}</p>
+                    </div>
+                    <ArrowRight size={16} className="text-muted-foreground" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+          
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4 border-t">
+            <Button 
+              variant="outline" 
+              className="flex-1"
+              onClick={() => setShowResults(false)}
+            >
+              <ArrowLeft size={16} className="mr-2" />
+              {t.previous}
+            </Button>
+            <Button 
+              className="flex-1 bg-green-600 hover:bg-green-700"
+              onClick={handleSaveAndContinue}
+            >
+              <CheckCircle size={16} className="mr-2" />
+              {t.saveAndContinue}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
   
   const renderStep = () => {
@@ -671,6 +973,11 @@ export function SelfDiscoveryQuiz({ language, onComplete, existingData }: SelfDi
       default:
         return null
     }
+  }
+  
+  // Show results screen if completed
+  if (showResults) {
+    return renderResultsScreen()
   }
   
   return (

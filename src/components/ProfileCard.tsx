@@ -2,9 +2,10 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MapPin, Briefcase, GraduationCap, UserCircle, ShieldCheck, Seal, Clock, Lock, Crown } from '@phosphor-icons/react'
+import { MapPin, Briefcase, GraduationCap, UserCircle, ShieldCheck, Seal, Clock, Lock, Crown, Eye } from '@phosphor-icons/react'
 import type { Profile, MembershipPlan } from '@/types/profile'
 import { motion } from 'framer-motion'
+import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 
 interface ProfileCardProps {
   profile: Profile
@@ -16,6 +17,9 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedIn = false, shouldBlur = false, membershipPlan }: ProfileCardProps) {
+  
+  // Lightbox for photo zoom
+  const { lightboxState, openLightbox, closeLightbox } = useLightbox()
   
   // Determine if user has premium access
   const hasPremiumAccess = membershipPlan === '6-month' || membershipPlan === '1-year'
@@ -95,8 +99,17 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
       <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 hover:border-teal/30">
         <CardHeader className="pb-4">
           <div className="flex items-start gap-4">
-            <div className="relative">
-              <Avatar className={`w-20 h-20 border-4 border-background shadow-lg ${(!isLoggedIn || shouldBlur) ? 'blur-md' : ''}`}>
+            <div 
+              className={`relative ${isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0 ? 'cursor-pointer group' : ''}`}
+              onClick={(e) => {
+                if (isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0) {
+                  e.stopPropagation()
+                  openLightbox(profile.photos, 0)
+                }
+              }}
+              title={isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0 ? (language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge') : ''}
+            >
+              <Avatar className={`w-20 h-20 border-4 border-background shadow-lg ${(!isLoggedIn || shouldBlur) ? 'blur-md' : ''} ${isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0 ? 'group-hover:ring-4 group-hover:ring-primary/50 transition-all' : ''}`}>
                 {isLoggedIn && !shouldBlur ? (
                   <AvatarImage src={profile.photos?.[0]} alt={displayName} />
                 ) : null}
@@ -104,6 +117,12 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
                   {initials}
                 </AvatarFallback>
               </Avatar>
+              {/* Zoom indicator for logged-in users who can see photos */}
+              {isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                  <Eye size={20} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              )}
               {/* Lock overlay for free/pending users */}
               {shouldBlur && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-full">
@@ -214,6 +233,14 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
           </Button>
         </CardFooter>
       </Card>
+
+      {/* Photo Lightbox for viewing photos in full size */}
+      <PhotoLightbox
+        photos={lightboxState.photos}
+        initialIndex={lightboxState.initialIndex}
+        open={lightboxState.open}
+        onClose={closeLightbox}
+      />
     </motion.div>
   )
 }

@@ -2417,16 +2417,16 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <div className="space-y-3">
                           {/* Pending Payments */}
                           {pendingPayments.map(profile => (
-                            <Card key={profile.id} className="border-amber-300 bg-amber-50/50 dark:bg-amber-900/10">
-                              <CardContent className="p-4">
-                                <div className="flex items-center gap-4">
+                            <Card key={profile.id} className="border-amber-300 bg-amber-50/50 dark:bg-amber-900/10 overflow-hidden">
+                              <CardContent className="p-3 sm:p-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                                   {/* Payment Screenshot Thumbnail */}
-                                  <div className="shrink-0">
+                                  <div className="shrink-0 flex items-start gap-3">
                                     {profile.paymentScreenshotUrl && (
                                       <img 
                                         src={profile.paymentScreenshotUrl} 
                                         alt="Payment Screenshot"
-                                        className="w-20 h-20 object-cover rounded-lg border-2 border-amber-400 cursor-pointer hover:opacity-80 transition-opacity"
+                                        className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border-2 border-amber-400 cursor-pointer hover:opacity-80 transition-opacity"
                                         onClick={() => {
                                           setPaymentViewProfile(profile)
                                           setPaymentRejectionReason('')
@@ -2434,11 +2434,24 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                         }}
                                       />
                                     )}
+                                    {/* Mobile: Show name next to image */}
+                                    <div className="sm:hidden flex-1 min-w-0">
+                                      <h4 className="font-bold truncate">{profile.fullName}</h4>
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        <Badge variant="outline" className="text-xs">{profile.profileId}</Badge>
+                                        <Badge className={`text-xs ${profile.membershipPlan === '1-year' ? 'bg-accent text-accent-foreground' : 'bg-primary'}`}>
+                                          {profile.membershipPlan === '6-month' ? (language === 'hi' ? '6 महीने' : '6 Month') : (language === 'hi' ? '1 वर्ष' : '1 Year')}
+                                        </Badge>
+                                        <Badge variant="secondary" className="text-xs bg-amber-500 text-white">
+                                          {language === 'hi' ? '₹ लंबित' : '₹ Pending'}
+                                        </Badge>
+                                      </div>
+                                    </div>
                                   </div>
 
-                                  {/* Profile Info */}
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
+                                  {/* Profile Info - Desktop */}
+                                  <div className="flex-1 min-w-0 hidden sm:block">
+                                    <div className="flex flex-wrap items-center gap-2 mb-1">
                                       <h4 className="font-bold">{profile.fullName}</h4>
                                       <Badge variant="outline" className="text-xs">{profile.profileId}</Badge>
                                       <Badge className={profile.membershipPlan === '1-year' ? 'bg-accent text-accent-foreground' : 'bg-primary'}>
@@ -2458,12 +2471,23 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                       <span>{profile.paymentUploadedAt ? formatDateDDMMYYYY(profile.paymentUploadedAt) : '-'}</span>
                                     </div>
                                   </div>
+                                  
+                                  {/* Amount info - Mobile only */}
+                                  <div className="sm:hidden text-sm text-muted-foreground">
+                                    <span>{language === 'hi' ? 'राशि:' : 'Amount:'} </span>
+                                    <span className="font-semibold text-foreground">
+                                      ₹{profile.paymentAmount?.toLocaleString('en-IN') || (profile.membershipPlan === '1-year' ? (membershipSettings?.oneYearPrice || 900) : (membershipSettings?.sixMonthPrice || 500))}
+                                    </span>
+                                    <span className="mx-2">|</span>
+                                    <span>{language === 'hi' ? 'अपलोड:' : 'Uploaded:'} </span>
+                                    <span>{profile.paymentUploadedAt ? formatDateDDMMYYYY(profile.paymentUploadedAt) : '-'}</span>
+                                  </div>
 
                                   {/* Actions */}
-                                  <div className="flex gap-2">
+                                  <div className="flex gap-2 sm:shrink-0">
                                     <Button 
                                       size="sm"
-                                      className="bg-green-600 hover:bg-green-700"
+                                      className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700"
                                       onClick={() => {
                                         const now = new Date()
                                         const monthsToAdd = profile.membershipPlan === '1-year' ? 12 : 6
@@ -2497,6 +2521,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     <Button 
                                       size="sm"
                                       variant="outline"
+                                      className="flex-1 sm:flex-none"
                                       onClick={() => {
                                         setPaymentViewProfile(profile)
                                         setPaymentRejectionReason('')
@@ -2522,16 +2547,16 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               </h4>
                               {rejectedPayments.map(profile => (
                                 <Card key={profile.id} className="border-red-300 bg-red-50/50 dark:bg-red-900/10">
-                                  <CardContent className="p-4">
-                                    <div className="flex items-center gap-4">
-                                      <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <h4 className="font-bold">{profile.fullName}</h4>
+                                  <CardContent className="p-3 sm:p-4">
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                                          <h4 className="font-bold truncate">{profile.fullName}</h4>
                                           <Badge variant="outline" className="text-xs">{profile.profileId}</Badge>
-                                          <Badge variant="destructive">{language === 'hi' ? '₹ अस्वीकृत' : '₹ Rejected'}</Badge>
+                                          <Badge variant="destructive" className="text-xs">{language === 'hi' ? '₹ अस्वीकृत' : '₹ Rejected'}</Badge>
                                         </div>
                                         {profile.paymentRejectionReason && (
-                                          <p className="text-sm text-red-600">
+                                          <p className="text-sm text-red-600 break-words">
                                             <span className="font-semibold">{language === 'hi' ? 'कारण:' : 'Reason:'}</span> {profile.paymentRejectionReason}
                                           </p>
                                         )}
@@ -2539,6 +2564,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                       <Button 
                                         size="sm"
                                         variant="outline"
+                                        className="w-full sm:w-auto shrink-0"
                                         onClick={() => {
                                           setPaymentViewProfile(profile)
                                           setPaymentRejectionReason('')
@@ -2580,22 +2606,36 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
 
                       <div className="space-y-3">
                         {pendingRenewals.map(profile => (
-                          <Card key={profile.id} className="border-blue-300 bg-blue-50/50 dark:bg-blue-900/10">
-                            <CardContent className="p-4">
-                              <div className="flex items-center gap-4">
+                          <Card key={profile.id} className="border-blue-300 bg-blue-50/50 dark:bg-blue-900/10 overflow-hidden">
+                            <CardContent className="p-3 sm:p-4">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                                 {/* Renewal Screenshot Thumbnail */}
-                                <div className="shrink-0">
+                                <div className="shrink-0 flex items-start gap-3">
                                   <img 
                                     src={profile.renewalPaymentScreenshotUrl} 
                                     alt="Renewal Payment Screenshot"
-                                    className="w-20 h-20 object-cover rounded-lg border-2 border-blue-400 cursor-pointer hover:opacity-80 transition-opacity"
+                                    className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border-2 border-blue-400 cursor-pointer hover:opacity-80 transition-opacity"
                                     onClick={() => openLightbox([profile.renewalPaymentScreenshotUrl!], 0)}
                                   />
+                                  {/* Mobile: Show name next to image */}
+                                  <div className="sm:hidden flex-1 min-w-0">
+                                    <h4 className="font-bold truncate">{profile.fullName}</h4>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      <Badge variant="outline" className="text-xs">{profile.profileId}</Badge>
+                                      <Badge className={`text-xs ${profile.membershipPlan === '1-year' ? 'bg-accent text-accent-foreground' : 'bg-primary'}`}>
+                                        {profile.membershipPlan === '6-month' ? (language === 'hi' ? '6 महीने' : '6 Month') : (language === 'hi' ? '1 वर्ष' : '1 Year')}
+                                      </Badge>
+                                      <Badge variant="secondary" className="text-xs bg-blue-500 text-white">
+                                        <ArrowCounterClockwise size={10} className="mr-1" />
+                                        {language === 'hi' ? 'नवीनीकरण' : 'Renewal'}
+                                      </Badge>
+                                    </div>
+                                  </div>
                                 </div>
 
-                                {/* Profile Info */}
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
+                                {/* Profile Info - Desktop */}
+                                <div className="flex-1 min-w-0 hidden sm:block">
+                                  <div className="flex flex-wrap items-center gap-2 mb-1">
                                     <h4 className="font-bold">{profile.fullName}</h4>
                                     <Badge variant="outline" className="text-xs">{profile.profileId}</Badge>
                                     <Badge className={profile.membershipPlan === '1-year' ? 'bg-accent text-accent-foreground' : 'bg-primary'}>
@@ -2616,12 +2656,23 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     <span>{profile.renewalPaymentUploadedAt ? formatDateDDMMYYYY(profile.renewalPaymentUploadedAt) : '-'}</span>
                                   </div>
                                 </div>
+                                
+                                {/* Amount info - Mobile only */}
+                                <div className="sm:hidden text-sm text-muted-foreground">
+                                  <span>{language === 'hi' ? 'राशि:' : 'Amount:'} </span>
+                                  <span className="font-semibold text-foreground">
+                                    ₹{profile.renewalPaymentAmount?.toLocaleString('en-IN') || (profile.membershipPlan === '1-year' ? (membershipSettings?.oneYearPrice || 900) : (membershipSettings?.sixMonthPrice || 500))}
+                                  </span>
+                                  <span className="mx-2">|</span>
+                                  <span>{language === 'hi' ? 'अपलोड:' : 'Uploaded:'} </span>
+                                  <span>{profile.renewalPaymentUploadedAt ? formatDateDDMMYYYY(profile.renewalPaymentUploadedAt) : '-'}</span>
+                                </div>
 
                                 {/* Actions */}
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 sm:shrink-0">
                                   <Button 
                                     size="sm"
-                                    className="bg-green-600 hover:bg-green-700"
+                                    className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700"
                                     onClick={() => {
                                       const now = new Date()
                                       const monthsToAdd = profile.membershipPlan === '1-year' ? 12 : 6
@@ -2657,6 +2708,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   <Button 
                                     size="sm"
                                     variant="destructive"
+                                    className="flex-1 sm:flex-none"
                                     onClick={() => {
                                       const reason = prompt(language === 'hi' ? 'अस्वीकृति का कारण दर्ज करें:' : 'Enter rejection reason:')
                                       if (reason) {

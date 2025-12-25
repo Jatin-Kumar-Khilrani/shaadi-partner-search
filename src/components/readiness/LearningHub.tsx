@@ -877,10 +877,10 @@ export function LearningHub({ language, completedArticles, onArticleComplete }: 
       
       {/* Article Dialog */}
       <Dialog open={!!selectedArticle} onOpenChange={() => setSelectedArticle(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
           {selectedArticle && (
             <>
-              <DialogHeader>
+              <DialogHeader className="flex-shrink-0">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge variant="outline">
                     {getCategoryIcon(selectedArticle.category)}
@@ -896,24 +896,28 @@ export function LearningHub({ language, completedArticles, onArticleComplete }: 
                 </DialogTitle>
               </DialogHeader>
               
-              <ScrollArea className="flex-1 pr-4">
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <div 
-                    className="whitespace-pre-line"
-                    dangerouslySetInnerHTML={{ 
-                      __html: (language === 'en' ? selectedArticle.content : selectedArticle.contentHi)
-                        .replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold mt-4 mb-2">$1</h1>')
-                        .replace(/^## (.+)$/gm, '<h2 class="text-lg font-semibold mt-4 mb-2">$1</h2>')
-                        .replace(/^### (.+)$/gm, '<h3 class="text-base font-medium mt-3 mb-1">$1</h3>')
-                        .replace(/^- (.+)$/gm, '<li class="ml-4">$1</li>')
-                        .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4">$2</li>')
-                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                    }}
-                  />
-                </div>
-              </ScrollArea>
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <div className="pr-4 pb-4">
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <div 
+                        className="whitespace-pre-line leading-relaxed"
+                        dangerouslySetInnerHTML={{ 
+                          __html: (language === 'en' ? selectedArticle.content : selectedArticle.contentHi)
+                            .replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold mt-4 mb-2">$1</h1>')
+                            .replace(/^## (.+)$/gm, '<h2 class="text-lg font-semibold mt-4 mb-2">$1</h2>')
+                            .replace(/^### (.+)$/gm, '<h3 class="text-base font-medium mt-3 mb-1">$1</h3>')
+                            .replace(/^- (.+)$/gm, '<li class="ml-4">$1</li>')
+                            .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4">$2</li>')
+                            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        }}
+                      />
+                    </div>
+                  </div>
+                </ScrollArea>
+              </div>
               
-              <div className="pt-4 border-t">
+              <div className="pt-4 border-t flex-shrink-0">
                 {completedArticles.includes(selectedArticle.id) ? (
                   <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
                     <CheckCircle size={14} className="mr-1" />
