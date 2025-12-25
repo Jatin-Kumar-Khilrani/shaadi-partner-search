@@ -47,6 +47,114 @@ const isValidPhoneLength = (phone: string, countryCode: string): boolean => {
   return phone.length >= lengthInfo.min && phone.length <= lengthInfo.max
 }
 
+// States/Provinces by Country
+const STATES_BY_COUNTRY: Record<string, string[]> = {
+  'India': [
+    'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 
+    'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 
+    'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 
+    'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 
+    'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 
+    'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+    'Andaman and Nicobar Islands', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu',
+    'Delhi', 'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry'
+  ],
+  'United States': [
+    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 
+    'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 
+    'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 
+    'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 
+    'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 
+    'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 
+    'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 
+    'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 
+    'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming',
+    'District of Columbia', 'Puerto Rico'
+  ],
+  'United Kingdom': [
+    'England', 'Scotland', 'Wales', 'Northern Ireland',
+    'Greater London', 'West Midlands', 'Greater Manchester', 'West Yorkshire',
+    'South Yorkshire', 'Merseyside', 'Tyne and Wear', 'Kent', 'Essex', 'Hampshire',
+    'Surrey', 'Hertfordshire', 'Lancashire', 'Nottinghamshire', 'Derbyshire'
+  ],
+  'Canada': [
+    'Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 
+    'Newfoundland and Labrador', 'Nova Scotia', 'Ontario', 'Prince Edward Island', 
+    'Quebec', 'Saskatchewan', 'Northwest Territories', 'Nunavut', 'Yukon'
+  ],
+  'Australia': [
+    'New South Wales', 'Victoria', 'Queensland', 'Western Australia', 
+    'South Australia', 'Tasmania', 'Australian Capital Territory', 'Northern Territory'
+  ],
+  'UAE': [
+    'Abu Dhabi', 'Dubai', 'Sharjah', 'Ajman', 'Umm Al Quwain', 'Ras Al Khaimah', 'Fujairah'
+  ],
+  'Singapore': ['Singapore'],
+  'Germany': [
+    'Baden-Württemberg', 'Bavaria', 'Berlin', 'Brandenburg', 'Bremen', 
+    'Hamburg', 'Hesse', 'Lower Saxony', 'Mecklenburg-Vorpommern', 
+    'North Rhine-Westphalia', 'Rhineland-Palatinate', 'Saarland', 
+    'Saxony', 'Saxony-Anhalt', 'Schleswig-Holstein', 'Thuringia'
+  ],
+  'New Zealand': [
+    'Auckland', 'Bay of Plenty', 'Canterbury', 'Gisborne', 'Hawke\'s Bay', 
+    'Manawatu-Whanganui', 'Marlborough', 'Nelson', 'Northland', 'Otago', 
+    'Southland', 'Taranaki', 'Tasman', 'Waikato', 'Wellington', 'West Coast'
+  ],
+  'Saudi Arabia': [
+    'Riyadh', 'Makkah', 'Madinah', 'Eastern Province', 'Asir', 
+    'Tabuk', 'Hail', 'Northern Borders', 'Jazan', 'Najran', 'Al Bahah', 'Al Jawf', 'Qassim'
+  ],
+  'Qatar': ['Doha', 'Al Rayyan', 'Al Wakrah', 'Al Khor', 'Al Shamal', 'Umm Salal', 'Al Daayen', 'Madinat ash Shamal'],
+  'Kuwait': ['Al Asimah', 'Hawalli', 'Farwaniya', 'Mubarak Al-Kabeer', 'Ahmadi', 'Jahra'],
+  'Oman': ['Muscat', 'Dhofar', 'Musandam', 'Al Buraimi', 'Ad Dakhiliyah', 'Al Batinah North', 'Al Batinah South', 'Ash Sharqiyah North', 'Ash Sharqiyah South', 'Al Wusta', 'Az Zahirah'],
+  'Bahrain': ['Capital', 'Muharraq', 'Northern', 'Southern'],
+  'Malaysia': [
+    'Johor', 'Kedah', 'Kelantan', 'Malacca', 'Negeri Sembilan', 'Pahang', 
+    'Perak', 'Perlis', 'Penang', 'Sabah', 'Sarawak', 'Selangor', 'Terengganu',
+    'Kuala Lumpur', 'Labuan', 'Putrajaya'
+  ],
+  'Netherlands': [
+    'Drenthe', 'Flevoland', 'Friesland', 'Gelderland', 'Groningen', 
+    'Limburg', 'North Brabant', 'North Holland', 'Overijssel', 
+    'South Holland', 'Utrecht', 'Zeeland'
+  ],
+  'France': [
+    'Île-de-France', 'Provence-Alpes-Côte d\'Azur', 'Auvergne-Rhône-Alpes', 
+    'Occitanie', 'Nouvelle-Aquitaine', 'Hauts-de-France', 'Grand Est', 
+    'Pays de la Loire', 'Brittany', 'Normandy', 'Bourgogne-Franche-Comté', 
+    'Centre-Val de Loire', 'Corsica'
+  ],
+  'Ireland': ['Connacht', 'Leinster', 'Munster', 'Ulster', 'Dublin', 'Cork', 'Galway', 'Limerick'],
+  'Switzerland': [
+    'Zürich', 'Bern', 'Lucerne', 'Uri', 'Schwyz', 'Obwalden', 'Nidwalden', 
+    'Glarus', 'Zug', 'Fribourg', 'Solothurn', 'Basel-Stadt', 'Basel-Landschaft', 
+    'Schaffhausen', 'Appenzell Ausserrhoden', 'Appenzell Innerrhoden', 'St. Gallen', 
+    'Graubünden', 'Aargau', 'Thurgau', 'Ticino', 'Vaud', 'Valais', 'Neuchâtel', 'Geneva', 'Jura'
+  ],
+  'Japan': [
+    'Hokkaido', 'Aomori', 'Iwate', 'Miyagi', 'Akita', 'Yamagata', 'Fukushima',
+    'Ibaraki', 'Tochigi', 'Gunma', 'Saitama', 'Chiba', 'Tokyo', 'Kanagawa',
+    'Niigata', 'Toyama', 'Ishikawa', 'Fukui', 'Yamanashi', 'Nagano', 'Gifu',
+    'Shizuoka', 'Aichi', 'Mie', 'Shiga', 'Kyoto', 'Osaka', 'Hyogo', 'Nara',
+    'Wakayama', 'Tottori', 'Shimane', 'Okayama', 'Hiroshima', 'Yamaguchi',
+    'Tokushima', 'Kagawa', 'Ehime', 'Kochi', 'Fukuoka', 'Saga', 'Nagasaki',
+    'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Okinawa'
+  ],
+  'South Korea': [
+    'Seoul', 'Busan', 'Daegu', 'Incheon', 'Gwangju', 'Daejeon', 'Ulsan', 'Sejong',
+    'Gyeonggi', 'Gangwon', 'North Chungcheong', 'South Chungcheong', 
+    'North Jeolla', 'South Jeolla', 'North Gyeongsang', 'South Gyeongsang', 'Jeju'
+  ],
+  'Hong Kong': ['Hong Kong Island', 'Kowloon', 'New Territories'],
+  'Other': []
+}
+
+// Helper function to get states for a country
+const getStatesForCountry = (country: string): string[] => {
+  return STATES_BY_COUNTRY[country] || []
+}
+
 interface MembershipSettings {
   sixMonthPrice: number
   oneYearPrice: number
@@ -1962,10 +2070,11 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <Select 
                       value={formData.country || ''} 
                       onValueChange={(value) => {
-                        // Update country and clear residential status if switching to India
+                        // Update country, clear state, and clear residential status if switching to India
                         setFormData(prev => ({
                           ...prev,
                           country: value,
+                          state: '', // Clear state when country changes
                           residentialStatus: value === 'India' ? '' : prev.residentialStatus
                         }))
                       }}
@@ -2003,13 +2112,31 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
                   <div className="space-y-2">
                     <Label htmlFor="state">{language === 'hi' ? 'राज्य/प्रांत' : 'State/Province'} *</Label>
-                    <Input
-                      id="state"
-                      placeholder={language === 'hi' ? 'उदाहरण: महाराष्ट्र, कैलिफोर्निया' : 'Example: Maharashtra, California'}
-                      value={formData.state || ''}
-                      onChange={(e) => updateField('state', e.target.value)}
-                      required
-                    />
+                    {getStatesForCountry(formData.country).length > 0 ? (
+                      <Select 
+                        value={formData.state || ''} 
+                        onValueChange={(value) => updateField('state', value)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder={language === 'hi' ? 'राज्य चुनें' : 'Select State/Province'} />
+                        </SelectTrigger>
+                        <SelectContent className="z-[9999] max-h-[300px]" position="popper" sideOffset={4}>
+                          {getStatesForCountry(formData.country).map((state) => (
+                            <SelectItem key={state} value={state}>
+                              {state}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        id="state"
+                        placeholder={language === 'hi' ? 'राज्य/प्रांत दर्ज करें' : 'Enter State/Province'}
+                        value={formData.state || ''}
+                        onChange={(e) => updateField('state', e.target.value)}
+                        required
+                      />
+                    )}
                   </div>
 
                   <div className="space-y-2">
