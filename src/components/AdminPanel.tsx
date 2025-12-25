@@ -931,30 +931,28 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   }
 
   // Handle marking photo as verified/not verified (manual admin action)
-  const handleMarkPhotoVerified = async (profile: Profile, isVerified: boolean) => {
-    try {
-      const updatedProfile = {
-        ...profile,
-        photoVerified: isVerified,
-        photoVerifiedAt: new Date().toISOString(),
-        photoVerifiedBy: 'Admin',
-        photoVerificationNotes: isVerified ? 'Manually verified by admin' : 'Manually marked as not verified by admin',
-        photoVerificationConfidence: isVerified ? 100 : 0
-      }
-      
-      await saveProfile(updatedProfile)
-      
-      // Update local state
-      setProfiles(prev => prev.map(p => p.id === profile.id ? updatedProfile : p))
-      setFaceVerificationDialog(updatedProfile)
-      
-      if (isVerified) {
-        toast.success(t.faceVerifiedSuccess)
-      } else {
-        toast.warning(t.faceNotVerifiedSuccess)
-      }
-    } catch (error) {
-      toast.error(language === 'hi' ? 'अपडेट विफल' : 'Update failed')
+  const handleMarkPhotoVerified = (profile: Profile, isVerified: boolean) => {
+    const updatedProfile: Profile = {
+      ...profile,
+      photoVerified: isVerified,
+      photoVerifiedAt: new Date().toISOString(),
+      photoVerifiedBy: 'Admin',
+      photoVerificationNotes: isVerified ? 'Manually verified by admin' : 'Manually marked as not verified by admin',
+      photoVerificationConfidence: isVerified ? 100 : 0
+    }
+    
+    // Update profiles state (this auto-persists to KV storage)
+    setProfiles((current) => 
+      (current || []).map(p => p.id === profile.id ? updatedProfile : p)
+    )
+    
+    // Update dialog state to show the updated profile
+    setFaceVerificationDialog(updatedProfile)
+    
+    if (isVerified) {
+      toast.success(t.faceVerifiedSuccess)
+    } else {
+      toast.warning(t.faceNotVerifiedSuccess)
     }
   }
 
