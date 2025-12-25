@@ -252,19 +252,18 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                     </div>
                                   )}
                                   <div>
-                                    <p className="font-semibold">{profile?.fullName || 'Unknown'}</p>
+                                    <p 
+                                      className={`font-semibold ${profile && onViewProfile ? 'cursor-pointer hover:text-primary hover:underline transition-colors' : ''}`}
+                                      onClick={() => profile && onViewProfile?.(profile)}
+                                    >
+                                      {profile?.fullName || 'Unknown'}
+                                    </p>
                                     <p className="text-sm text-muted-foreground">{profile?.profileId || interest.toProfileId}</p>
                                     <p className="text-xs text-muted-foreground">{formatDate(interest.createdAt)}</p>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {getStatusBadge(interest.status)}
-                                  {profile && onViewProfile && (
-                                    <Button variant="outline" size="sm" onClick={() => onViewProfile(profile)}>
-                                      <Eye size={16} className="mr-1" />
-                                      {t.viewProfile}
-                                    </Button>
-                                  )}
                                 </div>
                               </div>
                             </CardContent>
@@ -319,7 +318,12 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       </div>
                                     )}
                                     <div>
-                                      <p className="font-semibold">{profile?.fullName || 'Unknown'}</p>
+                                      <p 
+                                        className={`font-semibold ${profile && onViewProfile ? 'cursor-pointer hover:text-primary hover:underline transition-colors' : ''}`}
+                                        onClick={() => profile && onViewProfile?.(profile)}
+                                      >
+                                        {profile?.fullName || 'Unknown'}
+                                      </p>
                                       <p className="text-sm text-muted-foreground">{profile?.profileId || interest.fromProfileId}</p>
                                       <p className="text-xs text-muted-foreground">{formatDate(interest.createdAt)}</p>
                                     </div>
@@ -327,17 +331,6 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                   {getStatusBadge(interest.status)}
                                 </div>
                                 <div className="flex gap-2">
-                                  {profile && (
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => onViewProfile?.(profile)}
-                                      className="flex-1"
-                                    >
-                                      <Eye size={16} className="mr-2" />
-                                      {t.viewProfile}
-                                    </Button>
-                                  )}
                                   {interest.status === 'pending' && (
                                     <>
                                       <Button 
@@ -420,7 +413,12 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                         </div>
                                       )}
                                       <div>
-                                        <p className="font-semibold">{profile?.fullName || 'Unknown'}</p>
+                                        <p 
+                                          className={`font-semibold ${profile && onViewProfile ? 'cursor-pointer hover:text-primary hover:underline transition-colors' : ''}`}
+                                          onClick={() => profile && onViewProfile?.(profile)}
+                                        >
+                                          {profile?.fullName || 'Unknown'}
+                                        </p>
                                         <p className="text-sm text-muted-foreground">{profile?.profileId || 'Unknown'}</p>
                                         <p className="text-xs text-muted-foreground">{formatDate(request.createdAt)}</p>
                                       </div>
@@ -472,7 +470,12 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                           </div>
                                         )}
                                         <div>
-                                          <p className="font-semibold">{profile?.fullName || 'Unknown'}</p>
+                                          <p 
+                                            className={`font-semibold ${profile && onViewProfile ? 'cursor-pointer hover:text-primary hover:underline transition-colors' : ''}`}
+                                            onClick={() => profile && onViewProfile?.(profile)}
+                                          >
+                                            {profile?.fullName || 'Unknown'}
+                                          </p>
                                           <p className="text-sm text-muted-foreground">{profile?.profileId || 'Unknown'}</p>
                                           <p className="text-xs text-muted-foreground">{formatDate(request.createdAt)}</p>
                                         </div>
@@ -542,7 +545,10 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                 <div className="flex-1">
                                   <div className="flex items-center justify-between mb-2">
                                     <div>
-                                      <p className="font-semibold">
+                                      <p 
+                                        className={`font-semibold ${!isAdminMessage && otherProfile && onViewProfile ? 'cursor-pointer hover:text-primary hover:underline transition-colors' : ''}`}
+                                        onClick={() => !isAdminMessage && otherProfile && onViewProfile?.(otherProfile)}
+                                      >
                                         {isAdminMessage ? 'Admin' : (otherProfile?.fullName || 'Unknown')}
                                       </p>
                                       {!isAdminMessage && (

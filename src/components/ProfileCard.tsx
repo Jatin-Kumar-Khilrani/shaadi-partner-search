@@ -1,4 +1,4 @@
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -132,7 +132,10 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
-                <h3 className="font-bold text-xl leading-tight">
+                <h3 
+                  className="font-bold text-xl leading-tight cursor-pointer hover:text-primary hover:underline transition-colors"
+                  onClick={() => onViewProfile(profile)}
+                >
                   {displayName}
                   {shouldHideSurname && <span className="text-muted-foreground"> ...</span>}
                 </h3>
@@ -222,16 +225,6 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
             </p>
           )}
         </CardContent>
-
-        <CardFooter className="pt-0">
-          <Button 
-            onClick={() => onViewProfile(profile)} 
-            className="w-full"
-            variant="default"
-          >
-            {t.viewProfile}
-          </Button>
-        </CardFooter>
       </Card>
 
       {/* Photo Lightbox for viewing photos in full size */}

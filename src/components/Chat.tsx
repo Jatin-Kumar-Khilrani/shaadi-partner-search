@@ -148,7 +148,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     typeMessage: language === 'hi' ? 'संदेश लिखें...' : 'Type a message...',
     send: language === 'hi' ? 'भेजें' : 'Send',
     you: language === 'hi' ? 'आप' : 'You',
-    admin: language === 'hi' ? 'एडमिन' : 'Admin',
+    admin: language === 'hi' ? 'एडमिन सहायता' : 'Admin Support',
     broadcast: language === 'hi' ? 'सभी को' : 'Broadcast',
     chatLocked: language === 'hi' ? 'चैट लॉक है' : 'Chat Locked',
     acceptInterestFirst: language === 'hi' ? 'चैट करने के लिए पहले रुचि स्वीकार करें' : 'Accept interest first to chat',
@@ -422,6 +422,22 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
           })
         }
       })
+    }
+
+    // Always add Admin Support conversation for non-admin users
+    if (!isAdmin && currentUserProfile) {
+      const adminConvId = `admin-${currentUserProfile.profileId}`
+      if (!convMap.has(adminConvId)) {
+        convMap.set(adminConvId, {
+          id: adminConvId,
+          participants: ['admin', currentUserProfile.profileId],
+          lastMessage: undefined,
+          timestamp: new Date().toISOString(),
+          unreadCount: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+      }
     }
 
     const sortedConversations = Array.from(convMap.values()).sort(

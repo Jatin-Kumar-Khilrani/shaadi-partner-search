@@ -1451,7 +1451,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     )}
                                     
                                     {/* Profile info grid */}
-                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-muted-foreground overflow-hidden">
                                       <div className="truncate">{t.age}: {profile.age}</div>
                                       <div className="truncate">{profile.gender === 'male' ? (language === 'hi' ? 'पुरुष' : 'Male') : (language === 'hi' ? 'महिला' : 'Female')}</div>
                                       <div className="truncate">{t.location}: {profile.location}</div>

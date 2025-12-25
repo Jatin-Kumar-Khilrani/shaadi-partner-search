@@ -488,7 +488,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
               <UserCircle size={22} weight="fill" />
               {t.personalInfo}
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden">
               <InfoItem icon={<MapPin size={18} />} label={t.location} value={`${profile.location}, ${profile.country}`} />
               <InfoItem icon={<Calendar size={18} />} label={t.dateOfBirth} value={formatDateDDMMYYYY(profile.dateOfBirth)} />
               <InfoItem icon={<GraduationCap size={18} />} label={t.education} value={formatEducation(profile.education, language)} />
@@ -753,7 +753,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                   <Phone size={22} weight="fill" />
                   {t.contactInfo} ({language === 'hi' ? 'व्यवस्थापक दृश्य' : 'Admin View'})
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden">
                   <InfoItem 
                     icon={<Phone size={18} />} 
                     label={t.mobileNumber} 
@@ -783,7 +783,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                   <HandHeart size={22} weight="fill" className="text-purple-600" />
                   {t.partnerPreferences}
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden">
                   {/* Age Preference */}
                   {(profile.partnerPreferences.ageMin || profile.partnerPreferences.ageMax) && (
                     <InfoItem 
@@ -1214,11 +1214,11 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
 
 function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-start gap-2">
-      <div className="text-muted-foreground mt-0.5">{icon}</div>
-      <div>
-        <div className="text-xs text-muted-foreground">{label}</div>
-        <div className="font-medium">{value}</div>
+    <div className="flex items-start gap-2 min-w-0 overflow-hidden">
+      <div className="text-muted-foreground mt-0.5 flex-shrink-0">{icon}</div>
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <div className="text-xs text-muted-foreground truncate">{label}</div>
+        <div className="font-medium break-words line-clamp-2" title={value}>{value}</div>
       </div>
     </div>
   )

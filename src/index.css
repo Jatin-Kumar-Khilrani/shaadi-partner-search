@@ -17,6 +17,11 @@
   [data-radix-select-content] {
     z-index: 100 !important;
   }
+
+  /* Prevent text overflow in grid layouts */
+  .grid > * {
+    min-width: 0;
+  }
 }
 
 :root {
