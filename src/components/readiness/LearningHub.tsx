@@ -909,7 +909,7 @@ export function LearningHub({ language, completedArticles, onArticleComplete }: 
                           .replace(/^# .+\n+/, '')
                           .replace(/^## (.+)$/gm, '<h2 class="text-lg font-semibold mt-5 mb-3 text-foreground">$1</h2>')
                           .replace(/^### (.+)$/gm, '<h3 class="text-base font-medium mt-4 mb-2 text-foreground">$1</h3>')
-                          .replace(/^- (.+)$/gm, '<li class="ml-4 py-0.5">• $1</li>')
+                          .replace(/^- (.+)$/gm, '<li class="ml-4 py-0.5">$1</li>')
                           .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4 py-0.5">$1. $2</li>')
                           .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')
                       }}
