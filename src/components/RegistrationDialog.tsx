@@ -347,7 +347,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         height: editProfile.height || '',
         weight: editProfile.weight || '',
         disability: editProfile.disability || 'no',
-        disabilityDetails: editProfile.disabilityDetails || '',,
+        disabilityDetails: editProfile.disabilityDetails || '',
         bio: editProfile.bio || '',
         familyDetails: editProfile.familyDetails || '',
         membershipPlan: editProfile.membershipPlan,
