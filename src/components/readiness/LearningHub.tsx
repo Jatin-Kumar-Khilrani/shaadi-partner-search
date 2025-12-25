@@ -877,10 +877,11 @@ export function LearningHub({ language, completedArticles, onArticleComplete }: 
       
       {/* Article Dialog */}
       <Dialog open={!!selectedArticle} onOpenChange={() => setSelectedArticle(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[90vh] p-0 gap-0 overflow-hidden">
           {selectedArticle && (
-            <>
-              <DialogHeader className="flex-shrink-0">
+            <div className="flex flex-col h-full max-h-[90vh]">
+              {/* Fixed Header */}
+              <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b bg-background">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge variant="outline">
                     {getCategoryIcon(selectedArticle.category)}
@@ -891,49 +892,58 @@ export function LearningHub({ language, completedArticles, onArticleComplete }: 
                     {selectedArticle.duration} {t.minRead}
                   </span>
                 </div>
-                <DialogTitle>
+                <DialogTitle className="text-xl">
                   {language === 'en' ? selectedArticle.title : selectedArticle.titleHi}
                 </DialogTitle>
               </DialogHeader>
               
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <div className="pr-4 pb-4">
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                      <div 
-                        className="whitespace-pre-line leading-relaxed"
-                        dangerouslySetInnerHTML={{ 
-                          __html: (language === 'en' ? selectedArticle.content : selectedArticle.contentHi)
-                            .replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold mt-4 mb-2">$1</h1>')
-                            .replace(/^## (.+)$/gm, '<h2 class="text-lg font-semibold mt-4 mb-2">$1</h2>')
-                            .replace(/^### (.+)$/gm, '<h3 class="text-base font-medium mt-3 mb-1">$1</h3>')
-                            .replace(/^- (.+)$/gm, '<li class="ml-4">$1</li>')
-                            .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4">$2</li>')
-                            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                        }}
-                      />
-                    </div>
+              {/* Scrollable Content Area */}
+              <div className="flex-1 overflow-y-auto overscroll-contain">
+                <div className="p-6 pt-4">
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <div 
+                      className="leading-relaxed space-y-3"
+                      dangerouslySetInnerHTML={{ 
+                        __html: (language === 'en' ? selectedArticle.content : selectedArticle.contentHi)
+                          // Remove the first # heading (title) since it's already shown in DialogTitle
+                          .replace(/^# .+\n+/, '')
+                          .replace(/^## (.+)$/gm, '<h2 class="text-lg font-semibold mt-5 mb-3 text-foreground">$1</h2>')
+                          .replace(/^### (.+)$/gm, '<h3 class="text-base font-medium mt-4 mb-2 text-foreground">$1</h3>')
+                          .replace(/^- (.+)$/gm, '<li class="ml-4 py-0.5">• $1</li>')
+                          .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4 py-0.5">$1. $2</li>')
+                          .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+                      }}
+                    />
                   </div>
-                </ScrollArea>
+                </div>
               </div>
               
-              <div className="pt-4 border-t flex-shrink-0">
-                {completedArticles.includes(selectedArticle.id) ? (
-                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                    <CheckCircle size={14} className="mr-1" />
-                    {t.completed}
-                  </Badge>
-                ) : (
-                  <Button onClick={() => {
-                    onArticleComplete(selectedArticle.id)
-                    setSelectedArticle(null)
-                  }}>
-                    <CheckCircle size={16} className="mr-2" />
-                    {t.markComplete}
-                  </Button>
-                )}
+              {/* Fixed Footer */}
+              <div className="flex-shrink-0 p-4 border-t bg-muted/30">
+                <div className="flex items-center justify-between">
+                  {completedArticles.includes(selectedArticle.id) ? (
+                    <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 py-2 px-3">
+                      <CheckCircle size={16} className="mr-2" />
+                      {t.completed}
+                    </Badge>
+                  ) : (
+                    <Button 
+                      onClick={() => {
+                        onArticleComplete(selectedArticle.id)
+                        setSelectedArticle(null)
+                      }}
+                      size="lg"
+                    >
+                      <CheckCircle size={18} className="mr-2" />
+                      {t.markComplete}
+                    </Button>
+                  )}
+                  <span className="text-xs text-muted-foreground hidden sm:inline">
+                    {language === 'en' ? 'Scroll down to read more' : 'और पढ़ने के लिए नीचे स्क्रॉल करें'}
+                  </span>
+                </div>
               </div>
-            </>
+            </div>
           )}
         </DialogContent>
       </Dialog>

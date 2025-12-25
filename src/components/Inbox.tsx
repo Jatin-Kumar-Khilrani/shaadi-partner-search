@@ -7,9 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Heart, Check, X, Eye, Clock, ChatCircle, ProhibitInset, Phone, Envelope as EnvelopeIcon, Warning, MagnifyingGlassPlus } from '@phosphor-icons/react'
+import { Heart, Check, X, Eye, Clock, ChatCircle, ProhibitInset, Phone, Envelope as EnvelopeIcon, Warning, MagnifyingGlassPlus, User } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Interest, ContactRequest, Profile, BlockedProfile, MembershipPlan } from '@/types/profile'
+import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
 import type { ChatMessage } from '@/types/chat'
 import type { Language } from '@/lib/translations'
 import { formatDateDDMMYYYY } from '@/lib/utils'
@@ -53,6 +54,7 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, me
   const [interestToDecline, setInterestToDecline] = useState<string | null>(null)
   const [interestToBlock, setInterestToBlock] = useState<{ interestId: string, profileId: string } | null>(null)
   const [viewContactProfile, setViewContactProfile] = useState<Profile | null>(null)
+  const [selectedProfileForDetails, setSelectedProfileForDetails] = useState<Profile | null>(null)
   
   // Lightbox for photo zoom
   const { lightboxState, openLightbox, closeLightbox } = useLightbox()
@@ -124,6 +126,8 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, me
       ? 'यह आपकी अंतिम चैट थी!' 
       : 'This was your last chat!',
     remainingChats: language === 'hi' ? 'शेष चैट' : 'Chats Left',
+    viewProfile: language === 'hi' ? 'प्रोफाइल देखें' : 'View Profile',
+    clickToViewProfile: language === 'hi' ? 'प्रोफाइल देखने के लिए क्लिक करें' : 'Click to view profile',
   }
 
   const receivedInterests = interests?.filter(
@@ -369,7 +373,14 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, me
                             </div>
                           )}
                           <div>
-                            <h3 className="font-bold text-lg">{profile.fullName}</h3>
+                            <h3 
+                              className="font-bold text-lg text-primary hover:underline cursor-pointer inline-flex items-center gap-1 transition-colors"
+                              onClick={() => setSelectedProfileForDetails(profile)}
+                              title={t.clickToViewProfile}
+                            >
+                              {profile.fullName}
+                              <User size={14} weight="bold" className="opacity-60" />
+                            </h3>
                             <p className="text-sm text-muted-foreground">{profile.profileId}</p>
                             <p className="text-sm text-muted-foreground">
                               {profile.age} {language === 'hi' ? 'वर्ष' : 'years'} • {profile.location}
@@ -457,7 +468,14 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, me
                               </div>
                             )}
                             <div>
-                              <h3 className="font-bold text-lg">{profile.fullName}</h3>
+                              <h3 
+                                className="font-bold text-lg text-primary hover:underline cursor-pointer inline-flex items-center gap-1 transition-colors"
+                                onClick={() => setSelectedProfileForDetails(profile)}
+                                title={t.clickToViewProfile}
+                              >
+                                {profile.fullName}
+                                <User size={14} weight="bold" className="opacity-60" />
+                              </h3>
                               <p className="text-sm text-muted-foreground">{profile.profileId}</p>
                               <p className="text-sm text-muted-foreground">
                                 {profile.age} {language === 'hi' ? 'वर्ष' : 'years'} • {profile.location}
@@ -538,7 +556,14 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, me
                             </div>
                           )}
                           <div>
-                            <h3 className="font-bold text-lg">{profile.fullName}</h3>
+                            <h3 
+                              className="font-bold text-lg text-primary hover:underline cursor-pointer inline-flex items-center gap-1 transition-colors"
+                              onClick={() => setSelectedProfileForDetails(profile)}
+                              title={t.clickToViewProfile}
+                            >
+                              {profile.fullName}
+                              <User size={14} weight="bold" className="opacity-60" />
+                            </h3>
                             <p className="text-sm text-muted-foreground">{profile.profileId}</p>
                             <p className="text-sm text-muted-foreground">
                               {profile.age} {language === 'hi' ? 'वर्ष' : 'years'} • {profile.location}
@@ -693,6 +718,19 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, me
           initialIndex={lightboxState.initialIndex}
           open={lightboxState.open}
           onClose={closeLightbox}
+        />
+
+        {/* Profile Detail Dialog for viewing full profile */}
+        <ProfileDetailDialog
+          profile={selectedProfileForDetails}
+          open={!!selectedProfileForDetails}
+          onClose={() => setSelectedProfileForDetails(null)}
+          language={language}
+          currentUserProfile={currentUserProfile}
+          isLoggedIn={!!loggedInUserId}
+          membershipPlan={membershipPlan}
+          membershipSettings={membershipSettings}
+          setProfiles={setProfiles}
         />
       </div>
     </div>
