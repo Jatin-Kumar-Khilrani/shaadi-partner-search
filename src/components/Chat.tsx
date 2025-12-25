@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useKV } from '@/hooks/useKV'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -110,7 +110,34 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   }
 
   const chatLimit = getChatLimit()
-  const chatRequestsUsed = currentUserProfile?.chatRequestsUsed || currentUserProfile?.freeChatProfiles || []
+  
+  // Calculate actual profiles chatted with from messages (retroactive counting)
+  // This counts unique non-admin profiles the user has SENT messages to
+  const actualChattedProfiles = useMemo(() => {
+    if (!currentUserProfile || !messages) return []
+    
+    const userProfileId = currentUserProfile.profileId
+    const profilesChattedWith = new Set<string>()
+    
+    messages.forEach(msg => {
+      // Only count messages SENT by the current user to other users (not admin)
+      if (msg.fromProfileId === userProfileId && 
+          msg.toProfileId && 
+          msg.toProfileId !== 'admin' && 
+          msg.toProfileId !== 'all' &&
+          msg.type === 'user-to-user') {
+        profilesChattedWith.add(msg.toProfileId)
+      }
+    })
+    
+    return Array.from(profilesChattedWith)
+  }, [currentUserProfile, messages])
+  
+  // Use the larger of stored chatRequestsUsed or actual chatted profiles from messages
+  const storedChatRequests = currentUserProfile?.chatRequestsUsed || currentUserProfile?.freeChatProfiles || []
+  const chatRequestsUsed = actualChattedProfiles.length > storedChatRequests.length 
+    ? actualChattedProfiles 
+    : storedChatRequests
   const remainingChats = Math.max(0, chatLimit - chatRequestsUsed.length)
 
   const t = {
@@ -586,12 +613,15 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
 
       // Check chat limit for all plans (only for user-to-user chats, not admin chats)
       if (otherProfileId && setProfiles) {
-        // Use new chatRequestsUsed or fallback to legacy freeChatProfiles
-        const chattedProfiles = currentUserProfile.chatRequestsUsed || currentUserProfile.freeChatProfiles || []
+        // Get the current user's profile ID for matching
+        const currentProfileId = currentUserProfile.id
         
-        // If already chatted with this profile, allow
+        // Use actual chatted profiles from messages (most accurate) or stored values
+        const chattedProfiles = chatRequestsUsed
+        
+        // If already chatted with this profile, allow without further checks
         if (!chattedProfiles.includes(otherProfileId)) {
-          // Check if limit reached
+          // Check if limit reached using actual count
           if (chattedProfiles.length >= chatLimit) {
             toast.error(t.chatLimitReached, {
               description: t.upgradeForMoreChats,
@@ -602,13 +632,25 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
 
           // Add to chatted profiles (use new field)
           const updatedChattedProfiles = [...chattedProfiles, otherProfileId]
-          setProfiles((current) => 
-            (current || []).map(p => 
-              p.id === currentUserProfile.id 
-                ? { ...p, chatRequestsUsed: updatedChattedProfiles, freeChatProfiles: updatedChattedProfiles }
-                : p
-            )
-          )
+          
+          // Update profiles - use profileId for more reliable matching
+          setProfiles((current) => {
+            const updated = (current || []).map(p => {
+              // Match by both id and profileId for robustness
+              if (p.id === currentProfileId || p.profileId === currentUserProfile.profileId) {
+                console.log(`[Chat] Updating chatRequestsUsed for profile ${p.profileId}:`, updatedChattedProfiles)
+                return { 
+                  ...p, 
+                  chatRequestsUsed: updatedChattedProfiles, 
+                  freeChatProfiles: updatedChattedProfiles,
+                  updatedAt: new Date().toISOString()
+                }
+              }
+              return p
+            })
+            console.log(`[Chat] Profiles updated, saving to storage...`)
+            return updated
+          })
 
           // Notify user about remaining chats
           const remaining = chatLimit - updatedChattedProfiles.length
