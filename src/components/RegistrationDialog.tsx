@@ -1506,7 +1506,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               {step === 3 && showVerification && (language === 'hi' ? 'कृपया अपने ईमेल और मोबाइल पर भेजे गए OTP को सत्यापित करें।' : 'Please verify the OTPs sent to your email and mobile.')}
               {step === 4 && (language === 'hi' ? 'अपनी फ़ोटो और लाइव सेल्फी अपलोड करें। चेहरा फ्रेम का 50% होना चाहिए।' : 'Upload your photos and capture a live selfie. Face must cover 50% of frame.')}
               {step === 5 && (language === 'hi' ? 'अपने बारे में और परिवार की जानकारी दें। यह आवश्यक है।' : 'Tell us about yourself and your family. This is required.')}
-              {step === 6 && (language === 'hi' ? 'अपने साथी की पसंद बताएं - यह आपको बेहतर मैच खोजने में मदद करेगा।' : 'Tell us your partner preferences - this will help find better matches for you.')}
+              {step === 6 && (language === 'hi' ? 'अपने साथी की अपेक्षाएं बताएं - यह आपको बेहतर मैच खोजने में मदद करेगा।' : 'Tell us your partner preferences - this will help find better matches for you.')}
               {step === 7 && t.registration.step5}
             </AlertDescription>
           </Alert>
@@ -2988,7 +2988,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               <div className="space-y-6">
                 <div className="text-center mb-4">
                   <h3 className="text-2xl font-bold mb-2">
-                    {language === 'hi' ? 'साथी की पसंद' : 'Partner Preferences'}
+                    {language === 'hi' ? 'साथी की अपेक्षाएं' : 'Partner Preferences'}
                   </h3>
                   <p className="text-muted-foreground">
                     {language === 'hi' 
