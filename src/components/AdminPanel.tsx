@@ -4096,13 +4096,22 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
             {/* Selfie Section */}
             <div className="space-y-3">
               <h4 className="font-semibold text-sm">{t.selfieImage}</h4>
-              <div className="aspect-square rounded-lg overflow-hidden bg-muted border-2 border-dashed">
+              <div className="aspect-square rounded-lg overflow-hidden bg-muted border-2 border-dashed relative group">
                 {faceVerificationDialog?.selfieUrl ? (
-                  <img 
-                    src={faceVerificationDialog.selfieUrl} 
-                    alt="Selfie" 
-                    className="w-full h-full object-cover"
-                  />
+                  <>
+                    <img 
+                      src={faceVerificationDialog.selfieUrl} 
+                      alt="Selfie" 
+                      className="w-full h-full object-cover cursor-pointer"
+                      onClick={() => openLightbox([faceVerificationDialog.selfieUrl!], 0)}
+                    />
+                    <div 
+                      className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                      onClick={() => openLightbox([faceVerificationDialog.selfieUrl!], 0)}
+                    >
+                      <span className="text-white text-sm font-medium">{language === 'hi' ? 'ज़ूम करें' : 'Click to Zoom'}</span>
+                    </div>
+                  </>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                     {t.noSelfie}
@@ -4179,12 +4188,19 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               <div className="grid grid-cols-2 gap-2">
                 {faceVerificationDialog?.photos && faceVerificationDialog.photos.length > 0 ? (
                   faceVerificationDialog.photos.map((photo, idx) => (
-                    <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-muted border">
+                    <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-muted border relative group">
                       <img 
                         src={photo} 
                         alt={`Photo ${idx + 1}`} 
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover cursor-pointer"
+                        onClick={() => openLightbox(faceVerificationDialog.photos || [], idx)}
                       />
+                      <div 
+                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                        onClick={() => openLightbox(faceVerificationDialog.photos || [], idx)}
+                      >
+                        <span className="text-white text-sm font-medium">{language === 'hi' ? 'ज़ूम करें' : 'Click to Zoom'}</span>
+                      </div>
                     </div>
                   ))
                 ) : (
