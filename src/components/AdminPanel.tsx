@@ -875,13 +875,25 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     setBroadcastProfiles([])
   }
 
-  const handleFaceVerification = async (profile: Profile) => {
+  // Open face verification dialog for manual review (default)
+  const handleFaceVerification = (profile: Profile) => {
     if (!profile.selfieUrl || !profile.photos || profile.photos.length === 0) {
       toast.error(language === 'hi' ? 'सेल्फी और फोटो दोनों आवश्यक हैं' : 'Both selfie and photos are required for verification')
       return
     }
 
     setFaceVerificationDialog(profile)
+    setFaceVerificationResult(null)
+    setIsVerifyingFace(false)
+  }
+
+  // Run AI face verification only when explicitly triggered
+  const handleAIFaceVerification = async (profile: Profile) => {
+    if (!profile.selfieUrl || !profile.photos || profile.photos.length === 0) {
+      toast.error(language === 'hi' ? 'सेल्फी और फोटो दोनों आवश्यक हैं' : 'Both selfie and photos are required for verification')
+      return
+    }
+
     setFaceVerificationResult(null)
     setIsVerifyingFace(true)
 
@@ -4276,8 +4288,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
             </Button>
             {faceVerificationDialog && (
               <Button 
-                onClick={() => handleFaceVerification(faceVerificationDialog)}
+                onClick={() => handleAIFaceVerification(faceVerificationDialog)}
                 disabled={isVerifyingFace}
+                variant="outline"
                 className="gap-2"
               >
                 <ScanSmiley size={16} />
