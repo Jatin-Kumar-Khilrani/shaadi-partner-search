@@ -777,7 +777,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   const totalUnread = conversations.reduce((acc, conv) => acc + (conv.unreadCount || 0), 0)
 
   return (
-    <div className="container mx-auto px-4 md:px-8 py-8">
+    <div className="container mx-auto px-4 md:px-8 py-8 pb-24 md:pb-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">

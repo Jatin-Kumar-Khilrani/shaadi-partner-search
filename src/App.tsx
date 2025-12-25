@@ -84,7 +84,23 @@ function App() {
   const [profiles, setProfiles, , isProfilesLoaded] = useKV<Profile[]>('profiles', [])
   const [users, setUsers, , isUsersLoaded] = useKV<User[]>('users', [])
   const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
-  const [loggedInUser, setLoggedInUser] = useKV<string | null>('loggedInUser', null)
+  // IMPORTANT: Login state must be stored in localStorage, NOT in shared KV store!
+  // Each device/browser should have its own independent login session
+  const [loggedInUser, setLoggedInUser] = useState<string | null>(() => {
+    try {
+      // First check localStorage for persistent "keep me logged in"
+      const persistentLogin = localStorage.getItem('shaadi_loggedInUser')
+      if (persistentLogin) return persistentLogin
+      
+      // Then check sessionStorage for session-only logins
+      const sessionLogin = sessionStorage.getItem('shaadi_loggedInUser')
+      if (sessionLogin) return sessionLogin
+      
+      return null
+    } catch {
+      return null
+    }
+  })
   const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [membershipSettings] = useKV<MembershipSettings>('membershipSettings', defaultMembershipSettings)
   
@@ -442,10 +458,25 @@ function App() {
   }
 
   const handleLogin = (userId: string, profileId: string, keepLoggedIn: boolean) => {
+    // Store login state in localStorage (device-specific, not shared!)
+    setLoggedInUser(userId)
     if (keepLoggedIn) {
-      setLoggedInUser(userId)
+      try {
+        localStorage.setItem('shaadi_loggedInUser', userId)
+        localStorage.setItem('shaadi_keepLoggedIn', 'true')
+      } catch (e) {
+        console.warn('Failed to save login to localStorage:', e)
+      }
     } else {
-      setLoggedInUser(userId)
+      // Session-only login - still use state but clear on browser close
+      // We use sessionStorage as backup for session-only logins
+      try {
+        sessionStorage.setItem('shaadi_loggedInUser', userId)
+        localStorage.removeItem('shaadi_loggedInUser')
+        localStorage.removeItem('shaadi_keepLoggedIn')
+      } catch (e) {
+        console.warn('Failed to save session login:', e)
+      }
     }
     
     // Redirect to home page after login
@@ -480,7 +511,15 @@ function App() {
         return p
       })
     })
+    // Clear login state from storage
     setLoggedInUser(null)
+    try {
+      localStorage.removeItem('shaadi_loggedInUser')
+      localStorage.removeItem('shaadi_keepLoggedIn')
+      sessionStorage.removeItem('shaadi_loggedInUser')
+    } catch (e) {
+      console.warn('Failed to clear login storage:', e)
+    }
   }
 
   // Handle edit profile request
@@ -540,6 +579,14 @@ function App() {
 
   const handleLogout = () => {
     setLoggedInUser(null)
+    // Clear login state from all storage
+    try {
+      localStorage.removeItem('shaadi_loggedInUser')
+      localStorage.removeItem('shaadi_keepLoggedIn')
+      sessionStorage.removeItem('shaadi_loggedInUser')
+    } catch (e) {
+      console.warn('Failed to clear login storage:', e)
+    }
     toast.success(language === 'hi' ? 'लॉगआउट सफल' : 'Logged out successfully')
   }
 
@@ -1239,7 +1286,7 @@ function App() {
               size="sm"
             >
               <Envelope size={20} weight={currentView === 'inbox' ? 'fill' : 'regular'} />
-              <span className="text-xs mt-1">{language === 'hi' ? '���नबॉक्स' : 'Inbox'}</span>
+              <span className="text-xs mt-1">{language === 'hi' ? 'इनबॉक्स' : 'Inbox'}</span>
             </Button>
             <Button
               variant={currentView === 'chat' ? 'default' : 'ghost'}

@@ -201,7 +201,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
         </div>
 
         <Tabs defaultValue="sent-interests">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto gap-1 p-1">
             <TabsTrigger value="sent-interests">{t.sentInterests}</TabsTrigger>
             <TabsTrigger value="received-interests">{t.receivedInterests}</TabsTrigger>
             <TabsTrigger value="contact-requests">{t.myContactRequests}</TabsTrigger>
