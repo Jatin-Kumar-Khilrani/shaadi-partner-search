@@ -3348,13 +3348,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 <div className="space-y-2">
                   <Label>{language === 'hi' ? 'दिव्यांग स्वीकार्य' : 'Differently Abled Acceptance'}</Label>
                   <Select 
-                    value={
-                      formData.partnerDisability?.length === 1 && formData.partnerDisability[0] === 'no' 
-                        ? 'no-only' 
-                        : formData.partnerDisability?.length && formData.partnerDisability?.length > 1 
-                          ? 'accept' 
-                          : ''
-                    } 
+                    value={formData.partnerDisability?.includes('no') ? 'no-only' : formData.partnerDisability?.length ? 'accept' : ''} 
                     onValueChange={(v) => {
                       if (v === 'no-only') updateField('partnerDisability', ['no'] as DisabilityStatus[])
                       else if (v === 'accept') updateField('partnerDisability', ['no', 'yes'] as DisabilityStatus[])

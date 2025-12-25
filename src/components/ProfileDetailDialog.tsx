@@ -361,9 +361,15 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     preferred: language === 'hi' ? 'वांछित' : 'Preferred',
     notRequired: language === 'hi' ? 'आवश्यक नहीं' : 'Not Required',
     lastLogin: language === 'hi' ? 'अंतिम लॉगिन' : 'Last Login',
-    disability: language === 'hi' ? 'दिव्यांग' : 'Differently Abled',
-    disabilityNo: language === 'hi' ? 'नहीं' : 'No',
-    disabilityYes: language === 'hi' ? 'हाँ' : 'Yes',
+    disability: language === 'hi' ? 'दिव्यांगता' : 'Disability',
+    disabilityNone: language === 'hi' ? 'कोई नहीं' : 'None',
+    disabilityPhysical: language === 'hi' ? 'शारीरिक' : 'Physical',
+    disabilityVisual: language === 'hi' ? 'दृष्टि संबंधी' : 'Visual',
+    disabilityHearing: language === 'hi' ? 'श्रवण संबंधी' : 'Hearing',
+    disabilitySpeech: language === 'hi' ? 'वाक् संबंधी' : 'Speech',
+    disabilityIntellectual: language === 'hi' ? 'बौद्धिक' : 'Intellectual',
+    disabilityMultiple: language === 'hi' ? 'एकाधिक' : 'Multiple',
+    disabilityOther: language === 'hi' ? 'अन्य' : 'Other',
     // Partner Preferences labels
     partnerPreferences: language === 'hi' ? 'पार्टनर प्राथमिकताएं' : 'Partner Preferences',
     preferredAge: language === 'hi' ? 'आयु वरीयता' : 'Age Preference',
@@ -485,7 +491,16 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                 <InfoItem 
                   icon={<UserCircle size={18} />} 
                   label={t.disability} 
-                  value={profile.disability === 'no' ? t.disabilityNo : t.disabilityYes} 
+                  value={
+                    profile.disability === 'none' ? t.disabilityNone :
+                    profile.disability === 'physical' ? t.disabilityPhysical :
+                    profile.disability === 'visual' ? t.disabilityVisual :
+                    profile.disability === 'hearing' ? t.disabilityHearing :
+                    profile.disability === 'speech' ? t.disabilitySpeech :
+                    profile.disability === 'intellectual' ? t.disabilityIntellectual :
+                    profile.disability === 'multiple' ? t.disabilityMultiple :
+                    t.disabilityOther
+                  } 
                 />
               )}
               {profile.motherTongue && (
@@ -941,8 +956,14 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                       icon={<Wheelchair size={18} />} 
                       label={t.preferredDisability} 
                       value={profile.partnerPreferences.disability.map(d => 
-                        d === 'no' ? t.disabilityNo :
-                        d === 'yes' ? t.disabilityYes : d
+                        d === 'none' ? t.disabilityNone :
+                        d === 'physical' ? t.disabilityPhysical :
+                        d === 'visual' ? t.disabilityVisual :
+                        d === 'hearing' ? t.disabilityHearing :
+                        d === 'speech' ? t.disabilitySpeech :
+                        d === 'intellectual' ? t.disabilityIntellectual :
+                        d === 'multiple' ? t.disabilityMultiple :
+                        d === 'other' ? t.disabilityOther : d
                       ).join(', ')} 
                     />
                   )}
