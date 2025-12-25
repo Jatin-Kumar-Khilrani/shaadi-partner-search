@@ -134,6 +134,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   // All Database table sorting
   const [dbSortBy, setDbSortBy] = useState<'profileId' | 'name' | 'gender' | 'plan' | 'userId' | 'relation' | 'age' | 'location' | 'status' | 'email' | 'mobile' | 'createdAt'>('createdAt')
   const [dbSortOrder, setDbSortOrder] = useState<'asc' | 'desc'>('desc')
+  // Database tab filter: all, approved, pending, rejected, deleted
+  const [dbStatusFilter, setDbStatusFilter] = useState<'all' | 'approved' | 'pending' | 'rejected' | 'deleted'>('all')
   const [chatMessage, setChatMessage] = useState('')
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([])
   const [isLoadingAI, setIsLoadingAI] = useState(false)
@@ -513,7 +515,27 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const getUserCredentials = (profileId: string) => users?.find(u => u.profileId === profileId)
 
   const pendingProfiles = profiles?.filter(p => p.status === 'pending' && !p.isDeleted) || []
-  const approvedProfiles = profiles?.filter(p => p.status === 'verified' && !p.isDeleted) || []
+  const approvedProfiles = profiles?.filter(p => (p.status === 'verified' || p.status === 'approved') && !p.isDeleted) || []
+  const rejectedProfiles = profiles?.filter(p => p.status === 'rejected' && !p.isDeleted) || []
+  const deletedProfiles = profiles?.filter(p => p.isDeleted) || []
+
+  // Filtered profiles for database tab based on status filter
+  const getFilteredDatabaseProfiles = () => {
+    if (!profiles) return []
+    switch (dbStatusFilter) {
+      case 'approved':
+        return profiles.filter(p => (p.status === 'verified' || p.status === 'approved') && !p.isDeleted)
+      case 'pending':
+        return profiles.filter(p => p.status === 'pending' && !p.isDeleted)
+      case 'rejected':
+        return profiles.filter(p => p.status === 'rejected' && !p.isDeleted)
+      case 'deleted':
+        return profiles.filter(p => p.isDeleted)
+      default:
+        return profiles
+    }
+  }
+  const filteredDatabaseProfiles = getFilteredDatabaseProfiles()
 
   // Delete profile handler (soft delete - moves to Deleted Profiles tab)
   const handleDeleteProfile = (profileId: string) => {
@@ -1146,24 +1168,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 <Badge variant="destructive" className="ml-1 text-xs">{pendingProfiles.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="approved" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
-              <Check size={16} className="shrink-0" />
-              <span className="hidden sm:inline">{t.approvedProfiles}</span>
-              <span className="sm:hidden">{language === 'hi' ? 'स्वीकृत' : 'Approved'}</span>
-              <Badge variant="secondary" className="ml-1 text-xs">{approvedProfiles.length}</Badge>
-            </TabsTrigger>
             <TabsTrigger value="database" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
               <Database size={16} className="shrink-0" />
               <span className="hidden sm:inline">{t.allDatabase}</span>
               <span className="sm:hidden">{language === 'hi' ? 'डेटाबेस' : 'Database'}</span>
-            </TabsTrigger>
-            <TabsTrigger value="deleted" className="gap-1 text-xs sm:text-sm whitespace-nowrap text-red-600">
-              <Trash size={16} weight="fill" className="shrink-0" />
-              <span className="hidden sm:inline">{t.deletedProfiles}</span>
-              <span className="sm:hidden">{language === 'hi' ? 'हटाए गए' : 'Deleted'}</span>
-              {(profiles?.filter(p => p.isDeleted).length ?? 0) > 0 && (
-                <Badge variant="destructive" className="ml-1 text-xs">{profiles?.filter(p => p.isDeleted).length}</Badge>
-              )}
+              <Badge variant="secondary" className="ml-1 text-xs">{profiles?.length || 0}</Badge>
             </TabsTrigger>
             <TabsTrigger value="membership" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
               <CurrencyInr size={16} weight="fill" className="shrink-0" />
@@ -1679,193 +1688,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
             </Card>
           </TabsContent>
 
-          <TabsContent value="approved">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Key size={24} weight="fill" />
-                      {t.approvedProfiles} - {t.loginCredentials}
-                    </CardTitle>
-                    <CardDescription>
-                      {approvedProfiles.length} {language === 'hi' ? 'स्वीकृत प्रोफाइल और उनके लॉगिन विवरण' : 'approved profiles with login credentials'}
-                    </CardDescription>
-                  </div>
-                  {/* Sort Controls */}
-                  <div className="flex items-center gap-2">
-                    <Select value={sortBy} onValueChange={(val) => setSortBy(val as any)}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="name">{t.sortByName}</SelectItem>
-                        <SelectItem value="date">{t.sortByDate}</SelectItem>
-                        <SelectItem value="expiry">{t.sortByExpiry}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-                    >
-                      {sortOrder === 'asc' ? <CaretUp size={18} /> : <CaretDown size={18} />}
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {approvedProfiles.length === 0 ? (
-                  <Alert>
-                    <Info size={18} />
-                    <AlertDescription>{t.noApproved}</AlertDescription>
-                  </Alert>
-                ) : (
-                  <div className="overflow-auto max-h-[600px]">
-                    <Table className="min-w-[1400px]">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="whitespace-nowrap">{language === 'hi' ? 'फोटो' : 'Photo'}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.profileId}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.name}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.relation}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.membershipPlan}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.membershipExpiry}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.userId}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.password}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.email}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.mobile}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.verifiedAt}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.actions}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {[...approvedProfiles].sort((a, b) => {
-                          let comparison = 0
-                          if (sortBy === 'name') {
-                            comparison = a.fullName.localeCompare(b.fullName)
-                          } else if (sortBy === 'date') {
-                            comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-                          } else if (sortBy === 'expiry') {
-                            const expiryA = a.membershipExpiry ? new Date(a.membershipExpiry).getTime() : Infinity
-                            const expiryB = b.membershipExpiry ? new Date(b.membershipExpiry).getTime() : Infinity
-                            comparison = expiryA - expiryB
-                          }
-                          return sortOrder === 'asc' ? comparison : -comparison
-                        }).map((profile) => {
-                          const userCred = users?.find(u => u.profileId === profile.id)
-                          const isExpired = profile.membershipExpiry && new Date(profile.membershipExpiry) < new Date()
-                          const isExpiringSoon = profile.membershipExpiry && 
-                            new Date(profile.membershipExpiry) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) &&
-                            new Date(profile.membershipExpiry) > new Date()
-                          return (
-                            <TableRow key={profile.id} className={isExpired ? 'bg-red-50 dark:bg-red-950/20' : isExpiringSoon ? 'bg-yellow-50 dark:bg-yellow-950/20' : ''}>
-                              <TableCell>
-                                {profile.photos && profile.photos.length > 0 ? (
-                                  <img 
-                                    src={profile.photos[0]} 
-                                    alt={profile.fullName}
-                                    className="w-10 h-10 object-cover rounded-full border cursor-pointer hover:opacity-80 transition-opacity"
-                                    onClick={() => openLightbox(profile.photos || [], 0)}
-                                    title={language === 'hi' ? 'बड़ा देखें' : 'View larger'}
-                                  />
-                                ) : (
-                                  <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center text-xs">
-                                    {profile.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                                  </div>
-                                )}
-                              </TableCell>
-                              <TableCell className="font-mono font-semibold">{profile.profileId}</TableCell>
-                              <TableCell className="font-medium">{profile.fullName}</TableCell>
-                              <TableCell>
-                                {profile.relationToProfile || (language === 'hi' ? 'स्वयं' : 'Self')}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline">
-                                  {profile.membershipPlan === '6-month' ? t.sixMonthPlan : 
-                                   profile.membershipPlan === '1-year' ? t.oneYearPlan : '-'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {profile.membershipExpiry ? (
-                                  <span className={isExpired ? 'text-red-600 font-medium' : isExpiringSoon ? 'text-yellow-600 font-medium' : ''}>
-                                    {formatDateDDMMYYYY(profile.membershipExpiry)}
-                                  </span>
-                                ) : '-'}
-                              </TableCell>
-                              <TableCell className="font-mono text-primary">{userCred?.userId || '-'}</TableCell>
-                              <TableCell className="font-mono text-accent">{userCred?.password || '-'}</TableCell>
-                              <TableCell className="text-sm">{profile.email}</TableCell>
-                              <TableCell className="font-mono text-sm">{profile.mobile}</TableCell>
-                              <TableCell className="text-xs text-muted-foreground">
-                                {profile.verifiedAt ? formatDateDDMMYYYY(profile.verifiedAt) : '-'}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex gap-1">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={() => setViewProfileDialog(profile)}
-                                    title={language === 'hi' ? 'प्रोफाइल देखें' : 'View Profile'}
-                                  >
-                                    <Eye size={16} />
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedProfile(profile)
-                                      setShowChatDialog(true)
-                                    }}
-                                  >
-                                    <ChatCircle size={16} />
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={() => {
-                                      setEditMembershipDialog(profile)
-                                      setMembershipEditData({
-                                        plan: profile.membershipPlan || '',
-                                        customAmount: 0,
-                                        discountAmount: 0,
-                                        expiryDate: profile.membershipExpiry || ''
-                                      })
-                                    }}
-                                  >
-                                    <Pencil size={16} />
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={() => setReturnToEditDialog(profile)}
-                                    title={t.returnToEdit}
-                                    className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                                  >
-                                    <CaretDown size={16} weight="bold" />
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={() => handleOpenAdminEdit(profile)}
-                                    title={t.adminEditProfile}
-                                    className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                                  >
-                                    <User size={16} />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           <TabsContent value="database">
             <Card>
               <CardHeader>
@@ -1876,49 +1698,109 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       {t.allDatabase}
                     </CardTitle>
                     <CardDescription>
-                      {profiles?.length || 0} {language === 'hi' ? 'कुल प्रोफाइल' : 'total profiles'}
-                      {(profiles?.filter(p => p.isDeleted).length || 0) > 0 && (
-                        <span className="text-red-600 ml-2">({profiles?.filter(p => p.isDeleted).length} {language === 'hi' ? 'हटाई गई' : 'deleted'})</span>
+                      {filteredDatabaseProfiles.length} {language === 'hi' ? 'प्रोफाइल दिखाई जा रही हैं' : 'profiles shown'}
+                      {dbStatusFilter !== 'all' && (
+                        <span className="ml-1">
+                          ({language === 'hi' ? 'कुल' : 'of'} {profiles?.length || 0})
+                        </span>
                       )}
                     </CardDescription>
                   </div>
-                  {/* Bulk Actions Toolbar for Database */}
-                  {selectedDatabaseProfiles.length > 0 && (
-                    <div className="flex items-center gap-2 bg-muted p-2 rounded-lg flex-wrap">
-                      <span className="text-sm font-medium">
-                        {selectedDatabaseProfiles.length} {language === 'hi' ? 'चयनित' : 'selected'}
-                      </span>
-                      <Button 
-                        size="sm" 
-                        variant="destructive"
-                        onClick={() => {
-                          const count = selectedDatabaseProfiles.length
-                          selectedDatabaseProfiles.forEach(id => handleReject(id))
-                          setSelectedDatabaseProfiles([])
-                          toast.success(language === 'hi' ? `${count} प्रोफाइल अस्वीकृत!` : `${count} profiles rejected!`)
-                        }}
-                        className="gap-1"
+                  
+                  {/* Status Filter Buttons */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                      <Button
+                        size="sm"
+                        variant={dbStatusFilter === 'all' ? 'default' : 'ghost'}
+                        onClick={() => setDbStatusFilter('all')}
+                        className="gap-1 text-xs h-8"
                       >
-                        <X size={14} />
-                        {t.bulkReject}
+                        <Database size={14} />
+                        {language === 'hi' ? 'सभी' : 'All'}
+                        <Badge variant="outline" className="ml-1 text-xs bg-background">{profiles?.length || 0}</Badge>
                       </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="gap-1 text-red-600 hover:text-red-700"
-                        onClick={() => {
-                          if (confirm(language === 'hi' ? `क्या आप ${selectedDatabaseProfiles.length} प्रोफाइल हटाना चाहते हैं?` : `Delete ${selectedDatabaseProfiles.length} profiles?`)) {
-                            const count = selectedDatabaseProfiles.length
-                            selectedDatabaseProfiles.forEach(id => handleDeleteProfile(id))
-                            setSelectedDatabaseProfiles([])
-                            toast.success(language === 'hi' ? `${count} प्रोफाइल हटाई गई!` : `${count} profiles deleted!`)
-                          }
-                        }}
+                      <Button
+                        size="sm"
+                        variant={dbStatusFilter === 'approved' ? 'default' : 'ghost'}
+                        onClick={() => setDbStatusFilter('approved')}
+                        className="gap-1 text-xs h-8"
+                      >
+                        <Check size={14} />
+                        {language === 'hi' ? 'स्वीकृत' : 'Approved'}
+                        <Badge variant="outline" className="ml-1 text-xs bg-background">{approvedProfiles.length}</Badge>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={dbStatusFilter === 'pending' ? 'default' : 'ghost'}
+                        onClick={() => setDbStatusFilter('pending')}
+                        className="gap-1 text-xs h-8"
+                      >
+                        <Info size={14} />
+                        {language === 'hi' ? 'लंबित' : 'Pending'}
+                        <Badge variant="outline" className="ml-1 text-xs bg-background">{pendingProfiles.length}</Badge>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={dbStatusFilter === 'rejected' ? 'default' : 'ghost'}
+                        onClick={() => setDbStatusFilter('rejected')}
+                        className="gap-1 text-xs h-8 text-orange-600 hover:text-orange-700"
+                      >
+                        <Prohibit size={14} />
+                        {language === 'hi' ? 'अस्वीकृत' : 'Rejected'}
+                        <Badge variant="outline" className="ml-1 text-xs bg-background">{rejectedProfiles.length}</Badge>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={dbStatusFilter === 'deleted' ? 'default' : 'ghost'}
+                        onClick={() => setDbStatusFilter('deleted')}
+                        className="gap-1 text-xs h-8 text-red-600 hover:text-red-700"
                       >
                         <Trash size={14} />
-                        {language === 'hi' ? 'हटाएं' : 'Delete'}
+                        {language === 'hi' ? 'हटाए गए' : 'Deleted'}
+                        <Badge variant="outline" className="ml-1 text-xs bg-background">{deletedProfiles.length}</Badge>
                       </Button>
-                      <Button 
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Bulk Actions Toolbar for Database */}
+                {selectedDatabaseProfiles.length > 0 && (
+                  <div className="flex items-center gap-2 bg-muted p-2 rounded-lg flex-wrap mt-4">
+                    <span className="text-sm font-medium">
+                      {selectedDatabaseProfiles.length} {language === 'hi' ? 'चयनित' : 'selected'}
+                    </span>
+                    <Button 
+                      size="sm" 
+                      variant="destructive"
+                      onClick={() => {
+                        const count = selectedDatabaseProfiles.length
+                        selectedDatabaseProfiles.forEach(id => handleReject(id))
+                        setSelectedDatabaseProfiles([])
+                        toast.success(language === 'hi' ? `${count} प्रोफाइल अस्वीकृत!` : `${count} profiles rejected!`)
+                      }}
+                      className="gap-1"
+                    >
+                      <X size={14} />
+                      {t.bulkReject}
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="gap-1 text-red-600 hover:text-red-700"
+                      onClick={() => {
+                        if (confirm(language === 'hi' ? `क्या आप ${selectedDatabaseProfiles.length} प्रोफाइल हटाना चाहते हैं?` : `Delete ${selectedDatabaseProfiles.length} profiles?`)) {
+                          const count = selectedDatabaseProfiles.length
+                          selectedDatabaseProfiles.forEach(id => handleDeleteProfile(id))
+                          setSelectedDatabaseProfiles([])
+                          toast.success(language === 'hi' ? `${count} प्रोफाइल हटाई गई!` : `${count} profiles deleted!`)
+                        }
+                      }}
+                    >
+                      <Trash size={14} />
+                      {language === 'hi' ? 'हटाएं' : 'Delete'}
+                    </Button>
+                    <Button 
                         size="sm" 
                         variant="outline"
                         onClick={() => setSelectedDatabaseProfiles([])}
@@ -1927,14 +1809,15 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       </Button>
                     </div>
                   )}
-                </div>
               </CardHeader>
               <CardContent>
-                {!profiles || profiles.length === 0 ? (
+                {filteredDatabaseProfiles.length === 0 ? (
                   <Alert>
                     <Info size={18} />
                     <AlertDescription>
-                      {language === 'hi' ? 'कोई प्रोफाइल नहीं मिली।' : 'No profiles found.'}
+                      {dbStatusFilter === 'all' 
+                        ? (language === 'hi' ? 'कोई प्रोफाइल नहीं मिली।' : 'No profiles found.')
+                        : (language === 'hi' ? `कोई ${dbStatusFilter === 'approved' ? 'स्वीकृत' : dbStatusFilter === 'pending' ? 'लंबित' : dbStatusFilter === 'rejected' ? 'अस्वीकृत' : 'हटाई गई'} प्रोफाइल नहीं।` : `No ${dbStatusFilter} profiles found.`)}
                     </AlertDescription>
                   </Alert>
                 ) : (
@@ -1944,10 +1827,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <TableRow>
                             <TableHead className="whitespace-nowrap w-10">
                               <Checkbox 
-                                checked={selectedDatabaseProfiles.length === profiles.length && profiles.length > 0}
+                                checked={selectedDatabaseProfiles.length === filteredDatabaseProfiles.length && filteredDatabaseProfiles.length > 0}
                                 onCheckedChange={(checked) => {
                                   if (checked) {
-                                    setSelectedDatabaseProfiles(profiles.map(p => p.id))
+                                    setSelectedDatabaseProfiles(filteredDatabaseProfiles.map(p => p.id))
                                   } else {
                                     setSelectedDatabaseProfiles([])
                                   }
@@ -2030,7 +1913,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           </TableRow>
                         </TableHeader>
                       <TableBody>
-                        {[...profiles].sort((a, b) => {
+                        {[...filteredDatabaseProfiles].sort((a, b) => {
                           let comparison = 0
                           const aUserId = users?.find(u => u.profileId === a.id)?.userId || ''
                           const bUserId = users?.find(u => u.profileId === b.id)?.userId || ''
@@ -2130,11 +2013,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 <Badge variant="destructive">{language === 'hi' ? 'हटाया गया' : 'Deleted'}</Badge>
                               ) : (
                                 <Badge variant={
-                                  profile.status === 'verified' ? 'default' :
+                                  (profile.status === 'verified' || profile.status === 'approved') ? 'default' :
                                   profile.status === 'pending' ? 'secondary' :
                                   'destructive'
+                                } className={
+                                  (profile.status === 'verified' || profile.status === 'approved') ? 'bg-green-600' : ''
                                 }>
-                                  {profile.status === 'verified' ? t.verified :
+                                  {(profile.status === 'verified' || profile.status === 'approved') ? (language === 'hi' ? 'स्वीकृत' : 'Approved') :
                                    profile.status === 'pending' ? t.pending :
                                    t.rejected}
                                 </Badge>
@@ -2231,124 +2116,44 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 >
                                   <User size={16} />
                                 </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleDeleteProfile(profile.id)}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  title={t.deleteProfile}
-                                >
-                                  <Trash size={16} />
-                                </Button>
+                                {/* Conditional actions based on profile status */}
+                                {profile.isDeleted ? (
+                                  <>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => handleRestoreProfile(profile.id)}
+                                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                      title={t.restoreProfile}
+                                    >
+                                      <ArrowCounterClockwise size={16} />
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => handlePermanentDelete(profile.id)}
+                                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                      title={t.permanentDelete}
+                                    >
+                                      <Trash size={16} weight="fill" />
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleDeleteProfile(profile.id)}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    title={t.deleteProfile}
+                                  >
+                                    <Trash size={16} />
+                                  </Button>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
                           )
                         })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Deleted Profiles Tab */}
-          <TabsContent value="deleted">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-red-600">
-                  <Trash size={24} weight="fill" />
-                  {t.deletedProfiles}
-                </CardTitle>
-                <CardDescription>
-                  {profiles?.filter(p => p.isDeleted).length || 0} {language === 'hi' ? 'हटाई गई प्रोफाइल' : 'deleted profiles'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {!profiles || profiles.filter(p => p.isDeleted).length === 0 ? (
-                  <Alert>
-                    <Info size={18} />
-                    <AlertDescription>
-                      {t.noDeletedProfiles}
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <div className="overflow-auto max-h-[600px]">
-                    <Table className="min-w-[900px]">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="whitespace-nowrap">{t.profileId}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.name}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.email}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.mobile}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.deletedAt}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.deletedBy}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.actions}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {[...profiles.filter(p => p.isDeleted)].sort((a, b) => {
-                          const dateA = a.deletedAt ? new Date(a.deletedAt).getTime() : new Date(a.createdAt).getTime()
-                          const dateB = b.deletedAt ? new Date(b.deletedAt).getTime() : new Date(b.createdAt).getTime()
-                          return dateB - dateA
-                        }).map(profile => (
-                          <TableRow key={profile.id} className="bg-red-50 dark:bg-red-950/20">
-                            <TableCell className="font-mono text-sm">
-                              <div className="flex items-center gap-2">
-                                <Trash size={14} className="text-red-500" weight="fill" />
-                                {profile.profileId}
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-medium">{profile.fullName}</TableCell>
-                            <TableCell className="text-sm">{profile.email}</TableCell>
-                            <TableCell className="font-mono text-sm">{profile.mobile}</TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
-                              {profile.deletedAt ? new Date(profile.deletedAt).toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-IN', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              }) : '-'}
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
-                              {profile.deletedReason || '-'}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-1">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => setViewProfileDialog(profile)}
-                                  title={t.viewProfile}
-                                >
-                                  <Eye size={16} />
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handleRestoreProfile(profile.id)}
-                                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                  title={t.restoreProfile}
-                                >
-                                  <ArrowCounterClockwise size={16} />
-                                  <span className="ml-1 hidden md:inline">{t.restoreProfile}</span>
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handlePermanentDelete(profile.id)}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                                  title={t.permanentDelete}
-                                >
-                                  <Trash size={16} weight="fill" />
-                                  <span className="ml-1 hidden md:inline">{t.permanentDelete}</span>
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
                       </TableBody>
                     </Table>
                   </div>

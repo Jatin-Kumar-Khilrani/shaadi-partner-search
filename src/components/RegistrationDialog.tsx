@@ -3643,6 +3643,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     !formData.dateOfBirth || 
                     !formData.gender || 
                     !(formData.religion || '').trim() || 
+                    !(formData.motherTongue || '').trim() ||
+                    !formData.height ||
                     !formData.maritalStatus ||
                     !formData.profileCreatedFor ||
                     (formData.profileCreatedFor === 'Other' && !(formData.otherRelation || '').trim()) ||

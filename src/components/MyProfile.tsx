@@ -183,17 +183,12 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
   }
 
   const getDisabilityLabel = (disability: string | undefined) => {
-    const labels: Record<string, { hi: string; en: string }> = {
-      'none': { hi: 'कोई नहीं', en: 'None' },
-      'physical': { hi: 'शारीरिक', en: 'Physical' },
-      'visual': { hi: 'दृष्टि संबंधी', en: 'Visual' },
-      'hearing': { hi: 'श्रवण संबंधी', en: 'Hearing' },
-      'speech': { hi: 'वाक् संबंधी', en: 'Speech' },
-      'intellectual': { hi: 'बौद्धिक', en: 'Intellectual' },
-      'multiple': { hi: 'एकाधिक', en: 'Multiple' },
-      'other': { hi: 'अन्य', en: 'Other' },
+    if (!disability) return '-'
+    // Simplified to Yes/No - details can be discussed personally between parties
+    if (disability === 'none') {
+      return language === 'hi' ? 'नहीं' : 'No'
     }
-    return disability ? (labels[disability]?.[language] || disability) : '-'
+    return language === 'hi' ? 'हां' : 'Yes'
   }
 
   const handleEditClick = () => {
