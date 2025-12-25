@@ -147,8 +147,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [faceVerificationDialog, setFaceVerificationDialog] = useState<Profile | null>(null)
   const [faceVerificationResult, setFaceVerificationResult] = useState<PhotoVerificationResult | null>(null)
   const [isVerifyingFace, setIsVerifyingFace] = useState(false)
-  const [faceVerificationMode, setFaceVerificationMode] = useState<'none' | 'ai' | 'manual'>('none')
-  const [zoomedImage, setZoomedImage] = useState<{ url: string, title: string } | null>(null)
   const [editMembershipDialog, setEditMembershipDialog] = useState<Profile | null>(null)
   const [returnToEditDialog, setReturnToEditDialog] = useState<Profile | null>(null)
   const [returnToEditReason, setReturnToEditReason] = useState('')
@@ -296,7 +294,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     age: language === 'hi' ? 'आयु' : 'Age',
     location: language === 'hi' ? 'स्थान' : 'Location',
     education: language === 'hi' ? 'शिक्षा' : 'Education',
-    occupation: language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status',
+    occupation: language === 'hi' ? 'व्यवसाय' : 'Occupation',
     profileId: language === 'hi' ? 'प्रोफाइल ID' : 'Profile ID',
     userId: language === 'hi' ? 'यूज़र ID' : 'User ID',
     password: language === 'hi' ? 'पासवर्ड' : 'Password',
@@ -358,17 +356,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     uploadedPhotos: language === 'hi' ? 'अपलोड की गई तस्वीरें' : 'Uploaded Photos',
     verifying: language === 'hi' ? 'सत्यापित हो रहा है...' : 'Verifying...',
     verifyWithAI: language === 'hi' ? 'AI से सत्यापित करें' : 'Verify with AI',
-    verifyManually: language === 'hi' ? 'मैन्युअल सत्यापन' : 'Manual Verification',
-    selectVerificationMode: language === 'hi' ? 'सत्यापन विधि चुनें' : 'Select Verification Method',
-    aiVerification: language === 'hi' ? 'AI सत्यापन' : 'AI Verification',
-    manualVerification: language === 'hi' ? 'मैन्युअल सत्यापन' : 'Manual Verification',
-    aiVerificationDesc: language === 'hi' ? 'Azure AI का उपयोग करके स्वचालित चेहरा तुलना' : 'Automatic face comparison using Azure AI',
-    manualVerificationDesc: language === 'hi' ? 'छवियों को ज़ूम करके मैन्युअल रूप से तुलना करें' : 'Manually compare by zooming images',
-    markAsMatch: language === 'hi' ? 'मैच के रूप में चिह्नित करें' : 'Mark as Match',
-    markAsNoMatch: language === 'hi' ? 'मैच नहीं के रूप में चिह्नित करें' : 'Mark as No Match',
-    clickToZoom: language === 'hi' ? 'बड़ा करने के लिए क्लिक करें' : 'Click to zoom',
-    manuallyVerified: language === 'hi' ? 'मैन्युअल रूप से सत्यापित' : 'Manually Verified',
-    manuallyRejected: language === 'hi' ? 'मैन्युअल रूप से अस्वीकृत' : 'Manually Rejected',
     noSelfie: language === 'hi' ? 'कोई सेल्फी नहीं' : 'No Selfie',
     noPhotos: language === 'hi' ? 'कोई फोटो नहीं' : 'No Photos',
     // Registration location translations
@@ -888,26 +875,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     setBroadcastProfiles([])
   }
 
-  // Open face verification dialog (without auto-triggering AI)
-  const openFaceVerificationDialog = (profile: Profile) => {
-    if (!profile.selfieUrl || !profile.photos || profile.photos.length === 0) {
-      toast.error(language === 'hi' ? 'सेल्फी और फोटो दोनों आवश्यक हैं' : 'Both selfie and photos are required for verification')
-      return
-    }
-    setFaceVerificationDialog(profile)
-    setFaceVerificationResult(null)
-    setFaceVerificationMode('none')
-    setZoomedImage(null)
-  }
-
-  // Handle AI-based face verification
   const handleFaceVerification = async (profile: Profile) => {
     if (!profile.selfieUrl || !profile.photos || profile.photos.length === 0) {
       toast.error(language === 'hi' ? 'सेल्फी और फोटो दोनों आवश्यक हैं' : 'Both selfie and photos are required for verification')
       return
     }
 
-    setFaceVerificationMode('ai')
+    setFaceVerificationDialog(profile)
     setFaceVerificationResult(null)
     setIsVerifyingFace(true)
 
@@ -936,28 +910,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     } finally {
       setIsVerifyingFace(false)
     }
-  }
-
-  // Handle manual face verification by admin
-  const handleManualFaceVerification = (isMatch: boolean) => {
-    setFaceVerificationMode('manual')
-    setFaceVerificationResult({
-      isMatch,
-      confidence: isMatch ? 100 : 0,
-      matchDetails: {
-        faceShapeMatch: isMatch,
-        facialFeaturesMatch: isMatch,
-        overallSimilarity: isMatch ? 'high' : 'no-match'
-      },
-      analysis: isMatch 
-        ? (language === 'hi' ? 'एडमिन द्वारा मैन्युअल रूप से सत्यापित - चेहरे मैच होते हैं' : 'Manually verified by admin - Faces match')
-        : (language === 'hi' ? 'एडमिन द्वारा मैन्युअल रूप से अस्वीकृत - चेहरे मैच नहीं होते' : 'Manually rejected by admin - Faces do not match'),
-      recommendations: []
-    })
-    toast.success(isMatch 
-      ? (language === 'hi' ? 'मैन्युअल रूप से सत्यापित ✓' : 'Manually verified ✓')
-      : (language === 'hi' ? 'मैन्युअल रूप से अस्वीकृत ✗' : 'Manually rejected ✗')
-    )
   }
 
   const handleGetAISuggestions = async (profile: Profile) => {
@@ -1600,7 +1552,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 <span className="truncate">{t.viewProfile}</span>
                               </Button>
                               <Button 
-                                onClick={() => openFaceVerificationDialog(profile)}
+                                onClick={() => handleFaceVerification(profile)}
                                 variant="outline"
                                 size="sm"
                                 disabled={!profile.selfieUrl || !profile.photos?.length}
@@ -4064,12 +4016,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
       />
 
       {/* Face Verification Dialog */}
-      <Dialog open={!!faceVerificationDialog} onOpenChange={() => {
-        setFaceVerificationDialog(null)
-        setFaceVerificationMode('none')
-        setZoomedImage(null)
-      }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={!!faceVerificationDialog} onOpenChange={() => setFaceVerificationDialog(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ScanSmiley size={24} weight="bold" />
@@ -4083,35 +4031,14 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
             {/* Selfie Section */}
             <div className="space-y-3">
-              <h4 className="font-semibold text-sm flex items-center justify-between">
-                {t.selfieImage}
-                {faceVerificationDialog?.selfieUrl && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setZoomedImage({ url: faceVerificationDialog.selfieUrl!, title: language === 'hi' ? 'सेल्फी' : 'Selfie' })}
-                    className="text-xs text-blue-600 hover:text-blue-800"
-                  >
-                    <Eye size={14} className="mr-1" />
-                    {t.clickToZoom}
-                  </Button>
-                )}
-              </h4>
-              <div 
-                className="aspect-square rounded-lg overflow-hidden bg-muted border-2 border-dashed cursor-pointer hover:border-blue-400 transition-colors relative group"
-                onClick={() => faceVerificationDialog?.selfieUrl && setZoomedImage({ url: faceVerificationDialog.selfieUrl, title: language === 'hi' ? 'सेल्फी' : 'Selfie' })}
-              >
+              <h4 className="font-semibold text-sm">{t.selfieImage}</h4>
+              <div className="aspect-square rounded-lg overflow-hidden bg-muted border-2 border-dashed">
                 {faceVerificationDialog?.selfieUrl ? (
-                  <>
-                    <img 
-                      src={faceVerificationDialog.selfieUrl} 
-                      alt="Selfie" 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Eye size={32} className="text-white" />
-                    </div>
-                  </>
+                  <img 
+                    src={faceVerificationDialog.selfieUrl} 
+                    alt="Selfie" 
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                     {t.noSelfie}
@@ -4188,19 +4115,12 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               <div className="grid grid-cols-2 gap-2">
                 {faceVerificationDialog?.photos && faceVerificationDialog.photos.length > 0 ? (
                   faceVerificationDialog.photos.map((photo, idx) => (
-                    <div 
-                      key={idx} 
-                      className="aspect-square rounded-lg overflow-hidden bg-muted border cursor-pointer hover:border-blue-400 transition-colors relative group"
-                      onClick={() => setZoomedImage({ url: photo, title: `${language === 'hi' ? 'फोटो' : 'Photo'} ${idx + 1}` })}
-                    >
+                    <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-muted border">
                       <img 
                         src={photo} 
                         alt={`Photo ${idx + 1}`} 
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Eye size={24} className="text-white" />
-                      </div>
                     </div>
                   ))
                 ) : (
@@ -4211,78 +4131,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               </div>
             </div>
           </div>
-
-          {/* Verification Method Selection - Only show if no result yet and not currently verifying */}
-          {!faceVerificationResult && !isVerifyingFace && (
-            <div className="border rounded-lg p-4 bg-muted/30">
-              <h4 className="font-semibold text-sm mb-3">{t.selectVerificationMode}</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* AI Verification Option */}
-                <div 
-                  className="border rounded-lg p-4 cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
-                  onClick={() => faceVerificationDialog && handleFaceVerification(faceVerificationDialog)}
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                      <Robot size={20} className="text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="font-semibold">{t.aiVerification}</div>
-                      <div className="text-xs text-muted-foreground">{t.aiVerificationDesc}</div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Manual Verification Option */}
-                <div 
-                  className="border rounded-lg p-4 cursor-pointer hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors"
-                  onClick={() => setFaceVerificationMode('manual')}
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-                      <User size={20} className="text-green-600" />
-                    </div>
-                    <div>
-                      <div className="font-semibold">{t.manualVerification}</div>
-                      <div className="text-xs text-muted-foreground">{t.manualVerificationDesc}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Manual Verification Mode - Show decision buttons */}
-          {faceVerificationMode === 'manual' && !faceVerificationResult && (
-            <div className="border rounded-lg p-4 bg-amber-50 dark:bg-amber-950/30 border-amber-300">
-              <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                <Eye size={18} />
-                {t.manualVerification}
-              </h4>
-              <p className="text-sm text-muted-foreground mb-4">
-                {language === 'hi' 
-                  ? 'कृपया ऊपर सेल्फी और फोटो को ज़ूम करके तुलना करें और नीचे अपना निर्णय दें।'
-                  : 'Please zoom and compare the selfie with uploaded photos above, then provide your decision below.'}
-              </p>
-              <div className="flex gap-3">
-                <Button 
-                  onClick={() => handleManualFaceVerification(true)}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                >
-                  <CheckCircle size={18} className="mr-2" />
-                  {t.markAsMatch}
-                </Button>
-                <Button 
-                  onClick={() => handleManualFaceVerification(false)}
-                  variant="destructive"
-                  className="flex-1"
-                >
-                  <XCircle size={18} className="mr-2" />
-                  {t.markAsNoMatch}
-                </Button>
-              </div>
-            </div>
-          )}
 
           {/* Verification Result */}
           {isVerifyingFace ? (
@@ -4302,57 +4150,42 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   <XCircle size={20} weight="fill" className="text-red-600" />
                 )}
                 <AlertDescription className="ml-2">
-                  <div className="font-semibold text-lg flex items-center gap-2">
+                  <div className="font-semibold text-lg">
                     {faceVerificationResult.isMatch 
                       ? (language === 'hi' ? 'चेहरा सत्यापित ✓' : 'Face Verified ✓')
                       : (language === 'hi' ? 'चेहरा मेल नहीं खाता ✗' : 'Face Mismatch ✗')
                     }
-                    {faceVerificationMode === 'manual' && (
-                      <Badge variant="outline" className="text-xs">
-                        {t.manualVerification}
-                      </Badge>
-                    )}
                   </div>
                   <div className="text-sm mt-1 font-medium">
                     {language === 'hi' ? 'विश्वास स्कोर' : 'Confidence'}: {faceVerificationResult.confidence}%
-                    {faceVerificationMode === 'manual' && (
-                      <span className="text-xs text-muted-foreground ml-2">
-                        ({language === 'hi' ? 'एडमिन द्वारा' : 'by Admin'})
-                      </span>
-                    )}
                   </div>
                 </AlertDescription>
               </Alert>
 
-              {/* Match Details - Only show for AI verification */}
-              {faceVerificationMode === 'ai' && (
-                <div className="grid grid-cols-3 gap-2 text-sm">
-                  <div className={`p-2 rounded-lg text-center ${faceVerificationResult.matchDetails.faceShapeMatch ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    <div className="font-medium">{language === 'hi' ? 'चेहरे का आकार' : 'Face Shape'}</div>
-                    <div>{faceVerificationResult.matchDetails.faceShapeMatch ? '✓ Match' : '✗ No Match'}</div>
-                  </div>
-                  <div className={`p-2 rounded-lg text-center ${faceVerificationResult.matchDetails.facialFeaturesMatch ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    <div className="font-medium">{language === 'hi' ? 'चेहरे की विशेषताएं' : 'Facial Features'}</div>
-                    <div>{faceVerificationResult.matchDetails.facialFeaturesMatch ? '✓ Match' : '✗ No Match'}</div>
-                  </div>
-                  <div className={`p-2 rounded-lg text-center ${
-                    faceVerificationResult.matchDetails.overallSimilarity === 'high' ? 'bg-green-100 text-green-800' :
-                    faceVerificationResult.matchDetails.overallSimilarity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    <div className="font-medium">{language === 'hi' ? 'समग्र समानता' : 'Overall'}</div>
-                    <div className="capitalize">{faceVerificationResult.matchDetails.overallSimilarity}</div>
-                  </div>
+              {/* Match Details */}
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <div className={`p-2 rounded-lg text-center ${faceVerificationResult.matchDetails.faceShapeMatch ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  <div className="font-medium">{language === 'hi' ? 'चेहरे का आकार' : 'Face Shape'}</div>
+                  <div>{faceVerificationResult.matchDetails.faceShapeMatch ? '✓ Match' : '✗ No Match'}</div>
                 </div>
-              )}
+                <div className={`p-2 rounded-lg text-center ${faceVerificationResult.matchDetails.facialFeaturesMatch ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  <div className="font-medium">{language === 'hi' ? 'चेहरे की विशेषताएं' : 'Facial Features'}</div>
+                  <div>{faceVerificationResult.matchDetails.facialFeaturesMatch ? '✓ Match' : '✗ No Match'}</div>
+                </div>
+                <div className={`p-2 rounded-lg text-center ${
+                  faceVerificationResult.matchDetails.overallSimilarity === 'high' ? 'bg-green-100 text-green-800' :
+                  faceVerificationResult.matchDetails.overallSimilarity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  <div className="font-medium">{language === 'hi' ? 'समग्र समानता' : 'Overall'}</div>
+                  <div className="capitalize">{faceVerificationResult.matchDetails.overallSimilarity}</div>
+                </div>
+              </div>
 
-              {/* Analysis */}
+              {/* AI Analysis */}
               <div className="p-3 bg-muted rounded-lg">
                 <div className="font-medium text-sm mb-1 flex items-center gap-2">
-                  {faceVerificationMode === 'ai' 
-                    ? (language === 'hi' ? 'AI विश्लेषण' : 'AI Analysis')
-                    : (language === 'hi' ? 'एडमिन टिप्पणी' : 'Admin Notes')
-                  }:
+                  {language === 'hi' ? 'AI विश्लेषण' : 'AI Analysis'}:
                   {faceVerificationResult.analysis.includes('[DEMO MODE]') && (
                     <Badge variant="outline" className="text-amber-600 border-amber-400 text-xs">
                       {language === 'hi' ? 'डेमो मोड' : 'Demo Mode'}
@@ -4382,57 +4215,23 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   </ul>
                 </div>
               )}
-              
-              {/* Re-verify buttons after result */}
-              <div className="flex gap-2 pt-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    setFaceVerificationResult(null)
-                    setFaceVerificationMode('none')
-                  }}
-                >
-                  <ArrowCounterClockwise size={16} className="mr-1" />
-                  {language === 'hi' ? 'पुनः सत्यापित करें' : 'Re-verify'}
-                </Button>
-              </div>
             </div>
           ) : null}
 
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => {
-              setFaceVerificationDialog(null)
-              setFaceVerificationMode('none')
-              setZoomedImage(null)
-            }}>
+            <Button variant="outline" onClick={() => setFaceVerificationDialog(null)}>
               {t.close}
             </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Image Zoom Dialog */}
-      <Dialog open={!!zoomedImage} onOpenChange={() => setZoomedImage(null)}>
-        <DialogContent className="max-w-4xl max-h-[95vh] p-2">
-          <DialogHeader className="p-2">
-            <DialogTitle className="flex items-center justify-between">
-              <span>{zoomedImage?.title}</span>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex items-center justify-center overflow-auto max-h-[80vh]">
-            {zoomedImage && (
-              <img 
-                src={zoomedImage.url} 
-                alt={zoomedImage.title}
-                className="max-w-full max-h-[75vh] object-contain rounded-lg"
-              />
+            {faceVerificationDialog && (
+              <Button 
+                onClick={() => handleFaceVerification(faceVerificationDialog)}
+                disabled={isVerifyingFace}
+                className="gap-2"
+              >
+                <ScanSmiley size={16} />
+                {isVerifyingFace ? t.verifying : t.verifyWithAI}
+              </Button>
             )}
-          </div>
-          <div className="flex justify-center gap-2 pt-2">
-            <Button variant="outline" size="sm" onClick={() => setZoomedImage(null)}>
-              {t.close}
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -4735,13 +4534,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="adminEditOccupation">{language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status'}</Label>
+                  <Label htmlFor="adminEditOccupation">{language === 'hi' ? 'व्यवसाय' : 'Occupation'}</Label>
                   <SearchableSelect
                     options={OCCUPATION_OPTIONS}
                     value={adminEditFormData.occupation}
                     onValueChange={(value) => setAdminEditFormData(prev => ({ ...prev, occupation: value }))}
-                    placeholder={language === 'hi' ? 'रोजगार स्थिति चुनें' : 'Select Employment Status'}
-                    searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                    placeholder={language === 'hi' ? 'व्यवसाय चुनें' : 'Select Occupation'}
+                    searchPlaceholder={language === 'hi' ? 'व्यवसाय खोजें...' : 'Search occupation...'}
                     emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                   />
                 </div>

@@ -36,6 +36,7 @@ export interface Profile {
   education: string
   occupation: string
   salary?: string
+  position?: string  // Job position/designation
   location: string
   state?: string
   country: string
@@ -58,6 +59,10 @@ export interface Profile {
   manglik?: Manglik
   drinkingHabit?: DrinkingHabit
   smokingHabit?: SmokingHabit
+  // Horoscope fields
+  birthTime?: string  // Time of birth for horoscope
+  birthPlace?: string // Place of birth for horoscope
+  horoscopeMatching?: 'mandatory' | 'not-mandatory' | 'decide-later' | 'preferred'  // Horoscope matching preference
   status: ProfileStatus
   trustLevel: number
   createdAt: string

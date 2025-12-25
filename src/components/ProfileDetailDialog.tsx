@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { MapPin, Briefcase, GraduationCap, UserCircle, Phone, Envelope, Heart, ShieldCheck, Seal, Calendar, Clock, Eye, CheckCircle, XCircle, ClockCountdown } from '@phosphor-icons/react'
+import { MapPin, Briefcase, GraduationCap, UserCircle, Phone, Envelope, Heart, ShieldCheck, Seal, Calendar, Clock, Eye, CheckCircle, XCircle, ClockCountdown, UsersThree, Star, Ruler, CurrencyInr, Buildings, Globe, Translate, HandHeart, ForkKnife, Wine, Cigarette, Sun, Wheelchair, IdentificationCard } from '@phosphor-icons/react'
 import type { Profile, Interest, ContactRequest, MembershipPlan } from '@/types/profile'
 import { toast } from 'sonner'
 import { useKV } from '@/hooks/useKV'
@@ -370,6 +370,49 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     disabilityIntellectual: language === 'hi' ? 'बौद्धिक' : 'Intellectual',
     disabilityMultiple: language === 'hi' ? 'एकाधिक' : 'Multiple',
     disabilityOther: language === 'hi' ? 'अन्य' : 'Other',
+    // Partner Preferences labels
+    partnerPreferences: language === 'hi' ? 'पार्टनर प्राथमिकताएं' : 'Partner Preferences',
+    preferredAge: language === 'hi' ? 'आयु वरीयता' : 'Age Preference',
+    preferredHeight: language === 'hi' ? 'ऊंचाई वरीयता' : 'Height Preference',
+    preferredEducation: language === 'hi' ? 'शिक्षा वरीयता' : 'Education Preference',
+    preferredOccupation: language === 'hi' ? 'व्यवसाय वरीयता' : 'Occupation Preference',
+    preferredLocation: language === 'hi' ? 'स्थान वरीयता' : 'Location Preference',
+    preferredCountry: language === 'hi' ? 'देश वरीयता' : 'Country Preference',
+    preferredReligion: language === 'hi' ? 'धर्म वरीयता' : 'Religion Preference',
+    preferredCaste: language === 'hi' ? 'जाति वरीयता' : 'Caste Preference',
+    preferredMotherTongue: language === 'hi' ? 'मातृभाषा वरीयता' : 'Mother Tongue Preference',
+    preferredMaritalStatus: language === 'hi' ? 'वैवाहिक स्थिति वरीयता' : 'Marital Status Preference',
+    preferredDiet: language === 'hi' ? 'खान-पान वरीयता' : 'Diet Preference',
+    preferredDrinking: language === 'hi' ? 'पेय आदत वरीयता' : 'Drinking Habit Preference',
+    preferredSmoking: language === 'hi' ? 'धूम्रपान आदत वरीयता' : 'Smoking Habit Preference',
+    preferredManglik: language === 'hi' ? 'मांगलिक वरीयता' : 'Manglik Preference',
+    preferredDisability: language === 'hi' ? 'दिव्यांगता वरीयता' : 'Disability Preference',
+    noPreference: language === 'hi' ? 'कोई विशेष वरीयता नहीं' : 'No specific preference',
+    doesntMatter: language === 'hi' ? 'कोई फर्क नहीं' : 'Doesn\'t Matter',
+    yes: language === 'hi' ? 'हाँ' : 'Yes',
+    no: language === 'hi' ? 'नहीं' : 'No',
+    to: language === 'hi' ? 'से' : 'to',
+    // Additional profile fields
+    state: language === 'hi' ? 'राज्य' : 'State',
+    country: language === 'hi' ? 'देश' : 'Country',
+    residentialStatus: language === 'hi' ? 'आवासीय स्थिति' : 'Residential Status',
+    community: language === 'hi' ? 'समुदाय' : 'Community',
+    manglik: language === 'hi' ? 'मांगलिक' : 'Manglik',
+    drinkingHabit: language === 'hi' ? 'पेय आदत' : 'Drinking Habit',
+    smokingHabit: language === 'hi' ? 'धूम्रपान आदत' : 'Smoking Habit',
+    never: language === 'hi' ? 'कभी नहीं' : 'Never',
+    occasionally: language === 'hi' ? 'कभी-कभी' : 'Occasionally',
+    regularly: language === 'hi' ? 'नियमित' : 'Regularly',
+    veg: language === 'hi' ? 'शाकाहारी' : 'Vegetarian',
+    nonVeg: language === 'hi' ? 'मांसाहारी' : 'Non-Vegetarian',
+    eggetarian: language === 'hi' ? 'अंडाहारी' : 'Eggetarian',
+    idProof: language === 'hi' ? 'पहचान प्रमाण' : 'ID Proof',
+    idProofType: language === 'hi' ? 'पहचान प्रमाण प्रकार' : 'ID Proof Type',
+    membershipPlan: language === 'hi' ? 'सदस्यता योजना' : 'Membership Plan',
+    membershipExpiry: language === 'hi' ? 'सदस्यता समाप्ति' : 'Membership Expiry',
+    freePlan: language === 'hi' ? 'निःशुल्क' : 'Free',
+    sixMonthPlan: language === 'hi' ? '6 माह' : '6 Months',
+    oneYearPlan: language === 'hi' ? '1 वर्ष' : '1 Year',
   }
 
   // Format last login time
@@ -470,55 +513,161 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
               {/* Admin sees all additional fields */}
               {isAdmin && (
                 <>
+                  {/* State */}
+                  {profile.state && (
+                    <InfoItem 
+                      icon={<MapPin size={18} />} 
+                      label={t.state} 
+                      value={profile.state} 
+                    />
+                  )}
+                  {/* Country */}
                   <InfoItem 
-                    icon={<UserCircle size={18} />} 
-                    label={t.birthTime} 
-                    value={(profile as any).birthTime || t.notProvided} 
+                    icon={<Globe size={18} />} 
+                    label={t.country} 
+                    value={profile.country || t.notProvided} 
                   />
+                  {/* Residential Status */}
+                  {profile.residentialStatus && (
+                    <InfoItem 
+                      icon={<Buildings size={18} />} 
+                      label={t.residentialStatus} 
+                      value={profile.residentialStatus.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} 
+                    />
+                  )}
+                  {/* Community */}
+                  {profile.community && (
+                    <InfoItem 
+                      icon={<UsersThree size={18} />} 
+                      label={t.community} 
+                      value={profile.community} 
+                    />
+                  )}
+                  {/* Birth Time */}
+                  <InfoItem 
+                    icon={<Clock size={18} />} 
+                    label={t.birthTime} 
+                    value={profile.birthTime || t.notProvided} 
+                  />
+                  {/* Birth Place */}
                   <InfoItem 
                     icon={<MapPin size={18} />} 
                     label={t.birthPlace} 
-                    value={(profile as any).birthPlace || t.notProvided} 
+                    value={profile.birthPlace || t.notProvided} 
                   />
+                  {/* Horoscope Matching */}
                   <InfoItem 
-                    icon={<UserCircle size={18} />} 
+                    icon={<Sun size={18} />} 
                     label={t.horoscopeMatching} 
                     value={
-                      (profile as any).horoscopeMatching === 'mandatory' ? t.mandatory :
-                      (profile as any).horoscopeMatching === 'preferred' ? t.preferred :
-                      (profile as any).horoscopeMatching === 'not-required' ? t.notRequired : t.notProvided
+                      profile.horoscopeMatching === 'mandatory' ? t.mandatory :
+                      profile.horoscopeMatching === 'preferred' ? t.preferred :
+                      profile.horoscopeMatching === 'not-mandatory' ? t.notRequired :
+                      profile.horoscopeMatching === 'decide-later' ? (language === 'hi' ? 'बाद में तय करेंगे' : 'Decide Later') :
+                      t.notProvided
                     } 
                   />
+                  {/* Diet Preference */}
                   <InfoItem 
-                    icon={<UserCircle size={18} />} 
+                    icon={<ForkKnife size={18} />} 
                     label={t.diet} 
-                    value={(profile as any).diet || t.notProvided} 
+                    value={
+                      profile.dietPreference === 'veg' ? t.veg :
+                      profile.dietPreference === 'non-veg' ? t.nonVeg :
+                      profile.dietPreference === 'eggetarian' ? t.eggetarian :
+                      t.notProvided
+                    } 
                   />
+                  {/* Drinking Habit */}
                   <InfoItem 
-                    icon={<UserCircle size={18} />} 
-                    label={t.habits} 
-                    value={(profile as any).habits || t.notProvided} 
+                    icon={<Wine size={18} />} 
+                    label={t.drinkingHabit} 
+                    value={
+                      profile.drinkingHabit === 'never' ? t.never :
+                      profile.drinkingHabit === 'occasionally' ? t.occasionally :
+                      profile.drinkingHabit === 'regularly' ? t.regularly :
+                      t.notProvided
+                    } 
                   />
+                  {/* Smoking Habit */}
                   <InfoItem 
-                    icon={<Briefcase size={18} />} 
+                    icon={<Cigarette size={18} />} 
+                    label={t.smokingHabit} 
+                    value={
+                      profile.smokingHabit === 'never' ? t.never :
+                      profile.smokingHabit === 'occasionally' ? t.occasionally :
+                      profile.smokingHabit === 'regularly' ? t.regularly :
+                      t.notProvided
+                    } 
+                  />
+                  {/* Manglik */}
+                  <InfoItem 
+                    icon={<Star size={18} />} 
+                    label={t.manglik} 
+                    value={
+                      profile.manglik === true ? t.yes :
+                      profile.manglik === false ? t.no :
+                      t.notProvided
+                    } 
+                  />
+                  {/* Disability Details */}
+                  {profile.disabilityDetails && (
+                    <InfoItem 
+                      icon={<Wheelchair size={18} />} 
+                      label={language === 'hi' ? 'दिव्यांगता विवरण' : 'Disability Details'} 
+                      value={profile.disabilityDetails} 
+                    />
+                  )}
+                  {/* Annual Income / Salary */}
+                  <InfoItem 
+                    icon={<CurrencyInr size={18} />} 
                     label={t.annualIncome} 
-                    value={(profile as any).annualIncome || t.notProvided} 
+                    value={profile.salary || t.notProvided} 
                   />
+                  {/* Profession */}
                   <InfoItem 
                     icon={<Briefcase size={18} />} 
                     label={t.profession} 
-                    value={(profile as any).profession || t.notProvided} 
+                    value={profile.occupation || t.notProvided} 
                   />
+                  {/* Position */}
                   <InfoItem 
                     icon={<Briefcase size={18} />} 
                     label={t.position} 
-                    value={(profile as any).position || t.notProvided} 
+                    value={profile.position || t.notProvided} 
                   />
+                  {/* Relation to Profile */}
                   <InfoItem 
-                    icon={<UserCircle size={18} />} 
+                    icon={<UsersThree size={18} />} 
                     label={t.relation} 
-                    value={(profile as any).relation || (language === 'hi' ? 'स्वयं' : 'Self')} 
+                    value={profile.relationToProfile || (language === 'hi' ? 'स्वयं' : 'Self')} 
                   />
+                  {/* Membership Plan */}
+                  <InfoItem 
+                    icon={<Star size={18} className="text-amber-500" />} 
+                    label={t.membershipPlan} 
+                    value={
+                      profile.membershipPlan === '1-year' ? t.oneYearPlan :
+                      profile.membershipPlan === '6-month' ? t.sixMonthPlan :
+                      t.freePlan
+                    } 
+                  />
+                  {/* Membership Expiry */}
+                  {profile.membershipExpiry && (
+                    <InfoItem 
+                      icon={<Calendar size={18} />} 
+                      label={t.membershipExpiry} 
+                      value={formatDateDDMMYYYY(profile.membershipExpiry)} 
+                    />
+                  )}
+                  {/* ID Proof Type */}
+                  {profile.idProofType && (
+                    <InfoItem 
+                      icon={<IdentificationCard size={18} />} 
+                      label={t.idProofType} 
+                      value={profile.idProofType.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} 
+                    />
+                  )}
                 </>
               )}
             </div>
@@ -582,19 +731,228 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                   <InfoItem 
                     icon={<Phone size={18} />} 
                     label={t.mobileNumber} 
-                    value={(profile as any).mobile || (profile as any).phoneNumber || t.notProvided} 
+                    value={profile.mobile || t.notProvided} 
                   />
                   <InfoItem 
                     icon={<Envelope size={18} />} 
                     label={t.email} 
-                    value={(profile as any).email || t.notProvided} 
+                    value={profile.email || t.notProvided} 
                   />
                   <InfoItem 
                     icon={<UserCircle size={18} />} 
                     label={t.registeredBy} 
-                    value={(profile as any).registeredByName || t.notProvided} 
+                    value={profile.relationToProfile || (language === 'hi' ? 'स्वयं' : 'Self')} 
                   />
                 </div>
+              </section>
+            </>
+          )}
+
+          {/* Admin: Show Partner Preferences */}
+          {isAdmin && profile.partnerPreferences && (
+            <>
+              <Separator />
+              <section className="bg-purple-50 dark:bg-purple-950/30 p-4 rounded-lg">
+                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <HandHeart size={22} weight="fill" className="text-purple-600" />
+                  {t.partnerPreferences}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Age Preference */}
+                  {(profile.partnerPreferences.ageMin || profile.partnerPreferences.ageMax) && (
+                    <InfoItem 
+                      icon={<Calendar size={18} />} 
+                      label={t.preferredAge} 
+                      value={
+                        profile.partnerPreferences.ageMin && profile.partnerPreferences.ageMax
+                          ? `${profile.partnerPreferences.ageMin} ${t.to} ${profile.partnerPreferences.ageMax} ${t.years}`
+                          : profile.partnerPreferences.ageMin 
+                            ? `${profile.partnerPreferences.ageMin}+ ${t.years}`
+                            : `${language === 'hi' ? 'अधिकतम' : 'Up to'} ${profile.partnerPreferences.ageMax} ${t.years}`
+                      } 
+                    />
+                  )}
+                  {/* Height Preference */}
+                  {(profile.partnerPreferences.heightMin || profile.partnerPreferences.heightMax) && (
+                    <InfoItem 
+                      icon={<Ruler size={18} />} 
+                      label={t.preferredHeight} 
+                      value={
+                        profile.partnerPreferences.heightMin && profile.partnerPreferences.heightMax
+                          ? `${profile.partnerPreferences.heightMin} ${t.to} ${profile.partnerPreferences.heightMax}`
+                          : profile.partnerPreferences.heightMin || profile.partnerPreferences.heightMax || t.noPreference
+                      } 
+                    />
+                  )}
+                  {/* Education Preference */}
+                  {profile.partnerPreferences.education && profile.partnerPreferences.education.length > 0 && (
+                    <InfoItem 
+                      icon={<GraduationCap size={18} />} 
+                      label={t.preferredEducation} 
+                      value={profile.partnerPreferences.education.join(', ')} 
+                    />
+                  )}
+                  {/* Occupation Preference */}
+                  {profile.partnerPreferences.occupation && profile.partnerPreferences.occupation.length > 0 && (
+                    <InfoItem 
+                      icon={<Briefcase size={18} />} 
+                      label={t.preferredOccupation} 
+                      value={profile.partnerPreferences.occupation.join(', ')} 
+                    />
+                  )}
+                  {/* Location Preference */}
+                  {profile.partnerPreferences.location && profile.partnerPreferences.location.length > 0 && (
+                    <InfoItem 
+                      icon={<MapPin size={18} />} 
+                      label={t.preferredLocation} 
+                      value={profile.partnerPreferences.location.join(', ')} 
+                    />
+                  )}
+                  {/* Country Preference */}
+                  {profile.partnerPreferences.country && profile.partnerPreferences.country.length > 0 && (
+                    <InfoItem 
+                      icon={<Globe size={18} />} 
+                      label={t.preferredCountry} 
+                      value={profile.partnerPreferences.country.join(', ')} 
+                    />
+                  )}
+                  {/* Religion Preference */}
+                  {profile.partnerPreferences.religion && profile.partnerPreferences.religion.length > 0 && (
+                    <InfoItem 
+                      icon={<UserCircle size={18} />} 
+                      label={t.preferredReligion} 
+                      value={profile.partnerPreferences.religion.join(', ')} 
+                    />
+                  )}
+                  {/* Caste Preference */}
+                  {profile.partnerPreferences.caste && profile.partnerPreferences.caste.length > 0 && (
+                    <InfoItem 
+                      icon={<UsersThree size={18} />} 
+                      label={t.preferredCaste} 
+                      value={profile.partnerPreferences.caste.join(', ')} 
+                    />
+                  )}
+                  {/* Mother Tongue Preference */}
+                  {profile.partnerPreferences.motherTongue && profile.partnerPreferences.motherTongue.length > 0 && (
+                    <InfoItem 
+                      icon={<Translate size={18} />} 
+                      label={t.preferredMotherTongue} 
+                      value={profile.partnerPreferences.motherTongue.join(', ')} 
+                    />
+                  )}
+                  {/* Marital Status Preference */}
+                  {profile.partnerPreferences.maritalStatus && profile.partnerPreferences.maritalStatus.length > 0 && (
+                    <InfoItem 
+                      icon={<Heart size={18} />} 
+                      label={t.preferredMaritalStatus} 
+                      value={profile.partnerPreferences.maritalStatus.map(s => 
+                        s === 'never-married' ? (language === 'hi' ? 'अविवाहित' : 'Never Married') :
+                        s === 'divorced' ? (language === 'hi' ? 'तलाकशुदा' : 'Divorced') :
+                        s === 'widowed' ? (language === 'hi' ? 'विधुर/विधवा' : 'Widowed') : s
+                      ).join(', ')} 
+                    />
+                  )}
+                  {/* Diet Preference */}
+                  {profile.partnerPreferences.dietPreference && profile.partnerPreferences.dietPreference.length > 0 && (
+                    <InfoItem 
+                      icon={<ForkKnife size={18} />} 
+                      label={t.preferredDiet} 
+                      value={profile.partnerPreferences.dietPreference.map(d => 
+                        d === 'veg' ? t.veg :
+                        d === 'non-veg' ? t.nonVeg :
+                        d === 'eggetarian' ? t.eggetarian : d
+                      ).join(', ')} 
+                    />
+                  )}
+                  {/* Drinking Habit Preference */}
+                  {profile.partnerPreferences.drinkingHabit && profile.partnerPreferences.drinkingHabit.length > 0 && (
+                    <InfoItem 
+                      icon={<Wine size={18} />} 
+                      label={t.preferredDrinking} 
+                      value={profile.partnerPreferences.drinkingHabit.map(h => 
+                        h === 'never' ? t.never :
+                        h === 'occasionally' ? t.occasionally :
+                        h === 'regularly' ? t.regularly : h
+                      ).join(', ')} 
+                    />
+                  )}
+                  {/* Smoking Habit Preference */}
+                  {profile.partnerPreferences.smokingHabit && profile.partnerPreferences.smokingHabit.length > 0 && (
+                    <InfoItem 
+                      icon={<Cigarette size={18} />} 
+                      label={t.preferredSmoking} 
+                      value={profile.partnerPreferences.smokingHabit.map(h => 
+                        h === 'never' ? t.never :
+                        h === 'occasionally' ? t.occasionally :
+                        h === 'regularly' ? t.regularly : h
+                      ).join(', ')} 
+                    />
+                  )}
+                  {/* Manglik Preference */}
+                  {profile.partnerPreferences.manglik && (
+                    <InfoItem 
+                      icon={<Star size={18} />} 
+                      label={t.preferredManglik} 
+                      value={
+                        profile.partnerPreferences.manglik === 'yes' ? t.yes :
+                        profile.partnerPreferences.manglik === 'no' ? t.no :
+                        profile.partnerPreferences.manglik === 'doesnt-matter' ? t.doesntMatter : t.noPreference
+                      } 
+                    />
+                  )}
+                  {/* Disability Preference */}
+                  {profile.partnerPreferences.disability && profile.partnerPreferences.disability.length > 0 && (
+                    <InfoItem 
+                      icon={<Wheelchair size={18} />} 
+                      label={t.preferredDisability} 
+                      value={profile.partnerPreferences.disability.map(d => 
+                        d === 'none' ? t.disabilityNone :
+                        d === 'physical' ? t.disabilityPhysical :
+                        d === 'visual' ? t.disabilityVisual :
+                        d === 'hearing' ? t.disabilityHearing :
+                        d === 'speech' ? t.disabilitySpeech :
+                        d === 'intellectual' ? t.disabilityIntellectual :
+                        d === 'multiple' ? t.disabilityMultiple :
+                        d === 'other' ? t.disabilityOther : d
+                      ).join(', ')} 
+                    />
+                  )}
+                </div>
+                {/* Show message if no preferences set */}
+                {!profile.partnerPreferences.ageMin && !profile.partnerPreferences.ageMax && 
+                 !profile.partnerPreferences.heightMin && !profile.partnerPreferences.heightMax &&
+                 (!profile.partnerPreferences.education || profile.partnerPreferences.education.length === 0) &&
+                 (!profile.partnerPreferences.occupation || profile.partnerPreferences.occupation.length === 0) &&
+                 (!profile.partnerPreferences.location || profile.partnerPreferences.location.length === 0) &&
+                 (!profile.partnerPreferences.religion || profile.partnerPreferences.religion.length === 0) && (
+                  <p className="text-sm text-muted-foreground italic">{t.noPreference}</p>
+                )}
+              </section>
+            </>
+          )}
+
+          {/* Admin: Show ID Proof Image */}
+          {isAdmin && profile.idProofUrl && (
+            <>
+              <Separator />
+              <section>
+                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <IdentificationCard size={22} weight="fill" />
+                  {t.idProof}
+                </h3>
+                <div className="flex gap-3">
+                  <img 
+                    src={profile.idProofUrl} 
+                    alt="ID Proof" 
+                    className="max-w-xs max-h-48 object-contain rounded-lg border-2 border-amber-500 shadow cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => openLightbox([profile.idProofUrl!], 0)}
+                    title={language === 'hi' ? 'बड़ा देखें' : 'View larger'}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {profile.idProofType && `${t.idProofType}: ${profile.idProofType.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`}
+                  {profile.idProofVerified && ` • ${language === 'hi' ? 'सत्यापित' : 'Verified'}`}
+                </p>
               </section>
             </>
           )}
@@ -751,11 +1109,11 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <Phone size={16} className="text-muted-foreground" />
-                          <span className="font-medium">{(profile as any).mobile || (profile as any).phoneNumber || t.notProvided}</span>
+                          <span className="font-medium">{profile.mobile || t.notProvided}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Envelope size={16} className="text-muted-foreground" />
-                          <span className="font-medium">{(profile as any).email || t.notProvided}</span>
+                          <span className="font-medium">{profile.email || t.notProvided}</span>
                         </div>
                       </div>
                     </div>
