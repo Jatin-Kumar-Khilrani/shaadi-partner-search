@@ -181,19 +181,11 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
             </div>
           )}
 
-          {profile.disability && profile.disability !== 'none' && (
+          {profile.disability && profile.disability !== 'no' && (
             <div className="flex items-center gap-2 text-sm">
               <UserCircle size={16} className="text-muted-foreground shrink-0" />
               <span className="truncate">
-                {language === 'hi' ? 'दिव्यांगता' : 'Disability'}: {
-                  profile.disability === 'physical' ? (language === 'hi' ? 'शारीरिक' : 'Physical') :
-                  profile.disability === 'visual' ? (language === 'hi' ? 'दृष्टि संबंधी' : 'Visual') :
-                  profile.disability === 'hearing' ? (language === 'hi' ? 'श्रवण संबंधी' : 'Hearing') :
-                  profile.disability === 'speech' ? (language === 'hi' ? 'वाक् संबंधी' : 'Speech') :
-                  profile.disability === 'intellectual' ? (language === 'hi' ? 'बौद्धिक' : 'Intellectual') :
-                  profile.disability === 'multiple' ? (language === 'hi' ? 'एकाधिक' : 'Multiple') :
-                  (language === 'hi' ? 'अन्य' : 'Other')
-                }
+                {language === 'hi' ? 'दिव्यांग' : 'Differently Abled'}: {language === 'hi' ? 'हाँ' : 'Yes'}
               </span>
             </div>
           )}

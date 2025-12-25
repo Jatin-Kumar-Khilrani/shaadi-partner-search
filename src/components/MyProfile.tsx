@@ -185,7 +185,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
   const getDisabilityLabel = (disability: string | undefined) => {
     if (!disability) return '-'
     // Simplified to Yes/No - details can be discussed personally between parties
-    if (disability === 'none') {
+    if (disability === 'no') {
       return language === 'hi' ? 'नहीं' : 'No'
     }
     return language === 'hi' ? 'हां' : 'Yes'
@@ -849,7 +849,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                         <p className="text-sm text-muted-foreground">{t.disability}</p>
                         <p className="font-medium">
                           {getDisabilityLabel(profile.disability)}
-                          {profile.disability !== 'none' && profile.disabilityDetails && (
+                          {profile.disability !== 'no' && profile.disabilityDetails && (
                             <span className="text-muted-foreground text-sm ml-2">({profile.disabilityDetails})</span>
                           )}
                         </p>

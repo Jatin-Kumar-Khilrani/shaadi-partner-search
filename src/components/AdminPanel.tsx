@@ -1708,56 +1708,56 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   </div>
                   
                   {/* Status Filter Buttons */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                  <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+                    <div className="flex flex-wrap items-center gap-1 bg-muted rounded-lg p-1 w-full sm:w-auto">
                       <Button
                         size="sm"
                         variant={dbStatusFilter === 'all' ? 'default' : 'ghost'}
                         onClick={() => setDbStatusFilter('all')}
-                        className="gap-1 text-xs h-8"
+                        className="gap-1 text-xs h-8 flex-1 sm:flex-none min-w-0"
                       >
-                        <Database size={14} />
-                        {language === 'hi' ? 'सभी' : 'All'}
+                        <Database size={14} className="shrink-0" />
+                        <span className="hidden sm:inline">{language === 'hi' ? 'सभी' : 'All'}</span>
                         <Badge variant="outline" className="ml-1 text-xs bg-background">{profiles?.length || 0}</Badge>
                       </Button>
                       <Button
                         size="sm"
                         variant={dbStatusFilter === 'approved' ? 'default' : 'ghost'}
                         onClick={() => setDbStatusFilter('approved')}
-                        className="gap-1 text-xs h-8"
+                        className="gap-1 text-xs h-8 flex-1 sm:flex-none min-w-0"
                       >
-                        <Check size={14} />
-                        {language === 'hi' ? 'स्वीकृत' : 'Approved'}
+                        <Check size={14} className="shrink-0" />
+                        <span className="hidden sm:inline">{language === 'hi' ? 'स्वीकृत' : 'Approved'}</span>
                         <Badge variant="outline" className="ml-1 text-xs bg-background">{approvedProfiles.length}</Badge>
                       </Button>
                       <Button
                         size="sm"
                         variant={dbStatusFilter === 'pending' ? 'default' : 'ghost'}
                         onClick={() => setDbStatusFilter('pending')}
-                        className="gap-1 text-xs h-8"
+                        className="gap-1 text-xs h-8 flex-1 sm:flex-none min-w-0"
                       >
-                        <Info size={14} />
-                        {language === 'hi' ? 'लंबित' : 'Pending'}
+                        <Info size={14} className="shrink-0" />
+                        <span className="hidden sm:inline">{language === 'hi' ? 'लंबित' : 'Pending'}</span>
                         <Badge variant="outline" className="ml-1 text-xs bg-background">{pendingProfiles.length}</Badge>
                       </Button>
                       <Button
                         size="sm"
                         variant={dbStatusFilter === 'rejected' ? 'default' : 'ghost'}
                         onClick={() => setDbStatusFilter('rejected')}
-                        className="gap-1 text-xs h-8 text-orange-600 hover:text-orange-700"
+                        className="gap-1 text-xs h-8 text-orange-600 hover:text-orange-700 flex-1 sm:flex-none min-w-0"
                       >
-                        <Prohibit size={14} />
-                        {language === 'hi' ? 'अस्वीकृत' : 'Rejected'}
+                        <Prohibit size={14} className="shrink-0" />
+                        <span className="hidden sm:inline">{language === 'hi' ? 'अस्वीकृत' : 'Rejected'}</span>
                         <Badge variant="outline" className="ml-1 text-xs bg-background">{rejectedProfiles.length}</Badge>
                       </Button>
                       <Button
                         size="sm"
                         variant={dbStatusFilter === 'deleted' ? 'default' : 'ghost'}
                         onClick={() => setDbStatusFilter('deleted')}
-                        className="gap-1 text-xs h-8 text-red-600 hover:text-red-700"
+                        className="gap-1 text-xs h-8 text-red-600 hover:text-red-700 flex-1 sm:flex-none min-w-0"
                       >
-                        <Trash size={14} />
-                        {language === 'hi' ? 'हटाए गए' : 'Deleted'}
+                        <Trash size={14} className="shrink-0" />
+                        <span className="hidden sm:inline">{language === 'hi' ? 'हटाए गए' : 'Deleted'}</span>
                         <Badge variant="outline" className="ml-1 text-xs bg-background">{deletedProfiles.length}</Badge>
                       </Button>
                     </div>

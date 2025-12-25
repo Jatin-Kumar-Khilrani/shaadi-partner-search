@@ -13,13 +13,18 @@ export interface PartnerPreference {
   community?: string[]
   motherTongue?: string[]
   education?: string[]
-  occupation?: string[]
-  location?: string[]
-  country?: string[]
+  employmentStatus?: string[]     // Employment status preference
+  occupation?: string[]           // Occupation/Profession preference
+  livingCountry?: string[]        // Preferred countries partner is living in
+  livingState?: string[]          // Preferred states partner is living in
+  location?: string[]             // Preferred cities
+  country?: string[]              // Preferred countries (native)
   dietPreference?: DietPreference[]
   drinkingHabit?: DrinkingHabit[]
   smokingHabit?: SmokingHabit[]
   manglik?: Manglik[]
-  salaryMin?: string
-  salaryMax?: string
+  annualIncomeMin?: string        // Minimum annual income preference
+  annualIncomeMax?: string        // Maximum annual income preference
+  salaryMin?: string              // Deprecated: use annualIncomeMin
+  salaryMax?: string              // Deprecated: use annualIncomeMax
 }

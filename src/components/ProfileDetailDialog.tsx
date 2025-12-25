@@ -361,21 +361,18 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     preferred: language === 'hi' ? 'वांछित' : 'Preferred',
     notRequired: language === 'hi' ? 'आवश्यक नहीं' : 'Not Required',
     lastLogin: language === 'hi' ? 'अंतिम लॉगिन' : 'Last Login',
-    disability: language === 'hi' ? 'दिव्यांगता' : 'Disability',
-    disabilityNone: language === 'hi' ? 'कोई नहीं' : 'None',
-    disabilityPhysical: language === 'hi' ? 'शारीरिक' : 'Physical',
-    disabilityVisual: language === 'hi' ? 'दृष्टि संबंधी' : 'Visual',
-    disabilityHearing: language === 'hi' ? 'श्रवण संबंधी' : 'Hearing',
-    disabilitySpeech: language === 'hi' ? 'वाक् संबंधी' : 'Speech',
-    disabilityIntellectual: language === 'hi' ? 'बौद्धिक' : 'Intellectual',
-    disabilityMultiple: language === 'hi' ? 'एकाधिक' : 'Multiple',
-    disabilityOther: language === 'hi' ? 'अन्य' : 'Other',
+    disability: language === 'hi' ? 'दिव्यांग' : 'Differently Abled',
+    disabilityNo: language === 'hi' ? 'नहीं' : 'No',
+    disabilityYes: language === 'hi' ? 'हाँ' : 'Yes',
     // Partner Preferences labels
     partnerPreferences: language === 'hi' ? 'पार्टनर प्राथमिकताएं' : 'Partner Preferences',
     preferredAge: language === 'hi' ? 'आयु वरीयता' : 'Age Preference',
     preferredHeight: language === 'hi' ? 'ऊंचाई वरीयता' : 'Height Preference',
     preferredEducation: language === 'hi' ? 'शिक्षा वरीयता' : 'Education Preference',
+    preferredEmploymentStatus: language === 'hi' ? 'रोजगार स्थिति वरीयता' : 'Employment Status Preference',
     preferredOccupation: language === 'hi' ? 'व्यवसाय वरीयता' : 'Occupation Preference',
+    preferredLivingCountry: language === 'hi' ? 'रहने वाला देश वरीयता' : 'Living Country Preference',
+    preferredLivingState: language === 'hi' ? 'रहने वाला राज्य वरीयता' : 'Living State Preference',
     preferredLocation: language === 'hi' ? 'स्थान वरीयता' : 'Location Preference',
     preferredCountry: language === 'hi' ? 'देश वरीयता' : 'Country Preference',
     preferredReligion: language === 'hi' ? 'धर्म वरीयता' : 'Religion Preference',
@@ -387,6 +384,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     preferredSmoking: language === 'hi' ? 'धूम्रपान आदत वरीयता' : 'Smoking Habit Preference',
     preferredManglik: language === 'hi' ? 'मांगलिक वरीयता' : 'Manglik Preference',
     preferredDisability: language === 'hi' ? 'दिव्यांगता वरीयता' : 'Disability Preference',
+    preferredAnnualIncome: language === 'hi' ? 'वार्षिक आय वरीयता' : 'Annual Income Preference',
     noPreference: language === 'hi' ? 'कोई विशेष वरीयता नहीं' : 'No specific preference',
     doesntMatter: language === 'hi' ? 'कोई फर्क नहीं' : 'Doesn\'t Matter',
     yes: language === 'hi' ? 'हाँ' : 'Yes',
@@ -487,16 +485,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                 <InfoItem 
                   icon={<UserCircle size={18} />} 
                   label={t.disability} 
-                  value={
-                    profile.disability === 'none' ? t.disabilityNone :
-                    profile.disability === 'physical' ? t.disabilityPhysical :
-                    profile.disability === 'visual' ? t.disabilityVisual :
-                    profile.disability === 'hearing' ? t.disabilityHearing :
-                    profile.disability === 'speech' ? t.disabilitySpeech :
-                    profile.disability === 'intellectual' ? t.disabilityIntellectual :
-                    profile.disability === 'multiple' ? t.disabilityMultiple :
-                    t.disabilityOther
-                  } 
+                  value={profile.disability === 'no' ? t.disabilityNo : t.disabilityYes} 
                 />
               )}
               {profile.motherTongue && (
@@ -800,6 +789,52 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                       value={profile.partnerPreferences.occupation.join(', ')} 
                     />
                   )}
+                  {/* Employment Status Preference */}
+                  {profile.partnerPreferences.employmentStatus && profile.partnerPreferences.employmentStatus.length > 0 && (
+                    <InfoItem 
+                      icon={<Briefcase size={18} />} 
+                      label={t.preferredEmploymentStatus} 
+                      value={profile.partnerPreferences.employmentStatus.map(s => 
+                        s === 'employed' ? (language === 'hi' ? 'नौकरी' : 'Employed') :
+                        s === 'self-employed' ? (language === 'hi' ? 'स्वरोजगार' : 'Self-Employed') :
+                        s === 'business-owner' ? (language === 'hi' ? 'व्यापारी' : 'Business Owner') :
+                        s === 'govt-employee' ? (language === 'hi' ? 'सरकारी कर्मचारी' : 'Government Employee') :
+                        s === 'student' ? (language === 'hi' ? 'विद्यार्थी' : 'Student') :
+                        s === 'homemaker' ? (language === 'hi' ? 'गृहिणी' : 'Homemaker') :
+                        s === 'not-working' ? (language === 'hi' ? 'काम नहीं करते' : 'Not Working') : s
+                      ).join(', ')} 
+                    />
+                  )}
+                  {/* Living Country Preference */}
+                  {profile.partnerPreferences.livingCountry && profile.partnerPreferences.livingCountry.length > 0 && (
+                    <InfoItem 
+                      icon={<Globe size={18} />} 
+                      label={t.preferredLivingCountry} 
+                      value={profile.partnerPreferences.livingCountry.join(', ')} 
+                    />
+                  )}
+                  {/* Living State Preference */}
+                  {profile.partnerPreferences.livingState && profile.partnerPreferences.livingState.length > 0 && (
+                    <InfoItem 
+                      icon={<MapPin size={18} />} 
+                      label={t.preferredLivingState} 
+                      value={profile.partnerPreferences.livingState.join(', ')} 
+                    />
+                  )}
+                  {/* Annual Income Preference */}
+                  {(profile.partnerPreferences.annualIncomeMin || profile.partnerPreferences.annualIncomeMax) && (
+                    <InfoItem 
+                      icon={<Briefcase size={18} />} 
+                      label={t.preferredAnnualIncome} 
+                      value={
+                        profile.partnerPreferences.annualIncomeMin && profile.partnerPreferences.annualIncomeMax
+                          ? `${profile.partnerPreferences.annualIncomeMin} ${t.to} ${profile.partnerPreferences.annualIncomeMax}`
+                          : profile.partnerPreferences.annualIncomeMin 
+                            ? `${profile.partnerPreferences.annualIncomeMin}+`
+                            : `${language === 'hi' ? 'अधिकतम' : 'Up to'} ${profile.partnerPreferences.annualIncomeMax}`
+                      } 
+                    />
+                  )}
                   {/* Location Preference */}
                   {profile.partnerPreferences.location && profile.partnerPreferences.location.length > 0 && (
                     <InfoItem 
@@ -906,14 +941,8 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                       icon={<Wheelchair size={18} />} 
                       label={t.preferredDisability} 
                       value={profile.partnerPreferences.disability.map(d => 
-                        d === 'none' ? t.disabilityNone :
-                        d === 'physical' ? t.disabilityPhysical :
-                        d === 'visual' ? t.disabilityVisual :
-                        d === 'hearing' ? t.disabilityHearing :
-                        d === 'speech' ? t.disabilitySpeech :
-                        d === 'intellectual' ? t.disabilityIntellectual :
-                        d === 'multiple' ? t.disabilityMultiple :
-                        d === 'other' ? t.disabilityOther : d
+                        d === 'no' ? t.disabilityNo :
+                        d === 'yes' ? t.disabilityYes : d
                       ).join(', ')} 
                     />
                   )}

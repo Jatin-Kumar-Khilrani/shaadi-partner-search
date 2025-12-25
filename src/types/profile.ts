@@ -6,7 +6,7 @@ export type DrinkingHabit = 'never' | 'occasionally' | 'regularly'
 export type SmokingHabit = 'never' | 'occasionally' | 'regularly'
 export type MembershipPlan = 'free' | '6-month' | '1-year'
 export type Manglik = boolean
-export type DisabilityStatus = 'none' | 'physical' | 'visual' | 'hearing' | 'speech' | 'intellectual' | 'multiple' | 'other'
+export type DisabilityStatus = 'no' | 'yes'
 export type ResidentialStatus = 
   | 'citizen' 
   | 'permanent-resident' 
@@ -152,19 +152,24 @@ export interface Profile {
     ageMax?: number
     heightMin?: string
     heightMax?: string
-    education?: string[]          // Preferred education levels
-    occupation?: string[]         // Preferred occupations
-    location?: string[]           // Preferred cities
-    country?: string[]            // Preferred countries
-    religion?: string[]           // Preferred religions
-    caste?: string[]              // Preferred castes
-    motherTongue?: string[]       // Preferred mother tongues
+    education?: string[]            // Preferred education levels
+    employmentStatus?: string[]     // Preferred employment status
+    occupation?: string[]           // Preferred occupations/professions
+    livingCountry?: string[]        // Preferred countries partner is living in
+    livingState?: string[]          // Preferred states partner is living in
+    location?: string[]             // Preferred cities
+    country?: string[]              // Preferred countries (native)
+    religion?: string[]             // Preferred religions
+    caste?: string[]                // Preferred castes
+    motherTongue?: string[]         // Preferred mother tongues
     maritalStatus?: MaritalStatus[] // Preferred marital status
     dietPreference?: DietPreference[]
     drinkingHabit?: DrinkingHabit[]
     smokingHabit?: SmokingHabit[]
     manglik?: 'yes' | 'no' | 'doesnt-matter'
     disability?: DisabilityStatus[] // Accepted disability status
+    annualIncomeMin?: string        // Minimum annual income preference
+    annualIncomeMax?: string        // Maximum annual income preference
   }
 }
 

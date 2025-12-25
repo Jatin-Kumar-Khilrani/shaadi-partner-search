@@ -153,15 +153,9 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     years: language === 'hi' ? 'वर्ष' : 'years',
     
     // Disability
-    disability: language === 'hi' ? 'दिव्यांगता' : 'Disability',
-    disabilityNone: language === 'hi' ? 'कोई नहीं' : 'None',
-    disabilityPhysical: language === 'hi' ? 'शारीरिक' : 'Physical',
-    disabilityVisual: language === 'hi' ? 'दृष्टि संबंधी' : 'Visual',
-    disabilityHearing: language === 'hi' ? 'श्रवण संबंधी' : 'Hearing',
-    disabilitySpeech: language === 'hi' ? 'वाक् संबंधी' : 'Speech',
-    disabilityIntellectual: language === 'hi' ? 'बौद्धिक' : 'Intellectual',
-    disabilityMultiple: language === 'hi' ? 'एकाधिक' : 'Multiple',
-    disabilityOther: language === 'hi' ? 'अन्य' : 'Other',
+    disability: language === 'hi' ? 'दिव्यांग' : 'Differently Abled',
+    disabilityNo: language === 'hi' ? 'नहीं' : 'No',
+    disabilityYes: language === 'hi' ? 'हाँ' : 'Yes',
   }
 
   const filteredProfiles = useMemo(() => {
@@ -501,14 +495,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="any">{t.any}</SelectItem>
-              <SelectItem value="none">{t.disabilityNone}</SelectItem>
-              <SelectItem value="physical">{t.disabilityPhysical}</SelectItem>
-              <SelectItem value="visual">{t.disabilityVisual}</SelectItem>
-              <SelectItem value="hearing">{t.disabilityHearing}</SelectItem>
-              <SelectItem value="speech">{t.disabilitySpeech}</SelectItem>
-              <SelectItem value="intellectual">{t.disabilityIntellectual}</SelectItem>
-              <SelectItem value="multiple">{t.disabilityMultiple}</SelectItem>
-              <SelectItem value="other">{t.disabilityOther}</SelectItem>
+              <SelectItem value="no">{t.disabilityNo}</SelectItem>
+              <SelectItem value="yes">{t.disabilityYes}</SelectItem>
             </SelectContent>
           </Select>
         </div>

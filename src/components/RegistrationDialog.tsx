@@ -276,7 +276,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     mobile: '',
     height: '',
     weight: '',
-    disability: 'none' as DisabilityStatus,
+    disability: 'no' as DisabilityStatus,
     disabilityDetails: '',
     bio: '',
     familyDetails: '',
@@ -287,7 +287,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     partnerHeightMin: '',
     partnerHeightMax: '',
     partnerEducation: [] as string[],
+    partnerEmploymentStatus: [] as string[],
     partnerOccupation: [] as string[],
+    partnerLivingCountry: [] as string[],
+    partnerLivingState: [] as string[],
     partnerLocation: [] as string[],
     partnerCountry: [] as string[],
     partnerReligion: [] as string[],
@@ -298,7 +301,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     partnerDrinking: [] as DrinkingHabit[],
     partnerSmoking: [] as SmokingHabit[],
     partnerManglik: 'doesnt-matter' as 'yes' | 'no' | 'doesnt-matter',
-    partnerDisability: [] as DisabilityStatus[]
+    partnerDisability: [] as DisabilityStatus[],
+    partnerAnnualIncomeMin: '',
+    partnerAnnualIncomeMax: ''
   })
 
   const STORAGE_KEY = 'registration_draft'
@@ -341,8 +346,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         mobile: mobileNumber,
         height: editProfile.height || '',
         weight: editProfile.weight || '',
-        disability: editProfile.disability || 'none',
-        disabilityDetails: editProfile.disabilityDetails || '',
+        disability: editProfile.disability || 'no',
+        disabilityDetails: editProfile.disabilityDetails || '',,
         bio: editProfile.bio || '',
         familyDetails: editProfile.familyDetails || '',
         membershipPlan: editProfile.membershipPlan,
@@ -352,7 +357,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         partnerHeightMin: editProfile.partnerPreferences?.heightMin || '',
         partnerHeightMax: editProfile.partnerPreferences?.heightMax || '',
         partnerEducation: editProfile.partnerPreferences?.education || [],
+        partnerEmploymentStatus: editProfile.partnerPreferences?.employmentStatus || [],
         partnerOccupation: editProfile.partnerPreferences?.occupation || [],
+        partnerLivingCountry: editProfile.partnerPreferences?.livingCountry || [],
+        partnerLivingState: editProfile.partnerPreferences?.livingState || [],
         partnerLocation: editProfile.partnerPreferences?.location || [],
         partnerCountry: editProfile.partnerPreferences?.country || [],
         partnerReligion: editProfile.partnerPreferences?.religion || [],
@@ -363,7 +371,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         partnerDrinking: editProfile.partnerPreferences?.drinkingHabit || [],
         partnerSmoking: editProfile.partnerPreferences?.smokingHabit || [],
         partnerManglik: editProfile.partnerPreferences?.manglik || 'doesnt-matter',
-        partnerDisability: editProfile.partnerPreferences?.disability || []
+        partnerDisability: editProfile.partnerPreferences?.disability || [],
+        partnerAnnualIncomeMin: editProfile.partnerPreferences?.annualIncomeMin || '',
+        partnerAnnualIncomeMax: editProfile.partnerPreferences?.annualIncomeMax || ''
       })
       
       // Load existing photos
@@ -1070,7 +1080,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       }),
       // Disability information
       disability: formData.disability!,
-      disabilityDetails: formData.disability !== 'none' ? formData.disabilityDetails : undefined,
+      disabilityDetails: formData.disability !== 'no' ? formData.disabilityDetails : undefined,
       // Partner Preferences
       partnerPreferences: {
         ageMin: formData.partnerAgeMin,
@@ -1078,7 +1088,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         heightMin: formData.partnerHeightMin,
         heightMax: formData.partnerHeightMax,
         education: formData.partnerEducation?.length ? formData.partnerEducation : undefined,
+        employmentStatus: formData.partnerEmploymentStatus?.length ? formData.partnerEmploymentStatus : undefined,
         occupation: formData.partnerOccupation?.length ? formData.partnerOccupation : undefined,
+        livingCountry: formData.partnerLivingCountry?.length ? formData.partnerLivingCountry : undefined,
+        livingState: formData.partnerLivingState?.length ? formData.partnerLivingState : undefined,
         location: formData.partnerLocation?.length ? formData.partnerLocation : undefined,
         country: formData.partnerCountry?.length ? formData.partnerCountry : undefined,
         religion: formData.partnerReligion?.length ? formData.partnerReligion : undefined,
@@ -1089,7 +1102,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         drinkingHabit: formData.partnerDrinking?.length ? formData.partnerDrinking : undefined,
         smokingHabit: formData.partnerSmoking?.length ? formData.partnerSmoking : undefined,
         manglik: formData.partnerManglik,
-        disability: formData.partnerDisability?.length ? formData.partnerDisability : undefined
+        disability: formData.partnerDisability?.length ? formData.partnerDisability : undefined,
+        annualIncomeMin: formData.partnerAnnualIncomeMin || undefined,
+        annualIncomeMax: formData.partnerAnnualIncomeMax || undefined
       }
     }
 
@@ -1854,33 +1869,27 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="disability">{language === 'hi' ? 'विकलांगता' : 'Disability'} *</Label>
+                    <Label htmlFor="disability">{language === 'hi' ? 'दिव्यांग' : 'Differently Abled'} *</Label>
                     <Select 
-                      value={formData.disability || 'none'} 
+                      value={formData.disability || 'no'} 
                       onValueChange={(value: DisabilityStatus) => updateField('disability', value)}
                     >
                       <SelectTrigger id="disability" className="w-full">
-                        <SelectValue placeholder={language === 'hi' ? 'विकलांगता स्थिति चुनें' : 'Select Disability Status'} />
+                        <SelectValue placeholder={language === 'hi' ? 'चुनें' : 'Select'} />
                       </SelectTrigger>
                       <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
-                        <SelectItem value="none">{language === 'hi' ? 'कोई नहीं' : 'None'}</SelectItem>
-                        <SelectItem value="physical">{language === 'hi' ? 'शारीरिक' : 'Physical'}</SelectItem>
-                        <SelectItem value="visual">{language === 'hi' ? 'दृष्टि संबंधी' : 'Visual'}</SelectItem>
-                        <SelectItem value="hearing">{language === 'hi' ? 'श्रवण संबंधी' : 'Hearing'}</SelectItem>
-                        <SelectItem value="speech">{language === 'hi' ? 'वाणी संबंधी' : 'Speech'}</SelectItem>
-                        <SelectItem value="intellectual">{language === 'hi' ? 'बौद्धिक' : 'Intellectual'}</SelectItem>
-                        <SelectItem value="multiple">{language === 'hi' ? 'एकाधिक' : 'Multiple'}</SelectItem>
-                        <SelectItem value="other">{language === 'hi' ? 'अन्य' : 'Other'}</SelectItem>
+                        <SelectItem value="no">{language === 'hi' ? 'नहीं' : 'No'}</SelectItem>
+                        <SelectItem value="yes">{language === 'hi' ? 'हाँ' : 'Yes'}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
-                {/* Disability Details - show only if disability is not 'none' */}
-                {formData.disability && formData.disability !== 'none' && (
+                {/* Disability Details - show only if disability is 'yes' */}
+                {formData.disability === 'yes' && (
                   <div className="space-y-2">
                     <Label htmlFor="disabilityDetails">
-                      {language === 'hi' ? 'विकलांगता विवरण (वैकल्पिक)' : 'Disability Details (Optional)'}
+                      {language === 'hi' ? 'विवरण (वैकल्पिक)' : 'Details (Optional)'}
                     </Label>
                     <Textarea
                       id="disabilityDetails"
@@ -3107,6 +3116,202 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
                 </div>
 
+                {/* Mother Tongue */}
+                <div className="space-y-2">
+                  <Label>{language === 'hi' ? 'मातृभाषा' : 'Mother Tongue'}</Label>
+                  <Select 
+                    value={formData.partnerMotherTongue?.[0] || ''} 
+                    onValueChange={(v) => updateField('partnerMotherTongue', v ? [v] : [])}
+                  >
+                    <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
+                    <SelectContent className="z-[9999] max-h-60" position="popper">
+                      <SelectItem value="Hindi">{language === 'hi' ? 'हिंदी' : 'Hindi'}</SelectItem>
+                      <SelectItem value="English">{language === 'hi' ? 'अंग्रेज़ी' : 'English'}</SelectItem>
+                      <SelectItem value="Punjabi">{language === 'hi' ? 'पंजाबी' : 'Punjabi'}</SelectItem>
+                      <SelectItem value="Gujarati">{language === 'hi' ? 'गुजराती' : 'Gujarati'}</SelectItem>
+                      <SelectItem value="Marathi">{language === 'hi' ? 'मराठी' : 'Marathi'}</SelectItem>
+                      <SelectItem value="Tamil">{language === 'hi' ? 'तमिल' : 'Tamil'}</SelectItem>
+                      <SelectItem value="Telugu">{language === 'hi' ? 'तेलुगु' : 'Telugu'}</SelectItem>
+                      <SelectItem value="Kannada">{language === 'hi' ? 'कन्नड़' : 'Kannada'}</SelectItem>
+                      <SelectItem value="Malayalam">{language === 'hi' ? 'मलयालम' : 'Malayalam'}</SelectItem>
+                      <SelectItem value="Bengali">{language === 'hi' ? 'बंगाली' : 'Bengali'}</SelectItem>
+                      <SelectItem value="Odia">{language === 'hi' ? 'ओड़िया' : 'Odia'}</SelectItem>
+                      <SelectItem value="Urdu">{language === 'hi' ? 'उर्दू' : 'Urdu'}</SelectItem>
+                      <SelectItem value="Bhojpuri">{language === 'hi' ? 'भोजपुरी' : 'Bhojpuri'}</SelectItem>
+                      <SelectItem value="Rajasthani">{language === 'hi' ? 'राजस्थानी' : 'Rajasthani'}</SelectItem>
+                      <SelectItem value="Haryanvi">{language === 'hi' ? 'हरियाणवी' : 'Haryanvi'}</SelectItem>
+                      <SelectItem value="Other">{language === 'hi' ? 'अन्य' : 'Other'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Education & Employment Status */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'शिक्षा' : 'Education'}</Label>
+                    <Select 
+                      value={formData.partnerEducation?.[0] || ''} 
+                      onValueChange={(v) => updateField('partnerEducation', v ? [v] : [])}
+                    >
+                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
+                      <SelectContent className="z-[9999] max-h-60" position="popper">
+                        <SelectItem value="10th">{language === 'hi' ? '10वीं कक्षा' : '10th Standard'}</SelectItem>
+                        <SelectItem value="12th">{language === 'hi' ? '12वीं कक्षा' : '12th Standard'}</SelectItem>
+                        <SelectItem value="diploma">{language === 'hi' ? 'डिप्लोमा' : 'Diploma'}</SelectItem>
+                        <SelectItem value="graduate">{language === 'hi' ? 'स्नातक' : 'Graduate'}</SelectItem>
+                        <SelectItem value="btech-be">{language === 'hi' ? 'बी.टेक/बी.ई.' : 'B.Tech/B.E.'}</SelectItem>
+                        <SelectItem value="bba">{language === 'hi' ? 'बीबीए' : 'BBA'}</SelectItem>
+                        <SelectItem value="bca">{language === 'hi' ? 'बीसीए' : 'BCA'}</SelectItem>
+                        <SelectItem value="bsc">{language === 'hi' ? 'बी.एस.सी' : 'B.Sc'}</SelectItem>
+                        <SelectItem value="bcom">{language === 'hi' ? 'बी.कॉम' : 'B.Com'}</SelectItem>
+                        <SelectItem value="ba">{language === 'hi' ? 'बी.ए.' : 'B.A.'}</SelectItem>
+                        <SelectItem value="post-graduate">{language === 'hi' ? 'स्नातकोत्तर' : 'Post Graduate'}</SelectItem>
+                        <SelectItem value="mba">{language === 'hi' ? 'एमबीए' : 'MBA'}</SelectItem>
+                        <SelectItem value="mca">{language === 'hi' ? 'एमसीए' : 'MCA'}</SelectItem>
+                        <SelectItem value="mtech-me">{language === 'hi' ? 'एम.टेक/एम.ई.' : 'M.Tech/M.E.'}</SelectItem>
+                        <SelectItem value="phd">{language === 'hi' ? 'पीएचडी/डॉक्टरेट' : 'PhD/Doctorate'}</SelectItem>
+                        <SelectItem value="mbbs">{language === 'hi' ? 'एमबीबीएस' : 'MBBS'}</SelectItem>
+                        <SelectItem value="md-ms">{language === 'hi' ? 'एमडी/एमएस' : 'MD/MS'}</SelectItem>
+                        <SelectItem value="ca">{language === 'hi' ? 'सीए' : 'CA'}</SelectItem>
+                        <SelectItem value="other">{language === 'hi' ? 'अन्य' : 'Other'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status'}</Label>
+                    <Select 
+                      value={formData.partnerEmploymentStatus?.[0] || ''} 
+                      onValueChange={(v) => updateField('partnerEmploymentStatus', v ? [v] : [])}
+                    >
+                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
+                      <SelectContent className="z-[9999]" position="popper">
+                        <SelectItem value="employed">{language === 'hi' ? 'नौकरी' : 'Employed'}</SelectItem>
+                        <SelectItem value="self-employed">{language === 'hi' ? 'स्वरोजगार' : 'Self-Employed'}</SelectItem>
+                        <SelectItem value="business-owner">{language === 'hi' ? 'व्यापारी' : 'Business Owner'}</SelectItem>
+                        <SelectItem value="govt-employee">{language === 'hi' ? 'सरकारी कर्मचारी' : 'Government Employee'}</SelectItem>
+                        <SelectItem value="student">{language === 'hi' ? 'विद्यार्थी' : 'Student'}</SelectItem>
+                        <SelectItem value="homemaker">{language === 'hi' ? 'गृहिणी' : 'Homemaker'}</SelectItem>
+                        <SelectItem value="not-working">{language === 'hi' ? 'काम नहीं करते' : 'Not Working'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Occupation/Profession */}
+                <div className="space-y-2">
+                  <Label>{language === 'hi' ? 'व्यवसाय/पेशा' : 'Occupation/Profession'}</Label>
+                  <Input
+                    placeholder={language === 'hi' ? 'उदाहरण: सॉफ्टवेयर इंजीनियर, डॉक्टर, वकील' : 'Example: Software Engineer, Doctor, Lawyer'}
+                    value={formData.partnerOccupation?.[0] || ''}
+                    onChange={(e) => updateField('partnerOccupation', e.target.value ? [e.target.value] : [])}
+                  />
+                </div>
+
+                {/* Living Country & State */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'रहने वाला देश' : 'Living in Country'}</Label>
+                    <Select 
+                      value={formData.partnerLivingCountry?.[0] || ''} 
+                      onValueChange={(v) => {
+                        updateField('partnerLivingCountry', v ? [v] : [])
+                        updateField('partnerLivingState', []) // Clear state when country changes
+                      }}
+                    >
+                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
+                      <SelectContent className="z-[9999] max-h-60" position="popper">
+                        <SelectItem value="India">🇮🇳 India</SelectItem>
+                        <SelectItem value="United States">🇺🇸 United States</SelectItem>
+                        <SelectItem value="United Kingdom">🇬🇧 United Kingdom</SelectItem>
+                        <SelectItem value="Canada">🇨🇦 Canada</SelectItem>
+                        <SelectItem value="Australia">🇦🇺 Australia</SelectItem>
+                        <SelectItem value="UAE">🇦🇪 UAE</SelectItem>
+                        <SelectItem value="Singapore">🇸🇬 Singapore</SelectItem>
+                        <SelectItem value="Germany">🇩🇪 Germany</SelectItem>
+                        <SelectItem value="New Zealand">🇳🇿 New Zealand</SelectItem>
+                        <SelectItem value="Saudi Arabia">🇸🇦 Saudi Arabia</SelectItem>
+                        <SelectItem value="Qatar">🇶🇦 Qatar</SelectItem>
+                        <SelectItem value="Kuwait">🇰🇼 Kuwait</SelectItem>
+                        <SelectItem value="Oman">🇴🇲 Oman</SelectItem>
+                        <SelectItem value="Malaysia">🇲🇾 Malaysia</SelectItem>
+                        <SelectItem value="Other">🌍 {language === 'hi' ? 'अन्य' : 'Other'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'रहने वाला राज्य' : 'Living in State'}</Label>
+                    <Select 
+                      value={formData.partnerLivingState?.[0] || ''} 
+                      onValueChange={(v) => updateField('partnerLivingState', v ? [v] : [])}
+                      disabled={!formData.partnerLivingCountry?.length}
+                    >
+                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
+                      <SelectContent className="z-[9999] max-h-60" position="popper">
+                        {getStatesForCountry(formData.partnerLivingCountry?.[0] || '').map(state => (
+                          <SelectItem key={state} value={state}>{state}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Annual Income Range */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'न्यूनतम वार्षिक आय' : 'Minimum Annual Income'}</Label>
+                    <Select 
+                      value={formData.partnerAnnualIncomeMin || ''} 
+                      onValueChange={(v) => updateField('partnerAnnualIncomeMin', v)}
+                    >
+                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
+                      <SelectContent className="z-[9999] max-h-60" position="popper">
+                        <SelectItem value="no-income">{language === 'hi' ? 'कोई आय नहीं' : 'No Income'}</SelectItem>
+                        <SelectItem value="below-1-lakh">{language === 'hi' ? '₹1 लाख से कम' : 'Below ₹1 Lakh'}</SelectItem>
+                        <SelectItem value="1-2-lakh">{language === 'hi' ? '₹1-2 लाख' : '₹1-2 Lakh'}</SelectItem>
+                        <SelectItem value="2-3-lakh">{language === 'hi' ? '₹2-3 लाख' : '₹2-3 Lakh'}</SelectItem>
+                        <SelectItem value="3-4-lakh">{language === 'hi' ? '₹3-4 लाख' : '₹3-4 Lakh'}</SelectItem>
+                        <SelectItem value="4-5-lakh">{language === 'hi' ? '₹4-5 लाख' : '₹4-5 Lakh'}</SelectItem>
+                        <SelectItem value="5-7.5-lakh">{language === 'hi' ? '₹5-7.5 लाख' : '₹5-7.5 Lakh'}</SelectItem>
+                        <SelectItem value="7.5-10-lakh">{language === 'hi' ? '₹7.5-10 लाख' : '₹7.5-10 Lakh'}</SelectItem>
+                        <SelectItem value="10-15-lakh">{language === 'hi' ? '₹10-15 लाख' : '₹10-15 Lakh'}</SelectItem>
+                        <SelectItem value="15-20-lakh">{language === 'hi' ? '₹15-20 लाख' : '₹15-20 Lakh'}</SelectItem>
+                        <SelectItem value="20-25-lakh">{language === 'hi' ? '₹20-25 लाख' : '₹20-25 Lakh'}</SelectItem>
+                        <SelectItem value="25-35-lakh">{language === 'hi' ? '₹25-35 लाख' : '₹25-35 Lakh'}</SelectItem>
+                        <SelectItem value="35-50-lakh">{language === 'hi' ? '₹35-50 लाख' : '₹35-50 Lakh'}</SelectItem>
+                        <SelectItem value="50-75-lakh">{language === 'hi' ? '₹50-75 लाख' : '₹50-75 Lakh'}</SelectItem>
+                        <SelectItem value="75-1-crore">{language === 'hi' ? '₹75 लाख - 1 करोड़' : '₹75 Lakh - 1 Crore'}</SelectItem>
+                        <SelectItem value="above-1-crore">{language === 'hi' ? '₹1 करोड़ से अधिक' : 'Above ₹1 Crore'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'अधिकतम वार्षिक आय' : 'Maximum Annual Income'}</Label>
+                    <Select 
+                      value={formData.partnerAnnualIncomeMax || ''} 
+                      onValueChange={(v) => updateField('partnerAnnualIncomeMax', v)}
+                    >
+                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
+                      <SelectContent className="z-[9999] max-h-60" position="popper">
+                        <SelectItem value="below-1-lakh">{language === 'hi' ? '₹1 लाख से कम' : 'Below ₹1 Lakh'}</SelectItem>
+                        <SelectItem value="1-2-lakh">{language === 'hi' ? '₹1-2 लाख' : '₹1-2 Lakh'}</SelectItem>
+                        <SelectItem value="2-3-lakh">{language === 'hi' ? '₹2-3 लाख' : '₹2-3 Lakh'}</SelectItem>
+                        <SelectItem value="3-4-lakh">{language === 'hi' ? '₹3-4 लाख' : '₹3-4 Lakh'}</SelectItem>
+                        <SelectItem value="4-5-lakh">{language === 'hi' ? '₹4-5 लाख' : '₹4-5 Lakh'}</SelectItem>
+                        <SelectItem value="5-7.5-lakh">{language === 'hi' ? '₹5-7.5 लाख' : '₹5-7.5 Lakh'}</SelectItem>
+                        <SelectItem value="7.5-10-lakh">{language === 'hi' ? '₹7.5-10 लाख' : '₹7.5-10 Lakh'}</SelectItem>
+                        <SelectItem value="10-15-lakh">{language === 'hi' ? '₹10-15 लाख' : '₹10-15 Lakh'}</SelectItem>
+                        <SelectItem value="15-20-lakh">{language === 'hi' ? '₹15-20 लाख' : '₹15-20 Lakh'}</SelectItem>
+                        <SelectItem value="20-25-lakh">{language === 'hi' ? '₹20-25 लाख' : '₹20-25 Lakh'}</SelectItem>
+                        <SelectItem value="25-35-lakh">{language === 'hi' ? '₹25-35 लाख' : '₹25-35 Lakh'}</SelectItem>
+                        <SelectItem value="35-50-lakh">{language === 'hi' ? '₹35-50 लाख' : '₹35-50 Lakh'}</SelectItem>
+                        <SelectItem value="50-75-lakh">{language === 'hi' ? '₹50-75 लाख' : '₹50-75 Lakh'}</SelectItem>
+                        <SelectItem value="75-1-crore">{language === 'hi' ? '₹75 लाख - 1 करोड़' : '₹75 Lakh - 1 Crore'}</SelectItem>
+                        <SelectItem value="above-1-crore">{language === 'hi' ? '₹1 करोड़ से अधिक' : 'Above ₹1 Crore'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
                 {/* Diet & Lifestyle */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -3139,21 +3344,27 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
                 </div>
 
-                {/* Disability Acceptance */}
+                {/* Differently Abled Acceptance */}
                 <div className="space-y-2">
-                  <Label>{language === 'hi' ? 'विकलांगता स्वीकार्य' : 'Disability Acceptance'}</Label>
+                  <Label>{language === 'hi' ? 'दिव्यांग स्वीकार्य' : 'Differently Abled Acceptance'}</Label>
                   <Select 
-                    value={formData.partnerDisability?.includes('none') ? 'none-only' : formData.partnerDisability?.length ? 'accept' : ''} 
+                    value={
+                      formData.partnerDisability?.length === 1 && formData.partnerDisability[0] === 'no' 
+                        ? 'no-only' 
+                        : formData.partnerDisability?.length && formData.partnerDisability?.length > 1 
+                          ? 'accept' 
+                          : ''
+                    } 
                     onValueChange={(v) => {
-                      if (v === 'none-only') updateField('partnerDisability', ['none'] as DisabilityStatus[])
-                      else if (v === 'accept') updateField('partnerDisability', ['none', 'physical', 'visual', 'hearing', 'speech', 'other'] as DisabilityStatus[])
+                      if (v === 'no-only') updateField('partnerDisability', ['no'] as DisabilityStatus[])
+                      else if (v === 'accept') updateField('partnerDisability', ['no', 'yes'] as DisabilityStatus[])
                       else updateField('partnerDisability', [])
                     }}
                   >
                     <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'चुनें' : 'Select'} /></SelectTrigger>
                     <SelectContent className="z-[9999]" position="popper">
-                      <SelectItem value="none-only">{language === 'hi' ? 'केवल बिना विकलांगता वाले' : 'Only without disability'}</SelectItem>
-                      <SelectItem value="accept">{language === 'hi' ? 'विकलांगता स्वीकार्य' : 'Open to disability'}</SelectItem>
+                      <SelectItem value="no-only">{language === 'hi' ? 'नहीं' : 'No'}</SelectItem>
+                      <SelectItem value="accept">{language === 'hi' ? 'हाँ' : 'Yes'}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
