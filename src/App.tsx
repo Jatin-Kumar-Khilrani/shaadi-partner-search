@@ -25,6 +25,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
 import { AdminPanel } from '@/components/AdminPanel'
 import { AdminLoginDialog } from '@/components/AdminLoginDialog'
+import { CookieConsent } from '@/components/CookieConsent'
 import { useTranslation, type Language } from '@/lib/translations'
 import { toast } from 'sonner'
 import { sampleWeddingServices } from '@/lib/sampleData'
@@ -1392,6 +1393,9 @@ function App() {
       />
 
       <Toaster position="top-right" />
+
+      {/* Cookie Consent Banner */}
+      <CookieConsent language={language} />
     </div>
   )
 }

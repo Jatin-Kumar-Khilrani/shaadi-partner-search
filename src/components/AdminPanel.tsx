@@ -2203,9 +2203,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     onClick={() => {
                                       if (confirm(t.loginAsUserConfirm)) {
                                         onLoginAsUser(creds.userId)
-                                        toast.success(t.loginAsUserSuccess, {
-                                          description: `${profile.fullName} (${creds.userId})`
-                                        })
                                       }
                                     }}
                                     className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
