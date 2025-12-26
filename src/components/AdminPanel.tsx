@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SearchableSelect, EDUCATION_OPTIONS, OCCUPATION_OPTIONS } from '@/components/ui/searchable-select'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User, CreditCard, Upload, ShieldWarning, Prohibit, Warning } from '@phosphor-icons/react'
+import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, CaretLeft, CaretRight, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User, CreditCard, Upload, ShieldWarning, Prohibit, Warning } from '@phosphor-icons/react'
 import type { Profile, WeddingService, PaymentTransaction, BlockedProfile, ReportReason } from '@/types/profile'
 import type { User } from '@/types/user'
 import type { ChatMessage } from '@/types/chat'
@@ -136,6 +136,16 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [dbSortOrder, setDbSortOrder] = useState<'asc' | 'desc'>('desc')
   // Database tab filter: all, approved, pending, rejected, deleted
   const [dbStatusFilter, setDbStatusFilter] = useState<'all' | 'approved' | 'pending' | 'rejected' | 'deleted'>('all')
+  
+  // Pagination state for all tabs
+  const ITEMS_PER_PAGE = 10
+  const [pendingPage, setPendingPage] = useState(1)
+  const [databasePage, setDatabasePage] = useState(1)
+  const [reportsPage, setReportsPage] = useState(1)
+  const [accountsPage, setAccountsPage] = useState(1)
+  const [transactionsPage, setTransactionsPage] = useState(1)
+  const [servicesPage, setServicesPage] = useState(1)
+  
   const [chatMessage, setChatMessage] = useState('')
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([])
   const [isLoadingAI, setIsLoadingAI] = useState(false)
@@ -515,6 +525,140 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     otherReason: language === 'hi' ? 'अन्य' : 'Other',
     chatHistory: language === 'hi' ? 'चैट इतिहास' : 'Chat History',
     noMessagesFound: language === 'hi' ? 'कोई संदेश नहीं मिला' : 'No messages found',
+    // Pagination translations
+    page: language === 'hi' ? 'पृष्ठ' : 'Page',
+    of: language === 'hi' ? 'का' : 'of',
+    showing: language === 'hi' ? 'दिखा रहे हैं' : 'Showing',
+    to: language === 'hi' ? 'से' : 'to',
+    entries: language === 'hi' ? 'प्रविष्टियाँ' : 'entries',
+    previous: language === 'hi' ? 'पिछला' : 'Previous',
+    next: language === 'hi' ? 'अगला' : 'Next',
+    first: language === 'hi' ? 'पहला' : 'First',
+    last: language === 'hi' ? 'अंतिम' : 'Last',
+  }
+  
+  // Reset pagination when filters change
+  useEffect(() => {
+    setDatabasePage(1)
+  }, [dbStatusFilter])
+  
+  // Pagination helper component
+  const PaginationControls = ({ 
+    currentPage, 
+    totalItems, 
+    itemsPerPage, 
+    onPageChange,
+    className = ''
+  }: { 
+    currentPage: number
+    totalItems: number
+    itemsPerPage: number
+    onPageChange: (page: number) => void
+    className?: string
+  }) => {
+    const totalPages = Math.ceil(totalItems / itemsPerPage)
+    const startItem = (currentPage - 1) * itemsPerPage + 1
+    const endItem = Math.min(currentPage * itemsPerPage, totalItems)
+    
+    if (totalPages <= 1) return null
+    
+    // Generate page numbers to show
+    const getPageNumbers = () => {
+      const pages: (number | string)[] = []
+      const showPages = 5 // Max number of page buttons to show
+      
+      if (totalPages <= showPages) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i)
+      } else {
+        pages.push(1)
+        
+        if (currentPage > 3) pages.push('...')
+        
+        const start = Math.max(2, currentPage - 1)
+        const end = Math.min(totalPages - 1, currentPage + 1)
+        
+        for (let i = start; i <= end; i++) {
+          if (!pages.includes(i)) pages.push(i)
+        }
+        
+        if (currentPage < totalPages - 2) pages.push('...')
+        
+        if (!pages.includes(totalPages)) pages.push(totalPages)
+      }
+      
+      return pages
+    }
+    
+    return (
+      <div className={`flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-4 border-t ${className}`}>
+        <div className="text-sm text-muted-foreground">
+          {t.showing} {startItem} {t.to} {endItem} {t.of} {totalItems} {t.entries}
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(1)}
+            disabled={currentPage === 1}
+            className="h-8 px-2"
+            title={t.first}
+          >
+            <CaretLeft size={14} weight="bold" />
+            <CaretLeft size={14} weight="bold" className="-ml-2" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="h-8 px-3"
+          >
+            <CaretLeft size={14} />
+            <span className="hidden sm:inline ml-1">{t.previous}</span>
+          </Button>
+          
+          <div className="flex items-center gap-1 mx-1">
+            {getPageNumbers().map((page, idx) => (
+              typeof page === 'number' ? (
+                <Button
+                  key={idx}
+                  variant={currentPage === page ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => onPageChange(page)}
+                  className="h-8 w-8 p-0"
+                >
+                  {page}
+                </Button>
+              ) : (
+                <span key={idx} className="px-1 text-muted-foreground">...</span>
+              )
+            ))}
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="h-8 px-3"
+          >
+            <span className="hidden sm:inline mr-1">{t.next}</span>
+            <CaretRight size={14} />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(totalPages)}
+            disabled={currentPage === totalPages}
+            className="h-8 px-2"
+            title={t.last}
+          >
+            <CaretRight size={14} weight="bold" />
+            <CaretRight size={14} weight="bold" className="-ml-2" />
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   // Helper to get user credentials for a profile
@@ -1345,7 +1489,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       <Label className="cursor-pointer">{t.selectAll} ({pendingProfiles.length})</Label>
                     </div>
                     <div className="space-y-4">
-                    {[...pendingProfiles].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((profile) => (
+                    {(() => {
+                      const sortedPending = [...pendingProfiles].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                      const paginatedPending = sortedPending.slice((pendingPage - 1) * ITEMS_PER_PAGE, pendingPage * ITEMS_PER_PAGE)
+                      return paginatedPending
+                    })().map((profile) => (
                       <Card key={profile.id} className={`border-2 overflow-hidden ${selectedProfiles.includes(profile.id) ? 'border-primary bg-primary/5' : ''}`}>
                         <CardContent className="pt-6 overflow-hidden">
                           <div className="flex flex-col gap-4">
@@ -1801,6 +1949,12 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       </Card>
                     ))}
                   </div>
+                  <PaginationControls
+                    currentPage={pendingPage}
+                    totalItems={pendingProfiles.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setPendingPage}
+                  />
                   </>
                 )}
               </CardContent>
@@ -1940,6 +2094,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     </AlertDescription>
                   </Alert>
                 ) : (
+                  <>
                   <div className="overflow-auto max-h-[600px]">
                       <Table className="min-w-[1200px]">
                         <TableHeader>
@@ -2078,7 +2233,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               break
                           }
                           return dbSortOrder === 'asc' ? comparison : -comparison
-                        }).map((profile) => {
+                        }).slice((databasePage - 1) * ITEMS_PER_PAGE, databasePage * ITEMS_PER_PAGE).map((profile) => {
                           const creds = getUserCredentials(profile.id)
                           return (
                             <TableRow key={profile.id} className={`${profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20' : ''} ${selectedDatabaseProfiles.includes(profile.id) ? 'bg-primary/5' : ''}`}>
@@ -2273,6 +2428,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       </TableBody>
                     </Table>
                   </div>
+                  <PaginationControls
+                    currentPage={databasePage}
+                    totalItems={filteredDatabaseProfiles.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setDatabasePage}
+                  />
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -2877,6 +3039,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       <AlertDescription>{t.noTransactions}</AlertDescription>
                     </Alert>
                   ) : (
+                    <>
                     <div className="rounded-lg border overflow-hidden">
                       <Table>
                         <TableHeader>
@@ -2892,7 +3055,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {[...paymentTransactions].reverse().map(tx => (
+                          {[...paymentTransactions].reverse().slice((transactionsPage - 1) * ITEMS_PER_PAGE, transactionsPage * ITEMS_PER_PAGE).map(tx => (
                             <TableRow key={tx.id}>
                               <TableCell className="font-mono text-xs">{tx.receiptNumber}</TableCell>
                               <TableCell className="font-mono text-xs">{tx.transactionId}</TableCell>
@@ -2963,6 +3126,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         </TableBody>
                       </Table>
                     </div>
+                    <PaginationControls
+                      currentPage={transactionsPage}
+                      totalItems={paymentTransactions?.length || 0}
+                      itemsPerPage={ITEMS_PER_PAGE}
+                      onPageChange={setTransactionsPage}
+                    />
+                    </>
                   )}
                 </div>
               </CardContent>
@@ -3091,10 +3261,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     if (a.adminReviewed !== b.adminReviewed) return a.adminReviewed ? 1 : -1
                     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                   })
+                  
+                  // Paginate reports
+                  const paginatedReports = sortedReports.slice((reportsPage - 1) * ITEMS_PER_PAGE, reportsPage * ITEMS_PER_PAGE)
 
                   return (
                     <div className="space-y-4">
-                      {sortedReports.map(report => {
+                      {paginatedReports.map(report => {
                         const reporterProfile = getProfileByProfileId(report.blockerProfileId)
                         const reportedProfile = getProfileByProfileId(report.blockedProfileId)
                         
@@ -3232,6 +3405,12 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           </div>
                         )
                       })}
+                      <PaginationControls
+                        currentPage={reportsPage}
+                        totalItems={sortedReports.length}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                        onPageChange={setReportsPage}
+                      />
                     </div>
                   )
                 })()}
@@ -3267,6 +3446,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     </AlertDescription>
                   </Alert>
                 ) : (
+                  <>
                   <div className="overflow-auto max-h-[600px]">
                     <Table className="min-w-[900px]">
                       <TableHeader>
@@ -3281,7 +3461,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {weddingServices.map((service) => (
+                        {weddingServices.slice((servicesPage - 1) * ITEMS_PER_PAGE, servicesPage * ITEMS_PER_PAGE).map((service) => (
                           <TableRow key={service.id}>
                             <TableCell className="font-medium">{service.businessName}</TableCell>
                             <TableCell>{service.category}</TableCell>
@@ -3321,6 +3501,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       </TableBody>
                     </Table>
                   </div>
+                  <PaginationControls
+                    currentPage={servicesPage}
+                    totalItems={weddingServices?.length || 0}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setServicesPage}
+                  />
+                  </>
                 )}
               </CardContent>
             </Card>
