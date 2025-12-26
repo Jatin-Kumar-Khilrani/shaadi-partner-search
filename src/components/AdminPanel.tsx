@@ -1589,132 +1589,165 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               </div>
                             </div>
 
-                            {selectedProfile?.id === profile.id && aiSuggestions.length > 0 && (
-                              <Alert className="bg-primary/5">
-                                <Robot size={18} />
-                                <AlertDescription>
-                                  <div className="font-semibold mb-2">{t.aiSuggestions}:</div>
-                                  <ul className="space-y-1 text-sm">
-                                    {aiSuggestions.map((suggestion, idx) => (
-                                      <li key={idx}>{suggestion}</li>
-                                    ))}
-                                  </ul>
-                                </AlertDescription>
-                              </Alert>
-                            )}
-
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                              <Button 
-                                onClick={() => setViewProfileDialog(profile)}
-                                variant="outline"
-                                size="sm"
-                                className="w-full"
-                              >
-                                <Eye size={16} className="mr-1 shrink-0" />
-                                <span className="truncate">{t.viewProfile}</span>
-                              </Button>
-                              <Button 
-                                onClick={() => handleFaceVerification(profile)}
-                                variant="outline"
-                                size="sm"
-                                disabled={!profile.selfieUrl || !profile.photos?.length}
-                                className="text-blue-600 border-blue-300 hover:bg-blue-50 w-full"
-                              >
-                                <ScanSmiley size={16} className="mr-1 shrink-0" />
-                                <span className="truncate">{t.verifyFace}</span>
-                              </Button>
-                              <Button 
-                                onClick={() => handleGetAISuggestions(profile)}
-                                variant="outline"
-                                size="sm"
-                                disabled={isLoadingAI}
-                                className="w-full"
-                              >
-                                <Robot size={16} className="mr-1 shrink-0" />
-                                <span className="truncate">{isLoadingAI ? t.loading : t.aiReview}</span>
-                              </Button>
-                              <Button 
-                                onClick={() => {
-                                  setSelectedProfile(profile)
-                                  setShowChatDialog(true)
-                                }}
-                                variant="outline"
-                                size="sm"
-                                className="w-full"
-                              >
-                                <ChatCircle size={16} className="mr-1 shrink-0" />
-                                <span className="truncate">{t.chat}</span>
-                              </Button>
-                              <Button 
-                                onClick={() => {
-                                  setIdProofViewProfile(profile)
-                                  setShowIdProofViewDialog(true)
-                                }}
-                                variant="outline"
-                                size="sm"
-                                className={`w-full ${profile.idProofUrl ? (profile.idProofVerified ? 'text-green-600 border-green-400' : 'text-orange-600 border-orange-400') : 'text-gray-400 border-gray-300'}`}
-                                disabled={!profile.idProofUrl}
-                                title={profile.idProofUrl ? t.viewIdProof : t.idProofNotUploaded}
-                              >
-                                <IdentificationCard size={16} className="mr-1 shrink-0" />
-                                <span className="truncate">{profile.idProofVerified ? `✓ ${t.digilockerVerified}` : t.verifyIdProof}</span>
-                              </Button>
-                              {/* Payment Verification Button (for paid plans) */}
-                              {profile.membershipPlan && profile.membershipPlan !== 'free' && (
-                                <Button 
-                                  onClick={() => {
-                                    setPaymentViewProfile(profile)
-                                    setPaymentRejectionReason('')
-                                    setShowPaymentViewDialog(true)
-                                  }}
-                                  variant="outline"
-                                  size="sm"
-                                  className={`w-full ${profile.paymentScreenshotUrl ? 
-                                    (profile.paymentStatus === 'verified' ? 'text-green-600 border-green-400' : 
-                                     profile.paymentStatus === 'rejected' ? 'text-red-600 border-red-400' : 
-                                     'text-amber-600 border-amber-400') : 
-                                    'text-gray-400 border-gray-300'}`}
-                                  disabled={!profile.paymentScreenshotUrl}
-                                  title={profile.paymentScreenshotUrl ? 
-                                    (language === 'hi' ? 'भुगतान सत्यापित करें' : 'Verify Payment') : 
-                                    (language === 'hi' ? 'भुगतान स्क्रीनशॉट अपलोड नहीं किया' : 'Payment screenshot not uploaded')}
+                            {/* Consolidated Verification Panel */}
+                            <div className="border rounded-lg bg-muted/30 p-3">
+                              <div className="flex items-center gap-2 mb-3 pb-2 border-b">
+                                <ShieldCheck size={18} className="text-primary" />
+                                <span className="font-semibold text-sm">
+                                  {language === 'hi' ? 'सत्यापन पैनल' : 'Verification Panel'}
+                                </span>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                {/* Face Verification */}
+                                <div className={`flex flex-col items-center p-2 rounded-lg border-2 transition-all cursor-pointer hover:shadow-md ${
+                                  profile.photoVerified === true ? 'bg-green-50 border-green-400 dark:bg-green-950/30' : 
+                                  profile.photoVerified === false ? 'bg-red-50 border-red-300 dark:bg-red-950/30' : 
+                                  'bg-background border-amber-300 hover:border-amber-400'
+                                }`}
+                                  onClick={() => profile.selfieUrl && profile.photos?.length ? handleFaceVerification(profile) : null}
+                                  title={!profile.selfieUrl || !profile.photos?.length ? (language === 'hi' ? 'सेल्फी या फोटो नहीं' : 'No selfie or photos') : ''}
                                 >
-                                  <CurrencyInr size={16} className="mr-1 shrink-0" />
-                                  <span className="truncate">
-                                    {profile.paymentStatus === 'verified' ? 
-                                      (language === 'hi' ? '✓ भुगतान सत्यापित' : '✓ Payment Verified') : 
-                                      profile.paymentStatus === 'rejected' ? 
-                                      (language === 'hi' ? '✗ भुगतान अस्वीकृत' : '✗ Payment Rejected') :
-                                      (language === 'hi' ? '₹ भुगतान सत्यापित करें' : '₹ Verify Payment')}
+                                  <ScanSmiley size={24} className={
+                                    profile.photoVerified === true ? 'text-green-600' : 
+                                    profile.photoVerified === false ? 'text-red-500' : 'text-amber-500'
+                                  } />
+                                  <span className="text-xs font-medium mt-1">{t.faceVerification}</span>
+                                  <Badge variant="outline" className={`mt-1 text-[10px] px-1.5 py-0 ${
+                                    profile.photoVerified === true ? 'text-green-600 border-green-400' : 
+                                    profile.photoVerified === false ? 'text-red-600 border-red-400' : 'text-amber-600 border-amber-400'
+                                  }`}>
+                                    {profile.photoVerified === true ? (language === 'hi' ? '✓ सत्यापित' : '✓ Verified') : 
+                                     profile.photoVerified === false ? (language === 'hi' ? '✗ असत्यापित' : '✗ Failed') : 
+                                     (language === 'hi' ? 'लंबित' : 'Pending')}
+                                  </Badge>
+                                </div>
+                                
+                                {/* ID Proof Verification */}
+                                <div className={`flex flex-col items-center p-2 rounded-lg border-2 transition-all cursor-pointer hover:shadow-md ${
+                                  profile.idProofVerified ? 'bg-green-50 border-green-400 dark:bg-green-950/30' : 
+                                  profile.idProofUrl ? 'bg-background border-amber-300 hover:border-amber-400' : 
+                                  'bg-muted/50 border-gray-200 opacity-60'
+                                }`}
+                                  onClick={() => profile.idProofUrl ? (setIdProofViewProfile(profile), setShowIdProofViewDialog(true)) : null}
+                                  title={!profile.idProofUrl ? (language === 'hi' ? 'पहचान प्रमाण अपलोड नहीं' : 'ID proof not uploaded') : ''}
+                                >
+                                  <IdentificationCard size={24} className={
+                                    profile.idProofVerified ? 'text-green-600' : 
+                                    profile.idProofUrl ? 'text-amber-500' : 'text-gray-400'
+                                  } />
+                                  <span className="text-xs font-medium mt-1">{t.idProofVerification}</span>
+                                  <Badge variant="outline" className={`mt-1 text-[10px] px-1.5 py-0 ${
+                                    profile.idProofVerified ? 'text-green-600 border-green-400' : 
+                                    profile.idProofUrl ? 'text-amber-600 border-amber-400' : 'text-gray-400 border-gray-300'
+                                  }`}>
+                                    {profile.idProofVerified ? (language === 'hi' ? '✓ सत्यापित' : '✓ Verified') : 
+                                     profile.idProofUrl ? (language === 'hi' ? 'लंबित' : 'Pending') : 
+                                     (language === 'hi' ? 'नहीं' : 'None')}
+                                  </Badge>
+                                </div>
+                                
+                                {/* Payment Verification */}
+                                <div className={`flex flex-col items-center p-2 rounded-lg border-2 transition-all cursor-pointer hover:shadow-md ${
+                                  profile.membershipPlan === 'free' ? 'bg-muted/50 border-gray-200' :
+                                  profile.paymentStatus === 'verified' ? 'bg-green-50 border-green-400 dark:bg-green-950/30' : 
+                                  profile.paymentStatus === 'rejected' ? 'bg-red-50 border-red-300 dark:bg-red-950/30' : 
+                                  profile.paymentScreenshotUrl ? 'bg-background border-amber-300 hover:border-amber-400' : 
+                                  'bg-muted/50 border-gray-200 opacity-60'
+                                }`}
+                                  onClick={() => profile.membershipPlan !== 'free' && profile.paymentScreenshotUrl ? 
+                                    (setPaymentViewProfile(profile), setPaymentRejectionReason(''), setShowPaymentViewDialog(true)) : null}
+                                  title={profile.membershipPlan === 'free' ? (language === 'hi' ? 'फ्री प्लान' : 'Free plan') : 
+                                         !profile.paymentScreenshotUrl ? (language === 'hi' ? 'स्क्रीनशॉट नहीं' : 'No screenshot') : ''}
+                                >
+                                  <CurrencyInr size={24} className={
+                                    profile.membershipPlan === 'free' ? 'text-gray-400' :
+                                    profile.paymentStatus === 'verified' ? 'text-green-600' : 
+                                    profile.paymentStatus === 'rejected' ? 'text-red-500' : 
+                                    profile.paymentScreenshotUrl ? 'text-amber-500' : 'text-gray-400'
+                                  } />
+                                  <span className="text-xs font-medium mt-1">
+                                    {language === 'hi' ? 'भुगतान' : 'Payment'}
                                   </span>
-                                </Button>
+                                  <Badge variant="outline" className={`mt-1 text-[10px] px-1.5 py-0 ${
+                                    profile.membershipPlan === 'free' ? 'text-gray-500 border-gray-300' :
+                                    profile.paymentStatus === 'verified' ? 'text-green-600 border-green-400' : 
+                                    profile.paymentStatus === 'rejected' ? 'text-red-600 border-red-400' : 
+                                    'text-amber-600 border-amber-400'
+                                  }`}>
+                                    {profile.membershipPlan === 'free' ? (language === 'hi' ? 'फ्री' : 'Free') :
+                                     profile.paymentStatus === 'verified' ? (language === 'hi' ? '✓ सत्यापित' : '✓ Verified') : 
+                                     profile.paymentStatus === 'rejected' ? (language === 'hi' ? '✗ अस्वीकृत' : '✗ Rejected') : 
+                                     (language === 'hi' ? 'लंबित' : 'Pending')}
+                                  </Badge>
+                                </div>
+                                
+                                {/* AI Review */}
+                                <div className={`flex flex-col items-center p-2 rounded-lg border-2 transition-all cursor-pointer hover:shadow-md ${
+                                  selectedProfile?.id === profile.id && aiSuggestions.length > 0 ? 'bg-blue-50 border-blue-400 dark:bg-blue-950/30' : 
+                                  'bg-background border-gray-200 hover:border-blue-300'
+                                }`}
+                                  onClick={() => !isLoadingAI && handleGetAISuggestions(profile)}
+                                >
+                                  <Robot size={24} className={
+                                    isLoadingAI && selectedProfile?.id === profile.id ? 'text-blue-500 animate-pulse' :
+                                    selectedProfile?.id === profile.id && aiSuggestions.length > 0 ? 'text-blue-600' : 'text-gray-500'
+                                  } />
+                                  <span className="text-xs font-medium mt-1">{t.aiReview}</span>
+                                  <Badge variant="outline" className={`mt-1 text-[10px] px-1.5 py-0 ${
+                                    isLoadingAI && selectedProfile?.id === profile.id ? 'text-blue-500 border-blue-300' :
+                                    selectedProfile?.id === profile.id && aiSuggestions.length > 0 ? 'text-blue-600 border-blue-400' : 
+                                    'text-gray-500 border-gray-300'
+                                  }`}>
+                                    {isLoadingAI && selectedProfile?.id === profile.id ? (language === 'hi' ? 'चल रहा...' : 'Running...') :
+                                     selectedProfile?.id === profile.id && aiSuggestions.length > 0 ? (language === 'hi' ? '✓ पूर्ण' : '✓ Done') : 
+                                     (language === 'hi' ? 'रन करें' : 'Run')}
+                                  </Badge>
+                                </div>
+                              </div>
+                              
+                              {/* AI Suggestions Display */}
+                              {selectedProfile?.id === profile.id && aiSuggestions.length > 0 && (
+                                <Alert className="mt-3 bg-blue-50 border-blue-200 dark:bg-blue-950/20">
+                                  <Robot size={16} className="text-blue-600" />
+                                  <AlertDescription>
+                                    <div className="font-semibold text-xs mb-1 text-blue-700">{t.aiSuggestions}:</div>
+                                    <ul className="space-y-0.5 text-xs text-blue-800 dark:text-blue-200">
+                                      {aiSuggestions.map((suggestion, idx) => (
+                                        <li key={idx}>• {suggestion}</li>
+                                      ))}
+                                    </ul>
+                                  </AlertDescription>
+                                </Alert>
                               )}
+                            </div>
+
+                            {/* Action Buttons - Clean and organized */}
+                            <div className="flex flex-wrap gap-2 pt-2">
+                              {/* Primary Actions */}
                               <Button 
                                 onClick={() => handleApprove(profile.id)} 
-                                variant="default"
                                 size="sm"
-                                className="bg-teal hover:bg-teal/90 w-full"
+                                className="bg-teal hover:bg-teal/90"
                               >
-                                <Check size={16} className="mr-1 shrink-0" />
-                                <span className="truncate">{t.approve}</span>
+                                <Check size={16} className="mr-1" />
+                                {t.approve}
                               </Button>
                               <Button 
                                 onClick={() => setShowRejectDialog(profile)} 
                                 variant="outline"
                                 size="sm"
-                                className="w-full"
                               >
-                                <X size={16} className="mr-1 shrink-0" />
-                                <span className="truncate">{t.reject}</span>
+                                <X size={16} className="mr-1" />
+                                {t.reject}
                               </Button>
                               <Button 
                                 onClick={() => handleBlock(profile)} 
                                 variant="destructive"
                                 size="sm"
-                                className="w-full"
                               >
-                                <ProhibitInset size={16} className="mr-1 shrink-0" />
-                                <span className="truncate">{t.block}</span>
+                                <ProhibitInset size={16} className="mr-1" />
+                                {t.block}
                               </Button>
                               <Button 
                                 onClick={() => {
@@ -1723,20 +1756,44 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 }}
                                 variant="outline"
                                 size="sm"
-                                className="text-amber-600 border-amber-400 hover:bg-amber-50 w-full"
+                                className="text-amber-600 border-amber-400 hover:bg-amber-50"
                               >
-                                <Pencil size={16} className="mr-1 shrink-0" />
-                                <span className="truncate">{t.returnToEdit}</span>
+                                <Pencil size={16} className="mr-1" />
+                                {t.returnToEdit}
+                              </Button>
+                              
+                              {/* Secondary Actions - Less prominent */}
+                              <div className="flex-1" />
+                              <Button 
+                                onClick={() => setViewProfileDialog(profile)}
+                                variant="ghost"
+                                size="sm"
+                                className="text-muted-foreground"
+                              >
+                                <Eye size={16} className="mr-1" />
+                                {t.viewProfile}
+                              </Button>
+                              <Button 
+                                onClick={() => {
+                                  setSelectedProfile(profile)
+                                  setShowChatDialog(true)
+                                }}
+                                variant="ghost"
+                                size="sm"
+                                className="text-muted-foreground"
+                              >
+                                <ChatCircle size={16} className="mr-1" />
+                                {t.chat}
                               </Button>
                               <Button 
                                 onClick={() => handleOpenAdminEdit(profile)}
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
-                                className="text-purple-600 border-purple-400 hover:bg-purple-50 w-full"
+                                className="text-purple-600"
                                 title={language === 'hi' ? 'नाम, DOB, ईमेल, मोबाइल सहित सभी फ़ील्ड संपादित करें' : 'Edit all fields including Name, DOB, Email, Mobile'}
                               >
-                                <User size={16} className="mr-1 shrink-0" />
-                                <span className="truncate">{t.adminEditProfile}</span>
+                                <User size={16} className="mr-1" />
+                                {t.adminEditProfile}
                               </Button>
                             </div>
                           </div>
