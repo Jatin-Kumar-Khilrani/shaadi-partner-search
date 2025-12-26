@@ -3344,9 +3344,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
                 </div>
 
-                {/* Differently Abled Acceptance */}
+                {/* Differently Abled */}
                 <div className="space-y-2">
-                  <Label>{language === 'hi' ? 'दिव्यांग स्वीकार्य' : 'Differently Abled Acceptance'}</Label>
+                  <Label>{language === 'hi' ? 'दिव्यांग' : 'Differently Abled'}</Label>
                   <Select 
                     value={formData.partnerDisability?.includes('no') ? 'no-only' : formData.partnerDisability?.length ? 'accept' : ''} 
                     onValueChange={(v) => {
