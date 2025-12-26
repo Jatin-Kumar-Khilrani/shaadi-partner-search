@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SearchableSelect, EDUCATION_OPTIONS, OCCUPATION_OPTIONS } from '@/components/ui/searchable-select'
 import { Label } from '@/components/ui/label'
@@ -1812,8 +1813,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               </Button>
 
                               {/* Verification Panel Dropdown */}
-                              <Collapsible className="relative z-30">
-                                <CollapsibleTrigger asChild>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
                                   <Button 
                                     variant="outline"
                                     size="sm"
@@ -1829,100 +1830,98 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     </div>
                                     <CaretDown size={12} className="ml-1.5" />
                                   </Button>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent>
-                                  <div className="absolute left-0 top-full mt-1 z-50 bg-background border rounded-lg shadow-lg p-2 min-w-[280px]">
-                                    <div className="grid grid-cols-2 gap-2">
-                                      {/* Face Verification */}
-                                      <div className={`flex items-center gap-2 p-2 rounded border cursor-pointer hover:shadow-sm transition-all ${
-                                        profile.photoVerified === true ? 'bg-green-50 border-green-400' : 
-                                        profile.photoVerified === false ? 'bg-red-50 border-red-300' : 
-                                        'bg-background border-amber-300 hover:border-amber-400'
-                                      }`}
-                                        onClick={() => profile.selfieUrl && profile.photos?.length ? handleFaceVerification(profile) : null}
-                                        title={!profile.selfieUrl || !profile.photos?.length ? (language === 'hi' ? 'सेल्फी या फोटो नहीं' : 'No selfie or photos') : ''}
-                                      >
-                                        <ScanSmiley size={16} className={
-                                          profile.photoVerified === true ? 'text-green-600' : 
-                                          profile.photoVerified === false ? 'text-red-500' : 'text-amber-500'
-                                        } />
-                                        <span className="text-xs font-medium">{t.faceVerification}</span>
-                                      </div>
-                                      
-                                      {/* ID Proof Verification */}
-                                      <div className={`flex items-center gap-2 p-2 rounded border cursor-pointer hover:shadow-sm transition-all ${
-                                        profile.idProofVerified ? 'bg-green-50 border-green-400' : 
-                                        profile.idProofUrl ? 'bg-background border-amber-300 hover:border-amber-400' : 
-                                        'bg-muted/50 border-gray-200 opacity-60'
-                                      }`}
-                                        onClick={() => profile.idProofUrl ? (setIdProofViewProfile(profile), setShowIdProofViewDialog(true)) : null}
-                                        title={!profile.idProofUrl ? (language === 'hi' ? 'पहचान प्रमाण अपलोड नहीं' : 'ID proof not uploaded') : ''}
-                                      >
-                                        <IdentificationCard size={16} className={
-                                          profile.idProofVerified ? 'text-green-600' : 
-                                          profile.idProofUrl ? 'text-amber-500' : 'text-gray-400'
-                                        } />
-                                        <span className="text-xs font-medium">{t.idProofVerification}</span>
-                                      </div>
-                                      
-                                      {/* Payment Verification */}
-                                      <div className={`flex items-center gap-2 p-2 rounded border cursor-pointer hover:shadow-sm transition-all ${
-                                        profile.membershipPlan === 'free' ? 'bg-muted/50 border-gray-200' :
-                                        profile.paymentStatus === 'verified' ? 'bg-green-50 border-green-400' : 
-                                        profile.paymentStatus === 'rejected' ? 'bg-red-50 border-red-300' : 
-                                        profile.paymentScreenshotUrl ? 'bg-background border-amber-300 hover:border-amber-400' : 
-                                        'bg-muted/50 border-gray-200 opacity-60'
-                                      }`}
-                                        onClick={() => profile.membershipPlan !== 'free' && profile.paymentScreenshotUrl ? 
-                                          (setPaymentViewProfile(profile), setPaymentRejectionReason(''), setShowPaymentViewDialog(true)) : null}
-                                        title={profile.membershipPlan === 'free' ? (language === 'hi' ? 'फ्री प्लान' : 'Free plan') : 
-                                               !profile.paymentScreenshotUrl ? (language === 'hi' ? 'स्क्रीनशॉट नहीं' : 'No screenshot') : ''}
-                                      >
-                                        <CurrencyInr size={16} className={
-                                          profile.membershipPlan === 'free' ? 'text-gray-400' :
-                                          profile.paymentStatus === 'verified' ? 'text-green-600' : 
-                                          profile.paymentStatus === 'rejected' ? 'text-red-500' : 
-                                          profile.paymentScreenshotUrl ? 'text-amber-500' : 'text-gray-400'
-                                        } />
-                                        <span className="text-xs font-medium">{language === 'hi' ? 'भुगतान' : 'Payment'}</span>
-                                      </div>
-                                      
-                                      {/* AI Review */}
-                                      <div className={`flex items-center gap-2 p-2 rounded border cursor-pointer hover:shadow-sm transition-all ${
-                                        selectedProfile?.id === profile.id && aiSuggestions.length > 0 ? 'bg-blue-50 border-blue-400' : 
-                                        'bg-background border-gray-200 hover:border-blue-300'
-                                      }`}
-                                        onClick={() => !isLoadingAI && handleGetAISuggestions(profile)}
-                                      >
-                                        <Robot size={16} className={
-                                          isLoadingAI && selectedProfile?.id === profile.id ? 'text-blue-500 animate-pulse' :
-                                          selectedProfile?.id === profile.id && aiSuggestions.length > 0 ? 'text-blue-600' : 'text-gray-500'
-                                        } />
-                                        <span className="text-xs font-medium">{t.aiReview}</span>
-                                      </div>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="min-w-[280px] p-2">
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {/* Face Verification */}
+                                    <div className={`flex items-center gap-2 p-2 rounded border cursor-pointer hover:shadow-sm transition-all ${
+                                      profile.photoVerified === true ? 'bg-green-50 border-green-400' : 
+                                      profile.photoVerified === false ? 'bg-red-50 border-red-300' : 
+                                      'bg-background border-amber-300 hover:border-amber-400'
+                                    }`}
+                                      onClick={() => profile.selfieUrl && profile.photos?.length ? handleFaceVerification(profile) : null}
+                                      title={!profile.selfieUrl || !profile.photos?.length ? (language === 'hi' ? 'सेल्फी या फोटो नहीं' : 'No selfie or photos') : ''}
+                                    >
+                                      <ScanSmiley size={16} className={
+                                        profile.photoVerified === true ? 'text-green-600' : 
+                                        profile.photoVerified === false ? 'text-red-500' : 'text-amber-500'
+                                      } />
+                                      <span className="text-xs font-medium">{t.faceVerification}</span>
                                     </div>
                                     
-                                    {/* AI Suggestions Display */}
-                                    {selectedProfile?.id === profile.id && aiSuggestions.length > 0 && (
-                                      <Alert className="mt-2 bg-blue-50 border-blue-200 py-2">
-                                        <Robot size={12} className="text-blue-600" />
-                                        <AlertDescription>
-                                          <div className="font-semibold text-[10px] mb-1 text-blue-700">{t.aiSuggestions}:</div>
-                                          <ul className="space-y-0 text-[10px] text-blue-800">
-                                            {aiSuggestions.map((suggestion, idx) => (
-                                              <li key={idx}>• {suggestion}</li>
-                                            ))}
-                                          </ul>
-                                        </AlertDescription>
-                                      </Alert>
-                                    )}
+                                    {/* ID Proof Verification */}
+                                    <div className={`flex items-center gap-2 p-2 rounded border cursor-pointer hover:shadow-sm transition-all ${
+                                      profile.idProofVerified ? 'bg-green-50 border-green-400' : 
+                                      profile.idProofUrl ? 'bg-background border-amber-300 hover:border-amber-400' : 
+                                      'bg-muted/50 border-gray-200 opacity-60'
+                                    }`}
+                                      onClick={() => profile.idProofUrl ? (setIdProofViewProfile(profile), setShowIdProofViewDialog(true)) : null}
+                                      title={!profile.idProofUrl ? (language === 'hi' ? 'पहचान प्रमाण अपलोड नहीं' : 'ID proof not uploaded') : ''}
+                                    >
+                                      <IdentificationCard size={16} className={
+                                        profile.idProofVerified ? 'text-green-600' : 
+                                        profile.idProofUrl ? 'text-amber-500' : 'text-gray-400'
+                                      } />
+                                      <span className="text-xs font-medium">{t.idProofVerification}</span>
+                                    </div>
+                                    
+                                    {/* Payment Verification */}
+                                    <div className={`flex items-center gap-2 p-2 rounded border cursor-pointer hover:shadow-sm transition-all ${
+                                      profile.membershipPlan === 'free' ? 'bg-muted/50 border-gray-200' :
+                                      profile.paymentStatus === 'verified' ? 'bg-green-50 border-green-400' : 
+                                      profile.paymentStatus === 'rejected' ? 'bg-red-50 border-red-300' : 
+                                      profile.paymentScreenshotUrl ? 'bg-background border-amber-300 hover:border-amber-400' : 
+                                      'bg-muted/50 border-gray-200 opacity-60'
+                                    }`}
+                                      onClick={() => profile.membershipPlan !== 'free' && profile.paymentScreenshotUrl ? 
+                                        (setPaymentViewProfile(profile), setPaymentRejectionReason(''), setShowPaymentViewDialog(true)) : null}
+                                      title={profile.membershipPlan === 'free' ? (language === 'hi' ? 'फ्री प्लान' : 'Free plan') : 
+                                             !profile.paymentScreenshotUrl ? (language === 'hi' ? 'स्क्रीनशॉट नहीं' : 'No screenshot') : ''}
+                                    >
+                                      <CurrencyInr size={16} className={
+                                        profile.membershipPlan === 'free' ? 'text-gray-400' :
+                                        profile.paymentStatus === 'verified' ? 'text-green-600' : 
+                                        profile.paymentStatus === 'rejected' ? 'text-red-500' : 
+                                        profile.paymentScreenshotUrl ? 'text-amber-500' : 'text-gray-400'
+                                      } />
+                                      <span className="text-xs font-medium">{language === 'hi' ? 'भुगतान' : 'Payment'}</span>
+                                    </div>
+                                    
+                                    {/* AI Review */}
+                                    <div className={`flex items-center gap-2 p-2 rounded border cursor-pointer hover:shadow-sm transition-all ${
+                                      selectedProfile?.id === profile.id && aiSuggestions.length > 0 ? 'bg-blue-50 border-blue-400' : 
+                                      'bg-background border-gray-200 hover:border-blue-300'
+                                    }`}
+                                      onClick={() => !isLoadingAI && handleGetAISuggestions(profile)}
+                                    >
+                                      <Robot size={16} className={
+                                        isLoadingAI && selectedProfile?.id === profile.id ? 'text-blue-500 animate-pulse' :
+                                        selectedProfile?.id === profile.id && aiSuggestions.length > 0 ? 'text-blue-600' : 'text-gray-500'
+                                      } />
+                                      <span className="text-xs font-medium">{t.aiReview}</span>
+                                    </div>
                                   </div>
-                                </CollapsibleContent>
-                              </Collapsible>
+                                  
+                                  {/* AI Suggestions Display */}
+                                  {selectedProfile?.id === profile.id && aiSuggestions.length > 0 && (
+                                    <Alert className="mt-2 bg-blue-50 border-blue-200 py-2">
+                                      <Robot size={12} className="text-blue-600" />
+                                      <AlertDescription>
+                                        <div className="font-semibold text-[10px] mb-1 text-blue-700">{t.aiSuggestions}:</div>
+                                        <ul className="space-y-0 text-[10px] text-blue-800">
+                                          {aiSuggestions.map((suggestion, idx) => (
+                                            <li key={idx}>• {suggestion}</li>
+                                          ))}
+                                        </ul>
+                                      </AlertDescription>
+                                    </Alert>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
 
                               {/* More Actions Dropdown */}
-                              <Collapsible className="relative z-20">
-                                <CollapsibleTrigger asChild>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
                                   <Button 
                                     variant="outline"
                                     size="sm"
@@ -1932,46 +1931,38 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     {language === 'hi' ? 'अधिक कार्य' : 'More Actions'}
                                     <CaretDown size={12} className="ml-1.5" />
                                   </Button>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent>
-                                  <div className="absolute left-0 top-full mt-1 z-50 bg-background border rounded-lg shadow-lg p-1.5 min-w-[160px]">
-                                    <Button 
-                                      onClick={() => {
-                                        setReturnToEditDialog(profile)
-                                        setReturnToEditReason('')
-                                      }}
-                                      variant="ghost"
-                                      size="sm"
-                                      className="w-full justify-start h-8 text-xs text-amber-600 hover:bg-amber-50"
-                                    >
-                                      <ArrowCounterClockwise size={14} className="mr-2" />
-                                      {t.returnToEdit}
-                                    </Button>
-                                    <Button 
-                                      onClick={() => handleOpenAdminEdit(profile)}
-                                      variant="ghost"
-                                      size="sm"
-                                      className="w-full justify-start h-8 text-xs text-purple-600 hover:bg-purple-50"
-                                      title={language === 'hi' ? 'नाम, DOB, ईमेल, मोबाइल सहित सभी फ़ील्ड संपादित करें' : 'Edit all fields including Name, DOB, Email, Mobile'}
-                                    >
-                                      <User size={14} className="mr-2" />
-                                      {t.adminEditProfile}
-                                    </Button>
-                                    <Button 
-                                      onClick={() => {
-                                        setSelectedProfile(profile)
-                                        setShowChatDialog(true)
-                                      }}
-                                      variant="ghost"
-                                      size="sm"
-                                      className="w-full justify-start h-8 text-xs text-blue-600 hover:bg-blue-50"
-                                    >
-                                      <ChatCircle size={14} className="mr-2" />
-                                      {t.chat}
-                                    </Button>
-                                  </div>
-                                </CollapsibleContent>
-                              </Collapsible>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="min-w-[160px]">
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      setReturnToEditDialog(profile)
+                                      setReturnToEditReason('')
+                                    }}
+                                    className="text-amber-600 focus:text-amber-600 focus:bg-amber-50"
+                                  >
+                                    <ArrowCounterClockwise size={14} className="mr-2" />
+                                    {t.returnToEdit}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => handleOpenAdminEdit(profile)}
+                                    className="text-purple-600 focus:text-purple-600 focus:bg-purple-50"
+                                    title={language === 'hi' ? 'नाम, DOB, ईमेल, मोबाइल सहित सभी फ़ील्ड संपादित करें' : 'Edit all fields including Name, DOB, Email, Mobile'}
+                                  >
+                                    <User size={14} className="mr-2" />
+                                    {t.adminEditProfile}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      setSelectedProfile(profile)
+                                      setShowChatDialog(true)
+                                    }}
+                                    className="text-blue-600 focus:text-blue-600 focus:bg-blue-50"
+                                  >
+                                    <ChatCircle size={14} className="mr-2" />
+                                    {t.chat}
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
 
                             {/* Admin Toolbar - Row 2: Primary Actions */}
