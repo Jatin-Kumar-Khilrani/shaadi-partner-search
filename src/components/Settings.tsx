@@ -9,9 +9,11 @@ import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Gear, Heart, Phone, Info, FileText, ShieldCheck } from '@phosphor-icons/react'
 import { toast } from 'sonner'
-import type { PartnerPreferenceData } from '@/types/profile'
+import type { PartnerPreferenceData, DietPreference, DrinkingHabit, SmokingHabit } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 
 interface SettingsProps {
@@ -69,6 +71,23 @@ export function Settings({ open, onClose, profileId, language }: SettingsProps) 
     preferencesSaved: language === 'hi' ? 'प्राथमिकताएं सहेजी गईं' : 'Preferences saved',
     helpline: language === 'hi' ? 'हेल्पलाइन' : 'Helpline',
     email: language === 'hi' ? 'ईमेल' : 'Email',
+    education: language === 'hi' ? 'शिक्षा' : 'Education',
+    occupation: language === 'hi' ? 'व्यवसाय' : 'Occupation',
+    caste: language === 'hi' ? 'जाति' : 'Caste',
+    motherTongue: language === 'hi' ? 'मातृभाषा' : 'Mother Tongue',
+    manglik: language === 'hi' ? 'मांगलिक' : 'Manglik',
+    dietPreference: language === 'hi' ? 'आहार प्राथमिकता' : 'Diet Preference',
+    drinkingHabit: language === 'hi' ? 'पेय आदत' : 'Drinking Habit',
+    smokingHabit: language === 'hi' ? 'धूम्रपान आदत' : 'Smoking Habit',
+    doesntMatter: language === 'hi' ? 'कोई फर्क नहीं' : "Doesn't Matter",
+    yes: language === 'hi' ? 'हां' : 'Yes',
+    no: language === 'hi' ? 'नहीं' : 'No',
+    veg: language === 'hi' ? 'शाकाहारी' : 'Vegetarian',
+    nonVeg: language === 'hi' ? 'मांसाहारी' : 'Non-Vegetarian',
+    eggetarian: language === 'hi' ? 'अंडाहारी' : 'Eggetarian',
+    never: language === 'hi' ? 'कभी नहीं' : 'Never',
+    occasionally: language === 'hi' ? 'कभी-कभी' : 'Occasionally',
+    regularly: language === 'hi' ? 'नियमित' : 'Regularly',
     
     termsContent: language === 'hi' ? `
 नियम और शर्तें
@@ -233,7 +252,8 @@ Online Safety Tips
                 <CardHeader>
                   <CardTitle>{t.partnerPreferences}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
+                  {/* Age Range */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>{t.minAge}</Label>
@@ -255,6 +275,7 @@ Online Safety Tips
                     </div>
                   </div>
 
+                  {/* Height Range */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>{t.minHeight}</Label>
@@ -271,6 +292,148 @@ Online Safety Tips
                         value={formData.heightMax || ''}
                         onChange={(e) => setFormData({ ...formData, heightMax: e.target.value })}
                       />
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Education & Occupation */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>{t.education}</Label>
+                      <Input
+                        placeholder={t.education}
+                        value={formData.education || ''}
+                        onChange={(e) => setFormData({ ...formData, education: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t.occupation}</Label>
+                      <Input
+                        placeholder={t.occupation}
+                        value={formData.occupation || ''}
+                        onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Caste & Mother Tongue */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>{t.caste}</Label>
+                      <Input
+                        placeholder={t.caste}
+                        value={formData.caste?.join(', ') || ''}
+                        onChange={(e) => setFormData({ ...formData, caste: e.target.value ? e.target.value.split(',').map(s => s.trim()) : [] })}
+                      />
+                      <p className="text-xs text-muted-foreground">{language === 'hi' ? 'अल्पविराम से अलग करें' : 'Separate with commas'}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t.motherTongue}</Label>
+                      <Input
+                        placeholder={t.motherTongue}
+                        value={formData.motherTongue?.join(', ') || ''}
+                        onChange={(e) => setFormData({ ...formData, motherTongue: e.target.value ? e.target.value.split(',').map(s => s.trim()) : [] })}
+                      />
+                      <p className="text-xs text-muted-foreground">{language === 'hi' ? 'अल्पविराम से अलग करें' : 'Separate with commas'}</p>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Manglik */}
+                  <div className="space-y-2">
+                    <Label>{t.manglik}</Label>
+                    <Select
+                      value={formData.manglik === undefined ? 'doesnt-matter' : formData.manglik ? 'yes' : 'no'}
+                      onValueChange={(value) => setFormData({ ...formData, manglik: value === 'doesnt-matter' ? undefined : value === 'yes' })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t.manglik} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="doesnt-matter">{t.doesntMatter}</SelectItem>
+                        <SelectItem value="yes">{t.yes}</SelectItem>
+                        <SelectItem value="no">{t.no}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Diet Preference */}
+                  <div className="space-y-2">
+                    <Label>{t.dietPreference}</Label>
+                    <div className="flex flex-wrap gap-4">
+                      {(['veg', 'non-veg', 'eggetarian'] as DietPreference[]).map((diet) => (
+                        <div key={diet} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`diet-${diet}`}
+                            checked={formData.dietPreference?.includes(diet) || false}
+                            onCheckedChange={(checked) => {
+                              const current = formData.dietPreference || []
+                              if (checked) {
+                                setFormData({ ...formData, dietPreference: [...current, diet] })
+                              } else {
+                                setFormData({ ...formData, dietPreference: current.filter(d => d !== diet) })
+                              }
+                            }}
+                          />
+                          <label htmlFor={`diet-${diet}`} className="text-sm">
+                            {diet === 'veg' ? t.veg : diet === 'non-veg' ? t.nonVeg : t.eggetarian}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Drinking Habit */}
+                  <div className="space-y-2">
+                    <Label>{t.drinkingHabit}</Label>
+                    <div className="flex flex-wrap gap-4">
+                      {(['never', 'occasionally', 'regularly'] as DrinkingHabit[]).map((habit) => (
+                        <div key={habit} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`drink-${habit}`}
+                            checked={formData.drinkingHabit?.includes(habit) || false}
+                            onCheckedChange={(checked) => {
+                              const current = formData.drinkingHabit || []
+                              if (checked) {
+                                setFormData({ ...formData, drinkingHabit: [...current, habit] })
+                              } else {
+                                setFormData({ ...formData, drinkingHabit: current.filter(d => d !== habit) })
+                              }
+                            }}
+                          />
+                          <label htmlFor={`drink-${habit}`} className="text-sm">
+                            {habit === 'never' ? t.never : habit === 'occasionally' ? t.occasionally : t.regularly}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Smoking Habit */}
+                  <div className="space-y-2">
+                    <Label>{t.smokingHabit}</Label>
+                    <div className="flex flex-wrap gap-4">
+                      {(['never', 'occasionally', 'regularly'] as SmokingHabit[]).map((habit) => (
+                        <div key={habit} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`smoke-${habit}`}
+                            checked={formData.smokingHabit?.includes(habit) || false}
+                            onCheckedChange={(checked) => {
+                              const current = formData.smokingHabit || []
+                              if (checked) {
+                                setFormData({ ...formData, smokingHabit: [...current, habit] })
+                              } else {
+                                setFormData({ ...formData, smokingHabit: current.filter(d => d !== habit) })
+                              }
+                            }}
+                          />
+                          <label htmlFor={`smoke-${habit}`} className="text-sm">
+                            {habit === 'never' ? t.never : habit === 'occasionally' ? t.occasionally : t.regularly}
+                          </label>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
