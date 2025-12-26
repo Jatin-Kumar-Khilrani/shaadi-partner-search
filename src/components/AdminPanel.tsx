@@ -37,6 +37,66 @@ interface AdminPanelProps {
   onLoginAsUser?: (userId: string) => void
 }
 
+// Helper function to normalize country names for comparison
+// Handles multi-language names (e.g., भारत = India, भारत गणराज्य = Republic of India)
+const normalizeCountryName = (country: string): string => {
+  const normalized = country.toLowerCase().trim()
+  
+  // Map of country name variations to their canonical English name
+  const countryMappings: Record<string, string> = {
+    // India variations
+    'india': 'india',
+    'भारत': 'india',
+    'bharat': 'india',
+    'bharath': 'india',
+    'hindustan': 'india',
+    'हिंदुस्तान': 'india',
+    'भारत गणराज्य': 'india',
+    'republic of india': 'india',
+    // USA variations
+    'usa': 'usa',
+    'united states': 'usa',
+    'united states of america': 'usa',
+    'america': 'usa',
+    'अमेरिका': 'usa',
+    'संयुक्त राज्य अमेरिका': 'usa',
+    // UK variations
+    'uk': 'uk',
+    'united kingdom': 'uk',
+    'britain': 'uk',
+    'great britain': 'uk',
+    'england': 'uk',
+    'ब्रिटेन': 'uk',
+    'इंग्लैंड': 'uk',
+    // Canada variations
+    'canada': 'canada',
+    'कनाडा': 'canada',
+    // Australia variations
+    'australia': 'australia',
+    'ऑस्ट्रेलिया': 'australia',
+    // UAE variations
+    'uae': 'uae',
+    'united arab emirates': 'uae',
+    'संयुक्त अरब अमीरात': 'uae',
+    // Pakistan variations
+    'pakistan': 'pakistan',
+    'पाकिस्तान': 'pakistan',
+    // Nepal variations
+    'nepal': 'nepal',
+    'नेपाल': 'nepal',
+    // Bangladesh variations
+    'bangladesh': 'bangladesh',
+    'बांग्लादेश': 'bangladesh',
+  }
+  
+  return countryMappings[normalized] || normalized
+}
+
+// Check if two country names refer to the same country
+const isSameCountry = (country1: string, country2: string): boolean => {
+  return normalizeCountryName(country1) === normalizeCountryName(country2)
+}
+
 interface BlockedContact {
   email?: string
   mobile?: string
@@ -1739,25 +1799,25 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             </div>
 
                             {/* Admin Toolbar - Row 1: View Profile | Verification | More Actions */}
-                            <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-2 flex-wrap relative z-10">
                               {/* View Profile Button */}
                               <Button 
                                 onClick={() => setViewProfileDialog(profile)}
                                 variant="outline"
                                 size="sm"
-                                className="h-8 text-xs px-3 text-blue-600 border-blue-300 hover:bg-blue-50"
+                                className="h-8 text-xs px-3 text-blue-600 border-blue-300 hover:bg-blue-50 shrink-0"
                               >
                                 <Eye size={14} className="mr-1.5" />
                                 {t.viewProfile}
                               </Button>
 
                               {/* Verification Panel Dropdown */}
-                              <Collapsible className="relative">
+                              <Collapsible className="relative z-30">
                                 <CollapsibleTrigger asChild>
                                   <Button 
                                     variant="outline"
                                     size="sm"
-                                    className="h-8 text-xs px-3 border-primary/30 hover:bg-primary/5"
+                                    className="h-8 text-xs px-3 border-primary/30 hover:bg-primary/5 shrink-0"
                                   >
                                     <ShieldCheck size={14} className="mr-1.5" />
                                     {language === 'hi' ? 'सत्यापन' : 'Verification'}
@@ -1771,7 +1831,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   </Button>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
-                                  <div className="absolute left-0 top-full mt-1 z-20 bg-background border rounded-lg shadow-lg p-2 min-w-[280px]">
+                                  <div className="absolute left-0 top-full mt-1 z-50 bg-background border rounded-lg shadow-lg p-2 min-w-[280px]">
                                     <div className="grid grid-cols-2 gap-2">
                                       {/* Face Verification */}
                                       <div className={`flex items-center gap-2 p-2 rounded border cursor-pointer hover:shadow-sm transition-all ${
@@ -1861,12 +1921,12 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               </Collapsible>
 
                               {/* More Actions Dropdown */}
-                              <Collapsible className="relative">
+                              <Collapsible className="relative z-20">
                                 <CollapsibleTrigger asChild>
                                   <Button 
                                     variant="outline"
                                     size="sm"
-                                    className="h-8 text-xs px-3 text-muted-foreground"
+                                    className="h-8 text-xs px-3 text-muted-foreground shrink-0"
                                   >
                                     <Pencil size={14} className="mr-1.5" />
                                     {language === 'hi' ? 'अधिक कार्य' : 'More Actions'}
@@ -1874,7 +1934,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   </Button>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
-                                  <div className="absolute left-0 top-full mt-1 z-20 bg-background border rounded-lg shadow-lg p-1.5 min-w-[160px]">
+                                  <div className="absolute left-0 top-full mt-1 z-50 bg-background border rounded-lg shadow-lg p-1.5 min-w-[160px]">
                                     <Button 
                                       onClick={() => {
                                         setReturnToEditDialog(profile)
@@ -1915,11 +1975,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             </div>
 
                             {/* Admin Toolbar - Row 2: Primary Actions */}
-                            <div className="flex items-center gap-2 mt-2">
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
                               <Button 
                                 onClick={() => handleApprove(profile.id)} 
                                 size="sm"
-                                className="bg-teal hover:bg-teal/90 h-8 text-xs px-4"
+                                className="bg-teal hover:bg-teal/90 h-8 text-xs px-4 shrink-0"
                               >
                                 <Check size={14} className="mr-1.5" />
                                 {t.approve}
@@ -1928,7 +1988,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 onClick={() => setShowRejectDialog(profile)} 
                                 variant="outline"
                                 size="sm"
-                                className="h-8 text-xs px-4"
+                                className="h-8 text-xs px-4 shrink-0"
                               >
                                 <X size={14} className="mr-1.5" />
                                 {t.reject}
@@ -1937,7 +1997,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 onClick={() => handleBlock(profile)} 
                                 variant="destructive"
                                 size="sm"
-                                className="h-8 text-xs px-4"
+                                className="h-8 text-xs px-4 shrink-0"
                               >
                                 <ProhibitInset size={14} className="mr-1.5" />
                                 {t.block}
@@ -1994,16 +2054,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       </Button>
                       <Button
                         size="sm"
-                        variant={dbStatusFilter === 'approved' ? 'default' : 'ghost'}
-                        onClick={() => setDbStatusFilter('approved')}
-                        className="gap-1 text-xs h-8 flex-1 sm:flex-none min-w-0"
-                      >
-                        <Check size={14} className="shrink-0" />
-                        <span className="hidden sm:inline">{language === 'hi' ? 'स्वीकृत' : 'Approved'}</span>
-                        <Badge variant="outline" className="ml-1 text-xs bg-background">{approvedProfiles.length}</Badge>
-                      </Button>
-                      <Button
-                        size="sm"
                         variant={dbStatusFilter === 'pending' ? 'default' : 'ghost'}
                         onClick={() => setDbStatusFilter('pending')}
                         className="gap-1 text-xs h-8 flex-1 sm:flex-none min-w-0"
@@ -2011,6 +2061,16 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Info size={14} className="shrink-0" />
                         <span className="hidden sm:inline">{language === 'hi' ? 'लंबित' : 'Pending'}</span>
                         <Badge variant="outline" className="ml-1 text-xs bg-background">{pendingProfiles.length}</Badge>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={dbStatusFilter === 'approved' ? 'default' : 'ghost'}
+                        onClick={() => setDbStatusFilter('approved')}
+                        className="gap-1 text-xs h-8 flex-1 sm:flex-none min-w-0"
+                      >
+                        <Check size={14} className="shrink-0" />
+                        <span className="hidden sm:inline">{language === 'hi' ? 'स्वीकृत' : 'Approved'}</span>
+                        <Badge variant="outline" className="ml-1 text-xs bg-background">{approvedProfiles.length}</Badge>
                       </Button>
                       <Button
                         size="sm"
@@ -4386,7 +4446,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
             {/* Selfie Section */}
             <div className="space-y-3">
               <h4 className="font-semibold text-sm">{t.selfieImage}</h4>
-              <div className="aspect-square rounded-lg overflow-hidden bg-muted border-2 border-dashed relative group">
+              <div className="w-40 h-40 rounded-lg overflow-hidden bg-muted border-2 border-dashed relative group">
                 {faceVerificationDialog?.selfieUrl ? (
                   <>
                     <img 
@@ -4452,7 +4512,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     {/* Location mismatch warning */}
                     {faceVerificationDialog.registrationLocation.country && 
                      faceVerificationDialog.country && 
-                     faceVerificationDialog.registrationLocation.country.toLowerCase() !== faceVerificationDialog.country.toLowerCase() && (
+                     !isSameCountry(faceVerificationDialog.registrationLocation.country, faceVerificationDialog.country) && (
                       <Alert className="bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-800 mt-2">
                         <Info size={16} className="text-amber-600" />
                         <AlertDescription className="text-xs text-amber-800 dark:text-amber-200">
@@ -4478,7 +4538,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               <div className="grid grid-cols-2 gap-2">
                 {faceVerificationDialog?.photos && faceVerificationDialog.photos.length > 0 ? (
                   faceVerificationDialog.photos.map((photo, idx) => (
-                    <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-muted border relative group">
+                    <div key={idx} className="w-[76px] h-[76px] rounded-lg overflow-hidden bg-muted border relative group">
                       <img 
                         src={photo} 
                         alt={`Photo ${idx + 1}`} 
@@ -4489,12 +4549,12 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
                         onClick={() => openLightbox(faceVerificationDialog.photos || [], idx)}
                       >
-                        <span className="text-white text-sm font-medium">{language === 'hi' ? 'ज़ूम करें' : 'Click to Zoom'}</span>
+                        <span className="text-white text-xs font-medium">{language === 'hi' ? 'ज़ूम करें' : 'Zoom'}</span>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="col-span-2 aspect-video flex items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg">
+                  <div className="col-span-2 h-40 flex items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg">
                     {t.noPhotos}
                   </div>
                 )}
