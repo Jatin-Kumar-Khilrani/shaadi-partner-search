@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useKV } from '@/hooks/useKV'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -26,13 +26,30 @@ export function Settings({ open, onClose, profileId, language }: SettingsProps) 
   
   const currentPreference = preferences?.find(p => p.profileId === profileId)
   
-  const [formData, setFormData] = useState<Partial<PartnerPreferenceData>>(currentPreference || {
+  const [formData, setFormData] = useState<Partial<PartnerPreferenceData>>({
     profileId,
     ageMin: undefined,
     ageMax: undefined,
     heightMin: '',
     heightMax: '',
   })
+
+  // Sync form data when currentPreference changes or dialog opens
+  useEffect(() => {
+    if (open) {
+      if (currentPreference) {
+        setFormData(currentPreference)
+      } else {
+        setFormData({
+          profileId,
+          ageMin: undefined,
+          ageMax: undefined,
+          heightMin: '',
+          heightMax: '',
+        })
+      }
+    }
+  }, [open, currentPreference, profileId])
 
   const t = {
     title: language === 'hi' ? 'सेटिंग्स' : 'Settings',
