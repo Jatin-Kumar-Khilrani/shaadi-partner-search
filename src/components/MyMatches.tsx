@@ -12,8 +12,9 @@ import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
 import { ProfileCard } from './ProfileCard'
-import { MagnifyingGlass, Funnel, X, GraduationCap, Briefcase, MapPin, Globe, Calendar, Trophy } from '@phosphor-icons/react'
+import { MagnifyingGlass, Funnel, X, GraduationCap, Briefcase, MapPin, Globe, Calendar, Trophy, Sparkle } from '@phosphor-icons/react'
 import type { Profile, SearchFilters, BlockedProfile, MembershipPlan, ProfileStatus } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 
@@ -45,6 +46,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
   const [showFilters, setShowFilters] = useState(false)
   const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 60])
+  const [usePartnerPreferences, setUsePartnerPreferences] = useState(true) // Smart matching toggle
 
   const currentUserProfile = profiles.find(p => p.id === loggedInUserId)
   
@@ -156,10 +158,18 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     disability: language === 'hi' ? 'दिव्यांग' : 'Differently Abled',
     disabilityNo: language === 'hi' ? 'नहीं' : 'No',
     disabilityYes: language === 'hi' ? 'हाँ' : 'Yes',
+    
+    // Smart Matching
+    smartMatching: language === 'hi' ? 'स्मार्ट मैचिंग' : 'Smart Matching',
+    smartMatchingDesc: language === 'hi' ? 'आपकी पार्टनर प्राथमिकताओं के आधार पर मैच दिखाएं' : 'Show matches based on your partner preferences',
+    noPreferencesSet: language === 'hi' ? 'कोई पार्टनर प्राथमिकता सेट नहीं है' : 'No partner preferences set',
+    preferencesApplied: language === 'hi' ? 'प्राथमिकताएं लागू' : 'Preferences applied',
   }
 
   const filteredProfiles = useMemo(() => {
     if (!profiles || !currentUserProfile) return []
+    
+    const prefs = currentUserProfile.partnerPreferences
     
     return profiles.filter(profile => {
       if (profile.id === currentUserProfile.id) return false
@@ -175,6 +185,110 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       if (currentUserProfile.gender === 'male' && profile.gender !== 'female') return false
       if (currentUserProfile.gender === 'female' && profile.gender !== 'male') return false
       
+      // ============ PARTNER PREFERENCES BASED FILTERING ============
+      // Apply partner preferences if enabled and preferences exist
+      if (usePartnerPreferences && prefs) {
+        // Age filter based on partner preferences
+        if (prefs.ageMin && profile.age < prefs.ageMin) return false
+        if (prefs.ageMax && profile.age > prefs.ageMax) return false
+        
+        // Height filter (convert height string to comparable value)
+        if (prefs.heightMin || prefs.heightMax) {
+          const profileHeight = profile.height?.replace(/[^0-9.]/g, '') || '0'
+          const prefMinHeight = prefs.heightMin?.replace(/[^0-9.]/g, '') || '0'
+          const prefMaxHeight = prefs.heightMax?.replace(/[^0-9.]/g, '') || '999'
+          
+          if (parseFloat(profileHeight) < parseFloat(prefMinHeight)) return false
+          if (parseFloat(profileHeight) > parseFloat(prefMaxHeight)) return false
+        }
+        
+        // Marital status filter
+        if (prefs.maritalStatus && prefs.maritalStatus.length > 0) {
+          if (!prefs.maritalStatus.includes(profile.maritalStatus)) return false
+        }
+        
+        // Religion filter
+        if (prefs.religion && prefs.religion.length > 0) {
+          const profileReligion = profile.religion?.toLowerCase() || ''
+          if (!prefs.religion.some(r => profileReligion.includes(r.toLowerCase()))) return false
+        }
+        
+        // Caste filter
+        if (prefs.caste && prefs.caste.length > 0) {
+          const profileCaste = profile.caste?.toLowerCase() || ''
+          if (!prefs.caste.some(c => profileCaste.includes(c.toLowerCase()))) return false
+        }
+        
+        // Mother tongue filter
+        if (prefs.motherTongue && prefs.motherTongue.length > 0) {
+          const profileMotherTongue = profile.motherTongue?.toLowerCase() || ''
+          if (!prefs.motherTongue.some(mt => profileMotherTongue.includes(mt.toLowerCase()))) return false
+        }
+        
+        // Education filter
+        if (prefs.education && prefs.education.length > 0) {
+          const profileEducation = profile.education?.toLowerCase() || ''
+          if (!prefs.education.some(edu => profileEducation.toLowerCase() === edu.toLowerCase())) return false
+        }
+        
+        // Employment status filter
+        if (prefs.employmentStatus && prefs.employmentStatus.length > 0) {
+          const profileOccupation = profile.occupation?.toLowerCase() || ''
+          if (!prefs.employmentStatus.some(emp => profileOccupation.includes(emp.toLowerCase()))) return false
+        }
+        
+        // Occupation/Profession filter
+        if (prefs.occupation && prefs.occupation.length > 0) {
+          const profileOccupation = profile.occupation?.toLowerCase() || ''
+          if (!prefs.occupation.some(occ => profileOccupation.toLowerCase() === occ.toLowerCase())) return false
+        }
+        
+        // Living country filter
+        if (prefs.livingCountry && prefs.livingCountry.length > 0) {
+          const profileCountry = profile.country?.toLowerCase() || ''
+          if (!prefs.livingCountry.some(c => profileCountry.includes(c.toLowerCase()))) return false
+        }
+        
+        // Living state filter
+        if (prefs.livingState && prefs.livingState.length > 0) {
+          const profileState = profile.state?.toLowerCase() || ''
+          if (!prefs.livingState.some(s => profileState.includes(s.toLowerCase()))) return false
+        }
+        
+        // Location/City filter
+        if (prefs.location && prefs.location.length > 0) {
+          const profileLocation = profile.location?.toLowerCase() || ''
+          if (!prefs.location.some(loc => profileLocation.includes(loc.toLowerCase()))) return false
+        }
+        
+        // Diet preference filter
+        if (prefs.dietPreference && prefs.dietPreference.length > 0) {
+          if (!profile.dietPreference || !prefs.dietPreference.includes(profile.dietPreference)) return false
+        }
+        
+        // Drinking habit filter
+        if (prefs.drinkingHabit && prefs.drinkingHabit.length > 0) {
+          if (!profile.drinkingHabit || !prefs.drinkingHabit.includes(profile.drinkingHabit)) return false
+        }
+        
+        // Smoking habit filter
+        if (prefs.smokingHabit && prefs.smokingHabit.length > 0) {
+          if (!profile.smokingHabit || !prefs.smokingHabit.includes(profile.smokingHabit)) return false
+        }
+        
+        // Manglik filter
+        if (prefs.manglik && prefs.manglik !== 'doesnt-matter') {
+          const prefManglik = prefs.manglik === 'yes'
+          if (profile.manglik !== prefManglik) return false
+        }
+        
+        // Disability filter
+        if (prefs.disability && prefs.disability.length > 0) {
+          if (!prefs.disability.includes(profile.disability)) return false
+        }
+      }
+      // ============ END PARTNER PREFERENCES FILTERING ============
+      
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
         if (!profile.fullName.toLowerCase().includes(query) &&
@@ -184,7 +298,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
         }
       }
       
-      // Basic filters
+      // Basic filters (manual filters from filter panel)
       if (filters.caste && !profile.caste?.toLowerCase().includes(filters.caste.toLowerCase())) return false
       if (filters.community && !profile.community?.toLowerCase().includes(filters.community.toLowerCase())) return false
       if (filters.motherTongue && !profile.motherTongue?.toLowerCase().includes(filters.motherTongue.toLowerCase())) return false
@@ -237,11 +351,47 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       
       return true
     })
-  }, [profiles, currentUserProfile, searchQuery, filters, blockedProfiles])
+  }, [profiles, currentUserProfile, searchQuery, filters, blockedProfiles, usePartnerPreferences])
+
+  const hasPartnerPreferences = currentUserProfile?.partnerPreferences && 
+    (currentUserProfile.partnerPreferences.ageMin || 
+     currentUserProfile.partnerPreferences.ageMax ||
+     currentUserProfile.partnerPreferences.education?.length ||
+     currentUserProfile.partnerPreferences.caste?.length ||
+     currentUserProfile.partnerPreferences.motherTongue?.length ||
+     currentUserProfile.partnerPreferences.religion?.length ||
+     currentUserProfile.partnerPreferences.livingCountry?.length ||
+     currentUserProfile.partnerPreferences.dietPreference?.length)
 
   const FilterPanel = () => (
     <ScrollArea className="h-[calc(100vh-200px)]">
       <div className="space-y-6 pr-4">
+        {/* Smart Matching Toggle */}
+        <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkle size={18} className="text-primary" weight="fill" />
+              <Label className="font-medium">{t.smartMatching}</Label>
+            </div>
+            <Switch
+              checked={usePartnerPreferences}
+              onCheckedChange={setUsePartnerPreferences}
+              disabled={!hasPartnerPreferences}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            {hasPartnerPreferences ? t.smartMatchingDesc : t.noPreferencesSet}
+          </p>
+          {hasPartnerPreferences && usePartnerPreferences && (
+            <Badge variant="secondary" className="mt-2 text-xs">
+              <Sparkle size={12} className="mr-1" weight="fill" />
+              {t.preferencesApplied}
+            </Badge>
+          )}
+        </div>
+
+        <Separator />
+
         {/* Age Range */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
@@ -615,24 +765,45 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           </div>
         </div>
 
-        <div className="mb-4 flex items-center justify-between">
-          <span className="text-muted-foreground">
-            {filteredProfiles.length} {t.matchesFound}
-          </span>
-          {activeFilterCount > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => {
-                setFilters({})
-                setAgeRange([18, 60])
-              }}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <X size={14} className="mr-1" />
-              {t.clearFilters}
-            </Button>
-          )}
+        <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <span className="text-muted-foreground">
+              {filteredProfiles.length} {t.matchesFound}
+            </span>
+            {hasPartnerPreferences && usePartnerPreferences && (
+              <Badge variant="outline" className="text-xs bg-primary/10 border-primary/30">
+                <Sparkle size={12} className="mr-1 text-primary" weight="fill" />
+                {t.smartMatching}
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {hasPartnerPreferences && (
+              <Button
+                variant={usePartnerPreferences ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setUsePartnerPreferences(!usePartnerPreferences)}
+                className="text-xs"
+              >
+                <Sparkle size={14} className={usePartnerPreferences ? "text-primary mr-1" : "mr-1"} weight={usePartnerPreferences ? "fill" : "regular"} />
+                {t.smartMatching}
+              </Button>
+            )}
+            {activeFilterCount > 0 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  setFilters({})
+                  setAgeRange([18, 60])
+                }}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X size={14} className="mr-1" />
+                {t.clearFilters}
+              </Button>
+            )}
+          </div>
         </div>
 
         {filteredProfiles.length === 0 ? (
