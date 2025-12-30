@@ -984,14 +984,8 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                       icon={<Wheelchair size={18} />} 
                       label={t.preferredDisability} 
                       value={profile.partnerPreferences.disability.map(d => 
-                        d === 'none' ? t.disabilityNone :
-                        d === 'physical' ? t.disabilityPhysical :
-                        d === 'visual' ? t.disabilityVisual :
-                        d === 'hearing' ? t.disabilityHearing :
-                        d === 'speech' ? t.disabilitySpeech :
-                        d === 'intellectual' ? t.disabilityIntellectual :
-                        d === 'multiple' ? t.disabilityMultiple :
-                        d === 'other' ? t.disabilityOther : d
+                        d === 'no' ? t.no :
+                        d === 'yes' ? t.yes : d
                       ).join(', ')} 
                     />
                   )}
