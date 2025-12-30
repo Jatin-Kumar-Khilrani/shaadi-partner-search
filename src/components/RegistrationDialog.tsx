@@ -202,6 +202,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const [idProofType, setIdProofType] = useState<'aadhaar' | 'pan' | 'driving-license' | 'passport' | 'voter-id'>('aadhaar')
   const [showCamera, setShowCamera] = useState(false)
   const [isCameraReady, setIsCameraReady] = useState(false)
+  const [isCapturingSelfie, setIsCapturingSelfie] = useState(false)
   const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([])
   const [selectedCameraId, setSelectedCameraId] = useState<string>('')
   const [faceCoverageValid, setFaceCoverageValid] = useState(false)
@@ -621,7 +622,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   }
 
   const capturePhoto = async () => {
+    if (isCapturingSelfie) return // Prevent multiple clicks
+    
     if (videoRef.current && canvasRef.current) {
+      setIsCapturingSelfie(true)
       const canvas = canvasRef.current
       const video = videoRef.current
       
@@ -664,10 +668,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           setSelfiePreview(canvas.toDataURL('image/jpeg'))
           // Don't enter zoom mode - user should retake with live zoom instead
           stopCamera()
+          setIsCapturingSelfie(false)
           return
         } else if (coverage === 0) {
           // No face detected at all
           setFaceCoverageValid(false)
+          setIsCapturingSelfie(false)
           return
         }
         
@@ -692,7 +698,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           setSelfiePreview(canvasRef.current!.toDataURL('image/jpeg'))
           stopCamera()
         }
+        setIsCapturingSelfie(false)
       }, 'image/jpeg')
+    } else {
+      setIsCapturingSelfie(false)
     }
   }
 
@@ -2667,16 +2676,23 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           <Button 
                             type="button" 
                             onClick={capturePhoto}
-                            disabled={!isCameraReady}
+                            disabled={!isCameraReady || isCapturingSelfie}
                             className="gap-2 bg-green-600 hover:bg-green-700"
                           >
-                            <Camera size={16} weight="bold" />
-                            {language === 'hi' ? 'कैप्चर करें' : 'Capture'}
+                            {isCapturingSelfie ? (
+                              <SpinnerGap size={16} className="animate-spin" />
+                            ) : (
+                              <Camera size={16} weight="bold" />
+                            )}
+                            {isCapturingSelfie 
+                              ? (language === 'hi' ? 'प्रोसेसिंग...' : 'Processing...') 
+                              : (language === 'hi' ? 'कैप्चर करें' : 'Capture')}
                           </Button>
                           <Button 
                             type="button" 
                             variant="outline"
                             onClick={stopCamera}
+                            disabled={isCapturingSelfie}
                           >
                             {language === 'hi' ? 'रद्द करें' : 'Cancel'}
                           </Button>
@@ -2685,6 +2701,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                             <Button 
                               type="button" 
                               variant="secondary"
+                              disabled={isCapturingSelfie}
                               onClick={() => {
                                 // Cycle to next camera
                                 const currentIndex = availableCameras.findIndex(c => c.deviceId === selectedCameraId)
