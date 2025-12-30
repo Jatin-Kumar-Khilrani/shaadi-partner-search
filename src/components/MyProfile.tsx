@@ -90,6 +90,12 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
     motherTongue: language === 'hi' ? 'मातृभाषा' : 'Mother Tongue',
     maritalStatus: language === 'hi' ? 'वैवाहिक स्थिति' : 'Marital Status',
     manglik: language === 'hi' ? 'मांगलिक' : 'Manglik',
+    dateOfBirth: language === 'hi' ? 'जन्म तिथि' : 'Date of Birth',
+    birthTime: language === 'hi' ? 'जन्म समय' : 'Birth Time',
+    birthPlace: language === 'hi' ? 'जन्म स्थान' : 'Birth Place',
+    horoscopeMatching: language === 'hi' ? 'कुंडली मिलान' : 'Horoscope Matching',
+    position: language === 'hi' ? 'पद/पदनाम' : 'Position/Designation',
+    profileCreatedBy: language === 'hi' ? 'प्रोफाइल बनाने वाला' : 'Profile Created By',
     diet: language === 'hi' ? 'आहार' : 'Diet',
     drinking: language === 'hi' ? 'शराब' : 'Drinking',
     smoking: language === 'hi' ? 'धूम्रपान' : 'Smoking',
@@ -189,6 +195,41 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
       return language === 'hi' ? 'नहीं' : 'No'
     }
     return language === 'hi' ? 'हां' : 'Yes'
+  }
+
+  const getHoroscopeMatchingLabel = (horoscope: string | undefined) => {
+    const labels: Record<string, { hi: string; en: string }> = {
+      'mandatory': { hi: 'अनिवार्य', en: 'Mandatory' },
+      'preferred': { hi: 'वांछित', en: 'Preferred' },
+      'not-mandatory': { hi: 'आवश्यक नहीं', en: 'Not Required' },
+      'decide-later': { hi: 'बाद में तय करेंगे', en: 'Decide Later' },
+    }
+    return horoscope ? (labels[horoscope]?.[language] || horoscope) : '-'
+  }
+
+  const getProfileCreatedByLabel = (relation: string | undefined) => {
+    const labels: Record<string, { hi: string; en: string }> = {
+      'Self': { hi: 'स्वयं', en: 'Self' },
+      'Daughter': { hi: 'बेटी', en: 'Daughter' },
+      'Son': { hi: 'बेटा', en: 'Son' },
+      'Brother': { hi: 'भाई', en: 'Brother' },
+      'Sister': { hi: 'बहन', en: 'Sister' },
+    }
+    return relation ? (labels[relation]?.[language] || relation) : (language === 'hi' ? 'स्वयं' : 'Self')
+  }
+
+  const formatDateDDMMYYYY = (dateStr: string | undefined) => {
+    if (!dateStr) return '-'
+    try {
+      const date = new Date(dateStr)
+      return date.toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      })
+    } catch {
+      return dateStr
+    }
   }
 
   const handleEditClick = () => {
@@ -831,6 +872,14 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                         </p>
                       </div>
 
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.dateOfBirth}</p>
+                        <p className="font-medium flex items-center gap-2">
+                          <Calendar size={16} />
+                          {formatDateDDMMYYYY(profile.dateOfBirth)}
+                        </p>
+                      </div>
+
                       {profile.height && (
                         <div>
                           <p className="text-sm text-muted-foreground">{t.height}</p>
@@ -877,6 +926,16 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                           <p className="font-medium flex items-center gap-2">
                             <CurrencyInr size={16} />
                             {profile.salary}
+                          </p>
+                        </div>
+                      )}
+
+                      {profile.position && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.position}</p>
+                          <p className="font-medium flex items-center gap-2">
+                            <Briefcase size={16} />
+                            {profile.position}
                           </p>
                         </div>
                       )}
@@ -937,6 +996,32 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                       <div>
                         <p className="text-sm text-muted-foreground">{t.manglik}</p>
                         <p className="font-medium">{getManglikLabel(profile.manglik)}</p>
+                      </div>
+
+                      {/* Horoscope Section */}
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.horoscopeMatching}</p>
+                        <p className="font-medium">{getHoroscopeMatchingLabel(profile.horoscopeMatching)}</p>
+                      </div>
+
+                      {profile.birthTime && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.birthTime}</p>
+                          <p className="font-medium">{profile.birthTime}</p>
+                        </div>
+                      )}
+
+                      {profile.birthPlace && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.birthPlace}</p>
+                          <p className="font-medium">{profile.birthPlace}</p>
+                        </div>
+                      )}
+
+                      {/* Profile Created By */}
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.profileCreatedBy}</p>
+                        <p className="font-medium">{getProfileCreatedByLabel(profile.relationToProfile)}</p>
                       </div>
                     </div>
 

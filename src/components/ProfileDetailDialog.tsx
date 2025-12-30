@@ -118,15 +118,18 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
 
   if (!profile) return null
 
+  // Check if user is viewing their own profile
+  const isSelf = currentUserProfile?.id === profile.id
+
   // For admin or logged in users without blur, show full name; otherwise first name only
-  const canSeeFullDetails = isAdmin || (isLoggedIn && !shouldBlur)
+  const canSeeFullDetails = isAdmin || isSelf || (isLoggedIn && !shouldBlur)
   const displayName = canSeeFullDetails ? profile.fullName : profile.fullName.split(' ')[0]
   const initials = canSeeFullDetails 
     ? profile.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : profile.fullName.split(' ')[0][0].toUpperCase()
   
-  // Blur content for free/expired membership
-  const blurContent = shouldBlur && !isAdmin
+  // Blur content for free/expired membership (but never blur self view)
+  const blurContent = shouldBlur && !isAdmin && !isSelf
 
   const getTrustBadge = () => {
     if (profile.trustLevel >= 5) {
@@ -433,8 +436,11 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     })
   }
 
-  // Paid verified user (not admin, not free, not expired, verified)
+  // Paid verified user (not admin, not free, not expired, verified) OR viewing self
   const isPaidVerifiedUser = isLoggedIn && !shouldBlur && !isAdmin
+  
+  // Can see all profile details: Admin, self viewer, or paid verified user
+  const canSeeAllDetails = isAdmin || isSelf || isPaidVerifiedUser
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -532,8 +538,8 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                   value={formatLastLogin(profile.lastLoginAt)} 
                 />
               )}
-              {/* Paid verified users and Admin see all additional fields */}
-              {(isAdmin || isPaidVerifiedUser) && (
+              {/* Paid verified users, Admin, and Self view see all additional fields */}
+              {canSeeAllDetails && (
                 <>
                   {/* State */}
                   {profile.state && (
@@ -695,8 +701,8 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
             </div>
           </section>
 
-          {/* Paid verified users and Admin: Show all photos */}
-          {(isAdmin || isPaidVerifiedUser) && profile.photos && profile.photos.length > 0 && (
+          {/* Paid verified users, Admin, and Self: Show all photos */}
+          {canSeeAllDetails && profile.photos && profile.photos.length > 0 && (
             <>
               <Separator />
               <section>
@@ -774,8 +780,8 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
             </>
           )}
 
-          {/* Paid verified users and Admin: Show Partner Preferences */}
-          {(isAdmin || isPaidVerifiedUser) && profile.partnerPreferences && (
+          {/* Paid verified users, Admin, and Self: Show Partner Preferences */}
+          {canSeeAllDetails && profile.partnerPreferences && (
             <>
               <Separator />
               <section className="bg-purple-50 dark:bg-purple-950/30 p-4 rounded-lg">

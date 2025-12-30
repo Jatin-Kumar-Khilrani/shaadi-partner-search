@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SearchableSelect, EDUCATION_OPTIONS, OCCUPATION_OPTIONS } from '@/components/ui/searchable-select'
+import { MultiSelect, MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS, OCCUPATION_PROFESSION_OPTIONS, COUNTRY_OPTIONS, DIET_PREFERENCE_OPTIONS, getStateOptionsForCountries } from '@/components/ui/multi-select'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -15,6 +16,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Checkbox } from '@/components/ui/checkbox'
 import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, ArrowDown, FloppyDisk, Sparkle, Warning, SpinnerGap, Gift, ShieldCheck, IdentificationCard, ArrowCounterClockwise, Upload } from '@phosphor-icons/react'
 import { toast } from 'sonner'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import type { Gender, MaritalStatus, Profile, MembershipPlan, DisabilityStatus, DietPreference, DrinkingHabit, SmokingHabit } from '@/types/profile'
 import { useTranslation, type Language } from '@/lib/translations'
 import { generateBio, type BioGenerationParams } from '@/lib/aiFoundryService'
@@ -1478,7 +1480,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           </DialogDescription>
         </DialogHeader>
 
-        <div className="overflow-y-auto flex-1 px-1">
+        <ScrollArea className="flex-1 px-1">
           <div className="flex items-center justify-center gap-1 md:gap-2 mb-6">
             {[1, 2, 3, 4, 5, 6, 7].map((s) => {
               const isCompleted = s < step || (s === 3 && emailVerified && mobileVerified)
@@ -3080,69 +3082,40 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
                 </div>
 
-                {/* Marital Status & Religion */}
+                {/* Marital Status & Religion - Multi-select */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'वैवाहिक स्थिति' : 'Marital Status'}</Label>
-                    <Select 
-                      value={formData.partnerMaritalStatus?.[0] || ''} 
-                      onValueChange={(v) => updateField('partnerMaritalStatus', v ? [v as MaritalStatus] : [])}
-                    >
-                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
-                      <SelectContent className="z-[9999]" position="popper">
-                        <SelectItem value="never-married">{language === 'hi' ? 'अविवाहित' : 'Never Married'}</SelectItem>
-                        <SelectItem value="divorced">{language === 'hi' ? 'तलाकशुदा' : 'Divorced'}</SelectItem>
-                        <SelectItem value="widowed">{language === 'hi' ? 'विधुर/विधवा' : 'Widowed'}</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label>{language === 'hi' ? 'वैवाहिक स्थिति (एक से अधिक चुनें)' : 'Marital Status (select multiple)'}</Label>
+                    <MultiSelect
+                      options={MARITAL_STATUS_OPTIONS}
+                      value={formData.partnerMaritalStatus || []}
+                      onValueChange={(v) => updateField('partnerMaritalStatus', v as MaritalStatus[])}
+                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'धर्म' : 'Religion'}</Label>
-                    <Select 
-                      value={formData.partnerReligion?.[0] || ''} 
-                      onValueChange={(v) => updateField('partnerReligion', v ? [v] : [])}
-                    >
-                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
-                      <SelectContent className="z-[9999]" position="popper">
-                        <SelectItem value="Hindu">{language === 'hi' ? 'हिंदू' : 'Hindu'}</SelectItem>
-                        <SelectItem value="Muslim">{language === 'hi' ? 'मुस्लिम' : 'Muslim'}</SelectItem>
-                        <SelectItem value="Sikh">{language === 'hi' ? 'सिख' : 'Sikh'}</SelectItem>
-                        <SelectItem value="Christian">{language === 'hi' ? 'ईसाई' : 'Christian'}</SelectItem>
-                        <SelectItem value="Buddhist">{language === 'hi' ? 'बौद्ध' : 'Buddhist'}</SelectItem>
-                        <SelectItem value="Jain">{language === 'hi' ? 'जैन' : 'Jain'}</SelectItem>
-                        <SelectItem value="Other">{language === 'hi' ? 'अन्य' : 'Other'}</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label>{language === 'hi' ? 'धर्म (एक से अधिक चुनें)' : 'Religion (select multiple)'}</Label>
+                    <MultiSelect
+                      options={RELIGION_OPTIONS}
+                      value={formData.partnerReligion || []}
+                      onValueChange={(v) => updateField('partnerReligion', v)}
+                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                    />
                   </div>
                 </div>
 
-                {/* Mother Tongue */}
+                {/* Mother Tongue - Multi-select */}
                 <div className="space-y-2">
-                  <Label>{language === 'hi' ? 'मातृभाषा' : 'Mother Tongue'}</Label>
-                  <Select 
-                    value={formData.partnerMotherTongue?.[0] || ''} 
-                    onValueChange={(v) => updateField('partnerMotherTongue', v ? [v] : [])}
-                  >
-                    <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
-                    <SelectContent className="z-[9999] max-h-60" position="popper">
-                      <SelectItem value="Hindi">{language === 'hi' ? 'हिंदी' : 'Hindi'}</SelectItem>
-                      <SelectItem value="English">{language === 'hi' ? 'अंग्रेज़ी' : 'English'}</SelectItem>
-                      <SelectItem value="Punjabi">{language === 'hi' ? 'पंजाबी' : 'Punjabi'}</SelectItem>
-                      <SelectItem value="Gujarati">{language === 'hi' ? 'गुजराती' : 'Gujarati'}</SelectItem>
-                      <SelectItem value="Marathi">{language === 'hi' ? 'मराठी' : 'Marathi'}</SelectItem>
-                      <SelectItem value="Tamil">{language === 'hi' ? 'तमिल' : 'Tamil'}</SelectItem>
-                      <SelectItem value="Telugu">{language === 'hi' ? 'तेलुगु' : 'Telugu'}</SelectItem>
-                      <SelectItem value="Kannada">{language === 'hi' ? 'कन्नड़' : 'Kannada'}</SelectItem>
-                      <SelectItem value="Malayalam">{language === 'hi' ? 'मलयालम' : 'Malayalam'}</SelectItem>
-                      <SelectItem value="Bengali">{language === 'hi' ? 'बंगाली' : 'Bengali'}</SelectItem>
-                      <SelectItem value="Odia">{language === 'hi' ? 'ओड़िया' : 'Odia'}</SelectItem>
-                      <SelectItem value="Urdu">{language === 'hi' ? 'उर्दू' : 'Urdu'}</SelectItem>
-                      <SelectItem value="Bhojpuri">{language === 'hi' ? 'भोजपुरी' : 'Bhojpuri'}</SelectItem>
-                      <SelectItem value="Rajasthani">{language === 'hi' ? 'राजस्थानी' : 'Rajasthani'}</SelectItem>
-                      <SelectItem value="Haryanvi">{language === 'hi' ? 'हरियाणवी' : 'Haryanvi'}</SelectItem>
-                      <SelectItem value="Other">{language === 'hi' ? 'अन्य' : 'Other'}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>{language === 'hi' ? 'मातृभाषा (एक से अधिक चुनें)' : 'Mother Tongue (select multiple)'}</Label>
+                  <MultiSelect
+                    options={MOTHER_TONGUE_OPTIONS}
+                    value={formData.partnerMotherTongue || []}
+                    onValueChange={(v) => updateField('partnerMotherTongue', v)}
+                    placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                    searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                  />
                 </div>
 
                 {/* Education & Employment Status */}
@@ -3197,61 +3170,46 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
                 </div>
 
-                {/* Occupation/Profession */}
+                {/* Occupation/Profession - Multi-select */}
                 <div className="space-y-2">
-                  <Label>{language === 'hi' ? 'व्यवसाय/पेशा' : 'Occupation/Profession'}</Label>
-                  <Input
-                    placeholder={language === 'hi' ? 'उदाहरण: सॉफ्टवेयर इंजीनियर, डॉक्टर, वकील' : 'Example: Software Engineer, Doctor, Lawyer'}
-                    value={formData.partnerOccupation?.[0] || ''}
-                    onChange={(e) => updateField('partnerOccupation', e.target.value ? [e.target.value] : [])}
+                  <Label>{language === 'hi' ? 'व्यवसाय/पेशा (एक से अधिक चुनें)' : 'Occupation/Profession (select multiple)'}</Label>
+                  <MultiSelect
+                    options={OCCUPATION_PROFESSION_OPTIONS}
+                    value={formData.partnerOccupation || []}
+                    onValueChange={(v) => updateField('partnerOccupation', v)}
+                    placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                    searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                   />
                 </div>
 
-                {/* Living Country & State */}
+                {/* Living Country & State - Multi-select */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'रहने वाला देश' : 'Living in Country'}</Label>
-                    <Select 
-                      value={formData.partnerLivingCountry?.[0] || ''} 
+                    <Label>{language === 'hi' ? 'रहने वाला देश (एक से अधिक चुनें)' : 'Living in Country (select multiple)'}</Label>
+                    <MultiSelect
+                      options={COUNTRY_OPTIONS}
+                      value={formData.partnerLivingCountry || []}
                       onValueChange={(v) => {
-                        updateField('partnerLivingCountry', v ? [v] : [])
-                        updateField('partnerLivingState', []) // Clear state when country changes
+                        updateField('partnerLivingCountry', v)
+                        // Clear states that are no longer valid for selected countries
+                        const validStates = getStateOptionsForCountries(v).map(s => s.value)
+                        const updatedStates = (formData.partnerLivingState || []).filter(s => validStates.includes(s))
+                        updateField('partnerLivingState', updatedStates)
                       }}
-                    >
-                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
-                      <SelectContent className="z-[9999] max-h-60" position="popper">
-                        <SelectItem value="India">🇮🇳 India</SelectItem>
-                        <SelectItem value="United States">🇺🇸 United States</SelectItem>
-                        <SelectItem value="United Kingdom">🇬🇧 United Kingdom</SelectItem>
-                        <SelectItem value="Canada">🇨🇦 Canada</SelectItem>
-                        <SelectItem value="Australia">🇦🇺 Australia</SelectItem>
-                        <SelectItem value="UAE">🇦🇪 UAE</SelectItem>
-                        <SelectItem value="Singapore">🇸🇬 Singapore</SelectItem>
-                        <SelectItem value="Germany">🇩🇪 Germany</SelectItem>
-                        <SelectItem value="New Zealand">🇳🇿 New Zealand</SelectItem>
-                        <SelectItem value="Saudi Arabia">🇸🇦 Saudi Arabia</SelectItem>
-                        <SelectItem value="Qatar">🇶🇦 Qatar</SelectItem>
-                        <SelectItem value="Kuwait">🇰🇼 Kuwait</SelectItem>
-                        <SelectItem value="Oman">🇴🇲 Oman</SelectItem>
-                        <SelectItem value="Malaysia">🇲🇾 Malaysia</SelectItem>
-                        <SelectItem value="Other">🌍 {language === 'hi' ? 'अन्य' : 'Other'}</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'रहने वाला राज्य' : 'Living in State'}</Label>
-                    <Select 
-                      value={formData.partnerLivingState?.[0] || ''} 
-                      onValueChange={(v) => updateField('partnerLivingState', v ? [v] : [])}
+                    <Label>{language === 'hi' ? 'रहने वाला राज्य (एक से अधिक चुनें)' : 'Living in State (select multiple)'}</Label>
+                    <MultiSelect
+                      options={getStateOptionsForCountries(formData.partnerLivingCountry || [])}
+                      value={formData.partnerLivingState || []}
+                      onValueChange={(v) => updateField('partnerLivingState', v)}
+                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                       disabled={!formData.partnerLivingCountry?.length}
-                    >
-                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
-                      <SelectContent className="z-[9999] max-h-60" position="popper">
-                        {getStatesForCountry(formData.partnerLivingCountry?.[0] || '').map(state => (
-                          <SelectItem key={state} value={state}>{state}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
                 </div>
 
@@ -3312,21 +3270,17 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
                 </div>
 
-                {/* Diet & Lifestyle */}
+                {/* Diet & Lifestyle - Multi-select for Diet */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'आहार पसंद' : 'Diet Preference'}</Label>
-                    <Select 
-                      value={formData.partnerDiet?.[0] || ''} 
-                      onValueChange={(v) => updateField('partnerDiet', v ? [v as DietPreference] : [])}
-                    >
-                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
-                      <SelectContent className="z-[9999]" position="popper">
-                        <SelectItem value="veg">{language === 'hi' ? 'शाकाहारी' : 'Vegetarian'}</SelectItem>
-                        <SelectItem value="non-veg">{language === 'hi' ? 'मांसाहारी' : 'Non-Vegetarian'}</SelectItem>
-                        <SelectItem value="eggetarian">{language === 'hi' ? 'अंडाहारी' : 'Eggetarian'}</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label>{language === 'hi' ? 'आहार पसंद (एक से अधिक चुनें)' : 'Diet Preference (select multiple)'}</Label>
+                    <MultiSelect
+                      options={DIET_PREFERENCE_OPTIONS}
+                      value={formData.partnerDiet || []}
+                      onValueChange={(v) => updateField('partnerDiet', v as DietPreference[])}
+                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>{language === 'hi' ? 'मांगलिक' : 'Manglik'}</Label>
@@ -3790,7 +3744,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             )}
           </CardContent>
         </Card>
-        </div>
+        </ScrollArea>
 
         <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t min-h-[60px]">
           <div className="flex items-center gap-2 flex-shrink-0">

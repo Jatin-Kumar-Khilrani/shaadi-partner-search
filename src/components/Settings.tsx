@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { MultiSelect, MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS, OCCUPATION_PROFESSION_OPTIONS, COUNTRY_OPTIONS, DIET_PREFERENCE_OPTIONS, getStateOptionsForCountries } from '@/components/ui/multi-select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Gear, Heart, Phone, Info, FileText, ShieldCheck } from '@phosphor-icons/react'
 import { toast } from 'sonner'
@@ -88,6 +89,13 @@ export function Settings({ open, onClose, profileId, language }: SettingsProps) 
     never: language === 'hi' ? 'कभी नहीं' : 'Never',
     occasionally: language === 'hi' ? 'कभी-कभी' : 'Occasionally',
     regularly: language === 'hi' ? 'नियमित' : 'Regularly',
+    maritalStatus: language === 'hi' ? 'वैवाहिक स्थिति' : 'Marital Status',
+    religion: language === 'hi' ? 'धर्म' : 'Religion',
+    livingCountry: language === 'hi' ? 'रहने वाला देश' : 'Living in Country',
+    livingState: language === 'hi' ? 'रहने वाला राज्य' : 'Living in State',
+    selectMultiple: language === 'hi' ? '(एक से अधिक चुनें)' : '(select multiple)',
+    selectAny: language === 'hi' ? 'कोई भी चुनें' : 'Select any',
+    search: language === 'hi' ? 'खोजें...' : 'Search...',
     
     termsContent: language === 'hi' ? `
 नियम और शर्तें
@@ -297,43 +305,105 @@ Online Safety Tips
 
                   <Separator />
 
-                  {/* Education & Occupation */}
+                  {/* Marital Status & Religion - Multi-select */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>{t.maritalStatus} {t.selectMultiple}</Label>
+                      <MultiSelect
+                        options={MARITAL_STATUS_OPTIONS}
+                        value={formData.maritalStatus || []}
+                        onValueChange={(v) => setFormData({ ...formData, maritalStatus: v })}
+                        placeholder={t.selectAny}
+                        searchPlaceholder={t.search}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t.religion} {t.selectMultiple}</Label>
+                      <MultiSelect
+                        options={RELIGION_OPTIONS}
+                        value={formData.religion || []}
+                        onValueChange={(v) => setFormData({ ...formData, religion: v })}
+                        placeholder={t.selectAny}
+                        searchPlaceholder={t.search}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Mother Tongue - Multi-select */}
+                  <div className="space-y-2">
+                    <Label>{t.motherTongue} {t.selectMultiple}</Label>
+                    <MultiSelect
+                      options={MOTHER_TONGUE_OPTIONS}
+                      value={formData.motherTongue || []}
+                      onValueChange={(v) => setFormData({ ...formData, motherTongue: v })}
+                      placeholder={t.selectAny}
+                      searchPlaceholder={t.search}
+                    />
+                  </div>
+
+                  {/* Occupation - Multi-select */}
+                  <div className="space-y-2">
+                    <Label>{t.occupation} {t.selectMultiple}</Label>
+                    <MultiSelect
+                      options={OCCUPATION_PROFESSION_OPTIONS}
+                      value={formData.occupation || []}
+                      onValueChange={(v) => setFormData({ ...formData, occupation: v })}
+                      placeholder={t.selectAny}
+                      searchPlaceholder={t.search}
+                    />
+                  </div>
+
+                  {/* Living Country & State - Multi-select */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>{t.livingCountry} {t.selectMultiple}</Label>
+                      <MultiSelect
+                        options={COUNTRY_OPTIONS}
+                        value={formData.livingCountry || []}
+                        onValueChange={(v) => {
+                          setFormData({ ...formData, livingCountry: v })
+                          // Clear states that are no longer valid
+                          const validStates = getStateOptionsForCountries(v).map(s => s.value)
+                          const updatedStates = (formData.livingState || []).filter(s => validStates.includes(s))
+                          if (updatedStates.length !== (formData.livingState || []).length) {
+                            setFormData(prev => ({ ...prev, livingState: updatedStates }))
+                          }
+                        }}
+                        placeholder={t.selectAny}
+                        searchPlaceholder={t.search}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t.livingState} {t.selectMultiple}</Label>
+                      <MultiSelect
+                        options={getStateOptionsForCountries(formData.livingCountry || [])}
+                        value={formData.livingState || []}
+                        onValueChange={(v) => setFormData({ ...formData, livingState: v })}
+                        placeholder={t.selectAny}
+                        searchPlaceholder={t.search}
+                        disabled={!formData.livingCountry?.length}
+                      />
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Education & Caste */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>{t.education}</Label>
                       <Input
                         placeholder={t.education}
-                        value={formData.education || ''}
+                        value={Array.isArray(formData.education) ? formData.education.join(', ') : formData.education || ''}
                         onChange={(e) => setFormData({ ...formData, education: e.target.value })}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label>{t.occupation}</Label>
-                      <Input
-                        placeholder={t.occupation}
-                        value={formData.occupation || ''}
-                        onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Caste & Mother Tongue */}
-                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>{t.caste}</Label>
                       <Input
                         placeholder={t.caste}
                         value={formData.caste?.join(', ') || ''}
                         onChange={(e) => setFormData({ ...formData, caste: e.target.value ? e.target.value.split(',').map(s => s.trim()) : [] })}
-                      />
-                      <p className="text-xs text-muted-foreground">{language === 'hi' ? 'अल्पविराम से अलग करें' : 'Separate with commas'}</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>{t.motherTongue}</Label>
-                      <Input
-                        placeholder={t.motherTongue}
-                        value={formData.motherTongue?.join(', ') || ''}
-                        onChange={(e) => setFormData({ ...formData, motherTongue: e.target.value ? e.target.value.split(',').map(s => s.trim()) : [] })}
                       />
                       <p className="text-xs text-muted-foreground">{language === 'hi' ? 'अल्पविराम से अलग करें' : 'Separate with commas'}</p>
                     </div>

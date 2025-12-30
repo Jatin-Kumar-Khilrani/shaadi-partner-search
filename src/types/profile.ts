@@ -1,5 +1,5 @@
 export type Gender = 'male' | 'female'
-export type MaritalStatus = 'never-married' | 'divorced' | 'widowed'
+export type MaritalStatus = 'never-married' | 'divorced' | 'widowed' | 'awaiting-divorce'
 export type ProfileStatus = 'pending' | 'verified' | 'rejected'
 export type DietPreference = 'veg' | 'non-veg' | 'eggetarian'
 export type DrinkingHabit = 'never' | 'occasionally' | 'regularly'
@@ -251,13 +251,17 @@ export interface PartnerPreferenceData {
   ageMax?: number
   heightMin?: string
   heightMax?: string
+  maritalStatus?: string[]      // Multi-select marital status preference
+  religion?: string[]           // Multi-select religion preference
   caste?: string[]
   community?: string[]
-  motherTongue?: string[]
+  motherTongue?: string[]       // Multi-select mother tongue preference
   education?: string
-  occupation?: string
+  occupation?: string[]         // Multi-select occupation preference
+  livingCountry?: string[]      // Multi-select living country preference
+  livingState?: string[]        // Multi-select living state preference
   manglik?: Manglik
-  dietPreference?: DietPreference[]
+  dietPreference?: DietPreference[]  // Multi-select diet preference
   drinkingHabit?: DrinkingHabit[]
   smokingHabit?: SmokingHabit[]
 }
