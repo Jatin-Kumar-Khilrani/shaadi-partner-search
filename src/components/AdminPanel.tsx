@@ -2336,8 +2336,20 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     setDigilockerProfile(profile)
                                     setShowDigilockerDialog(true)
                                   }}
-                                  className={profile.digilockerVerified ? 'text-green-600 hover:text-green-700' : 'text-blue-600 hover:text-blue-700'}
-                                  title={profile.digilockerVerified ? t.digilockerVerified : t.verifyIdProof}
+                                  className={
+                                    profile.digilockerVerified 
+                                      ? 'text-green-600 hover:text-green-700 hover:bg-green-50' 
+                                      : profile.idProofUrl 
+                                        ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50' 
+                                        : 'text-gray-400 hover:text-gray-500'
+                                  }
+                                  title={
+                                    profile.digilockerVerified 
+                                      ? t.digilockerVerified 
+                                      : profile.idProofUrl 
+                                        ? (language === 'hi' ? 'ID प्रमाण अपलोड - सत्यापन लंबित' : 'ID Proof Uploaded - Pending Verification')
+                                        : t.idProofNotUploaded
+                                  }
                                 >
                                   <ShieldCheck size={16} />
                                 </Button>
@@ -5713,7 +5725,7 @@ ShaadiPartnerSearch Team
 
       {/* ID Verification Dialog */}
       <Dialog open={showDigilockerDialog} onOpenChange={setShowDigilockerDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShieldCheck size={24} className="text-blue-600" />
@@ -5725,6 +5737,127 @@ ShaadiPartnerSearch Team
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Profile Details Section for Verification */}
+            <div className="p-4 bg-muted/30 rounded-lg border">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <User size={18} />
+                {language === 'hi' ? 'प्रोफ़ाइल विवरण (मिलान के लिए)' : 'Profile Details (For Matching)'}
+              </h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">{language === 'hi' ? 'पूरा नाम' : 'Full Name'}</Label>
+                  <p className="font-medium text-lg">{digilockerProfile?.fullName}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">{language === 'hi' ? 'जन्म तिथि' : 'Date of Birth'}</Label>
+                  <p className="font-medium text-lg">{digilockerProfile?.dateOfBirth ? formatDateDDMMYYYY(digilockerProfile.dateOfBirth) : '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">{language === 'hi' ? 'आयु' : 'Age'}</Label>
+                  <p className="font-medium">{digilockerProfile?.age} {language === 'hi' ? 'वर्ष' : 'years'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">{language === 'hi' ? 'लिंग' : 'Gender'}</Label>
+                  <p className="font-medium">{digilockerProfile?.gender === 'male' ? (language === 'hi' ? 'पुरुष' : 'Male') : (language === 'hi' ? 'महिला' : 'Female')}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Photos Comparison Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Profile Photo */}
+              <div className="border rounded-lg p-3">
+                <Label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  <User size={16} />
+                  {language === 'hi' ? 'प्रोफ़ाइल फोटो' : 'Profile Photo'}
+                </Label>
+                <div className="bg-muted/20 rounded-lg p-2 flex items-center justify-center min-h-[200px]">
+                  {digilockerProfile?.photos && digilockerProfile.photos.length > 0 ? (
+                    <img 
+                      src={digilockerProfile.photos[0]} 
+                      alt="Profile Photo"
+                      className="max-h-[250px] object-contain rounded cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => openLightbox(digilockerProfile.photos || [], 0)}
+                    />
+                  ) : digilockerProfile?.selfieUrl ? (
+                    <img 
+                      src={digilockerProfile.selfieUrl} 
+                      alt="Selfie"
+                      className="max-h-[250px] object-contain rounded cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => openLightbox([digilockerProfile.selfieUrl!], 0)}
+                    />
+                  ) : (
+                    <div className="text-muted-foreground text-sm text-center p-4">
+                      {language === 'hi' ? 'कोई फोटो नहीं' : 'No photo available'}
+                    </div>
+                  )}
+                </div>
+                {(digilockerProfile?.photos && digilockerProfile.photos.length > 0) && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full mt-2"
+                    onClick={() => openLightbox(digilockerProfile.photos || [], 0)}
+                  >
+                    <Eye size={14} className="mr-1" />
+                    {language === 'hi' ? 'बड़ा करके देखें' : 'View Full Size'}
+                  </Button>
+                )}
+              </div>
+
+              {/* ID Proof Photo */}
+              <div className="border rounded-lg p-3">
+                <Label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  <IdentificationCard size={16} />
+                  {language === 'hi' ? 'पहचान प्रमाण' : 'ID Proof'}
+                  {digilockerProfile?.idProofType && (
+                    <Badge variant="secondary" className="ml-2">
+                      {digilockerProfile.idProofType === 'aadhaar' && t.aadhaar}
+                      {digilockerProfile.idProofType === 'pan' && t.pan}
+                      {digilockerProfile.idProofType === 'driving-license' && t.drivingLicense}
+                      {digilockerProfile.idProofType === 'passport' && t.passport}
+                      {digilockerProfile.idProofType === 'voter-id' && t.voterId}
+                    </Badge>
+                  )}
+                </Label>
+                <div className="bg-muted/20 rounded-lg p-2 flex items-center justify-center min-h-[200px]">
+                  {digilockerProfile?.idProofUrl ? (
+                    <img 
+                      src={digilockerProfile.idProofUrl} 
+                      alt="ID Proof"
+                      className="max-h-[250px] object-contain rounded cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => openLightbox([digilockerProfile.idProofUrl!], 0)}
+                    />
+                  ) : (
+                    <div className="text-muted-foreground text-sm text-center p-4">
+                      {t.idProofNotUploaded}
+                    </div>
+                  )}
+                </div>
+                {digilockerProfile?.idProofUrl && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full mt-2"
+                    onClick={() => openLightbox([digilockerProfile.idProofUrl!], 0)}
+                  >
+                    <Eye size={14} className="mr-1" />
+                    {language === 'hi' ? 'बड़ा करके देखें' : 'View Full Size'}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Verification Instructions */}
+            <Alert>
+              <Info size={18} />
+              <AlertDescription>
+                {language === 'hi' 
+                  ? 'कृपया जांचें: 1) ID पर नाम प्रोफ़ाइल नाम से मेल खाता है 2) ID पर जन्मतिथि प्रोफ़ाइल से मेल खाती है 3) ID पर फोटो प्रोफ़ाइल फोटो से मेल खाती है' 
+                  : 'Please verify: 1) Name on ID matches profile name 2) DOB on ID matches profile 3) Photo on ID matches profile photo'}
+              </AlertDescription>
+            </Alert>
+
             {/* Current Status */}
             <div className="p-3 rounded-lg bg-muted">
               <div className="flex items-center justify-between">
