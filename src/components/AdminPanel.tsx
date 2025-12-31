@@ -2341,18 +2341,15 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 >
                                   <ShieldCheck size={16} />
                                 </Button>
-                                {/* View ID Proof button */}
+                                {/* Photo Verification button (selfie vs uploaded photos) */}
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
-                                  onClick={() => {
-                                    setIdProofViewProfile(profile)
-                                    setShowIdProofViewDialog(true)
-                                  }}
-                                  className={profile.idProofUrl ? (profile.idProofVerified ? 'text-green-600 hover:text-green-700' : 'text-orange-500 hover:text-orange-600') : 'text-gray-400'}
-                                  title={profile.idProofUrl ? t.viewIdProof : t.idProofNotUploaded}
+                                  onClick={() => setFaceVerificationDialog(profile)}
+                                  className={profile.photoVerified === true ? 'text-green-600 hover:text-green-700' : profile.photoVerified === false ? 'text-red-500 hover:text-red-600' : 'text-amber-500 hover:text-amber-600'}
+                                  title={profile.photoVerified === true ? t.photoVerifiedBadge : t.verifyFace}
                                 >
-                                  <IdentificationCard size={16} />
+                                  <ScanSmiley size={16} />
                                 </Button>
                                 {/* Login as User button */}
                                 {onLoginAsUser && creds?.userId && (
