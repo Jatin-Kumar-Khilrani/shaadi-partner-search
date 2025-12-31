@@ -422,18 +422,21 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     oneYearPlan: language === 'hi' ? '1 वर्ष' : '1 Year',
   }
 
-  // Format last login time
+  // Format last login time in DD/MM/YYYY with IST time
   const formatLastLogin = (lastLoginAt?: string) => {
     if (!lastLoginAt) return language === 'hi' ? 'कभी नहीं' : 'Never'
     const date = new Date(lastLoginAt)
-    return date.toLocaleString(language === 'hi' ? 'hi-IN' : 'en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
+    // Format as DD/MM/YYYY HH:MM AM/PM IST
+    const day = date.toLocaleString('en-IN', { day: '2-digit', timeZone: 'Asia/Kolkata' })
+    const month = date.toLocaleString('en-IN', { month: '2-digit', timeZone: 'Asia/Kolkata' })
+    const year = date.toLocaleString('en-IN', { year: 'numeric', timeZone: 'Asia/Kolkata' })
+    const time = date.toLocaleString('en-IN', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: true, 
+      timeZone: 'Asia/Kolkata' 
     })
+    return `${day}/${month}/${year} ${time} IST`
   }
 
   // Paid verified user (not admin, not free, not expired, verified) OR viewing self
@@ -1218,7 +1221,7 @@ function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string
       <div className="text-muted-foreground mt-0.5 flex-shrink-0">{icon}</div>
       <div className="min-w-0 flex-1 overflow-hidden">
         <div className="text-xs text-muted-foreground truncate">{label}</div>
-        <div className="font-medium break-words line-clamp-2" title={value}>{value}</div>
+        <div className="font-medium break-words" title={value}>{value}</div>
       </div>
     </div>
   )
