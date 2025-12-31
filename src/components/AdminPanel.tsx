@@ -771,7 +771,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     setProfiles((current) => 
       (current || []).map(p => 
         p.id === profile.id 
-          ? { ...p, status: 'rejected' as const, rejectionReason: rejectionReason }
+          ? { ...p, status: 'rejected' as const, rejectionReason: rejectionReason, rejectedAt: new Date().toISOString() }
           : p
       )
     )
@@ -795,6 +795,19 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     setRejectionReason('')
     setSendRejectionNotification(true)
     setSelectedProfile(null)
+  }
+
+  // Undo rejection - move profile back to pending
+  const handleUndoRejection = (profile: Profile) => {
+    setProfiles((current) => 
+      (current || []).map(p => 
+        p.id === profile.id 
+          ? { ...p, status: 'pending' as const, rejectionReason: undefined, rejectedAt: undefined }
+          : p
+      )
+    )
+    toast.success(t.undoRejectionSuccess)
+    setShowRejectionReasonDialog(null)
   }
 
   // DigiLocker verification handler
@@ -2268,6 +2281,15 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               <TableCell>
                               {profile.isDeleted ? (
                                 <Badge variant="destructive">{language === 'hi' ? 'हटाया गया' : 'Deleted'}</Badge>
+                              ) : profile.status === 'rejected' ? (
+                                <Badge 
+                                  variant="destructive" 
+                                  className="cursor-pointer hover:bg-red-700 transition-colors"
+                                  onClick={() => setShowRejectionReasonDialog(profile)}
+                                  title={t.viewRejectionReason}
+                                >
+                                  {t.rejected}
+                                </Badge>
                               ) : (
                                 <Badge variant={
                                   (profile.status === 'verified' || profile.status === 'approved') ? 'default' :
@@ -2277,8 +2299,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   (profile.status === 'verified' || profile.status === 'approved') ? 'bg-green-600' : ''
                                 }>
                                   {(profile.status === 'verified' || profile.status === 'approved') ? (language === 'hi' ? 'स्वीकृत' : 'Approved') :
-                                   profile.status === 'pending' ? t.pending :
-                                   t.rejected}
+                                   t.pending}
                                 </Badge>
                               )}
                             </TableCell>
@@ -4911,6 +4932,62 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
             >
               <X size={16} className="mr-1" />
               {t.reject}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Rejection Reason Dialog */}
+      <Dialog open={!!showRejectionReasonDialog} onOpenChange={(open) => !open && setShowRejectionReasonDialog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Prohibit size={24} weight="bold" />
+              {t.rejectionDetails}
+            </DialogTitle>
+            <DialogDescription>
+              {showRejectionReasonDialog?.fullName} ({showRejectionReasonDialog?.profileId})
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Rejection reason */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">{t.rejectionReason}</Label>
+              <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  {showRejectionReasonDialog?.rejectionReason || t.noRejectionReason}
+                </p>
+              </div>
+            </div>
+            
+            {/* Rejection date */}
+            {showRejectionReasonDialog?.rejectedAt && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar size={14} />
+                <span>{t.rejectedOn}: {formatDateDDMMYYYY(showRejectionReasonDialog.rejectedAt)}</span>
+              </div>
+            )}
+            
+            {/* Contact details */}
+            <div className="p-3 bg-muted/50 rounded-lg text-sm">
+              <p className="font-medium mb-1">{language === 'hi' ? 'संपर्क विवरण:' : 'Contact Details:'}</p>
+              <p className="text-muted-foreground">📱 {showRejectionReasonDialog?.mobile}</p>
+              <p className="text-muted-foreground">✉️ {showRejectionReasonDialog?.email}</p>
+            </div>
+          </div>
+          
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowRejectionReasonDialog(null)}>
+              {t.close}
+            </Button>
+            <Button 
+              variant="default" 
+              onClick={() => showRejectionReasonDialog && handleUndoRejection(showRejectionReasonDialog)}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <ArrowCounterClockwise size={16} className="mr-1" />
+              {t.undoRejection}
             </Button>
           </DialogFooter>
         </DialogContent>
