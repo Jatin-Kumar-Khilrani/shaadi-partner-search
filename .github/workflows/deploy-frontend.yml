@@ -38,23 +38,34 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate runtime config
+      - name: Generate runtime config from secrets
+        env:
+          AZURE_FACE_API_ENDPOINT: ${{ secrets.AZURE_FACE_API_ENDPOINT }}
+          AZURE_FACE_API_KEY: ${{ secrets.AZURE_FACE_API_KEY }}
+          AZURE_VISION_ENDPOINT: ${{ secrets.AZURE_VISION_ENDPOINT }}
+          AZURE_VISION_KEY: ${{ secrets.AZURE_VISION_KEY }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://shaadi-partner-api.azurewebsites.net' }}
         run: |
-          cat > public/runtime.config.json << 'EOF'
+          # Generate runtime.config.json with secrets injected
+          cat > public/runtime.config.json << EOF
           {
-            "$schema": "./runtime.config.schema.json",
-            "description": "Runtime configuration for ShaadiPartnerSearch",
+            "\$schema": "./runtime.config.schema.json",
+            "description": "Runtime configuration for ShaadiPartnerSearch - Production Build",
             "version": "1.0.0",
             "api": {
-              "baseUrl": "https://shaadi-partner-api.azurewebsites.net"
+              "baseUrl": "${API_BASE_URL:-https://shaadi-partner-api.azurewebsites.net}"
             },
             "azure": {
               "cosmosDb": {
                 "key": ""
               },
               "faceApi": {
-                "endpoint": "${{ secrets.AZURE_FACE_API_ENDPOINT }}",
-                "key": "${{ secrets.AZURE_FACE_API_KEY }}"
+                "endpoint": "${AZURE_FACE_API_ENDPOINT}",
+                "key": "${AZURE_FACE_API_KEY}"
+              },
+              "visionApi": {
+                "endpoint": "${AZURE_VISION_ENDPOINT}",
+                "key": "${AZURE_VISION_KEY}"
               }
             },
             "features": {
@@ -67,6 +78,9 @@ jobs:
             }
           }
           EOF
+          echo "✅ runtime.config.json generated successfully"
+          echo "📋 Config preview (keys masked):"
+          cat public/runtime.config.json | sed 's/"key": "[^"]*"/"key": "***MASKED***"/g'
 
       - name: Build
         run: npm run build
