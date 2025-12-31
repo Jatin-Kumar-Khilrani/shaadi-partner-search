@@ -259,7 +259,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     birthPlace: '',
     horoscopeMatching: 'not-mandatory' as 'mandatory' | 'not-mandatory' | 'decide-later',
     diet: '' as '' | 'veg' | 'non-veg' | 'occasionally-non-veg' | 'jain' | 'vegan',
-    habit: '' as '' | 'none' | 'smoking' | 'drinking' | 'occasionally-drinking' | 'occasionally-smoking',
+    drinkingHabit: '' as '' | 'never' | 'occasionally' | 'regularly',
+    smokingHabit: '' as '' | 'never' | 'occasionally' | 'regularly',
     annualIncome: '' as string,
     profession: '' as string,
     position: '' as string,
@@ -329,7 +330,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         birthPlace: editProfile.birthPlace || '',
         horoscopeMatching: editProfile.horoscopeMatching || 'not-mandatory',
         diet: (editProfile.dietPreference as '' | 'veg' | 'non-veg' | 'occasionally-non-veg' | 'jain' | 'vegan') || '',
-        habit: (editProfile.smokingHabit || editProfile.drinkingHabit || '') as '' | 'none' | 'smoking' | 'drinking' | 'occasionally-drinking' | 'occasionally-smoking',
+        drinkingHabit: (editProfile.drinkingHabit || '') as '' | 'never' | 'occasionally' | 'regularly',
+        smokingHabit: (editProfile.smokingHabit || '') as '' | 'never' | 'occasionally' | 'regularly',
         annualIncome: editProfile.salary || '',
         profession: editProfile.occupation || '',
         position: editProfile.position || '',
@@ -1094,12 +1096,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       disabilityDetails: formData.disability !== 'no' ? formData.disabilityDetails : undefined,
       // Lifestyle fields - map from form fields to Profile fields
       dietPreference: formData.diet as DietPreference || undefined,
-      drinkingHabit: (formData.habit === 'drinking' ? 'regularly' : 
-                      formData.habit === 'occasionally-drinking' ? 'occasionally' : 
-                      formData.habit === 'none' ? 'never' : undefined) as DrinkingHabit | undefined,
-      smokingHabit: (formData.habit === 'smoking' ? 'regularly' : 
-                     formData.habit === 'occasionally-smoking' ? 'occasionally' : 
-                     formData.habit === 'none' ? 'never' : undefined) as SmokingHabit | undefined,
+      drinkingHabit: formData.drinkingHabit as DrinkingHabit || undefined,
+      smokingHabit: formData.smokingHabit as SmokingHabit || undefined,
       // Income and profession mapping
       salary: formData.annualIncome || undefined,
       // Partner Preferences
@@ -2000,20 +1998,35 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="habit">{language === 'hi' ? 'आदतें (वैकल्पिक)' : 'Habits (Optional)'}</Label>
+                    <Label htmlFor="drinkingHabit">{language === 'hi' ? 'शराब (वैकल्पिक)' : 'Drinking (Optional)'}</Label>
                     <Select 
-                      value={formData.habit} 
-                      onValueChange={(value) => updateField('habit', value)}
+                      value={formData.drinkingHabit} 
+                      onValueChange={(value) => updateField('drinkingHabit', value)}
                     >
-                      <SelectTrigger id="habit" className="w-full">
+                      <SelectTrigger id="drinkingHabit" className="w-full">
                         <SelectValue placeholder={t.fields.select} />
                       </SelectTrigger>
                       <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
-                        <SelectItem value="none">{language === 'hi' ? 'कोई नहीं' : 'None'}</SelectItem>
-                        <SelectItem value="smoking">{language === 'hi' ? 'धूम्रपान' : 'Smoking'}</SelectItem>
-                        <SelectItem value="drinking">{language === 'hi' ? 'शराब' : 'Drinking'}</SelectItem>
-                        <SelectItem value="occasionally-drinking">{language === 'hi' ? 'कभी-कभी शराब' : 'Occasionally Drinking'}</SelectItem>
-                        <SelectItem value="occasionally-smoking">{language === 'hi' ? 'कभी-कभी धूम्रपान' : 'Occasionally Smoking'}</SelectItem>
+                        <SelectItem value="never">{language === 'hi' ? 'कभी नहीं' : 'Never'}</SelectItem>
+                        <SelectItem value="occasionally">{language === 'hi' ? 'कभी-कभी' : 'Occasionally'}</SelectItem>
+                        <SelectItem value="regularly">{language === 'hi' ? 'नियमित' : 'Regularly'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="smokingHabit">{language === 'hi' ? 'धूम्रपान (वैकल्पिक)' : 'Smoking (Optional)'}</Label>
+                    <Select 
+                      value={formData.smokingHabit} 
+                      onValueChange={(value) => updateField('smokingHabit', value)}
+                    >
+                      <SelectTrigger id="smokingHabit" className="w-full">
+                        <SelectValue placeholder={t.fields.select} />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
+                        <SelectItem value="never">{language === 'hi' ? 'कभी नहीं' : 'Never'}</SelectItem>
+                        <SelectItem value="occasionally">{language === 'hi' ? 'कभी-कभी' : 'Occasionally'}</SelectItem>
+                        <SelectItem value="regularly">{language === 'hi' ? 'नियमित' : 'Regularly'}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

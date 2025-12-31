@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { ComponentProps } from "react"
 import { Command as CommandPrimitive } from "cmdk"
 import SearchIcon from "lucide-react/dist/esm/icons/search"
@@ -79,13 +80,26 @@ function CommandList({
   className,
   ...props
 }: ComponentProps<typeof CommandPrimitive.List>) {
+  const listRef = React.useRef<HTMLDivElement>(null)
+
+  // Handle mouse wheel scrolling - cmdk library can sometimes interfere with scroll events
+  const handleWheel = React.useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    const target = e.currentTarget
+    if (target) {
+      e.stopPropagation()
+      target.scrollTop += e.deltaY
+    }
+  }, [])
+
   return (
     <CommandPrimitive.List
+      ref={listRef}
       data-slot="command-list"
       className={cn(
-        "max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto",
+        "max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto overscroll-contain",
         className
       )}
+      onWheel={handleWheel}
       {...props}
     />
   )

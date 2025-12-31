@@ -70,6 +70,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
     personalInfo: language === 'hi' ? 'व्यक्तिगत जानकारी' : 'Personal Information',
     familyInfo: language === 'hi' ? 'पारिवारिक जानकारी' : 'Family Information',
     contactInfo: language === 'hi' ? 'संपर्क जानकारी' : 'Contact Information',
+    partnerPreferences: language === 'hi' ? 'पार्टनर प्राथमिकताएं' : 'Partner Preferences',
     lifestyleInfo: language === 'hi' ? 'जीवनशैली' : 'Lifestyle',
     gender: language === 'hi' ? 'लिंग' : 'Gender',
     age: language === 'hi' ? 'आयु' : 'Age',
@@ -222,11 +223,10 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
     if (!dateStr) return '-'
     try {
       const date = new Date(dateStr)
-      return date.toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-      })
+      const day = String(date.getDate()).padStart(2, '0')
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const year = date.getFullYear()
+      return `${day}/${month}/${year}`
     } catch {
       return dateStr
     }
@@ -831,10 +831,11 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
 
           <div className="md:col-span-2">
             <Tabs defaultValue="personal" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="personal">{t.personalInfo}</TabsTrigger>
                 <TabsTrigger value="family">{t.familyInfo}</TabsTrigger>
                 <TabsTrigger value="contact">{t.contactInfo}</TabsTrigger>
+                <TabsTrigger value="partner">{t.partnerPreferences}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="personal">
@@ -1092,6 +1093,169 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                         {profile.hideMobile ? '+91 XXXXXXXXXX' : profile.mobile}
                       </p>
                     </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="partner">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t.partnerPreferences}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {profile.partnerPreferences ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Age Preference */}
+                        {(profile.partnerPreferences.ageMin || profile.partnerPreferences.ageMax) && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">{language === 'hi' ? 'आयु' : 'Age'}</p>
+                            <p className="font-medium">
+                              {profile.partnerPreferences.ageMin || '-'} - {profile.partnerPreferences.ageMax || '-'} {t.years}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Height Preference */}
+                        {(profile.partnerPreferences.heightMin || profile.partnerPreferences.heightMax) && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">{t.height}</p>
+                            <p className="font-medium">
+                              {profile.partnerPreferences.heightMin || '-'} - {profile.partnerPreferences.heightMax || '-'}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Education Preference */}
+                        {profile.partnerPreferences.education && profile.partnerPreferences.education.length > 0 && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">{t.education}</p>
+                            <p className="font-medium">
+                              {profile.partnerPreferences.education.map(edu => formatEducation(edu, language)).join(', ')}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Employment Status Preference */}
+                        {profile.partnerPreferences.employmentStatus && profile.partnerPreferences.employmentStatus.length > 0 && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">{t.occupation}</p>
+                            <p className="font-medium">
+                              {profile.partnerPreferences.employmentStatus.map(occ => formatOccupation(occ, language)).join(', ')}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Annual Income Preference */}
+                        {(profile.partnerPreferences.annualIncomeMin || profile.partnerPreferences.annualIncomeMax) && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">{t.salary}</p>
+                            <p className="font-medium">
+                              {profile.partnerPreferences.annualIncomeMin || '-'} - {profile.partnerPreferences.annualIncomeMax || '-'}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Marital Status Preference */}
+                        {profile.partnerPreferences.maritalStatus && profile.partnerPreferences.maritalStatus.length > 0 && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">{t.maritalStatus}</p>
+                            <p className="font-medium">
+                              {profile.partnerPreferences.maritalStatus.map(status => getMaritalStatusLabel(status)).join(', ')}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Religion Preference */}
+                        {profile.partnerPreferences.religion && profile.partnerPreferences.religion.length > 0 && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">{t.religion}</p>
+                            <p className="font-medium">
+                              {profile.partnerPreferences.religion.join(', ')}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Caste Preference */}
+                        {profile.partnerPreferences.caste && profile.partnerPreferences.caste.length > 0 && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">{t.caste}</p>
+                            <p className="font-medium">
+                              {profile.partnerPreferences.caste.join(', ')}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Mother Tongue Preference */}
+                        {profile.partnerPreferences.motherTongue && profile.partnerPreferences.motherTongue.length > 0 && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">{t.motherTongue}</p>
+                            <p className="font-medium">
+                              {profile.partnerPreferences.motherTongue.join(', ')}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Living Country Preference */}
+                        {profile.partnerPreferences.livingCountry && profile.partnerPreferences.livingCountry.length > 0 && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">{language === 'hi' ? 'देश में रहने वाला' : 'Living in Country'}</p>
+                            <p className="font-medium">
+                              {profile.partnerPreferences.livingCountry.join(', ')}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Living State Preference */}
+                        {profile.partnerPreferences.livingState && profile.partnerPreferences.livingState.length > 0 && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">{language === 'hi' ? 'राज्य में रहने वाला' : 'Living in State'}</p>
+                            <p className="font-medium">
+                              {profile.partnerPreferences.livingState.join(', ')}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Diet Preference */}
+                        {profile.partnerPreferences.dietPreference && profile.partnerPreferences.dietPreference.length > 0 && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">{t.diet}</p>
+                            <p className="font-medium">
+                              {profile.partnerPreferences.dietPreference.map(d => getDietLabel(d)).join(', ')}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Manglik Preference */}
+                        {profile.partnerPreferences.manglik && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">{t.manglik}</p>
+                            <p className="font-medium">
+                              {profile.partnerPreferences.manglik === 'doesnt-matter' 
+                                ? (language === 'hi' ? 'कोई फर्क नहीं' : "Doesn't Matter")
+                                : (profile.partnerPreferences.manglik === 'yes' 
+                                  ? (language === 'hi' ? 'हां' : 'Yes') 
+                                  : (language === 'hi' ? 'नहीं' : 'No'))}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Disability Preference */}
+                        {profile.partnerPreferences.disability && profile.partnerPreferences.disability.length > 0 && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">{t.disability}</p>
+                            <p className="font-medium">
+                              {profile.partnerPreferences.disability.map(d => 
+                                d === 'no' ? (language === 'hi' ? 'नहीं' : 'No') : (language === 'hi' ? 'हां' : 'Yes')
+                              ).join(', ')}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-8">
+                        {language === 'hi' ? 'कोई पार्टनर प्राथमिकताएं नहीं' : 'No partner preferences set'}
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
