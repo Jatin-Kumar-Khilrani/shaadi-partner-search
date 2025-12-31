@@ -1371,6 +1371,15 @@ function App() {
           onClose={() => setShowSettings(false)}
           profileId={currentUserProfile.profileId}
           language={language}
+          currentProfile={currentUserProfile}
+          onUpdateProfile={(updatedProfile) => {
+            setProfiles(current => {
+              if (!current) return []
+              return current.map(p => 
+                p.profileId === updatedProfile.profileId ? updatedProfile : p
+              )
+            })
+          }}
         />
       )}
 

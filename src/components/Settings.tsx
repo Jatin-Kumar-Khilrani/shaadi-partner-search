@@ -14,7 +14,7 @@ import { MultiSelect, MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OP
 import { Checkbox } from '@/components/ui/checkbox'
 import { Gear, Heart, Phone, Info, FileText, ShieldCheck } from '@phosphor-icons/react'
 import { toast } from 'sonner'
-import type { PartnerPreferenceData, DietPreference, DrinkingHabit, SmokingHabit } from '@/types/profile'
+import type { Profile, PartnerPreferenceData, DietPreference, DrinkingHabit, SmokingHabit } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 
 interface SettingsProps {
@@ -22,12 +22,16 @@ interface SettingsProps {
   onClose: () => void
   profileId: string
   language: Language
+  currentProfile?: Profile
+  onUpdateProfile?: (profile: Profile) => void
 }
 
-export function Settings({ open, onClose, profileId, language }: SettingsProps) {
+export function Settings({ open, onClose, profileId, language, currentProfile, onUpdateProfile }: SettingsProps) {
   const [preferences, setPreferences] = useKV<PartnerPreferenceData[]>('partnerPreferences', [])
   
-  const currentPreference = preferences?.find(p => p.profileId === profileId)
+  // Get preferences from the legacy KV store OR from the profile's partnerPreferences
+  const legacyPreference = preferences?.find(p => p.profileId === profileId)
+  const profilePreference = currentProfile?.partnerPreferences
   
   const [formData, setFormData] = useState<Partial<PartnerPreferenceData>>({
     profileId,
@@ -37,11 +41,35 @@ export function Settings({ open, onClose, profileId, language }: SettingsProps) 
     heightMax: '',
   })
 
-  // Sync form data when currentPreference changes or dialog opens
+  // Sync form data when dialog opens - prioritize profile's partnerPreferences, fallback to legacy store
   useEffect(() => {
     if (open) {
-      if (currentPreference) {
-        setFormData(currentPreference)
+      // First try to load from profile's partnerPreferences (set during registration)
+      if (profilePreference) {
+        setFormData({
+          profileId,
+          ageMin: profilePreference.ageMin,
+          ageMax: profilePreference.ageMax,
+          heightMin: profilePreference.heightMin || '',
+          heightMax: profilePreference.heightMax || '',
+          maritalStatus: profilePreference.maritalStatus,
+          religion: profilePreference.religion,
+          motherTongue: profilePreference.motherTongue,
+          occupation: profilePreference.occupation,
+          livingCountry: profilePreference.livingCountry,
+          livingState: profilePreference.livingState,
+          education: profilePreference.education,
+          caste: profilePreference.caste,
+          dietPreference: profilePreference.dietPreference,
+          drinkingHabit: profilePreference.drinkingHabit,
+          smokingHabit: profilePreference.smokingHabit,
+          manglik: profilePreference.manglik,
+          annualIncomeMin: profilePreference.annualIncomeMin,
+          annualIncomeMax: profilePreference.annualIncomeMax,
+        })
+      } else if (legacyPreference) {
+        // Fallback to legacy KV store if profile preferences not available
+        setFormData(legacyPreference)
       } else {
         setFormData({
           profileId,
@@ -52,7 +80,7 @@ export function Settings({ open, onClose, profileId, language }: SettingsProps) 
         })
       }
     }
-  }, [open, currentPreference, profileId])
+  }, [open, profilePreference, legacyPreference, profileId])
 
   const t = {
     title: language === 'hi' ? 'सेटिंग्स' : 'Settings',
@@ -207,6 +235,7 @@ Online Safety Tips
   }
 
   const handleSave = () => {
+    // Update legacy KV store for backwards compatibility
     setPreferences(current => {
       const existing = current?.findIndex(p => p.profileId === profileId)
       if (existing !== undefined && existing >= 0) {
@@ -217,6 +246,35 @@ Online Safety Tips
         return [...(current || []), formData as PartnerPreferenceData]
       }
     })
+    
+    // Also update the profile's partnerPreferences if callback is provided
+    if (currentProfile && onUpdateProfile) {
+      const updatedProfile: Profile = {
+        ...currentProfile,
+        partnerPreferences: {
+          ageMin: formData.ageMin,
+          ageMax: formData.ageMax,
+          heightMin: formData.heightMin,
+          heightMax: formData.heightMax,
+          maritalStatus: formData.maritalStatus,
+          religion: formData.religion,
+          motherTongue: formData.motherTongue,
+          occupation: formData.occupation,
+          livingCountry: formData.livingCountry,
+          livingState: formData.livingState,
+          education: formData.education,
+          caste: formData.caste,
+          dietPreference: formData.dietPreference,
+          drinkingHabit: formData.drinkingHabit,
+          smokingHabit: formData.smokingHabit,
+          manglik: formData.manglik as 'yes' | 'no' | 'doesnt-matter' | undefined,
+          annualIncomeMin: formData.annualIncomeMin,
+          annualIncomeMax: formData.annualIncomeMax,
+        }
+      }
+      onUpdateProfile(updatedProfile)
+    }
+    
     toast.success(t.preferencesSaved)
   }
 
