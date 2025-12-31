@@ -395,6 +395,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         setSelfiePreview(editProfile.selfieUrl)
       }
       
+      // Load ID proof (especially for admin mode)
+      if (editProfile.idProofUrl) {
+        setIdProofPreview(editProfile.idProofUrl)
+      }
+      if (editProfile.idProofType) {
+        setIdProofType(editProfile.idProofType)
+      }
+      
       // Skip verification for edit mode
       setEmailVerified(true)
       setMobileVerified(true)
