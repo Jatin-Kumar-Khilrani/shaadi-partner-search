@@ -37,6 +37,9 @@ interface MultiSelectProps {
   className?: string
   disabled?: boolean
   maxDisplay?: number
+  showSelectAll?: boolean
+  selectAllLabel?: string
+  clearAllLabel?: string
 }
 
 export function MultiSelect({
@@ -49,16 +52,28 @@ export function MultiSelect({
   className,
   disabled = false,
   maxDisplay = 3,
+  showSelectAll = false,
+  selectAllLabel = "Select All",
+  clearAllLabel = "Clear All",
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false)
 
   const selectedOptions = options.filter((option) => value.includes(option.value))
+  const allSelected = options.length > 0 && value.length === options.length
 
   const handleSelect = (optionValue: string) => {
     if (value.includes(optionValue)) {
       onValueChange(value.filter((v) => v !== optionValue))
     } else {
       onValueChange([...value, optionValue])
+    }
+  }
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      onValueChange([])
+    } else {
+      onValueChange(options.map(o => o.value))
     }
   }
 
@@ -117,6 +132,18 @@ export function MultiSelect({
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0 max-h-[350px] z-[9999]" align="start">
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
+          {showSelectAll && options.length > 0 && (
+            <div className="p-2 border-b">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs"
+                onClick={handleSelectAll}
+              >
+                {allSelected ? clearAllLabel : selectAllLabel}
+              </Button>
+            </div>
+          )}
           <CommandList className="max-h-[280px] overflow-y-auto scroll-smooth">
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>

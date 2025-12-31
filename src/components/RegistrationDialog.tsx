@@ -1504,6 +1504,18 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               const isCurrent = s === step
               const canClick = isCompleted && !showVerification // Can click on completed steps
               
+              // Step names for tooltips
+              const stepNames: Record<number, { en: string; hi: string }> = {
+                1: { en: 'Personal Information', hi: 'व्यक्तिगत जानकारी' },
+                2: { en: 'Education & Career', hi: 'शिक्षा और करियर' },
+                3: { en: 'Contact & Location', hi: 'संपर्क और स्थान' },
+                4: { en: 'Photos', hi: 'फ़ोटो' },
+                5: { en: 'About Yourself & Family', hi: 'अपने और परिवार के बारे में' },
+                6: { en: 'Partner Preferences', hi: 'साथी वरीयताएँ' },
+                7: { en: 'Membership Plan', hi: 'सदस्यता योजना' },
+              }
+              const stepName = stepNames[s] || { en: `Step ${s}`, hi: `चरण ${s}` }
+              
               return (
                 <div key={s} className="flex items-center">
                   <button
@@ -1514,7 +1526,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       isCurrent ? 'bg-primary text-primary-foreground scale-110' :
                       isCompleted ? 'bg-teal text-teal-foreground cursor-pointer hover:scale-110 hover:ring-2 hover:ring-teal/50' : 'bg-muted text-muted-foreground cursor-default'
                     }`}
-                    title={canClick ? (language === 'hi' ? `चरण ${s} पर जाएं` : `Go to step ${s}`) : ''}
+                    title={canClick ? (language === 'hi' ? `${stepName.hi} पर जाएं` : `Go to ${stepName.en}`) : ''}
                   >
                     {s}
                     {isCompleted && (
@@ -3132,6 +3144,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       onValueChange={(v) => updateField('partnerMaritalStatus', v as MaritalStatus[])}
                       placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                      showSelectAll
+                      selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
+                      clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
                     />
                   </div>
                   <div className="space-y-2">
@@ -3142,6 +3157,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       onValueChange={(v) => updateField('partnerReligion', v)}
                       placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                      showSelectAll
+                      selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
+                      clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
                     />
                   </div>
                 </div>
@@ -3155,6 +3173,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     onValueChange={(v) => updateField('partnerMotherTongue', v)}
                     placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
                     searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                    showSelectAll
+                    selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
+                    clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
                   />
                 </div>
 
@@ -3168,6 +3189,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       onValueChange={(v) => updateField('partnerEducation', v)}
                       placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                      showSelectAll
+                      selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
+                      clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
                     />
                   </div>
                   <div className="space-y-2">
@@ -3178,6 +3202,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       onValueChange={(v) => updateField('partnerEmploymentStatus', v)}
                       placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                      showSelectAll
+                      selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
+                      clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
                     />
                   </div>
                 </div>
@@ -3191,6 +3218,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     onValueChange={(v) => updateField('partnerOccupation', v)}
                     placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
                     searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                    showSelectAll
+                    selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
+                    clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
                   />
                 </div>
 
@@ -3210,6 +3240,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       }}
                       placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                      showSelectAll
+                      selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
+                      clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
                     />
                   </div>
                   <div className="space-y-2">
@@ -3221,6 +3254,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                       disabled={!formData.partnerLivingCountry?.length}
+                      showSelectAll
+                      selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
+                      clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
                     />
                   </div>
                 </div>
@@ -3292,6 +3328,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       onValueChange={(v) => updateField('partnerDiet', v as DietPreference[])}
                       placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                      showSelectAll
+                      selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
+                      clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
                     />
                   </div>
                   <div className="space-y-2">
