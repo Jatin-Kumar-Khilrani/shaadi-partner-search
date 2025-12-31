@@ -3183,6 +3183,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       showSelectAll
                       selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
                       clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
+                      showAnyOption
+                      anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                     />
                   </div>
                   <div className="space-y-2">
@@ -3196,6 +3198,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       showSelectAll
                       selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
                       clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
+                      showAnyOption
+                      anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                     />
                   </div>
                 </div>
@@ -3212,6 +3216,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     showSelectAll
                     selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
                     clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
+                    showAnyOption
+                    anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                   />
                 </div>
 
@@ -3228,6 +3234,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       showSelectAll
                       selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
                       clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
+                      showAnyOption
+                      anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                     />
                   </div>
                   <div className="space-y-2">
@@ -3241,6 +3249,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       showSelectAll
                       selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
                       clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
+                      showAnyOption
+                      anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                     />
                   </div>
                 </div>
@@ -3257,6 +3267,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     showSelectAll
                     selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
                     clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
+                    showAnyOption
+                    anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                   />
                 </div>
 
@@ -3269,16 +3281,22 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       value={formData.partnerLivingCountry || []}
                       onValueChange={(v) => {
                         updateField('partnerLivingCountry', v)
-                        // Clear states that are no longer valid for selected countries
-                        const validStates = getStateOptionsForCountries(v).map(s => s.value)
-                        const updatedStates = (formData.partnerLivingState || []).filter(s => validStates.includes(s))
-                        updateField('partnerLivingState', updatedStates)
+                        // Clear states that are no longer valid for selected countries (skip if 'any' is selected)
+                        if (v.length === 1 && v[0] === 'any') {
+                          updateField('partnerLivingState', ['any'])
+                        } else {
+                          const validStates = getStateOptionsForCountries(v).map(s => s.value)
+                          const updatedStates = (formData.partnerLivingState || []).filter(s => validStates.includes(s))
+                          updateField('partnerLivingState', updatedStates)
+                        }
                       }}
                       placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                       showSelectAll
                       selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
                       clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
+                      showAnyOption
+                      anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                     />
                   </div>
                   <div className="space-y-2">
@@ -3289,10 +3307,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       onValueChange={(v) => updateField('partnerLivingState', v)}
                       placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
-                      disabled={!formData.partnerLivingCountry?.length}
+                      disabled={!formData.partnerLivingCountry?.length || (formData.partnerLivingCountry?.length === 1 && formData.partnerLivingCountry[0] === 'any')}
                       showSelectAll
                       selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
                       clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
+                      showAnyOption
+                      anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                     />
                   </div>
                 </div>
@@ -3367,6 +3387,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       showSelectAll
                       selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
                       clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
+                      showAnyOption
+                      anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                     />
                   </div>
                   <div className="space-y-2">

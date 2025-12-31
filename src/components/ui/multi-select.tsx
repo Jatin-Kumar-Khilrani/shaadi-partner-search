@@ -40,6 +40,8 @@ interface MultiSelectProps {
   showSelectAll?: boolean
   selectAllLabel?: string
   clearAllLabel?: string
+  showAnyOption?: boolean
+  anyOptionLabel?: string
 }
 
 export function MultiSelect({
@@ -55,13 +57,25 @@ export function MultiSelect({
   showSelectAll = false,
   selectAllLabel = "Select All",
   clearAllLabel = "Clear All",
+  showAnyOption = false,
+  anyOptionLabel = "Any / No Preference",
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false)
 
-  const selectedOptions = options.filter((option) => value.includes(option.value))
+  // Check if "any" is selected (special value meaning no preference)
+  const isAnySelected = value.length === 1 && value[0] === 'any'
+  
+  // Filter out "any" for display purposes when showing selected options
+  const selectedOptions = isAnySelected ? [] : options.filter((option) => value.includes(option.value))
   const allSelected = options.length > 0 && value.length === options.length
 
   const handleSelect = (optionValue: string) => {
+    // If "any" was selected, clear it and add the new selection
+    if (isAnySelected) {
+      onValueChange([optionValue])
+      return
+    }
+    
     if (value.includes(optionValue)) {
       onValueChange(value.filter((v) => v !== optionValue))
     } else {
@@ -69,8 +83,16 @@ export function MultiSelect({
     }
   }
 
+  const handleAnySelect = () => {
+    if (isAnySelected) {
+      onValueChange([]) // Deselect "any"
+    } else {
+      onValueChange(['any']) // Select "any" and clear all other selections
+    }
+  }
+
   const handleSelectAll = () => {
-    if (allSelected) {
+    if (allSelected || isAnySelected) {
       onValueChange([])
     } else {
       onValueChange(options.map(o => o.value))
@@ -83,6 +105,7 @@ export function MultiSelect({
   }
 
   const displayText = () => {
+    if (isAnySelected) return anyOptionLabel
     if (selectedOptions.length === 0) return placeholder
     if (selectedOptions.length <= maxDisplay) {
       return selectedOptions.map((o) => o.label).join(", ")
@@ -101,7 +124,19 @@ export function MultiSelect({
           disabled={disabled}
         >
           <div className="flex flex-wrap gap-1 items-center flex-1 text-left">
-            {selectedOptions.length > 0 ? (
+            {isAnySelected ? (
+              <Badge
+                variant="secondary"
+                className="text-xs px-1.5 py-0.5 gap-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+              >
+                {anyOptionLabel}
+                <X
+                  size={12}
+                  className="cursor-pointer hover:text-destructive"
+                  onClick={(e) => { e.stopPropagation(); onValueChange([]); }}
+                />
+              </Badge>
+            ) : selectedOptions.length > 0 ? (
               selectedOptions.length <= 2 ? (
                 selectedOptions.map((option) => (
                   <Badge
@@ -147,19 +182,43 @@ export function MultiSelect({
           <CommandList className="max-h-[280px] overflow-y-auto scroll-smooth">
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
+              {/* "Any / No Preference" option at the top */}
+              {showAnyOption && (
+                <CommandItem
+                  key="any-option"
+                  value={anyOptionLabel}
+                  onSelect={handleAnySelect}
+                  className="border-b mb-1"
+                >
+                  <div className={cn(
+                    "mr-2 h-4 w-4 border rounded-sm flex items-center justify-center",
+                    isAnySelected 
+                      ? "bg-green-600 border-green-600 text-white" 
+                      : "border-input"
+                  )}>
+                    {isAnySelected && (
+                      <CheckIcon className="h-3 w-3" />
+                    )}
+                  </div>
+                  <span className="font-medium text-green-700 dark:text-green-400">{anyOptionLabel}</span>
+                </CommandItem>
+              )}
+              {/* Regular options - disabled when "Any" is selected */}
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={option.label}
                   onSelect={() => handleSelect(option.value)}
+                  disabled={isAnySelected}
+                  className={isAnySelected ? "opacity-50" : ""}
                 >
                   <div className={cn(
                     "mr-2 h-4 w-4 border rounded-sm flex items-center justify-center",
-                    value.includes(option.value) 
+                    value.includes(option.value) && !isAnySelected
                       ? "bg-primary border-primary text-primary-foreground" 
                       : "border-input"
                   )}>
-                    {value.includes(option.value) && (
+                    {value.includes(option.value) && !isAnySelected && (
                       <CheckIcon className="h-3 w-3" />
                     )}
                   </div>
@@ -169,7 +228,7 @@ export function MultiSelect({
             </CommandGroup>
           </CommandList>
         </Command>
-        {selectedOptions.length > 0 && (
+        {(selectedOptions.length > 0 || isAnySelected) && (
           <div className="p-2 border-t">
             <Button
               variant="ghost"

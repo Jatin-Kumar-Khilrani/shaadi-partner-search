@@ -118,6 +118,20 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
 
   if (!profile) return null
 
+  // Helper function to format preference arrays - shows "Any / No Preference" if ['any'] is stored
+  const formatPreferenceValue = (values: string[] | undefined, mapFn?: (v: string) => string): string => {
+    if (!values || values.length === 0) return ''
+    if (values.length === 1 && values[0] === 'any') {
+      return language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'
+    }
+    return mapFn ? values.map(mapFn).join(', ') : values.join(', ')
+  }
+
+  // Check if preference has meaningful values (not empty and not just 'any')
+  const hasPreferenceValue = (values: string[] | undefined): boolean => {
+    return !!(values && values.length > 0)
+  }
+
   // Check if user is viewing their own profile
   const isSelf = currentUserProfile?.id === profile.id
 
@@ -820,27 +834,27 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                     />
                   )}
                   {/* Education Preference */}
-                  {profile.partnerPreferences.education && profile.partnerPreferences.education.length > 0 && (
+                  {hasPreferenceValue(profile.partnerPreferences.education) && (
                     <InfoItem 
                       icon={<GraduationCap size={18} />} 
                       label={t.preferredEducation} 
-                      value={profile.partnerPreferences.education.join(', ')} 
+                      value={formatPreferenceValue(profile.partnerPreferences.education)} 
                     />
                   )}
                   {/* Occupation Preference */}
-                  {profile.partnerPreferences.occupation && profile.partnerPreferences.occupation.length > 0 && (
+                  {hasPreferenceValue(profile.partnerPreferences.occupation) && (
                     <InfoItem 
                       icon={<Briefcase size={18} />} 
                       label={t.preferredOccupation} 
-                      value={profile.partnerPreferences.occupation.join(', ')} 
+                      value={formatPreferenceValue(profile.partnerPreferences.occupation)} 
                     />
                   )}
                   {/* Employment Status Preference */}
-                  {profile.partnerPreferences.employmentStatus && profile.partnerPreferences.employmentStatus.length > 0 && (
+                  {hasPreferenceValue(profile.partnerPreferences.employmentStatus) && (
                     <InfoItem 
                       icon={<Briefcase size={18} />} 
                       label={t.preferredEmploymentStatus} 
-                      value={profile.partnerPreferences.employmentStatus.map(s => 
+                      value={formatPreferenceValue(profile.partnerPreferences.employmentStatus, s => 
                         s === 'employed' ? (language === 'hi' ? 'नौकरी' : 'Employed') :
                         s === 'self-employed' ? (language === 'hi' ? 'स्वरोजगार' : 'Self-Employed') :
                         s === 'business-owner' ? (language === 'hi' ? 'व्यापारी' : 'Business Owner') :
@@ -848,23 +862,23 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                         s === 'student' ? (language === 'hi' ? 'विद्यार्थी' : 'Student') :
                         s === 'homemaker' ? (language === 'hi' ? 'गृहिणी' : 'Homemaker') :
                         s === 'not-working' ? (language === 'hi' ? 'काम नहीं करते' : 'Not Working') : s
-                      ).join(', ')} 
+                      )} 
                     />
                   )}
                   {/* Living Country Preference */}
-                  {profile.partnerPreferences.livingCountry && profile.partnerPreferences.livingCountry.length > 0 && (
+                  {hasPreferenceValue(profile.partnerPreferences.livingCountry) && (
                     <InfoItem 
                       icon={<Globe size={18} />} 
                       label={t.preferredLivingCountry} 
-                      value={profile.partnerPreferences.livingCountry.join(', ')} 
+                      value={formatPreferenceValue(profile.partnerPreferences.livingCountry)} 
                     />
                   )}
                   {/* Living State Preference */}
-                  {profile.partnerPreferences.livingState && profile.partnerPreferences.livingState.length > 0 && (
+                  {hasPreferenceValue(profile.partnerPreferences.livingState) && (
                     <InfoItem 
                       icon={<MapPin size={18} />} 
                       label={t.preferredLivingState} 
-                      value={profile.partnerPreferences.livingState.join(', ')} 
+                      value={formatPreferenceValue(profile.partnerPreferences.livingState)} 
                     />
                   )}
                   {/* Annual Income Preference */}
@@ -882,91 +896,91 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                     />
                   )}
                   {/* Location Preference */}
-                  {profile.partnerPreferences.location && profile.partnerPreferences.location.length > 0 && (
+                  {hasPreferenceValue(profile.partnerPreferences.location) && (
                     <InfoItem 
                       icon={<MapPin size={18} />} 
                       label={t.preferredLocation} 
-                      value={profile.partnerPreferences.location.join(', ')} 
+                      value={formatPreferenceValue(profile.partnerPreferences.location)} 
                     />
                   )}
                   {/* Country Preference */}
-                  {profile.partnerPreferences.country && profile.partnerPreferences.country.length > 0 && (
+                  {hasPreferenceValue(profile.partnerPreferences.country) && (
                     <InfoItem 
                       icon={<Globe size={18} />} 
                       label={t.preferredCountry} 
-                      value={profile.partnerPreferences.country.join(', ')} 
+                      value={formatPreferenceValue(profile.partnerPreferences.country)} 
                     />
                   )}
                   {/* Religion Preference */}
-                  {profile.partnerPreferences.religion && profile.partnerPreferences.religion.length > 0 && (
+                  {hasPreferenceValue(profile.partnerPreferences.religion) && (
                     <InfoItem 
                       icon={<UserCircle size={18} />} 
                       label={t.preferredReligion} 
-                      value={profile.partnerPreferences.religion.join(', ')} 
+                      value={formatPreferenceValue(profile.partnerPreferences.religion)} 
                     />
                   )}
                   {/* Caste Preference */}
-                  {profile.partnerPreferences.caste && profile.partnerPreferences.caste.length > 0 && (
+                  {hasPreferenceValue(profile.partnerPreferences.caste) && (
                     <InfoItem 
                       icon={<UsersThree size={18} />} 
                       label={t.preferredCaste} 
-                      value={profile.partnerPreferences.caste.join(', ')} 
+                      value={formatPreferenceValue(profile.partnerPreferences.caste)} 
                     />
                   )}
                   {/* Mother Tongue Preference */}
-                  {profile.partnerPreferences.motherTongue && profile.partnerPreferences.motherTongue.length > 0 && (
+                  {hasPreferenceValue(profile.partnerPreferences.motherTongue) && (
                     <InfoItem 
                       icon={<Translate size={18} />} 
                       label={t.preferredMotherTongue} 
-                      value={profile.partnerPreferences.motherTongue.join(', ')} 
+                      value={formatPreferenceValue(profile.partnerPreferences.motherTongue)} 
                     />
                   )}
                   {/* Marital Status Preference */}
-                  {profile.partnerPreferences.maritalStatus && profile.partnerPreferences.maritalStatus.length > 0 && (
+                  {hasPreferenceValue(profile.partnerPreferences.maritalStatus) && (
                     <InfoItem 
                       icon={<Heart size={18} />} 
                       label={t.preferredMaritalStatus} 
-                      value={profile.partnerPreferences.maritalStatus.map(s => 
+                      value={formatPreferenceValue(profile.partnerPreferences.maritalStatus, s => 
                         s === 'never-married' ? (language === 'hi' ? 'अविवाहित' : 'Never Married') :
                         s === 'divorced' ? (language === 'hi' ? 'तलाकशुदा' : 'Divorced') :
                         s === 'widowed' ? (language === 'hi' ? 'विधुर/विधवा' : 'Widowed') : s
-                      ).join(', ')} 
+                      )} 
                     />
                   )}
                   {/* Diet Preference */}
-                  {profile.partnerPreferences.dietPreference && profile.partnerPreferences.dietPreference.length > 0 && (
+                  {hasPreferenceValue(profile.partnerPreferences.dietPreference) && (
                     <InfoItem 
                       icon={<ForkKnife size={18} />} 
                       label={t.preferredDiet} 
-                      value={profile.partnerPreferences.dietPreference.map(d => 
+                      value={formatPreferenceValue(profile.partnerPreferences.dietPreference, d => 
                         d === 'veg' ? t.veg :
                         d === 'non-veg' ? t.nonVeg :
                         d === 'eggetarian' ? t.eggetarian : d
-                      ).join(', ')} 
+                      )} 
                     />
                   )}
                   {/* Drinking Habit Preference */}
-                  {profile.partnerPreferences.drinkingHabit && profile.partnerPreferences.drinkingHabit.length > 0 && (
+                  {hasPreferenceValue(profile.partnerPreferences.drinkingHabit) && (
                     <InfoItem 
                       icon={<Wine size={18} />} 
                       label={t.preferredDrinking} 
-                      value={profile.partnerPreferences.drinkingHabit.map(h => 
+                      value={formatPreferenceValue(profile.partnerPreferences.drinkingHabit, h => 
                         h === 'never' ? t.never :
                         h === 'occasionally' ? t.occasionally :
                         h === 'regularly' ? t.regularly : h
-                      ).join(', ')} 
+                      )} 
                     />
                   )}
                   {/* Smoking Habit Preference */}
-                  {profile.partnerPreferences.smokingHabit && profile.partnerPreferences.smokingHabit.length > 0 && (
+                  {hasPreferenceValue(profile.partnerPreferences.smokingHabit) && (
                     <InfoItem 
                       icon={<Cigarette size={18} />} 
                       label={t.preferredSmoking} 
-                      value={profile.partnerPreferences.smokingHabit.map(h => 
+                      value={formatPreferenceValue(profile.partnerPreferences.smokingHabit, h => 
                         h === 'never' ? t.never :
                         h === 'occasionally' ? t.occasionally :
                         h === 'regularly' ? t.regularly : h
-                      ).join(', ')} 
+                      )} 
                     />
                   )}
                   {/* Manglik Preference */}
@@ -982,14 +996,14 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                     />
                   )}
                   {/* Disability Preference */}
-                  {profile.partnerPreferences.disability && profile.partnerPreferences.disability.length > 0 && (
+                  {hasPreferenceValue(profile.partnerPreferences.disability) && (
                     <InfoItem 
                       icon={<Wheelchair size={18} />} 
                       label={t.preferredDisability} 
-                      value={profile.partnerPreferences.disability.map(d => 
+                      value={formatPreferenceValue(profile.partnerPreferences.disability, d => 
                         d === 'no' ? t.no :
                         d === 'yes' ? t.yes : d
-                      ).join(', ')} 
+                      )} 
                     />
                   )}
                 </div>
