@@ -1632,8 +1632,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
                 )}
 
-                {/* Show locked badge for edit mode */}
-                {isEditMode && (
+                {/* Show locked badge for edit mode (not in admin mode) */}
+                {isEditMode && !isAdminMode && (
                   <Alert className="bg-gray-50 border-gray-400 dark:bg-gray-950/30">
                     <ShieldCheck size={20} weight="fill" className="text-gray-600" />
                     <AlertDescription className="text-gray-700 dark:text-gray-300">
@@ -1647,7 +1647,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 <div className="space-y-2">
                   <Label htmlFor="fullName">
                     {language === 'hi' ? 'नाम' : 'Name'} *
-                    {isEditMode && (
+                    {isEditMode && !isAdminMode && (
                       <span className="ml-2 text-xs text-gray-500">
                         🔒 {language === 'hi' ? 'स्थायी' : 'Permanent'}
                       </span>
@@ -1659,8 +1659,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     value={formData.fullName}
                     onChange={(e) => updateField('fullName', e.target.value)}
                     required
-                    disabled={isEditMode}
-                    className={isEditMode ? 'bg-muted' : ''}
+                    disabled={isEditMode && !isAdminMode}
+                    className={isEditMode && !isAdminMode ? 'bg-muted' : ''}
                   />
                   {!isEditMode && (
                     <p className="text-xs text-orange-600 dark:text-orange-400">
@@ -1725,7 +1725,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   <div className="space-y-2">
                     <Label htmlFor="dateOfBirth">
                       {language === 'hi' ? 'जन्म तिथि' : 'Date of Birth'} * <span className="text-xs font-normal text-muted-foreground">(DD/MM/YYYY)</span>
-                      {isEditMode && (
+                      {isEditMode && !isAdminMode && (
                         <span className="ml-2 text-xs text-gray-500">
                           🔒 {language === 'hi' ? 'स्थायी' : 'Permanent'}
                         </span>
@@ -1736,10 +1736,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       onChange={(value) => updateField('dateOfBirth', value)}
                       maxDate={new Date(getMaxDate())}
                       minDate={new Date(getMinDate())}
-                      disabled={!formData.gender || isEditMode}
+                      disabled={!formData.gender || (isEditMode && !isAdminMode)}
                       placeholder="DD/MM/YYYY"
                     />
-                    {isEditMode && (
+                    {isEditMode && !isAdminMode && (
                       <p className="text-xs text-gray-600">
                         {language === 'hi' ? 'जन्म तिथि संपादित नहीं की जा सकती' : 'Date of birth cannot be edited'}
                       </p>
@@ -2291,8 +2291,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
                 )}
 
-                {/* Email and Mobile - Locked in edit mode */}
-                {isEditMode && (
+                {/* Email and Mobile - Locked in edit mode (not in admin mode) */}
+                {isEditMode && !isAdminMode && (
                   <Alert className="bg-gray-50 border-gray-400 dark:bg-gray-950/30">
                     <ShieldCheck size={20} weight="fill" className="text-gray-600" />
                     <AlertDescription className="text-gray-700 dark:text-gray-300">
@@ -2306,7 +2306,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 <div className="space-y-2">
                   <Label htmlFor="email">
                     {language === 'hi' ? 'ईमेल' : 'Email'} *
-                    {isEditMode && (
+                    {isEditMode && !isAdminMode && (
                       <span className="ml-2 text-xs text-gray-500">
                         🔒 {language === 'hi' ? 'सत्यापित' : 'Verified'}
                       </span>
@@ -2319,10 +2319,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     value={formData.email || ''}
                     onChange={(e) => updateField('email', e.target.value)}
                     required
-                    disabled={isEditMode}
-                    className={isEditMode ? 'bg-muted' : ''}
+                    disabled={isEditMode && !isAdminMode}
+                    className={isEditMode && !isAdminMode ? 'bg-muted' : ''}
                   />
-                  {isEditMode && (
+                  {isEditMode && !isAdminMode && (
                     <p className="text-xs text-gray-600">
                       {language === 'hi' ? 'ईमेल बदलने के लिए एडमिन से संपर्क करें' : 'Contact admin to change email'}
                     </p>
@@ -2332,7 +2332,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 <div className="space-y-2">
                   <Label htmlFor="mobile">
                     {language === 'hi' ? 'मोबाइल' : 'Mobile'} *
-                    {isEditMode && (
+                    {isEditMode && !isAdminMode && (
                       <span className="ml-2 text-xs text-gray-500">
                         🔒 {language === 'hi' ? 'सत्यापित' : 'Verified'}
                       </span>
@@ -2342,9 +2342,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <Select 
                       onValueChange={(value) => updateField('countryCode', value)} 
                       value={formData.countryCode}
-                      disabled={isEditMode}
+                      disabled={isEditMode && !isAdminMode}
                     >
-                      <SelectTrigger className={`w-[100px] ${isEditMode ? 'bg-muted' : ''}`}>
+                      <SelectTrigger className={`w-[100px] ${isEditMode && !isAdminMode ? 'bg-muted' : ''}`}>
                         <SelectValue placeholder="+91" />
                       </SelectTrigger>
                       <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
@@ -2372,16 +2372,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       }}
                       maxLength={getPhoneLengthInfo(formData.countryCode || '+91').max}
                       required
-                      disabled={isEditMode}
-                      className={`flex-1 ${isEditMode ? 'bg-muted' : ''}`}
+                      disabled={isEditMode && !isAdminMode}
+                      className={`flex-1 ${isEditMode && !isAdminMode ? 'bg-muted' : ''}`}
                     />
                   </div>
-                  {isEditMode && (
+                  {isEditMode && !isAdminMode && (
                     <p className="text-xs text-gray-600">
                       {language === 'hi' ? 'मोबाइल बदलने के लिए एडमिन से संपर्क करें' : 'Contact admin to change mobile'}
                     </p>
                   )}
-                  {!isEditMode && formData.mobile && !isValidPhoneLength(formData.mobile, formData.countryCode || '+91') && (
+                  {(!isEditMode || isAdminMode) && formData.mobile && !isValidPhoneLength(formData.mobile, formData.countryCode || '+91') && (
                     <p className="text-xs text-destructive">
                       {language === 'hi' ? `कृपया ${getPhoneLengthInfo(formData.countryCode || '+91').display} अंक का मोबाइल नंबर दर्ज करें` : `Please enter a ${getPhoneLengthInfo(formData.countryCode || '+91').display} digit mobile number`}
                     </p>
