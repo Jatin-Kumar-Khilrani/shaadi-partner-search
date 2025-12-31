@@ -222,16 +222,16 @@ Online Safety Tips
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-2xl">
             <Gear size={28} weight="bold" />
             {t.title}
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="preferences" className="mt-4">
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs defaultValue="preferences" className="flex-1 flex flex-col min-h-0 mt-4">
+          <TabsList className="grid w-full grid-cols-5 flex-shrink-0">
             <TabsTrigger value="preferences" className="text-xs md:text-sm">
               <Heart size={16} className="mr-1" />
               {language === 'hi' ? 'प्राथमिकता' : 'Preferences'}
@@ -254,7 +254,7 @@ Online Safety Tips
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="h-[60vh] mt-4">
+          <div className="flex-1 overflow-y-auto min-h-0 mt-4">
             <TabsContent value="preferences" className="space-y-4">
               <Card>
                 <CardHeader>
@@ -616,7 +616,7 @@ Online Safety Tips
                 </CardContent>
               </Card>
             </TabsContent>
-          </ScrollArea>
+          </div>
         </Tabs>
 
         <div className="flex justify-end gap-2 mt-4">

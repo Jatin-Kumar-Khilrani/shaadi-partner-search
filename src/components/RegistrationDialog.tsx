@@ -1474,8 +1474,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
   return (
     <Dialog open={open} onOpenChange={onClose} modal>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col z-50" onOpenAutoFocus={(e) => e.preventDefault()}>
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden z-50" onOpenAutoFocus={(e) => e.preventDefault()}>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-3xl flex items-center gap-2">
             <UserPlus size={32} weight="bold" />
             {isEditMode 
@@ -1489,7 +1489,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-1">
+        <div className="flex-1 overflow-y-auto px-1 min-h-0">
           <div className="flex items-center justify-center gap-1 md:gap-2 mb-6">
             {[1, 2, 3, 4, 5, 6, 7].map((s) => {
               const isCompleted = s < step || (s === 3 && emailVerified && mobileVerified)
@@ -3761,9 +3761,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             )}
           </CardContent>
         </Card>
-        </ScrollArea>
+        </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t min-h-[60px]">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t min-h-[60px] flex-shrink-0">
           <div className="flex items-center gap-2 flex-shrink-0">
             {step > 1 && !showVerification && (
               <Button variant="outline" onClick={prevStep} size="sm" className="text-sm">

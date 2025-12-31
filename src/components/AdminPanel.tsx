@@ -4526,10 +4526,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
             {/* Uploaded Photos Section */}
             <div className="space-y-3">
               <h4 className="font-semibold text-sm">{t.uploadedPhotos}</h4>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 {faceVerificationDialog?.photos && faceVerificationDialog.photos.length > 0 ? (
                   faceVerificationDialog.photos.map((photo, idx) => (
-                    <div key={idx} className="w-[76px] h-[76px] rounded-lg overflow-hidden bg-muted border relative group">
+                    <div key={idx} className="w-40 h-40 rounded-lg overflow-hidden bg-muted border-2 border-dashed relative group">
                       <img 
                         src={photo} 
                         alt={`Photo ${idx + 1}`} 
@@ -4540,7 +4540,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
                         onClick={() => openLightbox(faceVerificationDialog.photos || [], idx)}
                       >
-                        <span className="text-white text-xs font-medium">{language === 'hi' ? 'ज़ूम करें' : 'Zoom'}</span>
+                        <span className="text-white text-sm font-medium">{language === 'hi' ? 'ज़ूम करें' : 'Click to Zoom'}</span>
                       </div>
                     </div>
                   ))
