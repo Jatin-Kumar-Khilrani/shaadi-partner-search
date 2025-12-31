@@ -57,7 +57,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
   const isPendingApproval = profileStatus === 'pending'
   const shouldBlurProfiles = isFreePlan || isPendingApproval
 
-  // Count active filters
+  // Count active filters (don't count 'any' selections as active filters)
   const activeFilterCount = useMemo(() => {
     let count = 0
     if (filters.caste) count++
@@ -67,8 +67,9 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     if (filters.dietPreference) count++
     if (filters.drinkingHabit) count++
     if (filters.smokingHabit) count++
-    if (filters.educationLevels && filters.educationLevels.length > 0) count++
-    if (filters.employmentStatuses && filters.employmentStatuses.length > 0) count++
+    // Don't count 'any' as active filter
+    if (filters.educationLevels && filters.educationLevels.length > 0 && !(filters.educationLevels.length === 1 && filters.educationLevels[0] === 'any')) count++
+    if (filters.employmentStatuses && filters.employmentStatuses.length > 0 && !(filters.employmentStatuses.length === 1 && filters.employmentStatuses[0] === 'any')) count++
     if (filters.occupationType) count++
     if (filters.country) count++
     if (filters.city) count++
@@ -311,13 +312,15 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       if (filters.smokingHabit && profile.smokingHabit !== filters.smokingHabit) return false
       
       // Education filter - multi-select match with standardized values
-      if (filters.educationLevels && filters.educationLevels.length > 0) {
+      // Skip filter if 'any' is selected (means no preference)
+      if (filters.educationLevels && filters.educationLevels.length > 0 && !(filters.educationLevels.length === 1 && filters.educationLevels[0] === 'any')) {
         const profileEducation = profile.education?.toLowerCase() || ''
         if (!filters.educationLevels.some(edu => profileEducation === edu.toLowerCase())) return false
       }
       
       // Employment status filter - multi-select match
-      if (filters.employmentStatuses && filters.employmentStatuses.length > 0) {
+      // Skip filter if 'any' is selected (means no preference)
+      if (filters.employmentStatuses && filters.employmentStatuses.length > 0 && !(filters.employmentStatuses.length === 1 && filters.employmentStatuses[0] === 'any')) {
         const profileOccupation = profile.occupation?.toLowerCase() || ''
         if (!filters.employmentStatuses.some(emp => profileOccupation.includes(emp.toLowerCase()))) return false
       }
@@ -444,6 +447,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               placeholder={t.any}
               searchPlaceholder={language === 'hi' ? 'शिक्षा खोजें...' : 'Search education...'}
               emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
+              showAnyOption
+              anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
             />
           </div>
 
@@ -456,6 +461,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               placeholder={t.any}
               searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
               emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
+              showAnyOption
+              anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
             />
           </div>
 

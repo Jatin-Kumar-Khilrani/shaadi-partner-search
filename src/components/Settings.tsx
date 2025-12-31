@@ -375,6 +375,8 @@ Online Safety Tips
                         onValueChange={(v) => setFormData({ ...formData, maritalStatus: v })}
                         placeholder={t.selectAny}
                         searchPlaceholder={t.search}
+                        showAnyOption
+                        anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                       />
                     </div>
                     <div className="space-y-2">
@@ -385,6 +387,8 @@ Online Safety Tips
                         onValueChange={(v) => setFormData({ ...formData, religion: v })}
                         placeholder={t.selectAny}
                         searchPlaceholder={t.search}
+                        showAnyOption
+                        anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                       />
                     </div>
                   </div>
@@ -398,6 +402,8 @@ Online Safety Tips
                       onValueChange={(v) => setFormData({ ...formData, motherTongue: v })}
                       placeholder={t.selectAny}
                       searchPlaceholder={t.search}
+                      showAnyOption
+                      anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                     />
                   </div>
 
@@ -410,6 +416,8 @@ Online Safety Tips
                       onValueChange={(v) => setFormData({ ...formData, occupation: v })}
                       placeholder={t.selectAny}
                       searchPlaceholder={t.search}
+                      showAnyOption
+                      anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                     />
                   </div>
 
@@ -422,15 +430,22 @@ Online Safety Tips
                         value={formData.livingCountry || []}
                         onValueChange={(v) => {
                           setFormData({ ...formData, livingCountry: v })
-                          // Clear states that are no longer valid
-                          const validStates = getStateOptionsForCountries(v).map(s => s.value)
-                          const updatedStates = (formData.livingState || []).filter(s => validStates.includes(s))
-                          if (updatedStates.length !== (formData.livingState || []).length) {
-                            setFormData(prev => ({ ...prev, livingState: updatedStates }))
+                          // Handle 'any' selection - also set state to 'any'
+                          if (v.length === 1 && v[0] === 'any') {
+                            setFormData(prev => ({ ...prev, livingCountry: v, livingState: ['any'] }))
+                          } else {
+                            // Clear states that are no longer valid
+                            const validStates = getStateOptionsForCountries(v).map(s => s.value)
+                            const updatedStates = (formData.livingState || []).filter(s => validStates.includes(s))
+                            if (updatedStates.length !== (formData.livingState || []).length) {
+                              setFormData(prev => ({ ...prev, livingCountry: v, livingState: updatedStates }))
+                            }
                           }
                         }}
                         placeholder={t.selectAny}
                         searchPlaceholder={t.search}
+                        showAnyOption
+                        anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                       />
                     </div>
                     <div className="space-y-2">
@@ -441,7 +456,9 @@ Online Safety Tips
                         onValueChange={(v) => setFormData({ ...formData, livingState: v })}
                         placeholder={t.selectAny}
                         searchPlaceholder={t.search}
-                        disabled={!formData.livingCountry?.length}
+                        disabled={!formData.livingCountry?.length || (formData.livingCountry?.length === 1 && formData.livingCountry[0] === 'any')}
+                        showAnyOption
+                        anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                       />
                     </div>
                   </div>
@@ -458,6 +475,8 @@ Online Safety Tips
                         onValueChange={(v) => setFormData({ ...formData, education: v })}
                         placeholder={t.selectAny}
                         searchPlaceholder={t.search}
+                        showAnyOption
+                        anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                       />
                     </div>
                     <div className="space-y-2">
@@ -468,6 +487,8 @@ Online Safety Tips
                         onValueChange={(v) => setFormData({ ...formData, employmentStatus: v })}
                         placeholder={t.selectAny}
                         searchPlaceholder={t.search}
+                        showAnyOption
+                        anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                       />
                     </div>
                   </div>

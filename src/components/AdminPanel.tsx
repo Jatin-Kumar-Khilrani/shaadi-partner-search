@@ -302,6 +302,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [showChatHistoryDialog, setShowChatHistoryDialog] = useState(false)
   const [chatHistoryParticipants, setChatHistoryParticipants] = useState<{ reporter: string, reported: string } | null>(null)
   
+  // View rejection reason dialog state
+  const [showRejectionReasonDialog, setShowRejectionReasonDialog] = useState<Profile | null>(null)
+  
   const t = {
     title: language === 'hi' ? 'प्रशासन पैनल' : 'Admin Panel',
     description: language === 'hi' ? 'प्रोफाइल सत्यापन और प्रबंधन' : 'Profile verification and management',
@@ -450,6 +453,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     rejectionReasonPlaceholder: language === 'hi' ? 'कृपया अस्वीकृति का कारण बताएं...' : 'Please provide reason for rejection...',
     sendNotification: language === 'hi' ? 'SMS और ईमेल सूचना भेजें' : 'Send SMS & Email Notification',
     notificationSent: language === 'hi' ? 'SMS और ईमेल सूचना भेजी गई!' : 'SMS and Email notification sent!',
+    // Rejection details view
+    viewRejectionReason: language === 'hi' ? 'अस्वीकृति का कारण देखें' : 'View Rejection Reason',
+    rejectionDetails: language === 'hi' ? 'अस्वीकृति विवरण' : 'Rejection Details',
+    noRejectionReason: language === 'hi' ? 'कोई कारण दर्ज नहीं किया गया' : 'No reason provided',
+    rejectedOn: language === 'hi' ? 'अस्वीकृत' : 'Rejected on',
+    undoRejection: language === 'hi' ? 'अस्वीकृति रद्द करें' : 'Undo Rejection',
+    undoRejectionSuccess: language === 'hi' ? 'प्रोफाइल को पेंडिंग में वापस ले जाया गया!' : 'Profile moved back to pending!',
     // Accounts & Payments
     accounts: language === 'hi' ? 'खाते' : 'Accounts',
     accountsDescription: language === 'hi' ? 'भुगतान प्रबंधन और रसीद जनरेशन' : 'Payment management and receipt generation',

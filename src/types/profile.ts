@@ -64,6 +64,8 @@ export interface Profile {
   birthPlace?: string // Place of birth for horoscope
   horoscopeMatching?: 'mandatory' | 'not-mandatory' | 'decide-later' | 'preferred'  // Horoscope matching preference
   status: ProfileStatus
+  rejectionReason?: string  // Reason for profile rejection
+  rejectedAt?: string       // When the profile was rejected
   trustLevel: number
   createdAt: string
   updatedAt?: string
