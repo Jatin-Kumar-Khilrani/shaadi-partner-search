@@ -39,9 +39,13 @@ interface MyProfileProps {
   onDeleteProfile?: (profileId: string) => void
   onUpdateProfile?: (updatedProfile: Partial<Profile>) => void
   membershipSettings?: MembershipSettings
+  onNavigateHome?: () => void
+  onNavigateActivity?: () => void
+  onNavigateInbox?: () => void
+  onNavigateChat?: () => void
 }
 
-export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdateProfile, membershipSettings }: MyProfileProps) {
+export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdateProfile, membershipSettings, onNavigateHome, onNavigateActivity, onNavigateInbox, onNavigateChat }: MyProfileProps) {
   // Get pricing from settings or defaults
   const pricing = {
     sixMonth: membershipSettings?.sixMonthPrice || DEFAULT_PRICING.sixMonthPrice,
@@ -1272,19 +1276,19 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
           <Card>
             <CardContent className="py-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Button variant="outline" className="gap-2" disabled>
+                <Button variant="outline" className="gap-2" onClick={onNavigateHome}>
                   <Heart size={20} weight="fill" />
                   {language === 'hi' ? 'मुखपृष्ठ' : 'Home'}
                 </Button>
-                <Button variant="outline" className="gap-2" disabled>
+                <Button variant="outline" className="gap-2" onClick={onNavigateActivity}>
                   <User size={20} />
                   {language === 'hi' ? 'मेरी गतिविधि' : 'My Activity'}
                 </Button>
-                <Button variant="outline" className="gap-2" disabled>
+                <Button variant="outline" className="gap-2" onClick={onNavigateInbox}>
                   <Envelope size={20} />
                   {language === 'hi' ? 'इनबॉक्स' : 'Inbox'}
                 </Button>
-                <Button variant="outline" className="gap-2" disabled>
+                <Button variant="outline" className="gap-2" onClick={onNavigateChat}>
                   <ChatCircle size={20} />
                   {language === 'hi' ? 'चैट' : 'Chat'}
                 </Button>

@@ -1225,6 +1225,10 @@ function App() {
             onEdit={handleEditProfile}
             onDeleteProfile={handleDeleteProfile}
             membershipSettings={membershipSettings || defaultMembershipSettings}
+            onNavigateHome={() => setCurrentView('home')}
+            onNavigateActivity={() => setCurrentView('my-activity')}
+            onNavigateInbox={() => setCurrentView('inbox')}
+            onNavigateChat={() => { setChatTargetProfileId(null); setCurrentView('chat'); }}
           />
         )}
 

@@ -25,6 +25,7 @@ import type { ChatMessage } from '@/types/chat'
 import { Chat } from '@/components/Chat'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
+import { RegistrationDialog } from '@/components/RegistrationDialog'
 import { toast } from 'sonner'
 import { formatDateDDMMYYYY } from '@/lib/utils'
 import { verifyPhotosWithVision, type PhotoVerificationResult } from '@/lib/visionPhotoVerification'
@@ -294,50 +295,12 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [paymentViewProfile, setPaymentViewProfile] = useState<Profile | null>(null)
   const [paymentRejectionReason, setPaymentRejectionReason] = useState('')
   
-  // Admin Edit Profile dialog state
+  // Admin Edit Profile dialog state (uses RegistrationDialog with isAdminMode)
   const [adminEditDialog, setAdminEditDialog] = useState<Profile | null>(null)
   
   // Report review state
   const [showChatHistoryDialog, setShowChatHistoryDialog] = useState(false)
   const [chatHistoryParticipants, setChatHistoryParticipants] = useState<{ reporter: string, reported: string } | null>(null)
-  
-  const [adminEditFormData, setAdminEditFormData] = useState<{
-    fullName: string
-    dateOfBirth: string
-    email: string
-    mobile: string
-    height: string
-    weight: string
-    motherTongue: string
-    education: string
-    occupation: string
-    salary: string
-    religion: string
-    caste: string
-    location: string
-    state: string
-    country: string
-    bio: string
-    familyDetails: string
-  }>({
-    fullName: '',
-    dateOfBirth: '',
-    email: '',
-    mobile: '',
-    height: '',
-    weight: '',
-    motherTongue: '',
-    education: '',
-    occupation: '',
-    salary: '',
-    religion: '',
-    caste: '',
-    location: '',
-    state: '',
-    country: '',
-    bio: '',
-    familyDetails: ''
-  })
   
   const t = {
     title: language === 'hi' ? 'प्रशासन पैनल' : 'Admin Panel',
@@ -1000,58 +963,18 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     )
   }
 
-  // Open Admin Edit Profile dialog
+  // Open Admin Edit Profile dialog (using RegistrationDialog in admin mode)
   const handleOpenAdminEdit = (profile: Profile) => {
-    setAdminEditFormData({
-      fullName: profile.fullName || '',
-      dateOfBirth: profile.dateOfBirth ? formatDateDDMMYYYY(profile.dateOfBirth) : '',
-      email: profile.email || '',
-      mobile: profile.mobile || '',
-      height: profile.height || '',
-      weight: profile.weight || '',
-      motherTongue: profile.motherTongue || '',
-      education: profile.education || '',
-      occupation: profile.occupation || '',
-      salary: profile.salary || '',
-      religion: profile.religion || '',
-      caste: profile.caste || '',
-      location: profile.location || '',
-      state: profile.state || '',
-      country: profile.country || '',
-      bio: profile.bio || '',
-      familyDetails: profile.familyDetails || ''
-    })
     setAdminEditDialog(profile)
   }
 
-  // Save Admin Edit Profile changes
-  const handleSaveAdminEdit = () => {
-    if (!adminEditDialog) return
-    
+  // Handle save from admin edit mode
+  const handleAdminEditSave = (updatedProfile: Profile) => {
     setProfiles((current) => 
       (current || []).map(p => 
-        p.id === adminEditDialog.id 
+        p.id === updatedProfile.id 
           ? { 
-              ...p, 
-              fullName: adminEditFormData.fullName,
-              firstName: adminEditFormData.fullName.split(' ')[0],
-              lastName: adminEditFormData.fullName.split(' ').slice(1).join(' ') || adminEditFormData.fullName.split(' ')[0],
-              dateOfBirth: adminEditFormData.dateOfBirth,
-              email: adminEditFormData.email,
-              mobile: adminEditFormData.mobile,
-              height: adminEditFormData.height,
-              weight: adminEditFormData.weight,
-              motherTongue: adminEditFormData.motherTongue,
-              education: adminEditFormData.education,
-              occupation: adminEditFormData.occupation,
-              salary: adminEditFormData.salary,
-              religion: adminEditFormData.religion,
-              caste: adminEditFormData.caste,
-              location: adminEditFormData.location,
-              state: adminEditFormData.state,
-              country: adminEditFormData.country,
-              bio: adminEditFormData.bio,
-              familyDetails: adminEditFormData.familyDetails,
+              ...updatedProfile,
               adminEditedAt: new Date().toISOString(),
               adminEditedBy: 'Admin'
             }
@@ -4889,213 +4812,20 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
         </DialogContent>
       </Dialog>
 
-      {/* Admin Edit Profile Dialog */}
-      <Dialog open={!!adminEditDialog} onOpenChange={() => setAdminEditDialog(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User size={24} className="text-purple-600" />
-              {t.adminEditProfile}
-            </DialogTitle>
-            <DialogDescription>
-              {t.adminEditDesc}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {adminEditDialog && (
-            <div className="space-y-4 py-4">
-              <Alert className="bg-purple-50 border-purple-300 dark:bg-purple-950/20">
-                <Info size={18} className="text-purple-600" />
-                <AlertDescription className="text-purple-700 dark:text-purple-300">
-                  {language === 'hi' 
-                    ? 'आप नाम, DOB, ईमेल और मोबाइल सहित सभी फ़ील्ड संपादित कर सकते हैं।' 
-                    : 'You can edit ALL fields including Name, DOB, Email, and Mobile.'}
-                </AlertDescription>
-              </Alert>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="adminEditName">{language === 'hi' ? 'नाम' : 'Full Name'} *</Label>
-                  <Input
-                    id="adminEditName"
-                    value={adminEditFormData.fullName}
-                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, fullName: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminEditDob">{language === 'hi' ? 'जन्म तिथि' : 'Date of Birth'}</Label>
-                  <Input
-                    id="adminEditDob"
-                    value={adminEditFormData.dateOfBirth}
-                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
-                    placeholder="DD/MM/YYYY"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminEditEmail">{language === 'hi' ? 'ईमेल' : 'Email'} *</Label>
-                  <Input
-                    id="adminEditEmail"
-                    type="email"
-                    value={adminEditFormData.email}
-                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, email: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminEditMobile">{language === 'hi' ? 'मोबाइल' : 'Mobile'} *</Label>
-                  <Input
-                    id="adminEditMobile"
-                    value={adminEditFormData.mobile}
-                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, mobile: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminEditHeight">{language === 'hi' ? 'ऊंचाई' : 'Height'}</Label>
-                  <Input
-                    id="adminEditHeight"
-                    value={adminEditFormData.height}
-                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, height: e.target.value }))}
-                    placeholder="5 ft 8 in"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminEditWeight">{language === 'hi' ? 'वजन' : 'Weight'}</Label>
-                  <Input
-                    id="adminEditWeight"
-                    value={adminEditFormData.weight}
-                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, weight: e.target.value }))}
-                    placeholder="70 kg"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminEditMotherTongue">{language === 'hi' ? 'मातृभाषा' : 'Mother Tongue'}</Label>
-                  <Input
-                    id="adminEditMotherTongue"
-                    value={adminEditFormData.motherTongue}
-                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, motherTongue: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminEditEducation">{language === 'hi' ? 'शिक्षा' : 'Education'}</Label>
-                  <SearchableSelect
-                    options={EDUCATION_OPTIONS}
-                    value={adminEditFormData.education}
-                    onValueChange={(value) => setAdminEditFormData(prev => ({ ...prev, education: value }))}
-                    placeholder={language === 'hi' ? 'शिक्षा चुनें' : 'Select Education'}
-                    searchPlaceholder={language === 'hi' ? 'शिक्षा खोजें...' : 'Search education...'}
-                    emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminEditOccupation">{language === 'hi' ? 'व्यवसाय' : 'Occupation'}</Label>
-                  <SearchableSelect
-                    options={OCCUPATION_OPTIONS}
-                    value={adminEditFormData.occupation}
-                    onValueChange={(value) => setAdminEditFormData(prev => ({ ...prev, occupation: value }))}
-                    placeholder={language === 'hi' ? 'व्यवसाय चुनें' : 'Select Occupation'}
-                    searchPlaceholder={language === 'hi' ? 'व्यवसाय खोजें...' : 'Search occupation...'}
-                    emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminEditSalary">{language === 'hi' ? 'वेतन' : 'Salary'}</Label>
-                  <Input
-                    id="adminEditSalary"
-                    value={adminEditFormData.salary}
-                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, salary: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminEditReligion">{language === 'hi' ? 'धर्म' : 'Religion'}</Label>
-                  <Input
-                    id="adminEditReligion"
-                    value={adminEditFormData.religion}
-                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, religion: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminEditCaste">{language === 'hi' ? 'जाति' : 'Caste'}</Label>
-                  <Input
-                    id="adminEditCaste"
-                    value={adminEditFormData.caste}
-                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, caste: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminEditLocation">{language === 'hi' ? 'शहर' : 'City'}</Label>
-                  <Input
-                    id="adminEditLocation"
-                    value={adminEditFormData.location}
-                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, location: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminEditState">{language === 'hi' ? 'राज्य' : 'State'}</Label>
-                  <Input
-                    id="adminEditState"
-                    value={adminEditFormData.state}
-                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, state: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="adminEditCountry">{language === 'hi' ? 'देश' : 'Country'}</Label>
-                  <Input
-                    id="adminEditCountry"
-                    value={adminEditFormData.country}
-                    onChange={(e) => setAdminEditFormData(prev => ({ ...prev, country: e.target.value }))}
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="adminEditBio">{language === 'hi' ? 'बायो' : 'Bio'}</Label>
-                <Textarea
-                  id="adminEditBio"
-                  value={adminEditFormData.bio}
-                  onChange={(e) => setAdminEditFormData(prev => ({ ...prev, bio: e.target.value }))}
-                  rows={3}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="adminEditFamily">{language === 'hi' ? 'पारिवारिक विवरण' : 'Family Details'}</Label>
-                <Textarea
-                  id="adminEditFamily"
-                  value={adminEditFormData.familyDetails}
-                  onChange={(e) => setAdminEditFormData(prev => ({ ...prev, familyDetails: e.target.value }))}
-                  rows={3}
-                />
-              </div>
-            </div>
-          )}
-          
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setAdminEditDialog(null)}>
-              {t.cancel}
-            </Button>
-            <Button 
-              onClick={handleSaveAdminEdit}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              <Check size={16} className="mr-1" />
-              {t.saveChanges}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Admin Edit Profile Dialog - Uses RegistrationDialog with isAdminMode */}
+      {adminEditDialog && (
+        <RegistrationDialog
+          open={!!adminEditDialog}
+          onClose={() => setAdminEditDialog(null)}
+          language={language}
+          editProfile={adminEditDialog}
+          isAdminMode={true}
+          onSubmit={(profile) => {
+            handleAdminEditSave(profile as Profile)
+          }}
+          existingProfiles={profiles || []}
+        />
+      )}
 
       {/* Photo Lightbox for viewing photos in full size */}
       <PhotoLightbox

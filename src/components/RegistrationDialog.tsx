@@ -189,9 +189,10 @@ interface RegistrationDialogProps {
   existingProfiles?: Profile[]
   editProfile?: Profile | null
   membershipSettings?: MembershipSettings
+  isAdminMode?: boolean  // Admin mode: skip payment, allow all field edits
 }
 
-export function RegistrationDialog({ open, onClose, onSubmit, language, existingProfiles = [], editProfile = null, membershipSettings }: RegistrationDialogProps) {
+export function RegistrationDialog({ open, onClose, onSubmit, language, existingProfiles = [], editProfile = null, membershipSettings, isAdminMode = false }: RegistrationDialogProps) {
   const t = useTranslation(language)
   const [step, setStep] = useState(1)
   const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([])
@@ -861,13 +862,18 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
-    if (!formData.fullName || !formData.dateOfBirth || !formData.gender || !formData.religion || !formData.motherTongue || !formData.height || !formData.maritalStatus || !formData.horoscopeMatching || !formData.email || !formData.mobile || !formData.membershipPlan) {
+    // Admin mode has relaxed validation - only require basic fields
+    const requiredFields = isAdminMode 
+      ? (formData.fullName && formData.gender)
+      : (formData.fullName && formData.dateOfBirth && formData.gender && formData.religion && formData.motherTongue && formData.height && formData.maritalStatus && formData.horoscopeMatching && formData.email && formData.mobile && formData.membershipPlan)
+    
+    if (!requiredFields) {
       toast.error(t.registration.fillAllFields)
       return
     }
 
-    // Validate Terms and Conditions acceptance
-    if (!termsAccepted) {
+    // Validate Terms and Conditions acceptance (skip for admin mode)
+    if (!isAdminMode && !termsAccepted) {
       toast.error(
         language === 'hi' 
           ? 'कृपया नियम और शर्तें स्वीकार करें' 
@@ -1129,12 +1135,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
     onSubmit(profile)
     
-    if (!isEditMode) {
+    if (!isEditMode && !isAdminMode) {
       clearDraft()
     }
     
     // Show appropriate message based on mode and plan type
-    if (isEditMode) {
+    if (isAdminMode) {
+      // Admin mode - close dialog, toast is shown by AdminPanel
+      onClose()
+      return
+    } else if (isEditMode) {
       toast.success(
         language === 'hi' ? 'प्रोफ़ाइल अपडेट किया गया!' : 'Profile Updated!',
         {
@@ -1444,6 +1454,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         return
       }
       
+      // Admin mode: skip OTP verification entirely
+      if (isAdminMode) {
+        setEmailVerified(true)
+        setMobileVerified(true)
+        setStep(4)
+        return
+      }
+      
       // Only send OTPs if not already verified
       if (emailVerified && mobileVerified) {
         // Both already verified, skip OTP step and proceed to next step
@@ -1453,25 +1471,26 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       sendOtps()
       return
     }
-    if (step === 4 && photos.length === 0) {
+    // Admin mode: skip photo requirements
+    if (step === 4 && !isAdminMode && photos.length === 0) {
       toast.error(language === 'hi' ? 'कृपया कम से कम एक फोटो अपलोड करें' : 'Please upload at least one photo')
       return
     }
-    if (step === 4 && !selfiePreview) {
+    if (step === 4 && !isAdminMode && !selfiePreview) {
       toast.error(language === 'hi' ? 'कृपया लाइव सेल्फी लें' : 'Please capture a live selfie')
       return
     }
-    // ID Proof is mandatory for new registrations only (not for edit mode)
-    if (step === 4 && !isEditMode && !idProofPreview) {
+    // ID Proof is mandatory for new registrations only (not for edit mode or admin mode)
+    if (step === 4 && !isEditMode && !isAdminMode && !idProofPreview) {
       toast.error(language === 'hi' ? 'कृपया सरकारी पहचान प्रमाण अपलोड करें' : 'Please upload government ID proof')
       return
     }
-    if (step === 4 && !isEditMode && !idProofType) {
+    if (step === 4 && !isEditMode && !isAdminMode && !idProofType) {
       toast.error(language === 'hi' ? 'कृपया दस्तावेज़ का प्रकार चुनें' : 'Please select document type')
       return
     }
-    // Step 5 - Bio is mandatory
-    if (step === 5 && !(formData.bio || '').trim()) {
+    // Step 5 - Bio is optional in admin mode
+    if (step === 5 && !isAdminMode && !(formData.bio || '').trim()) {
       toast.error(language === 'hi' ? 'कृपया अपने बारे में लिखें (अनिवार्य है)' : 'Please write about yourself (required)')
       return
     }
@@ -1486,20 +1505,29 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-3xl flex items-center gap-2">
             <UserPlus size={32} weight="bold" />
-            {isEditMode 
-              ? (language === 'hi' ? 'प्रोफ़ाइल संपादित करें' : 'Edit Profile')
-              : t.registration.title}
+            {isAdminMode
+              ? (language === 'hi' ? 'एडमिन: प्रोफ़ाइल संपादित करें' : 'Admin: Edit Profile')
+              : isEditMode 
+                ? (language === 'hi' ? 'प्रोफ़ाइल संपादित करें' : 'Edit Profile')
+                : t.registration.title}
+            {isAdminMode && (
+              <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full dark:bg-purple-900 dark:text-purple-300">
+                {language === 'hi' ? 'एडमिन मोड' : 'Admin Mode'}
+              </span>
+            )}
           </DialogTitle>
           <DialogDescription>
-            {isEditMode
-              ? (language === 'hi' ? 'अपनी प्रोफ़ाइल जानकारी अपडेट करें' : 'Update your profile information')
-              : t.registration.subtitle}
+            {isAdminMode
+              ? (language === 'hi' ? 'सभी फ़ील्ड संपादित करें - OTP/भुगतान छोड़ें' : 'Edit all fields - skip OTP/payment verification')
+              : isEditMode
+                ? (language === 'hi' ? 'अपनी प्रोफ़ाइल जानकारी अपडेट करें' : 'Update your profile information')
+                : t.registration.subtitle}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-1 min-h-0">
           <div className="flex items-center justify-center gap-1 md:gap-2 mb-6">
-            {[1, 2, 3, 4, 5, 6, 7].map((s) => {
+            {(isAdminMode ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6, 7]).map((s) => {
               const isCompleted = s < step || (s === 3 && emailVerified && mobileVerified)
               const isCurrent = s === step
               const canClick = isCompleted && !showVerification // Can click on completed steps
@@ -3843,12 +3871,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               <span className="hidden sm:inline text-sm">{language === 'hi' ? 'सेव' : 'Save'}</span>
             </Button>
             
-            {step < 7 && !showVerification ? (
+            {step < (isAdminMode ? 7 : 7) && !showVerification && !(isAdminMode && step === 6) ? (
               <Button 
                 size="sm"
                 onClick={nextStep}
                 disabled={
-                  (step === 1 && (
+                  (step === 1 && !isAdminMode && (
                     !(formData.fullName || '').trim() || 
                     !formData.dateOfBirth || 
                     !formData.gender || 
@@ -3861,8 +3889,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     ((formData.horoscopeMatching || 'not-mandatory') === 'mandatory' && (!formData.birthTime || !formData.birthPlace)) ||
                     !formData.disability
                   )) ||
-                  (step === 2 && (!formData.education || !formData.occupation)) ||
-                  (step === 3 && (
+                  (step === 1 && isAdminMode && (
+                    !(formData.fullName || '').trim() || 
+                    !formData.gender
+                  )) ||
+                  (step === 2 && !isAdminMode && (!formData.education || !formData.occupation)) ||
+                  (step === 3 && !isAdminMode && (
                     !formData.location || 
                     !formData.state || 
                     !formData.country || 
@@ -3870,22 +3902,26 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     !formData.mobile ||
                     (formData.country !== 'India' && !formData.residentialStatus)
                   )) ||
-                  (step === 4 && (photos.length === 0 || !selfiePreview || (!isEditMode && !idProofPreview))) ||
-                  (step === 5 && !(formData.bio || '').trim())
+                  (step === 4 && !isAdminMode && (photos.length === 0 || !selfiePreview || (!isEditMode && !idProofPreview))) ||
+                  (step === 5 && !isAdminMode && !(formData.bio || '').trim())
                 }
               >
                 {t.registration.next}
               </Button>
-            ) : step === 7 ? (
+            ) : (step === 7 || (isAdminMode && step === 6)) ? (
               <Button 
                 size="sm" 
                 onClick={handleSubmit} 
                 disabled={
-                  !termsAccepted || 
-                  !formData.membershipPlan || 
-                  isSubmitting ||
-                  // Require payment screenshot for paid plans
-                  (formData.membershipPlan !== 'free' && !paymentScreenshotPreview)
+                  isAdminMode 
+                    ? isSubmitting // Admin mode: only check if submitting
+                    : (
+                        !termsAccepted || 
+                        !formData.membershipPlan || 
+                        isSubmitting ||
+                        // Require payment screenshot for paid plans
+                        (formData.membershipPlan !== 'free' && !paymentScreenshotPreview)
+                      )
                 }
               >
                 {isSubmitting ? (
@@ -3894,7 +3930,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     {language === 'hi' ? 'अपलोड हो रहा है...' : 'Uploading...'}
                   </>
                 ) : (
-                  isEditMode ? t.registration.updateProfile : t.registration.submit
+                  isAdminMode 
+                    ? (language === 'hi' ? 'बदलाव सेव करें' : 'Save Changes')
+                    : (isEditMode ? t.registration.updateProfile : t.registration.submit)
                 )}
               </Button>
             ) : null}
