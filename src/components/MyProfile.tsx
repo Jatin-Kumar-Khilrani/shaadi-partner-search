@@ -67,10 +67,10 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
     title: language === 'hi' ? 'मेरी प्रोफाइल' : 'My Profile',
     edit: language === 'hi' ? 'संपादित करें' : 'Edit Profile',
     profileId: language === 'hi' ? 'प्रोफाइल ID' : 'Profile ID',
-    personalInfo: language === 'hi' ? 'व्यक्तिगत जानकारी' : 'Personal Information',
-    familyInfo: language === 'hi' ? 'पारिवारिक जानकारी' : 'Family Information',
-    contactInfo: language === 'hi' ? 'संपर्क जानकारी' : 'Contact Information',
-    partnerPreferences: language === 'hi' ? 'पार्टनर प्राथमिकताएं' : 'Partner Preferences',
+    personalInfo: language === 'hi' ? 'व्यक्तिगत' : 'Personal',
+    familyInfo: language === 'hi' ? 'परिवार' : 'Family',
+    contactInfo: language === 'hi' ? 'संपर्क' : 'Contact',
+    partnerPreferences: language === 'hi' ? 'पार्टनर' : 'Partner Pref',
     lifestyleInfo: language === 'hi' ? 'जीवनशैली' : 'Lifestyle',
     gender: language === 'hi' ? 'लिंग' : 'Gender',
     age: language === 'hi' ? 'आयु' : 'Age',
@@ -144,8 +144,13 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
   const getHabitLabel = (habit: string | undefined) => {
     const labels: Record<string, { hi: string; en: string }> = {
       'never': { hi: 'कभी नहीं', en: 'Never' },
+      'none': { hi: 'कभी नहीं', en: 'Never' },
       'occasionally': { hi: 'कभी-कभी', en: 'Occasionally' },
+      'occasionally-drinking': { hi: 'कभी-कभी', en: 'Occasionally' },
+      'occasionally-smoking': { hi: 'कभी-कभी', en: 'Occasionally' },
       'regularly': { hi: 'नियमित', en: 'Regularly' },
+      'smoking': { hi: 'नियमित', en: 'Regularly' },
+      'drinking': { hi: 'नियमित', en: 'Regularly' },
     }
     return habit ? (labels[habit]?.[language] || habit) : '-'
   }
@@ -831,11 +836,11 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
 
           <div className="md:col-span-2">
             <Tabs defaultValue="personal" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="personal">{t.personalInfo}</TabsTrigger>
-                <TabsTrigger value="family">{t.familyInfo}</TabsTrigger>
-                <TabsTrigger value="contact">{t.contactInfo}</TabsTrigger>
-                <TabsTrigger value="partner">{t.partnerPreferences}</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+                <TabsTrigger value="personal" className="text-xs sm:text-sm px-2">{t.personalInfo}</TabsTrigger>
+                <TabsTrigger value="family" className="text-xs sm:text-sm px-2">{t.familyInfo}</TabsTrigger>
+                <TabsTrigger value="contact" className="text-xs sm:text-sm px-2">{t.contactInfo}</TabsTrigger>
+                <TabsTrigger value="partner" className="text-xs sm:text-sm px-2">{t.partnerPreferences}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="personal">
