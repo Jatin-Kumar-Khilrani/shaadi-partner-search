@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { MultiSelect, MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS, OCCUPATION_PROFESSION_OPTIONS, COUNTRY_OPTIONS, DIET_PREFERENCE_OPTIONS, getStateOptionsForCountries } from '@/components/ui/multi-select'
+import { MultiSelect, MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS, OCCUPATION_PROFESSION_OPTIONS, COUNTRY_OPTIONS, DIET_PREFERENCE_OPTIONS, EDUCATION_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, getStateOptionsForCountries } from '@/components/ui/multi-select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Gear, Heart, Phone, Info, FileText, ShieldCheck } from '@phosphor-icons/react'
 import { toast } from 'sonner'
@@ -59,6 +59,7 @@ export function Settings({ open, onClose, profileId, language, currentProfile, o
           livingCountry: profilePreference.livingCountry,
           livingState: profilePreference.livingState,
           education: profilePreference.education,
+          employmentStatus: profilePreference.employmentStatus,
           caste: profilePreference.caste,
           dietPreference: profilePreference.dietPreference,
           drinkingHabit: profilePreference.drinkingHabit,
@@ -263,6 +264,7 @@ Online Safety Tips
           livingCountry: formData.livingCountry,
           livingState: formData.livingState,
           education: formData.education,
+          employmentStatus: formData.employmentStatus,
           caste: formData.caste,
           dietPreference: formData.dietPreference,
           drinkingHabit: formData.drinkingHabit,
@@ -446,25 +448,39 @@ Online Safety Tips
 
                   <Separator />
 
-                  {/* Education & Caste */}
+                  {/* Education & Employment Status */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>{t.education}</Label>
-                      <Input
-                        placeholder={t.education}
-                        value={Array.isArray(formData.education) ? formData.education.join(', ') : formData.education || ''}
-                        onChange={(e) => setFormData({ ...formData, education: e.target.value })}
+                      <Label>{t.education} {t.selectMultiple}</Label>
+                      <MultiSelect
+                        options={EDUCATION_OPTIONS}
+                        value={formData.education || []}
+                        onValueChange={(v) => setFormData({ ...formData, education: v })}
+                        placeholder={t.selectAny}
+                        searchPlaceholder={t.search}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>{t.caste}</Label>
-                      <Input
-                        placeholder={t.caste}
-                        value={formData.caste?.join(', ') || ''}
-                        onChange={(e) => setFormData({ ...formData, caste: e.target.value ? e.target.value.split(',').map(s => s.trim()) : [] })}
+                      <Label>{language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status'} {t.selectMultiple}</Label>
+                      <MultiSelect
+                        options={EMPLOYMENT_STATUS_OPTIONS}
+                        value={formData.employmentStatus || []}
+                        onValueChange={(v) => setFormData({ ...formData, employmentStatus: v })}
+                        placeholder={t.selectAny}
+                        searchPlaceholder={t.search}
                       />
-                      <p className="text-xs text-muted-foreground">{language === 'hi' ? 'अल्पविराम से अलग करें' : 'Separate with commas'}</p>
                     </div>
+                  </div>
+
+                  {/* Caste */}
+                  <div className="space-y-2">
+                    <Label>{t.caste}</Label>
+                    <Input
+                      placeholder={t.caste}
+                      value={formData.caste?.join(', ') || ''}
+                      onChange={(e) => setFormData({ ...formData, caste: e.target.value ? e.target.value.split(',').map(s => s.trim()) : [] })}
+                    />
+                    <p className="text-xs text-muted-foreground">{language === 'hi' ? 'अल्पविराम से अलग करें' : 'Separate with commas'}</p>
                   </div>
 
                   <Separator />

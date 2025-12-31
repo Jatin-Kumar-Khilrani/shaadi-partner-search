@@ -2405,11 +2405,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   <Button 
                                     variant="ghost" 
                                     size="sm"
-                                    onClick={() => {
-                                      if (confirm(t.loginAsUserConfirm)) {
-                                        onLoginAsUser(creds.userId)
-                                      }
-                                    }}
+                                    onClick={() => onLoginAsUser(creds.userId)}
                                     className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
                                     title={t.loginAsUser}
                                   >

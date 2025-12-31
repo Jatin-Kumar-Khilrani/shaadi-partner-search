@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SearchableSelect, EDUCATION_OPTIONS, OCCUPATION_OPTIONS } from '@/components/ui/searchable-select'
-import { MultiSelect, MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS, OCCUPATION_PROFESSION_OPTIONS, COUNTRY_OPTIONS, DIET_PREFERENCE_OPTIONS, getStateOptionsForCountries } from '@/components/ui/multi-select'
+import { MultiSelect, MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS, OCCUPATION_PROFESSION_OPTIONS, COUNTRY_OPTIONS, DIET_PREFERENCE_OPTIONS, EDUCATION_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, getStateOptionsForCountries } from '@/components/ui/multi-select'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -1092,6 +1092,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       // Disability information
       disability: formData.disability!,
       disabilityDetails: formData.disability !== 'no' ? formData.disabilityDetails : undefined,
+      // Lifestyle fields - map from form fields to Profile fields
+      dietPreference: formData.diet as DietPreference || undefined,
+      drinkingHabit: (formData.habit === 'drinking' ? 'regularly' : 
+                      formData.habit === 'occasionally-drinking' ? 'occasionally' : 
+                      formData.habit === 'none' ? 'never' : undefined) as DrinkingHabit | undefined,
+      smokingHabit: (formData.habit === 'smoking' ? 'regularly' : 
+                     formData.habit === 'occasionally-smoking' ? 'occasionally' : 
+                     formData.habit === 'none' ? 'never' : undefined) as SmokingHabit | undefined,
+      // Income and profession mapping
+      salary: formData.annualIncome || undefined,
       // Partner Preferences
       partnerPreferences: {
         ageMin: formData.partnerAgeMin,
@@ -3138,52 +3148,24 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 {/* Education & Employment Status */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'शिक्षा' : 'Education'}</Label>
-                    <Select 
-                      value={formData.partnerEducation?.[0] || ''} 
-                      onValueChange={(v) => updateField('partnerEducation', v ? [v] : [])}
-                    >
-                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
-                      <SelectContent className="z-[9999] max-h-60" position="popper">
-                        <SelectItem value="10th">{language === 'hi' ? '10वीं कक्षा' : '10th Standard'}</SelectItem>
-                        <SelectItem value="12th">{language === 'hi' ? '12वीं कक्षा' : '12th Standard'}</SelectItem>
-                        <SelectItem value="diploma">{language === 'hi' ? 'डिप्लोमा' : 'Diploma'}</SelectItem>
-                        <SelectItem value="graduate">{language === 'hi' ? 'स्नातक' : 'Graduate'}</SelectItem>
-                        <SelectItem value="btech-be">{language === 'hi' ? 'बी.टेक/बी.ई.' : 'B.Tech/B.E.'}</SelectItem>
-                        <SelectItem value="bba">{language === 'hi' ? 'बीबीए' : 'BBA'}</SelectItem>
-                        <SelectItem value="bca">{language === 'hi' ? 'बीसीए' : 'BCA'}</SelectItem>
-                        <SelectItem value="bsc">{language === 'hi' ? 'बी.एस.सी' : 'B.Sc'}</SelectItem>
-                        <SelectItem value="bcom">{language === 'hi' ? 'बी.कॉम' : 'B.Com'}</SelectItem>
-                        <SelectItem value="ba">{language === 'hi' ? 'बी.ए.' : 'B.A.'}</SelectItem>
-                        <SelectItem value="post-graduate">{language === 'hi' ? 'स्नातकोत्तर' : 'Post Graduate'}</SelectItem>
-                        <SelectItem value="mba">{language === 'hi' ? 'एमबीए' : 'MBA'}</SelectItem>
-                        <SelectItem value="mca">{language === 'hi' ? 'एमसीए' : 'MCA'}</SelectItem>
-                        <SelectItem value="mtech-me">{language === 'hi' ? 'एम.टेक/एम.ई.' : 'M.Tech/M.E.'}</SelectItem>
-                        <SelectItem value="phd">{language === 'hi' ? 'पीएचडी/डॉक्टरेट' : 'PhD/Doctorate'}</SelectItem>
-                        <SelectItem value="mbbs">{language === 'hi' ? 'एमबीबीएस' : 'MBBS'}</SelectItem>
-                        <SelectItem value="md-ms">{language === 'hi' ? 'एमडी/एमएस' : 'MD/MS'}</SelectItem>
-                        <SelectItem value="ca">{language === 'hi' ? 'सीए' : 'CA'}</SelectItem>
-                        <SelectItem value="other">{language === 'hi' ? 'अन्य' : 'Other'}</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label>{language === 'hi' ? 'शिक्षा (एक से अधिक चुनें)' : 'Education (select multiple)'}</Label>
+                    <MultiSelect
+                      options={EDUCATION_OPTIONS}
+                      value={formData.partnerEducation || []}
+                      onValueChange={(v) => updateField('partnerEducation', v)}
+                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status'}</Label>
-                    <Select 
-                      value={formData.partnerEmploymentStatus?.[0] || ''} 
-                      onValueChange={(v) => updateField('partnerEmploymentStatus', v ? [v] : [])}
-                    >
-                      <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
-                      <SelectContent className="z-[9999]" position="popper">
-                        <SelectItem value="employed">{language === 'hi' ? 'नौकरी' : 'Employed'}</SelectItem>
-                        <SelectItem value="self-employed">{language === 'hi' ? 'स्वरोजगार' : 'Self-Employed'}</SelectItem>
-                        <SelectItem value="business-owner">{language === 'hi' ? 'व्यापारी' : 'Business Owner'}</SelectItem>
-                        <SelectItem value="govt-employee">{language === 'hi' ? 'सरकारी कर्मचारी' : 'Government Employee'}</SelectItem>
-                        <SelectItem value="student">{language === 'hi' ? 'विद्यार्थी' : 'Student'}</SelectItem>
-                        <SelectItem value="homemaker">{language === 'hi' ? 'गृहिणी' : 'Homemaker'}</SelectItem>
-                        <SelectItem value="not-working">{language === 'hi' ? 'काम नहीं करते' : 'Not Working'}</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label>{language === 'hi' ? 'रोजगार स्थिति (एक से अधिक चुनें)' : 'Employment Status (select multiple)'}</Label>
+                    <MultiSelect
+                      options={EMPLOYMENT_STATUS_OPTIONS}
+                      value={formData.partnerEmploymentStatus || []}
+                      onValueChange={(v) => updateField('partnerEmploymentStatus', v)}
+                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                    />
                   </div>
                 </div>
 
@@ -3860,7 +3842,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     {language === 'hi' ? 'अपलोड हो रहा है...' : 'Uploading...'}
                   </>
                 ) : (
-                  t.registration.submit
+                  isEditMode ? t.registration.updateProfile : t.registration.submit
                 )}
               </Button>
             ) : null}

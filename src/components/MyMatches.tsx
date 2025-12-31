@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { SearchableSelect, EDUCATION_OPTIONS, OCCUPATION_OPTIONS } from '@/components/ui/searchable-select'
+import { SearchableSelect, OCCUPATION_OPTIONS } from '@/components/ui/searchable-select'
+import { MultiSelect, EDUCATION_OPTIONS, EMPLOYMENT_STATUS_OPTIONS } from '@/components/ui/multi-select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
@@ -20,7 +21,8 @@ import type { Language } from '@/lib/translations'
 
 // Extended filters interface with additional fields
 interface ExtendedFilters extends SearchFilters {
-  educationLevel?: string
+  educationLevels?: string[]
+  employmentStatuses?: string[]
   occupationType?: string
   country?: string
   city?: string
@@ -65,7 +67,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     if (filters.dietPreference) count++
     if (filters.drinkingHabit) count++
     if (filters.smokingHabit) count++
-    if (filters.educationLevel) count++
+    if (filters.educationLevels && filters.educationLevels.length > 0) count++
+    if (filters.employmentStatuses && filters.employmentStatuses.length > 0) count++
     if (filters.occupationType) count++
     if (filters.country) count++
     if (filters.city) count++
@@ -307,9 +310,16 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       if (filters.drinkingHabit && profile.drinkingHabit !== filters.drinkingHabit) return false
       if (filters.smokingHabit && profile.smokingHabit !== filters.smokingHabit) return false
       
-      // Education filter - exact match with standardized values
-      if (filters.educationLevel && filters.educationLevel !== 'any') {
-        if (profile.education !== filters.educationLevel) return false
+      // Education filter - multi-select match with standardized values
+      if (filters.educationLevels && filters.educationLevels.length > 0) {
+        const profileEducation = profile.education?.toLowerCase() || ''
+        if (!filters.educationLevels.some(edu => profileEducation === edu.toLowerCase())) return false
+      }
+      
+      // Employment status filter - multi-select match
+      if (filters.employmentStatuses && filters.employmentStatuses.length > 0) {
+        const profileOccupation = profile.occupation?.toLowerCase() || ''
+        if (!filters.employmentStatuses.some(emp => profileOccupation.includes(emp.toLowerCase()))) return false
       }
       
       // Occupation filter - exact match with standardized values
@@ -426,13 +436,25 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           </h4>
           
           <div className="space-y-2">
-            <Label>{t.education}</Label>
-            <SearchableSelect
-              options={[{ value: 'any', label: t.any }, ...EDUCATION_OPTIONS]}
-              value={filters.educationLevel || 'any'}
-              onValueChange={(val) => setFilters({ ...filters, educationLevel: val === 'any' ? undefined : val })}
+            <Label>{t.education} {language === 'hi' ? '(एक से अधिक चुनें)' : '(select multiple)'}</Label>
+            <MultiSelect
+              options={EDUCATION_OPTIONS}
+              value={filters.educationLevels || []}
+              onValueChange={(val) => setFilters({ ...filters, educationLevels: val.length > 0 ? val : undefined })}
               placeholder={t.any}
               searchPlaceholder={language === 'hi' ? 'शिक्षा खोजें...' : 'Search education...'}
+              emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>{language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status'} {language === 'hi' ? '(एक से अधिक चुनें)' : '(select multiple)'}</Label>
+            <MultiSelect
+              options={EMPLOYMENT_STATUS_OPTIONS}
+              value={filters.employmentStatuses || []}
+              onValueChange={(val) => setFilters({ ...filters, employmentStatuses: val.length > 0 ? val : undefined })}
+              placeholder={t.any}
+              searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
               emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
             />
           </div>

@@ -168,6 +168,38 @@ export const MARITAL_STATUS_OPTIONS: MultiSelectOption[] = [
   { value: "awaiting-divorce", label: "Awaiting Divorce" },
 ]
 
+export const EDUCATION_OPTIONS: MultiSelectOption[] = [
+  { value: "10th", label: "10th Standard" },
+  { value: "12th", label: "12th Standard" },
+  { value: "diploma", label: "Diploma" },
+  { value: "graduate", label: "Graduate" },
+  { value: "btech-be", label: "B.Tech/B.E." },
+  { value: "bba", label: "BBA" },
+  { value: "bca", label: "BCA" },
+  { value: "bsc", label: "B.Sc" },
+  { value: "bcom", label: "B.Com" },
+  { value: "ba", label: "B.A." },
+  { value: "post-graduate", label: "Post Graduate" },
+  { value: "mba", label: "MBA" },
+  { value: "mca", label: "MCA" },
+  { value: "mtech-me", label: "M.Tech/M.E." },
+  { value: "phd", label: "PhD/Doctorate" },
+  { value: "mbbs", label: "MBBS" },
+  { value: "md-ms", label: "MD/MS" },
+  { value: "ca", label: "CA" },
+  { value: "other", label: "Other" },
+]
+
+export const EMPLOYMENT_STATUS_OPTIONS: MultiSelectOption[] = [
+  { value: "employed", label: "Employed" },
+  { value: "self-employed", label: "Self-Employed" },
+  { value: "business-owner", label: "Business Owner" },
+  { value: "govt-employee", label: "Government Employee" },
+  { value: "student", label: "Student" },
+  { value: "homemaker", label: "Homemaker" },
+  { value: "not-working", label: "Not Working" },
+]
+
 export const RELIGION_OPTIONS: MultiSelectOption[] = [
   { value: "Hindu", label: "Hindu" },
   { value: "Muslim", label: "Muslim" },
