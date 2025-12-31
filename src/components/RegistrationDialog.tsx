@@ -2865,7 +2865,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <IdentificationCard size={24} weight="bold" className="text-blue-600" />
                     <Label className="text-lg font-semibold">
                       {language === 'hi' ? 'सरकारी पहचान प्रमाण अपलोड करें' : 'Upload Government ID Proof'} *
-                      {isEditMode && (
+                      {isEditMode && !isAdminMode && (
                         <span className="ml-2 text-xs text-gray-500 font-normal">
                           🔒 {language === 'hi' ? 'स्थायी' : 'Permanent'}
                         </span>
@@ -2873,8 +2873,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     </Label>
                   </div>
                   
-                  {/* In Edit Mode - Show locked message */}
-                  {isEditMode ? (
+                  {/* In Edit Mode (not admin) - Show locked message */}
+                  {isEditMode && !isAdminMode ? (
                     <Alert className="bg-gray-50 border-gray-400 dark:bg-gray-950/30">
                       <ShieldCheck size={20} weight="fill" className="text-gray-600" />
                       <AlertDescription className="text-gray-700 dark:text-gray-300">
@@ -2883,7 +2883,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           : 'ID Proof cannot be edited. It was submitted during registration for verification.'}
                       </AlertDescription>
                     </Alert>
-                  ) : (
+                  ) : !isEditMode ? (
                     <Alert className="bg-orange-50 border-orange-300 dark:bg-orange-950/20 dark:border-orange-700">
                       <Warning size={18} className="text-orange-600" />
                       <AlertDescription className="text-orange-700 dark:text-orange-400">
@@ -2892,10 +2892,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           : 'Government ID is mandatory for name and DOB verification. This is for verification only and will NOT be shown to other users.'}
                       </AlertDescription>
                     </Alert>
-                  )}
+                  ) : null}
 
-                  {/* Only show ID proof upload controls in new registration mode */}
-                  {!isEditMode && (
+                  {/* Only show ID proof upload controls in new registration mode OR admin mode */}
+                  {(!isEditMode || isAdminMode) && (
                     <>
                       <div className="space-y-3">
                         <Label>{language === 'hi' ? 'दस्तावेज़ का प्रकार चुनें' : 'Select Document Type'} *</Label>
@@ -2987,8 +2987,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     </>
                   )}
 
-                  {/* In edit mode, show existing ID proof info (read-only) */}
-                  {isEditMode && editProfile?.idProofType && (
+                  {/* In edit mode (for regular users), show existing ID proof info (read-only) */}
+                  {isEditMode && !isAdminMode && editProfile?.idProofType && (
                     <div className="border-2 border-gray-300 bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
                       <div className="flex items-center gap-3">
                         <ShieldCheck size={24} weight="fill" className="text-green-600" />
