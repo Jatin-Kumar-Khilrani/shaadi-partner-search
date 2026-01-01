@@ -19,7 +19,7 @@ interface BiodataGeneratorProps {
   open: boolean
 }
 
-// Gender-specific color themes
+// Gender-specific color themes with universal wedding symbols
 const getGenderTheme = (gender: 'male' | 'female') => {
   if (gender === 'female') {
     return {
@@ -31,11 +31,12 @@ const getGenderTheme = (gender: 'male' | 'female') => {
       gradient2: '#fbcfe8', // Pink-200
       headerBg: 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
       cardBg: '#fff1f2',
-      symbol: '🌸', // Lotus flower for female
+      symbol: '💐', // Bouquet - universal wedding symbol
       symbolColor: '#ec4899',
-      omColor: '#be185d',
-      watermarkColor: '#f472b6',
+      titleSymbol: '💍', // Ring - universal wedding symbol
+      watermarkColor: 'rgba(190, 24, 93, 0.12)',
       decorativePattern: 'radial-gradient(circle at 20% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(244, 114, 182, 0.1) 0%, transparent 50%)',
+      borderGradient: 'linear-gradient(135deg, #be185d, #d4af37, #be185d)',
     }
   }
   return {
@@ -47,11 +48,12 @@ const getGenderTheme = (gender: 'male' | 'female') => {
     gradient2: '#bfdbfe', // Blue-200
     headerBg: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
     cardBg: '#f0f9ff',
-    symbol: '🪷', // Lotus for male
+    symbol: '💐', // Bouquet - universal wedding symbol
     symbolColor: '#3b82f6',
-    omColor: '#1e40af',
-    watermarkColor: '#60a5fa',
+    titleSymbol: '💍', // Ring - universal wedding symbol
+    watermarkColor: 'rgba(30, 64, 175, 0.12)',
     decorativePattern: 'radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(147, 197, 253, 0.1) 0%, transparent 50%)',
+    borderGradient: 'linear-gradient(135deg, #1e40af, #d4af37, #1e40af)',
   }
 }
 
@@ -282,16 +284,18 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
       ctx.lineWidth = 2
       ctx.strokeRect(25, 25, canvas.width - 50, canvas.height - 50)
       
-      // Draw ॐ symbol or flower at top
-      ctx.font = 'bold 48px Arial'
-      ctx.fillStyle = theme.omColor
+      // Draw elegant wedding header with rings
+      ctx.font = '36px Arial'
+      ctx.fillStyle = theme.primary
       ctx.textAlign = 'center'
-      ctx.fillText(profile.gender === 'female' ? '॥ श्री ॥' : 'ॐ', canvas.width / 2, 65)
+      ctx.fillText('💍 ❤ 💍', canvas.width / 2, 60)
       
-      // Draw decorative elements around title
-      ctx.font = '24px Arial'
-      ctx.fillText('✿', canvas.width / 2 - 120, 100)
-      ctx.fillText('✿', canvas.width / 2 + 120, 100)
+      // Draw decorative flourishes around title
+      ctx.font = '20px Arial'
+      ctx.fillText('✧', canvas.width / 2 - 140, 95)
+      ctx.fillText('❀', canvas.width / 2 - 110, 100)
+      ctx.fillText('❀', canvas.width / 2 + 110, 100)
+      ctx.fillText('✧', canvas.width / 2 + 140, 95)
       
       // Draw title with decorative style
       ctx.font = 'bold 28px Georgia'
@@ -600,26 +604,53 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
         }
       }
       
-      // Watermark
+      // Multiple Watermarks across the page for branding
       ctx.save()
-      ctx.globalAlpha = 0.08
-      ctx.font = 'bold 50px Arial'
-      ctx.fillStyle = theme.watermarkColor
-      ctx.textAlign = 'center'
-      ctx.translate(canvas.width / 2, canvas.height / 2)
-      ctx.rotate(-Math.PI / 6)
-      ctx.fillText('ShaadiPartnerSearch', 0, 0)
-      ctx.restore()
-      
-      // Footer branding
-      ctx.font = 'bold 12px Arial'
+      ctx.globalAlpha = 0.06
+      ctx.font = 'bold 32px Georgia'
       ctx.fillStyle = theme.primary
       ctx.textAlign = 'center'
-      ctx.fillText('💒 ShaadiPartnerSearch.com', canvas.width / 2, canvas.height - 30)
+      
+      // Top-left watermark
+      ctx.save()
+      ctx.translate(180, 250)
+      ctx.rotate(-Math.PI / 6)
+      ctx.fillText('Shaadi Partner Search', 0, 0)
+      ctx.restore()
+      
+      // Center watermark
+      ctx.save()
+      ctx.translate(canvas.width / 2, canvas.height / 2)
+      ctx.rotate(-Math.PI / 6)
+      ctx.font = 'bold 40px Georgia'
+      ctx.globalAlpha = 0.08
+      ctx.fillText('Shaadi Partner Search', 0, 0)
+      ctx.restore()
+      
+      // Bottom-right watermark
+      ctx.save()
+      ctx.translate(canvas.width - 180, canvas.height - 300)
+      ctx.rotate(-Math.PI / 6)
+      ctx.font = 'bold 32px Georgia'
+      ctx.globalAlpha = 0.06
+      ctx.fillText('Shaadi Partner Search', 0, 0)
+      ctx.restore()
+      
+      ctx.restore()
+      
+      // Footer branding - Enhanced with rings
+      ctx.font = 'bold 12px Georgia'
+      ctx.fillStyle = theme.primary
+      ctx.textAlign = 'center'
+      ctx.fillText('💍 Shaadi Partner Search 💍', canvas.width / 2, canvas.height - 35)
       
       ctx.font = '10px Arial'
       ctx.fillStyle = '#666'
-      ctx.fillText(language === 'hi' ? 'भारत की विश्वसनीय वैवाहिक सेवा' : "India's Trusted Matrimonial Service", canvas.width / 2, canvas.height - 15)
+      ctx.fillText(language === 'hi' ? 'भारत की विश्वसनीय वैवाहिक सेवा' : "India's Trusted Matrimonial Service", canvas.width / 2, canvas.height - 20)
+      
+      ctx.font = '9px Arial'
+      ctx.fillStyle = '#999'
+      ctx.fillText('www.shaadipartnersearch.com', canvas.width / 2, canvas.height - 8)
       
       // Download
       const link = document.createElement('a')
@@ -692,25 +723,43 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
               style={{ background: theme.primary }}
             />
             
-            {/* Watermark for non-paid users */}
+            {/* Prominent watermark for non-paid users */}
             {!isPaidUser && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                <div 
-                  className="rotate-[-30deg] text-4xl font-bold opacity-40 select-none whitespace-nowrap"
-                  style={{ color: theme.watermarkColor }}
-                >
-                  ShaadiPartnerSearch.com
+              <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
+                <div className="absolute top-[15%] left-[10%] rotate-[-30deg] text-2xl font-bold opacity-30 select-none whitespace-nowrap" style={{ color: theme.primary }}>
+                  Shaadi Partner Search
+                </div>
+                <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 rotate-[-30deg] text-4xl font-bold opacity-40 select-none whitespace-nowrap" style={{ color: theme.primary }}>
+                  Shaadi Partner Search
+                </div>
+                <div className="absolute bottom-[20%] right-[5%] rotate-[-30deg] text-2xl font-bold opacity-30 select-none whitespace-nowrap" style={{ color: theme.primary }}>
+                  Shaadi Partner Search
                 </div>
               </div>
             )}
             
-            {/* Subtle branding watermark for all users */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-5">
+            {/* Elegant branding watermarks for all users - appears on every page */}
+            <div className="absolute inset-0 pointer-events-none z-5 overflow-hidden">
+              {/* Top-left watermark */}
               <div 
-                className="rotate-[-30deg] text-3xl font-bold opacity-10 select-none whitespace-nowrap"
+                className="absolute top-[20%] left-[5%] rotate-[-30deg] text-xl font-serif font-bold select-none whitespace-nowrap"
                 style={{ color: theme.watermarkColor }}
               >
-                ShaadiPartnerSearch
+                Shaadi Partner Search
+              </div>
+              {/* Center watermark */}
+              <div 
+                className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 rotate-[-30deg] text-3xl font-serif font-bold select-none whitespace-nowrap"
+                style={{ color: theme.watermarkColor }}
+              >
+                Shaadi Partner Search
+              </div>
+              {/* Bottom-right watermark */}
+              <div 
+                className="absolute bottom-[25%] right-[0%] rotate-[-30deg] text-xl font-serif font-bold select-none whitespace-nowrap"
+                style={{ color: theme.watermarkColor }}
+              >
+                Shaadi Partner Search
               </div>
             </div>
             
@@ -719,21 +768,27 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
               className="border-2 rounded p-4 relative"
               style={{ borderColor: '#d4af37' }}
             >
-              {/* Religious Symbol */}
-              <div className="text-center mb-3">
-                <span 
-                  className="text-4xl font-bold"
-                  style={{ color: theme.omColor }}
-                >
-                  {profile.gender === 'female' ? '॥ श्री ॥' : 'ॐ'}
-                </span>
+              {/* Elegant Wedding Header - Universal Symbol */}
+              <div className="text-center mb-2">
+                <div className="flex items-center justify-center gap-3">
+                  <span className="text-2xl">💍</span>
+                  <span 
+                    className="text-3xl"
+                    style={{ color: theme.primary }}
+                  >
+                    ❤
+                  </span>
+                  <span className="text-2xl">💍</span>
+                </div>
               </div>
               
-              {/* Decorative flowers */}
-              <div className="flex justify-center gap-4 mb-2">
-                <span className="text-xl" style={{ color: theme.accent }}>✿</span>
-                <span className="text-xl" style={{ color: theme.accent }}>✿</span>
-                <span className="text-xl" style={{ color: theme.accent }}>✿</span>
+              {/* Decorative flourishes */}
+              <div className="flex justify-center items-center gap-3 mb-2">
+                <span className="text-lg" style={{ color: theme.accent }}>✧</span>
+                <span className="text-xl" style={{ color: theme.accent }}>❀</span>
+                <span className="text-sm" style={{ color: '#d4af37' }}>⋆</span>
+                <span className="text-xl" style={{ color: theme.accent }}>❀</span>
+                <span className="text-lg" style={{ color: theme.accent }}>✧</span>
               </div>
               
               {/* Title */}
@@ -1107,32 +1162,37 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
                 </CardContent>
               </Card>
               
-              {/* Footer with Branding */}
+              {/* Footer with Branding - Elegant Design */}
               <div 
-                className="mt-4 pt-3 border-t"
-                style={{ borderColor: theme.accent }}
+                className="mt-4 pt-3 border-t-2"
+                style={{ borderColor: theme.accent, borderStyle: 'dashed' }}
               >
                 <div className="flex items-center justify-center gap-2 mb-1">
-                  <span className="text-xl">{profile.gender === 'female' ? '🌸' : '💒'}</span>
+                  <span className="text-lg">💍</span>
                   <span 
-                    className="font-bold text-base"
+                    className="font-bold text-base font-serif tracking-wide"
                     style={{ color: theme.primary }}
                   >
-                    ShaadiPartnerSearch.com
+                    Shaadi Partner Search
                   </span>
+                  <span className="text-lg">💍</span>
                 </div>
-                <p className="text-center text-[10px] text-gray-500">
+                <p className="text-center text-[10px] text-gray-500 font-medium">
                   {language === 'hi' ? 'भारत की विश्वसनीय वैवाहिक सेवा' : "India's Trusted Matrimonial Service"}
                 </p>
-                <p className="text-center text-[9px] text-gray-400 mt-0.5">
+                <p className="text-center text-[9px] text-gray-400 mt-0.5 flex items-center justify-center gap-1">
+                  <span>📱</span>
                   {language === 'hi' ? 'QR कोड स्कैन करके प्रोफ़ाइल देखें' : 'Scan QR code to view profile'}
+                </p>
+                <p className="text-center text-[8px] text-gray-300 mt-1">
+                  www.shaadipartnersearch.com
                 </p>
               </div>
             </div>
           </div>
         </ScrollArea>
         
-        <div className="flex justify-end gap-3 pt-4 border-t bg-white sticky bottom-0 pb-2">
+        <div className="flex justify-end gap-3 pt-4 border-t bg-white relative z-50">
           <Button variant="outline" onClick={onClose} className="min-w-[100px]">
             {t.close}
           </Button>
