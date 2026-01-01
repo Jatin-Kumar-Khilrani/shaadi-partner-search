@@ -197,7 +197,7 @@ export function AdminLoginDialog({
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="pr-10"
+                  className="pr-10 [&::-ms-reveal]:hidden [&::-webkit-credentials-auto-fill-button]:hidden"
                   placeholder={language === 'hi' ? 'पासवर्ड दर्ज करें' : 'Enter password'}
                 />
                 <Button

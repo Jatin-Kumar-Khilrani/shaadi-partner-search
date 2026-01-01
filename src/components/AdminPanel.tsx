@@ -309,6 +309,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [showBulkRejectDialog, setShowBulkRejectDialog] = useState<{ ids: string[], source: 'pending' | 'database' } | null>(null)
   const [bulkRejectReason, setBulkRejectReason] = useState('')
   
+  // Delete transaction confirmation dialog state
+  const [showDeleteTransactionDialog, setShowDeleteTransactionDialog] = useState<PaymentTransaction | null>(null)
+  
   const t = {
     title: language === 'hi' ? 'प्रशासन पैनल' : 'Admin Panel',
     description: language === 'hi' ? 'प्रोफाइल सत्यापन और प्रबंधन' : 'Profile verification and management',
@@ -3055,10 +3058,40 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
 
                 {/* Transactions Table */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <Receipt size={20} />
-                    {t.recentTransactions}
-                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Receipt size={20} />
+                      {t.recentTransactions}
+                    </h3>
+                    {paymentTransactions && paymentTransactions.length > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => {
+                          if (confirm(language === 'hi' ? 'क्या आप सभी लेन-देन रीसेट करना चाहते हैं? यह कार्रवाई पूर्ववत नहीं की जा सकती।' : 'Reset all transactions? This cannot be undone.')) {
+                            setPaymentTransactions([])
+                            // Also clear payment receipts from profiles
+                            setProfiles((current) => 
+                              (current || []).map(p => ({
+                                ...p,
+                                paymentReceipt: undefined,
+                                paymentReceiptUrl: undefined,
+                                paymentVerified: undefined,
+                                paymentVerifiedAt: undefined,
+                                paymentRejected: undefined,
+                                paymentRejectedReason: undefined
+                              }))
+                            )
+                            toast.success(language === 'hi' ? 'सभी लेन-देन रीसेट!' : 'All transactions reset!')
+                          }
+                        }}
+                      >
+                        <Trash size={14} className="mr-1" />
+                        {language === 'hi' ? 'रीसेट करें' : 'Reset All'}
+                      </Button>
+                    )}
+                  </div>
                   
                   {(!paymentTransactions || paymentTransactions.length === 0) ? (
                     <Alert>
@@ -3114,7 +3147,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               </TableCell>
                               <TableCell>{formatDateDDMMYYYY(tx.paymentDate)}</TableCell>
                               <TableCell>
-                                <div className="flex gap-1">
+                                <div className="flex gap-1 flex-wrap">
                                   <Button
                                     size="sm"
                                     variant="outline"
@@ -3146,6 +3179,15 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                       {t.refund}
                                     </Button>
                                   )}
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setShowDeleteTransactionDialog(tx)}
+                                    className="gap-1 text-red-600 border-red-300 hover:bg-red-50"
+                                    title={language === 'hi' ? 'हटाएं' : 'Delete'}
+                                  >
+                                    <Trash size={14} />
+                                  </Button>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -5528,56 +5570,144 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               variant="outline"
               onClick={() => {
                 if (selectedTransaction) {
-                  // Generate receipt as text file for download
-                  const receiptText = `
-════════════════════════════════════════
-       SHAADI PARTNER SEARCH
-       PAYMENT RECEIPT
-════════════════════════════════════════
+                  // Generate receipt as PDF using print-to-PDF
+                  const receiptHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Receipt - ${selectedTransaction.receiptNumber}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; }
+    .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 20px; }
+    .header h1 { color: #7c3aed; font-size: 24px; margin-bottom: 5px; }
+    .header .subtitle { color: #666; font-size: 12px; }
+    .header .badge { display: inline-block; background: #dcfce7; color: #166534; padding: 4px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 10px; }
+    .section { margin-bottom: 20px; }
+    .section-title { font-size: 14px; color: #666; font-weight: 600; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .field { margin-bottom: 8px; }
+    .field .label { font-size: 11px; color: #888; }
+    .field .value { font-size: 13px; font-weight: 600; }
+    .plan-box { background: #f5f5f5; padding: 15px; border-radius: 8px; margin-top: 10px; }
+    .plan-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+    .plan-row.total { border-top: 1px solid #ccc; padding-top: 10px; margin-top: 10px; font-weight: bold; font-size: 16px; }
+    .plan-row.total .amount { color: #16a34a; }
+    .discount { color: #16a34a; }
+    .validity { text-align: center; background: #eff6ff; padding: 12px; border-radius: 8px; margin-top: 15px; }
+    .validity .label { font-size: 11px; color: #666; }
+    .validity .dates { font-weight: 600; font-size: 13px; margin-top: 5px; }
+    .footer { text-align: center; font-size: 11px; color: #888; border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px; }
+    @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>ShaadiPartnerSearch</h1>
+    <div class="subtitle">${language === 'hi' ? 'विश्वसनीय वैवाहिक सेवा' : 'Trusted Matrimonial Service'}</div>
+    <div class="badge">${t.paymentReceipt}</div>
+  </div>
 
-Receipt No: ${selectedTransaction.receiptNumber}
-Transaction ID: ${selectedTransaction.transactionId}
-Payment Date: ${formatDateDDMMYYYY(selectedTransaction.paymentDate)}
-Payment Mode: ${selectedTransaction.paymentMode}
+  <div class="section">
+    <div class="grid">
+      <div class="field">
+        <div class="label">${t.receiptNumber}</div>
+        <div class="value" style="font-family: monospace;">${selectedTransaction.receiptNumber}</div>
+      </div>
+      <div class="field">
+        <div class="label">${t.transactionId}</div>
+        <div class="value" style="font-family: monospace;">${selectedTransaction.transactionId}</div>
+      </div>
+      <div class="field">
+        <div class="label">${t.paymentDate}</div>
+        <div class="value">${formatDateDDMMYYYY(selectedTransaction.paymentDate)}</div>
+      </div>
+      <div class="field">
+        <div class="label">${t.paymentMode}</div>
+        <div class="value" style="text-transform: capitalize;">${selectedTransaction.paymentMode}</div>
+      </div>
+    </div>
+  </div>
 
-────────────────────────────────────────
-CUSTOMER DETAILS
-────────────────────────────────────────
-Name: ${selectedTransaction.profileName}
-Profile ID: ${selectedTransaction.profileId}
-Mobile: ${selectedTransaction.profileMobile}
-Email: ${selectedTransaction.profileEmail}
+  <div class="section">
+    <div class="section-title">${language === 'hi' ? 'ग्राहक विवरण' : 'Customer Details'}</div>
+    <div class="grid">
+      <div class="field">
+        <div class="label">${t.name}</div>
+        <div class="value">${selectedTransaction.profileName}</div>
+      </div>
+      <div class="field">
+        <div class="label">${t.profileId}</div>
+        <div class="value" style="font-family: monospace;">${selectedTransaction.profileId}</div>
+      </div>
+      <div class="field">
+        <div class="label">${t.mobile}</div>
+        <div class="value">${selectedTransaction.profileMobile}</div>
+      </div>
+      <div class="field">
+        <div class="label">${t.email}</div>
+        <div class="value" style="font-size: 11px;">${selectedTransaction.profileEmail}</div>
+      </div>
+    </div>
+  </div>
 
-────────────────────────────────────────
-PLAN DETAILS
-────────────────────────────────────────
-Membership Plan: ${selectedTransaction.plan === 'free' ? 'Free Plan' : selectedTransaction.plan === '6-month' ? '6 Month Plan' : '1 Year Plan'}
-Original Amount: ₹${selectedTransaction.amount}
-Discount: ₹${selectedTransaction.discountAmount}
-────────────────────────────────────────
-FINAL AMOUNT: ₹${selectedTransaction.finalAmount}
-────────────────────────────────────────
+  <div class="section">
+    <div class="section-title">${language === 'hi' ? 'योजना विवरण' : 'Plan Details'}</div>
+    <div class="plan-box">
+      <div class="plan-row">
+        <span>${t.membershipPlan}</span>
+        <span style="font-weight: 600;">${selectedTransaction.plan === 'free' ? t.freePlan : selectedTransaction.plan === '6-month' ? t.sixMonthPlan : t.oneYearPlan}</span>
+      </div>
+      <div class="plan-row">
+        <span>${t.originalAmount}</span>
+        <span style="font-family: monospace;">₹${selectedTransaction.amount}</span>
+      </div>
+      ${selectedTransaction.discountAmount > 0 ? `
+      <div class="plan-row discount">
+        <span>${language === 'hi' ? 'छूट' : 'Discount'}</span>
+        <span style="font-family: monospace;">-₹${selectedTransaction.discountAmount}</span>
+      </div>
+      ` : ''}
+      <div class="plan-row total">
+        <span>${t.finalAmount}</span>
+        <span class="amount" style="font-family: monospace;">₹${selectedTransaction.finalAmount}</span>
+      </div>
+    </div>
+  </div>
 
-Validity Period: ${formatDateDDMMYYYY(selectedTransaction.paymentDate)} - ${formatDateDDMMYYYY(selectedTransaction.expiryDate)}
+  <div class="validity">
+    <div class="label">${language === 'hi' ? 'वैधता अवधि' : 'Validity Period'}</div>
+    <div class="dates">${formatDateDDMMYYYY(selectedTransaction.paymentDate)} - ${formatDateDDMMYYYY(selectedTransaction.expiryDate)}</div>
+  </div>
 
-${selectedTransaction.notes ? `Notes: ${selectedTransaction.notes}` : ''}
+  ${selectedTransaction.notes ? `
+  <div class="section" style="margin-top: 15px;">
+    <div class="field">
+      <div class="label">${language === 'hi' ? 'नोट्स' : 'Notes'}</div>
+      <div class="value">${selectedTransaction.notes}</div>
+    </div>
+  </div>
+  ` : ''}
 
-════════════════════════════════════════
-This is a computer generated receipt.
-Thank you for choosing ShaadiPartnerSearch!
-════════════════════════════════════════
+  <div class="footer">
+    <p>${language === 'hi' ? 'यह कंप्यूटर जनित रसीद है।' : 'This is a computer generated receipt.'}</p>
+    <p>${language === 'hi' ? 'ShaadiPartnerSearch चुनने के लिए धन्यवाद!' : 'Thank you for choosing ShaadiPartnerSearch!'}</p>
+  </div>
+</body>
+</html>
                   `.trim()
                   
-                  const blob = new Blob([receiptText], { type: 'text/plain' })
-                  const url = URL.createObjectURL(blob)
-                  const a = document.createElement('a')
-                  a.href = url
-                  a.download = `Receipt_${selectedTransaction.receiptNumber}.txt`
-                  document.body.appendChild(a)
-                  a.click()
-                  document.body.removeChild(a)
-                  URL.revokeObjectURL(url)
-                  toast.success(language === 'hi' ? 'रसीद डाउनलोड हो गई!' : 'Receipt downloaded!')
+                  // Open a new window with the receipt for print/save as PDF
+                  const printWindow = window.open('', '_blank', 'width=700,height=900')
+                  if (printWindow) {
+                    printWindow.document.write(receiptHtml)
+                    printWindow.document.close()
+                    // Give the content time to load before triggering print
+                    setTimeout(() => {
+                      printWindow.print()
+                    }, 300)
+                    toast.success(language === 'hi' ? 'PDF के रूप में सहेजने के लिए प्रिंट करें!' : 'Use Print > Save as PDF to download!')
+                  }
                 }
               }}
               className="gap-2"
@@ -5588,7 +5718,145 @@ Thank you for choosing ShaadiPartnerSearch!
             <Button 
               variant="outline"
               onClick={() => {
-                window.print()
+                if (selectedTransaction) {
+                  // Print only the receipt content
+                  const receiptHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Receipt - ${selectedTransaction.receiptNumber}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; }
+    .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 20px; }
+    .header h1 { color: #7c3aed; font-size: 24px; margin-bottom: 5px; }
+    .header .subtitle { color: #666; font-size: 12px; }
+    .header .badge { display: inline-block; background: #dcfce7; color: #166534; padding: 4px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 10px; }
+    .section { margin-bottom: 20px; }
+    .section-title { font-size: 14px; color: #666; font-weight: 600; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .field { margin-bottom: 8px; }
+    .field .label { font-size: 11px; color: #888; }
+    .field .value { font-size: 13px; font-weight: 600; }
+    .plan-box { background: #f5f5f5; padding: 15px; border-radius: 8px; margin-top: 10px; }
+    .plan-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+    .plan-row.total { border-top: 1px solid #ccc; padding-top: 10px; margin-top: 10px; font-weight: bold; font-size: 16px; }
+    .plan-row.total .amount { color: #16a34a; }
+    .discount { color: #16a34a; }
+    .validity { text-align: center; background: #eff6ff; padding: 12px; border-radius: 8px; margin-top: 15px; }
+    .validity .label { font-size: 11px; color: #666; }
+    .validity .dates { font-weight: 600; font-size: 13px; margin-top: 5px; }
+    .footer { text-align: center; font-size: 11px; color: #888; border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px; }
+    @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>ShaadiPartnerSearch</h1>
+    <div class="subtitle">${language === 'hi' ? 'विश्वसनीय वैवाहिक सेवा' : 'Trusted Matrimonial Service'}</div>
+    <div class="badge">${t.paymentReceipt}</div>
+  </div>
+
+  <div class="section">
+    <div class="grid">
+      <div class="field">
+        <div class="label">${t.receiptNumber}</div>
+        <div class="value" style="font-family: monospace;">${selectedTransaction.receiptNumber}</div>
+      </div>
+      <div class="field">
+        <div class="label">${t.transactionId}</div>
+        <div class="value" style="font-family: monospace;">${selectedTransaction.transactionId}</div>
+      </div>
+      <div class="field">
+        <div class="label">${t.paymentDate}</div>
+        <div class="value">${formatDateDDMMYYYY(selectedTransaction.paymentDate)}</div>
+      </div>
+      <div class="field">
+        <div class="label">${t.paymentMode}</div>
+        <div class="value" style="text-transform: capitalize;">${selectedTransaction.paymentMode}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">${language === 'hi' ? 'ग्राहक विवरण' : 'Customer Details'}</div>
+    <div class="grid">
+      <div class="field">
+        <div class="label">${t.name}</div>
+        <div class="value">${selectedTransaction.profileName}</div>
+      </div>
+      <div class="field">
+        <div class="label">${t.profileId}</div>
+        <div class="value" style="font-family: monospace;">${selectedTransaction.profileId}</div>
+      </div>
+      <div class="field">
+        <div class="label">${t.mobile}</div>
+        <div class="value">${selectedTransaction.profileMobile}</div>
+      </div>
+      <div class="field">
+        <div class="label">${t.email}</div>
+        <div class="value" style="font-size: 11px;">${selectedTransaction.profileEmail}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">${language === 'hi' ? 'योजना विवरण' : 'Plan Details'}</div>
+    <div class="plan-box">
+      <div class="plan-row">
+        <span>${t.membershipPlan}</span>
+        <span style="font-weight: 600;">${selectedTransaction.plan === 'free' ? t.freePlan : selectedTransaction.plan === '6-month' ? t.sixMonthPlan : t.oneYearPlan}</span>
+      </div>
+      <div class="plan-row">
+        <span>${t.originalAmount}</span>
+        <span style="font-family: monospace;">₹${selectedTransaction.amount}</span>
+      </div>
+      ${selectedTransaction.discountAmount > 0 ? `
+      <div class="plan-row discount">
+        <span>${language === 'hi' ? 'छूट' : 'Discount'}</span>
+        <span style="font-family: monospace;">-₹${selectedTransaction.discountAmount}</span>
+      </div>
+      ` : ''}
+      <div class="plan-row total">
+        <span>${t.finalAmount}</span>
+        <span class="amount" style="font-family: monospace;">₹${selectedTransaction.finalAmount}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="validity">
+    <div class="label">${language === 'hi' ? 'वैधता अवधि' : 'Validity Period'}</div>
+    <div class="dates">${formatDateDDMMYYYY(selectedTransaction.paymentDate)} - ${formatDateDDMMYYYY(selectedTransaction.expiryDate)}</div>
+  </div>
+
+  ${selectedTransaction.notes ? `
+  <div class="section" style="margin-top: 15px;">
+    <div class="field">
+      <div class="label">${language === 'hi' ? 'नोट्स' : 'Notes'}</div>
+      <div class="value">${selectedTransaction.notes}</div>
+    </div>
+  </div>
+  ` : ''}
+
+  <div class="footer">
+    <p>${language === 'hi' ? 'यह कंप्यूटर जनित रसीद है।' : 'This is a computer generated receipt.'}</p>
+    <p>${language === 'hi' ? 'ShaadiPartnerSearch चुनने के लिए धन्यवाद!' : 'Thank you for choosing ShaadiPartnerSearch!'}</p>
+  </div>
+</body>
+</html>
+                  `.trim()
+                  
+                  // Open a new window with only the receipt for printing
+                  const printWindow = window.open('', '_blank', 'width=700,height=900')
+                  if (printWindow) {
+                    printWindow.document.write(receiptHtml)
+                    printWindow.document.close()
+                    setTimeout(() => {
+                      printWindow.print()
+                      printWindow.close()
+                    }, 300)
+                  }
+                }
               }}
               className="gap-2"
             >
@@ -5668,6 +5936,68 @@ ShaadiPartnerSearch Team
               {t.emailReceipt}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Transaction Confirmation Dialog */}
+      <Dialog open={!!showDeleteTransactionDialog} onOpenChange={(open) => !open && setShowDeleteTransactionDialog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash size={24} />
+              {language === 'hi' ? 'लेन-देन हटाएं' : 'Delete Transaction'}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'hi' ? 'क्या आप वाकई इस लेन-देन को हटाना चाहते हैं?' : 'Are you sure you want to delete this transaction?'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {showDeleteTransactionDialog && (
+            <div className="py-4 space-y-2">
+              <div className="p-4 bg-muted rounded-lg space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t.receiptNumber}:</span>
+                  <span className="font-mono font-bold">{showDeleteTransactionDialog.receiptNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t.name}:</span>
+                  <span className="font-semibold">{showDeleteTransactionDialog.profileName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t.finalAmount}:</span>
+                  <span className="font-bold text-green-600">₹{showDeleteTransactionDialog.finalAmount}</span>
+                </div>
+              </div>
+              <Alert variant="destructive">
+                <Warning className="h-4 w-4" />
+                <AlertDescription>
+                  {language === 'hi' ? 'यह क्रिया पूर्ववत नहीं की जा सकती।' : 'This action cannot be undone.'}
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteTransactionDialog(null)}>
+              {t.cancel}
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => {
+                if (showDeleteTransactionDialog) {
+                  setPaymentTransactions((prev: PaymentTransaction[]) => 
+                    prev.filter((tx: PaymentTransaction) => tx.id !== showDeleteTransactionDialog.id)
+                  )
+                  toast.success(language === 'hi' ? 'लेन-देन हटा दिया गया!' : 'Transaction deleted!')
+                  setShowDeleteTransactionDialog(null)
+                }
+              }}
+              className="gap-2"
+            >
+              <Trash size={16} />
+              {language === 'hi' ? 'हटाएं' : 'Delete'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
