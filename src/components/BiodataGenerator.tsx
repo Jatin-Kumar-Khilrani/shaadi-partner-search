@@ -706,7 +706,7 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
           {/* Biodata Preview - Gender-specific styling */}
           <div 
             ref={biodataRef}
-            className="relative rounded-lg p-4 pb-0 mx-auto max-w-2xl overflow-hidden"
+            className="relative rounded-lg p-4 mx-auto max-w-2xl overflow-hidden"
             style={{ 
               minHeight: '800px',
               background: `linear-gradient(135deg, ${theme.gradient1} 0%, ${theme.gradient2} 100%)`,
@@ -765,7 +765,7 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
             
             {/* Inner decorative border with golden accent */}
             <div 
-              className="border-2 rounded p-4 relative"
+              className="border-2 rounded p-4 pb-0 relative"
               style={{ borderColor: '#d4af37' }}
             >
               {/* Elegant Wedding Header - Universal Symbol */}
@@ -1164,7 +1164,7 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
               
               {/* Footer with Branding - Elegant Design */}
               <div 
-                className="mt-4 pt-3 pb-2 border-t-2 rounded-b"
+                className="mt-4 pt-3 pb-4 border-t-2 rounded-b"
                 style={{ 
                   borderColor: theme.accent, 
                   borderStyle: 'dashed',
