@@ -1,15 +1,30 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Eye, EyeSlash } from '@phosphor-icons/react'
+import { Eye, EyeSlash, ArrowRight, ArrowLeft } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Language } from '@/lib/translations'
 
-const ADMIN_USERNAME = 'rkkhilrani'
-const ADMIN_PASSWORD = '1234'
+// Get admin credentials from environment variables (set via GitHub Secrets in production)
+const getAdminCredentials = () => {
+  // Check runtime config first (for production deployments)
+  const runtimeConfig = (window as unknown as { __RUNTIME_CONFIG__?: { admin?: { username?: string; password?: string } } }).__RUNTIME_CONFIG__
+  if (runtimeConfig?.admin?.username && runtimeConfig?.admin?.password) {
+    return {
+      username: runtimeConfig.admin.username,
+      password: runtimeConfig.admin.password
+    }
+  }
+  
+  // Fallback to Vite env variables (for development)
+  return {
+    username: import.meta.env.VITE_ADMIN_USERNAME || '',
+    password: import.meta.env.VITE_ADMIN_PASSWORD || ''
+  }
+}
 
 interface AdminLoginDialogProps {
   open: boolean
@@ -28,38 +43,70 @@ export function AdminLoginDialog({
   const [password, setPassword] = useState('')
   const [otp, setOtp] = useState('')
   const [generatedOtp, setGeneratedOtp] = useState('')
-  const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
+  const [step, setStep] = useState<'username' | 'password' | 'otp'>('username')
   const [showPassword, setShowPassword] = useState(false)
   const [keepLoggedIn, setKeepLoggedIn] = useState(false)
+  const [adminCredentials, setAdminCredentials] = useState<{ username: string; password: string } | null>(null)
+
+  // Load credentials on mount
+  useEffect(() => {
+    setAdminCredentials(getAdminCredentials())
+  }, [])
 
   const t = {
     title: language === 'hi' ? 'एडमिन लॉगिन' : 'Admin Login',
     username: language === 'hi' ? 'यूज़रनेम' : 'Username',
     password: language === 'hi' ? 'पासवर्ड' : 'Password',
     login: language === 'hi' ? 'लॉगिन करें' : 'Login',
+    next: language === 'hi' ? 'आगे बढ़ें' : 'Next',
+    back: language === 'hi' ? 'वापस जाएं' : 'Back',
     cancel: language === 'hi' ? 'रद्द करें' : 'Cancel',
     otpTitle: language === 'hi' ? 'OTP सत्यापन' : 'OTP Verification',
     otpLabel: language === 'hi' ? 'OTP दर्ज करें' : 'Enter OTP',
     verify: language === 'hi' ? 'सत्यापित करें' : 'Verify',
     invalidCredentials: language === 'hi' ? 'गलत यूज़रनेम या पासवर्ड' : 'Invalid username or password',
+    invalidUsername: language === 'hi' ? 'गलत यूज़रनेम' : 'Invalid username',
+    invalidPassword: language === 'hi' ? 'गलत पासवर्ड' : 'Invalid password',
     invalidOtp: language === 'hi' ? 'गलत OTP' : 'Invalid OTP',
-    keepMeLoggedIn: language === 'hi' ? 'मुझे लॉग इन रखें' : 'Keep me logged in'
+    keepMeLoggedIn: language === 'hi' ? 'मुझे लॉग इन रखें' : 'Keep me logged in',
+    enterUsername: language === 'hi' ? 'पहले अपना यूज़रनेम दर्ज करें' : 'Enter your username first',
+    credentialsNotConfigured: language === 'hi' ? 'एडमिन क्रेडेंशियल्स कॉन्फ़िगर नहीं हैं' : 'Admin credentials not configured'
   }
 
   const handleClose = () => {
     setUsername('')
     setPassword('')
     setOtp('')
-    setStep('credentials')
+    setStep('username')
     setGeneratedOtp('')
     setKeepLoggedIn(false)
     onClose()
   }
 
-  const handleCredentialsSubmit = (e: React.FormEvent) => {
+  const handleUsernameSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    if (!adminCredentials?.username || !adminCredentials?.password) {
+      toast.error(t.credentialsNotConfigured)
+      return
+    }
+    
+    if (username === adminCredentials.username) {
+      setStep('password')
+    } else {
+      toast.error(t.invalidUsername)
+    }
+  }
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!adminCredentials?.password) {
+      toast.error(t.credentialsNotConfigured)
+      return
+    }
+    
+    if (password === adminCredentials.password) {
       const otp = Math.floor(100000 + Math.random() * 900000).toString()
       setGeneratedOtp(otp)
       setStep('otp')
@@ -69,7 +116,7 @@ export function AdminLoginDialog({
         duration: 10000
       })
     } else {
-      toast.error(t.invalidCredentials)
+      toast.error(t.invalidPassword)
     }
   }
 
@@ -88,11 +135,15 @@ export function AdminLoginDialog({
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{step === 'credentials' ? t.title : t.otpTitle}</DialogTitle>
+          <DialogTitle>
+            {step === 'username' && t.title}
+            {step === 'password' && t.title}
+            {step === 'otp' && t.otpTitle}
+          </DialogTitle>
         </DialogHeader>
 
-        {step === 'credentials' ? (
-          <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+        {step === 'username' && (
+          <form onSubmit={handleUsernameSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="admin-username">{t.username}</Label>
               <Input
@@ -102,10 +153,29 @@ export function AdminLoginDialog({
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 autoComplete="username"
+                placeholder={language === 'hi' ? 'यूज़रनेम दर्ज करें' : 'Enter username'}
               />
+              <p className="text-xs text-muted-foreground">{t.enterUsername}</p>
             </div>
 
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={handleClose}>
+                {t.cancel}
+              </Button>
+              <Button type="submit" className="gap-1">
+                {t.next}
+                <ArrowRight size={16} />
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {step === 'password' && (
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                <span className="px-2 py-1 bg-primary/10 rounded text-primary font-medium">{username}</span>
+              </div>
               <Label htmlFor="admin-password">{t.password}</Label>
               <div className="relative">
                 <Input
@@ -116,6 +186,7 @@ export function AdminLoginDialog({
                   required
                   autoComplete="current-password"
                   className="pr-10"
+                  placeholder={language === 'hi' ? 'पासवर्ड दर्ज करें' : 'Enter password'}
                 />
                 <Button
                   type="button"
@@ -143,16 +214,19 @@ export function AdminLoginDialog({
               </Label>
             </div>
 
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={handleClose}>
-                {t.cancel}
+            <div className="flex gap-2 justify-between">
+              <Button type="button" variant="ghost" onClick={() => setStep('username')} className="gap-1">
+                <ArrowLeft size={16} />
+                {t.back}
               </Button>
               <Button type="submit">
                 {t.login}
               </Button>
             </div>
           </form>
-        ) : (
+        )}
+
+        {step === 'otp' && (
           <form onSubmit={handleOtpSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="admin-otp">{t.otpLabel}</Label>

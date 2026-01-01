@@ -45,6 +45,8 @@ jobs:
           AZURE_VISION_ENDPOINT: ${{ secrets.AZURE_VISION_ENDPOINT }}
           AZURE_VISION_KEY: ${{ secrets.AZURE_VISION_KEY }}
           API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://shaadi-partner-api.azurewebsites.net' }}
+          ADMIN_USERNAME: ${{ secrets.VITE_ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.VITE_ADMIN_PASSWORD }}
         run: |
           # Generate runtime.config.json with secrets injected
           cat > public/runtime.config.json << EOF
@@ -54,6 +56,10 @@ jobs:
             "version": "1.0.0",
             "api": {
               "baseUrl": "${API_BASE_URL:-https://shaadi-partner-api.azurewebsites.net}"
+            },
+            "admin": {
+              "username": "${ADMIN_USERNAME}",
+              "password": "${ADMIN_PASSWORD}"
             },
             "azure": {
               "cosmosDb": {
@@ -86,6 +92,8 @@ jobs:
         run: npm run build
         env:
           GITHUB_PAGES: true
+          VITE_ADMIN_USERNAME: ${{ secrets.VITE_ADMIN_USERNAME }}
+          VITE_ADMIN_PASSWORD: ${{ secrets.VITE_ADMIN_PASSWORD }}
           VITE_AZURE_OPENAI_ENDPOINT: ${{ secrets.VITE_AZURE_OPENAI_ENDPOINT }}
           VITE_AZURE_OPENAI_API_KEY: ${{ secrets.VITE_AZURE_OPENAI_API_KEY }}
           VITE_AZURE_OPENAI_DEPLOYMENT: ${{ secrets.VITE_AZURE_OPENAI_DEPLOYMENT }}
