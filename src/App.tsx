@@ -987,7 +987,7 @@ function App() {
         </div>
       </header>
 
-      <main className="flex-1">
+      <main className={`flex-1 ${loggedInUser ? 'pb-16 md:pb-0' : ''}`}>
         {currentView === 'home' && (
           <>
             <HeroSearch 
@@ -1307,7 +1307,7 @@ function App() {
       )}
 
       {/* Hide footer on mobile when in chat view to prevent overlap */}
-      <footer className={`border-t bg-muted/30 py-8 ${loggedInUser && currentView === 'chat' ? 'hidden md:block' : ''}`} style={{ marginBottom: loggedInUser ? '64px' : '0' }}>
+      <footer className={`border-t bg-muted/30 py-8 ${loggedInUser && currentView === 'chat' ? 'hidden md:block' : ''}`}>
         <div className="container mx-auto px-4 md:px-8">
           <div className="max-w-5xl mx-auto text-center">
             <div className="flex items-center justify-center gap-2 mb-4">

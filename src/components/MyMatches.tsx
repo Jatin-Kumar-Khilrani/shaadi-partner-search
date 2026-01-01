@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SearchableSelect, OCCUPATION_OPTIONS } from '@/components/ui/searchable-select'
-import { MultiSelect, EDUCATION_OPTIONS, EMPLOYMENT_STATUS_OPTIONS } from '@/components/ui/multi-select'
+import { MultiSelect, EDUCATION_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, getStateOptionsForCountries, getCityOptionsForStates, COUNTRY_OPTIONS } from '@/components/ui/multi-select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
@@ -25,6 +25,7 @@ interface ExtendedFilters extends SearchFilters {
   employmentStatuses?: string[]
   occupationType?: string
   country?: string
+  state?: string
   city?: string
   ageRange?: [number, number]
   hasReadinessBadge?: boolean
@@ -492,7 +493,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             <Label>{t.country}</Label>
             <Select 
               value={filters.country || ''} 
-              onValueChange={(val) => setFilters({ ...filters, country: val || undefined })}
+              onValueChange={(val) => setFilters({ ...filters, country: val || undefined, state: undefined, city: undefined })}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t.any} />
@@ -510,14 +511,49 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>{t.city}</Label>
-            <Input 
-              placeholder={t.city}
-              value={filters.city || ''}
-              onChange={(e) => setFilters({ ...filters, city: e.target.value || undefined })}
-            />
-          </div>
+          {filters.country && filters.country !== 'any' && (
+            <div className="space-y-2">
+              <Label>{t.state}</Label>
+              <Select 
+                value={filters.state || ''} 
+                onValueChange={(val) => setFilters({ ...filters, state: val || undefined, city: undefined })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t.any} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">{t.any}</SelectItem>
+                  {getStateOptionsForCountries([filters.country]).map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {filters.state && filters.state !== 'any' && (
+            <div className="space-y-2">
+              <Label>{t.city}</Label>
+              <Select 
+                value={filters.city || ''} 
+                onValueChange={(val) => setFilters({ ...filters, city: val || undefined })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t.any} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">{t.any}</SelectItem>
+                  {getCityOptionsForStates([filters.state]).map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         <Separator />

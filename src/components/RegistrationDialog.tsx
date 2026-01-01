@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SearchableSelect, EDUCATION_OPTIONS, OCCUPATION_OPTIONS } from '@/components/ui/searchable-select'
-import { MultiSelect, MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS, OCCUPATION_PROFESSION_OPTIONS, COUNTRY_OPTIONS, DIET_PREFERENCE_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, getStateOptionsForCountries } from '@/components/ui/multi-select'
+import { MultiSelect, MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS, OCCUPATION_PROFESSION_OPTIONS, COUNTRY_OPTIONS, DIET_PREFERENCE_OPTIONS, DRINKING_HABIT_OPTIONS, SMOKING_HABIT_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, getStateOptionsForCountries, getCitiesForState, getCityOptionsForStates } from '@/components/ui/multi-select'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -157,22 +157,45 @@ const getStatesForCountry = (country: string): string[] => {
   return STATES_BY_COUNTRY[country] || []
 }
 
-// Height options with order index for comparison
+// Height options with order index for comparison (1-inch increments)
 const HEIGHT_OPTIONS = [
-  { value: "4'6\"", label: "4'6\" (137 cm)", order: 1 },
-  { value: "4'8\"", label: "4'8\" (142 cm)", order: 2 },
-  { value: "4'10\"", label: "4'10\" (147 cm)", order: 3 },
-  { value: "5'0\"", label: "5'0\" (152 cm)", order: 4 },
-  { value: "5'2\"", label: "5'2\" (157 cm)", order: 5 },
-  { value: "5'4\"", label: "5'4\" (163 cm)", order: 6 },
-  { value: "5'6\"", label: "5'6\" (168 cm)", order: 7 },
-  { value: "5'8\"", label: "5'8\" (173 cm)", order: 8 },
-  { value: "5'10\"", label: "5'10\" (178 cm)", order: 9 },
-  { value: "6'0\"", label: "6'0\" (183 cm)", order: 10 },
-  { value: "6'2\"", label: "6'2\" (188 cm)", order: 11 },
-  { value: "6'4\"", label: "6'4\" (193 cm)", order: 12 },
-  { value: "6'6\"", label: "6'6\" (198 cm)", order: 13 },
-  { value: "7'0\"", label: "7'0\" (213 cm)", order: 14 },
+  { value: "4'0\"", label: "4'0\" (122 cm)", order: 1 },
+  { value: "4'1\"", label: "4'1\" (124 cm)", order: 2 },
+  { value: "4'2\"", label: "4'2\" (127 cm)", order: 3 },
+  { value: "4'3\"", label: "4'3\" (130 cm)", order: 4 },
+  { value: "4'4\"", label: "4'4\" (132 cm)", order: 5 },
+  { value: "4'5\"", label: "4'5\" (135 cm)", order: 6 },
+  { value: "4'6\"", label: "4'6\" (137 cm)", order: 7 },
+  { value: "4'7\"", label: "4'7\" (140 cm)", order: 8 },
+  { value: "4'8\"", label: "4'8\" (142 cm)", order: 9 },
+  { value: "4'9\"", label: "4'9\" (145 cm)", order: 10 },
+  { value: "4'10\"", label: "4'10\" (147 cm)", order: 11 },
+  { value: "4'11\"", label: "4'11\" (150 cm)", order: 12 },
+  { value: "5'0\"", label: "5'0\" (152 cm)", order: 13 },
+  { value: "5'1\"", label: "5'1\" (155 cm)", order: 14 },
+  { value: "5'2\"", label: "5'2\" (157 cm)", order: 15 },
+  { value: "5'3\"", label: "5'3\" (160 cm)", order: 16 },
+  { value: "5'4\"", label: "5'4\" (163 cm)", order: 17 },
+  { value: "5'5\"", label: "5'5\" (165 cm)", order: 18 },
+  { value: "5'6\"", label: "5'6\" (168 cm)", order: 19 },
+  { value: "5'7\"", label: "5'7\" (170 cm)", order: 20 },
+  { value: "5'8\"", label: "5'8\" (173 cm)", order: 21 },
+  { value: "5'9\"", label: "5'9\" (175 cm)", order: 22 },
+  { value: "5'10\"", label: "5'10\" (178 cm)", order: 23 },
+  { value: "5'11\"", label: "5'11\" (180 cm)", order: 24 },
+  { value: "6'0\"", label: "6'0\" (183 cm)", order: 25 },
+  { value: "6'1\"", label: "6'1\" (185 cm)", order: 26 },
+  { value: "6'2\"", label: "6'2\" (188 cm)", order: 27 },
+  { value: "6'3\"", label: "6'3\" (191 cm)", order: 28 },
+  { value: "6'4\"", label: "6'4\" (193 cm)", order: 29 },
+  { value: "6'5\"", label: "6'5\" (196 cm)", order: 30 },
+  { value: "6'6\"", label: "6'6\" (198 cm)", order: 31 },
+  { value: "6'7\"", label: "6'7\" (201 cm)", order: 32 },
+  { value: "6'8\"", label: "6'8\" (203 cm)", order: 33 },
+  { value: "6'9\"", label: "6'9\" (206 cm)", order: 34 },
+  { value: "6'10\"", label: "6'10\" (208 cm)", order: 35 },
+  { value: "6'11\"", label: "6'11\" (211 cm)", order: 36 },
+  { value: "7'0\"", label: "7'0\" (213 cm)", order: 37 },
 ]
 
 // Income options with order index for comparison
@@ -443,6 +466,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       // Load selfie
       if (editProfile.selfieUrl) {
         setSelfiePreview(editProfile.selfieUrl)
+        // In edit mode, assume existing selfie already passed face coverage validation
+        setFaceCoverageValid(true)
       }
       
       // Load ID proof (especially for admin mode)
@@ -481,6 +506,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         }
         if (parsed.selfiePreview) {
           setSelfiePreview(parsed.selfiePreview)
+          // If selfie was saved in draft, it already passed face coverage validation
+          if (parsed.faceCoverageValid !== undefined) {
+            setFaceCoverageValid(parsed.faceCoverageValid)
+          }
         }
         // Also restore verification states if saved
         if (parsed.emailVerified) {
@@ -513,6 +542,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         step,
         photos,
         selfiePreview,
+        faceCoverageValid,
         // Also save verification states
         emailVerified,
         mobileVerified,
@@ -1538,6 +1568,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       toast.error(language === 'hi' ? 'कृपया लाइव सेल्फी लें' : 'Please capture a live selfie')
       return
     }
+    if (step === 4 && !isAdminMode && selfiePreview && !faceCoverageValid) {
+      toast.error(language === 'hi' ? 'चेहरा फ्रेम का कम से कम 50% होना चाहिए। कृपया पुनः सेल्फी लें।' : 'Face must cover at least 50% of the frame. Please retake selfie.')
+      return
+    }
     // ID Proof is mandatory for new registrations only (not for edit mode or admin mode)
     if (step === 4 && !isEditMode && !isAdminMode && !idProofPreview) {
       toast.error(language === 'hi' ? 'कृपया सरकारी पहचान प्रमाण अपलोड करें' : 'Please upload government ID proof')
@@ -2256,7 +2290,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     {getStatesForCountry(formData.country).length > 0 ? (
                       <Select 
                         value={formData.state || ''} 
-                        onValueChange={(value) => updateField('state', value)}
+                        onValueChange={(value) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            state: value,
+                            location: '' // Clear city when state changes
+                          }))
+                        }}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder={language === 'hi' ? 'राज्य चुनें' : 'Select State/Province'} />
@@ -2274,7 +2314,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                         id="state"
                         placeholder={language === 'hi' ? 'राज्य/प्रांत दर्ज करें' : 'Enter State/Province'}
                         value={formData.state || ''}
-                        onChange={(e) => updateField('state', e.target.value)}
+                        onChange={(e) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            state: e.target.value,
+                            location: '' // Clear city when state changes
+                          }))
+                        }}
                         required
                       />
                     )}
@@ -2282,13 +2328,48 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
                   <div className="space-y-2">
                     <Label htmlFor="location">{language === 'hi' ? 'शहर' : 'City'} *</Label>
-                    <Input
-                      id="location"
-                      placeholder={language === 'hi' ? 'उदाहरण: मुंबई, न्यूयॉर्क' : 'Example: Mumbai, New York'}
-                      value={formData.location || ''}
-                      onChange={(e) => updateField('location', e.target.value)}
-                      required
-                    />
+                    {formData.state && getCitiesForState(formData.state).length > 0 ? (
+                      <Select 
+                        value={formData.location || ''} 
+                        onValueChange={(value) => updateField('location', value)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder={language === 'hi' ? 'शहर चुनें' : 'Select City'} />
+                        </SelectTrigger>
+                        <SelectContent className="z-[9999] max-h-[300px]" position="popper" sideOffset={4}>
+                          {getCitiesForState(formData.state).map((city) => (
+                            <SelectItem key={city} value={city}>
+                              {city}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="__other__">
+                            {language === 'hi' ? '🔹 अन्य शहर...' : '🔹 Other City...'}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        id="location"
+                        placeholder={language === 'hi' ? 'उदाहरण: मुंबई, न्यूयॉर्क' : 'Example: Mumbai, New York'}
+                        value={formData.location || ''}
+                        onChange={(e) => updateField('location', e.target.value)}
+                        required
+                      />
+                    )}
+                    {/* Show text input if "Other" is selected */}
+                    {formData.location === '__other__' && (
+                      <Input
+                        id="location-other"
+                        placeholder={language === 'hi' ? 'अपना शहर दर्ज करें' : 'Enter your city'}
+                        className="mt-2"
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            updateField('location', e.target.value)
+                          }
+                        }}
+                        autoFocus
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -3358,7 +3439,17 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <MultiSelect
                       options={getStateOptionsForCountries(formData.partnerLivingCountry || [])}
                       value={formData.partnerLivingState || []}
-                      onValueChange={(v) => updateField('partnerLivingState', v)}
+                      onValueChange={(v) => {
+                        updateField('partnerLivingState', v)
+                        // Clear cities when states change (skip if 'any' is selected)
+                        if (v.length === 1 && v[0] === 'any') {
+                          updateField('partnerLocation', ['any'])
+                        } else {
+                          const validCities = getCityOptionsForStates(v).map(c => c.value)
+                          const updatedCities = (formData.partnerLocation || []).filter(c => validCities.includes(c))
+                          updateField('partnerLocation', updatedCities)
+                        }
+                      }}
                       placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                       disabled={!formData.partnerLivingCountry?.length || (formData.partnerLivingCountry?.length === 1 && formData.partnerLivingCountry[0] === 'any')}
@@ -3369,6 +3460,24 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                     />
                   </div>
+                </div>
+
+                {/* City - Multi-select based on selected states */}
+                <div className="space-y-2">
+                  <Label>{language === 'hi' ? 'शहर (एक से अधिक चुनें)' : 'City (select multiple)'}</Label>
+                  <MultiSelect
+                    options={getCityOptionsForStates(formData.partnerLivingState || [])}
+                    value={formData.partnerLocation || []}
+                    onValueChange={(v) => updateField('partnerLocation', v)}
+                    placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                    searchPlaceholder={language === 'hi' ? 'शहर खोजें...' : 'Search cities...'}
+                    disabled={!formData.partnerLivingState?.length || (formData.partnerLivingState?.length === 1 && formData.partnerLivingState[0] === 'any')}
+                    showSelectAll
+                    selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
+                    clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
+                    showAnyOption
+                    anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+                  />
                 </div>
 
                 {/* Annual Income Range */}
@@ -3389,7 +3498,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       <SelectContent className="z-[9999] max-h-60" position="popper">
                         {INCOME_OPTIONS.map(i => (
                           <SelectItem key={i.value} value={i.value}>
-                            {language === 'hi' ? i.labelHi : i.label}
+                            {language === 'hi' ? i.labelHi : i.labelEn}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -3407,7 +3516,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           .filter(i => !formData.partnerAnnualIncomeMin || i.order >= getIncomeOrder(formData.partnerAnnualIncomeMin))
                           .map(i => (
                             <SelectItem key={i.value} value={i.value}>
-                              {language === 'hi' ? i.labelHi : i.label}
+                              {language === 'hi' ? i.labelHi : i.labelEn}
                             </SelectItem>
                           ))}
                       </SelectContent>
@@ -3448,11 +3557,45 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
                 </div>
 
+                {/* Drinking & Smoking Preferences */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'पीने की आदत (एक से अधिक चुनें)' : 'Drinking Habit (select multiple)'}</Label>
+                    <MultiSelect
+                      options={DRINKING_HABIT_OPTIONS}
+                      value={formData.partnerDrinking || []}
+                      onValueChange={(v) => updateField('partnerDrinking', v as DrinkingHabit[])}
+                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                      showSelectAll
+                      selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
+                      clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
+                      showAnyOption
+                      anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{language === 'hi' ? 'धूम्रपान की आदत (एक से अधिक चुनें)' : 'Smoking Habit (select multiple)'}</Label>
+                    <MultiSelect
+                      options={SMOKING_HABIT_OPTIONS}
+                      value={formData.partnerSmoking || []}
+                      onValueChange={(v) => updateField('partnerSmoking', v as SmokingHabit[])}
+                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                      showSelectAll
+                      selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
+                      clearAllLabel={language === 'hi' ? 'सभी हटाएं' : 'Clear All'}
+                      showAnyOption
+                      anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+                    />
+                  </div>
+                </div>
+
                 {/* Differently Abled */}
                 <div className="space-y-2">
                   <Label>{language === 'hi' ? 'दिव्यांग' : 'Differently Abled'}</Label>
                   <Select 
-                    value={formData.partnerDisability?.includes('no') ? 'no-only' : formData.partnerDisability?.length ? 'accept' : ''} 
+                    value={formData.partnerDisability?.includes('yes') ? 'accept' : formData.partnerDisability?.includes('no') ? 'no-only' : ''} 
                     onValueChange={(v) => {
                       if (v === 'no-only') updateField('partnerDisability', ['no'] as DisabilityStatus[])
                       else if (v === 'accept') updateField('partnerDisability', ['no', 'yes'] as DisabilityStatus[])
@@ -3973,7 +4116,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     !formData.mobile ||
                     (formData.country !== 'India' && !formData.residentialStatus)
                   )) ||
-                  (step === 4 && !isAdminMode && (photos.length === 0 || !selfiePreview || (!isEditMode && !idProofPreview))) ||
+                  (step === 4 && !isAdminMode && (photos.length === 0 || !selfiePreview || !faceCoverageValid || (!isEditMode && !idProofPreview))) ||
                   (step === 5 && !isAdminMode && !(formData.bio || '').trim())
                 }
               >
