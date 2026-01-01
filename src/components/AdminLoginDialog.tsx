@@ -8,22 +8,34 @@ import { Eye, EyeSlash, ArrowRight, ArrowLeft } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Language } from '@/lib/translations'
 
-// Get admin credentials from environment variables (set via GitHub Secrets in production)
-const getAdminCredentials = () => {
-  // Check runtime config first (for production deployments)
-  const runtimeConfig = (window as unknown as { __RUNTIME_CONFIG__?: { admin?: { username?: string; password?: string } } }).__RUNTIME_CONFIG__
-  if (runtimeConfig?.admin?.username && runtimeConfig?.admin?.password) {
-    return {
-      username: runtimeConfig.admin.username,
-      password: runtimeConfig.admin.password
+// Fetch admin credentials from runtime.config.json (same pattern as Azure credentials)
+const fetchAdminCredentials = async (): Promise<{ username: string; password: string }> => {
+  // Try different paths for GitHub Pages vs local dev
+  const paths = [
+    './runtime.config.json',
+    '/runtime.config.json',
+    '/shaadi-partner-search/runtime.config.json'
+  ]
+  
+  for (const path of paths) {
+    try {
+      const response = await fetch(path)
+      if (response.ok) {
+        const config = await response.json()
+        if (config?.admin?.username && config?.admin?.password) {
+          return {
+            username: config.admin.username,
+            password: config.admin.password
+          }
+        }
+      }
+    } catch {
+      // Try next path
     }
   }
   
-  // Fallback to Vite env variables (for development)
-  return {
-    username: import.meta.env.VITE_ADMIN_USERNAME || '',
-    password: import.meta.env.VITE_ADMIN_PASSWORD || ''
-  }
+  // Fallback to empty (will show error on login attempt)
+  return { username: '', password: '' }
 }
 
 interface AdminLoginDialogProps {
@@ -48,9 +60,9 @@ export function AdminLoginDialog({
   const [keepLoggedIn, setKeepLoggedIn] = useState(false)
   const [adminCredentials, setAdminCredentials] = useState<{ username: string; password: string } | null>(null)
 
-  // Load credentials on mount
+  // Load credentials from runtime.config.json on mount (same as Azure credentials)
   useEffect(() => {
-    setAdminCredentials(getAdminCredentials())
+    fetchAdminCredentials().then(setAdminCredentials)
   }, [])
 
   const t = {

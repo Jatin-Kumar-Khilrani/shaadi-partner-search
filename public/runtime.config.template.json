@@ -8,6 +8,12 @@
     "description": "Azure Function API backend URL. Leave empty for localStorage mode."
   },
   
+  "admin": {
+    "username": "YOUR_ADMIN_USERNAME",
+    "password": "YOUR_ADMIN_PASSWORD",
+    "description": "Admin credentials. For local dev, set here. In production, injected via GitHub Secrets."
+  },
+  
   "azure": {
     "cosmosDb": {
       "key": "",

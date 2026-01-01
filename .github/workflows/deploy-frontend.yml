@@ -92,8 +92,6 @@ jobs:
         run: npm run build
         env:
           GITHUB_PAGES: true
-          VITE_ADMIN_USERNAME: ${{ secrets.VITE_ADMIN_USERNAME }}
-          VITE_ADMIN_PASSWORD: ${{ secrets.VITE_ADMIN_PASSWORD }}
           VITE_AZURE_OPENAI_ENDPOINT: ${{ secrets.VITE_AZURE_OPENAI_ENDPOINT }}
           VITE_AZURE_OPENAI_API_KEY: ${{ secrets.VITE_AZURE_OPENAI_API_KEY }}
           VITE_AZURE_OPENAI_DEPLOYMENT: ${{ secrets.VITE_AZURE_OPENAI_DEPLOYMENT }}
