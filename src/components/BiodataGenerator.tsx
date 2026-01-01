@@ -706,7 +706,7 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
           {/* Biodata Preview - Gender-specific styling */}
           <div 
             ref={biodataRef}
-            className="relative rounded-lg p-6 mx-auto max-w-2xl"
+            className="relative rounded-lg p-4 pb-0 mx-auto max-w-2xl overflow-hidden"
             style={{ 
               minHeight: '800px',
               background: `linear-gradient(135deg, ${theme.gradient1} 0%, ${theme.gradient2} 100%)`,
@@ -1164,8 +1164,12 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
               
               {/* Footer with Branding - Elegant Design */}
               <div 
-                className="mt-4 pt-3 border-t-2"
-                style={{ borderColor: theme.accent, borderStyle: 'dashed' }}
+                className="mt-4 pt-3 pb-2 border-t-2 rounded-b"
+                style={{ 
+                  borderColor: theme.accent, 
+                  borderStyle: 'dashed',
+                  background: `linear-gradient(135deg, ${theme.secondary} 0%, ${theme.gradient2} 100%)`
+                }}
               >
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <span className="text-lg">💍</span>
