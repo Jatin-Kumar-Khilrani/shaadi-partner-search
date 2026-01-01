@@ -157,6 +157,56 @@ const getStatesForCountry = (country: string): string[] => {
   return STATES_BY_COUNTRY[country] || []
 }
 
+// Height options with order index for comparison
+const HEIGHT_OPTIONS = [
+  { value: "4'6\"", label: "4'6\" (137 cm)", order: 1 },
+  { value: "4'8\"", label: "4'8\" (142 cm)", order: 2 },
+  { value: "4'10\"", label: "4'10\" (147 cm)", order: 3 },
+  { value: "5'0\"", label: "5'0\" (152 cm)", order: 4 },
+  { value: "5'2\"", label: "5'2\" (157 cm)", order: 5 },
+  { value: "5'4\"", label: "5'4\" (163 cm)", order: 6 },
+  { value: "5'6\"", label: "5'6\" (168 cm)", order: 7 },
+  { value: "5'8\"", label: "5'8\" (173 cm)", order: 8 },
+  { value: "5'10\"", label: "5'10\" (178 cm)", order: 9 },
+  { value: "6'0\"", label: "6'0\" (183 cm)", order: 10 },
+  { value: "6'2\"", label: "6'2\" (188 cm)", order: 11 },
+  { value: "6'4\"", label: "6'4\" (193 cm)", order: 12 },
+  { value: "6'6\"", label: "6'6\" (198 cm)", order: 13 },
+  { value: "7'0\"", label: "7'0\" (213 cm)", order: 14 },
+]
+
+// Income options with order index for comparison
+const INCOME_OPTIONS = [
+  { value: 'no-income', labelHi: 'कोई आय नहीं', labelEn: 'No Income', order: 0 },
+  { value: 'below-1-lakh', labelHi: '₹1 लाख से कम', labelEn: 'Below ₹1 Lakh', order: 1 },
+  { value: '1-2-lakh', labelHi: '₹1-2 लाख', labelEn: '₹1-2 Lakh', order: 2 },
+  { value: '2-3-lakh', labelHi: '₹2-3 लाख', labelEn: '₹2-3 Lakh', order: 3 },
+  { value: '3-4-lakh', labelHi: '₹3-4 लाख', labelEn: '₹3-4 Lakh', order: 4 },
+  { value: '4-5-lakh', labelHi: '₹4-5 लाख', labelEn: '₹4-5 Lakh', order: 5 },
+  { value: '5-7.5-lakh', labelHi: '₹5-7.5 लाख', labelEn: '₹5-7.5 Lakh', order: 6 },
+  { value: '7.5-10-lakh', labelHi: '₹7.5-10 लाख', labelEn: '₹7.5-10 Lakh', order: 7 },
+  { value: '10-15-lakh', labelHi: '₹10-15 लाख', labelEn: '₹10-15 Lakh', order: 8 },
+  { value: '15-20-lakh', labelHi: '₹15-20 लाख', labelEn: '₹15-20 Lakh', order: 9 },
+  { value: '20-25-lakh', labelHi: '₹20-25 लाख', labelEn: '₹20-25 Lakh', order: 10 },
+  { value: '25-35-lakh', labelHi: '₹25-35 लाख', labelEn: '₹25-35 Lakh', order: 11 },
+  { value: '35-50-lakh', labelHi: '₹35-50 लाख', labelEn: '₹35-50 Lakh', order: 12 },
+  { value: '50-75-lakh', labelHi: '₹50-75 लाख', labelEn: '₹50-75 Lakh', order: 13 },
+  { value: '75-1-crore', labelHi: '₹75 लाख - 1 करोड़', labelEn: '₹75 Lakh - 1 Crore', order: 14 },
+  { value: 'above-1-crore', labelHi: '₹1 करोड़ से अधिक', labelEn: 'Above ₹1 Crore', order: 15 },
+]
+
+// Helper to get height order from value
+const getHeightOrder = (value: string): number => {
+  const option = HEIGHT_OPTIONS.find(h => h.value === value)
+  return option?.order || 0
+}
+
+// Helper to get income order from value
+const getIncomeOrder = (value: string): number => {
+  const option = INCOME_OPTIONS.find(i => i.value === value)
+  return option?.order || 0
+}
+
 interface MembershipSettings {
   sixMonthPrice: number
   oneYearPrice: number
@@ -3102,7 +3152,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <Label>{language === 'hi' ? 'न्यूनतम आयु' : 'Minimum Age'}</Label>
                     <Select 
                       value={formData.partnerAgeMin?.toString() || ''} 
-                      onValueChange={(v) => updateField('partnerAgeMin', v ? parseInt(v) : undefined)}
+                      onValueChange={(v) => {
+                        const minAge = v ? parseInt(v) : undefined
+                        updateField('partnerAgeMin', minAge)
+                        // If max age is less than new min age, reset it
+                        if (minAge && formData.partnerAgeMax && formData.partnerAgeMax < minAge) {
+                          updateField('partnerAgeMax', undefined)
+                        }
+                      }}
                     >
                       <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'चुनें' : 'Select'} /></SelectTrigger>
                       <SelectContent className="z-[9999] max-h-60" position="popper">
@@ -3120,9 +3177,11 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     >
                       <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'चुनें' : 'Select'} /></SelectTrigger>
                       <SelectContent className="z-[9999] max-h-60" position="popper">
-                        {Array.from({ length: 43 }, (_, i) => 18 + i).map(age => (
-                          <SelectItem key={age} value={age.toString()}>{age} {language === 'hi' ? 'वर्ष' : 'years'}</SelectItem>
-                        ))}
+                        {Array.from({ length: 43 }, (_, i) => 18 + i)
+                          .filter(age => !formData.partnerAgeMin || age >= formData.partnerAgeMin)
+                          .map(age => (
+                            <SelectItem key={age} value={age.toString()}>{age} {language === 'hi' ? 'वर्ष' : 'years'}</SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -3132,20 +3191,21 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>{language === 'hi' ? 'न्यूनतम ऊंचाई' : 'Minimum Height'}</Label>
-                    <Select value={formData.partnerHeightMin || ''} onValueChange={(v) => updateField('partnerHeightMin', v)}>
+                    <Select 
+                      value={formData.partnerHeightMin || ''} 
+                      onValueChange={(v) => {
+                        updateField('partnerHeightMin', v)
+                        // If max height is less than new min height, reset it
+                        if (v && formData.partnerHeightMax && getHeightOrder(formData.partnerHeightMax) < getHeightOrder(v)) {
+                          updateField('partnerHeightMax', '')
+                        }
+                      }}
+                    >
                       <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'चुनें' : 'Select'} /></SelectTrigger>
                       <SelectContent className="z-[9999] max-h-60" position="popper">
-                        <SelectItem value="4'6&quot;">4'6" (137 cm)</SelectItem>
-                        <SelectItem value="4'8&quot;">4'8" (142 cm)</SelectItem>
-                        <SelectItem value="4'10&quot;">4'10" (147 cm)</SelectItem>
-                        <SelectItem value="5'0&quot;">5'0" (152 cm)</SelectItem>
-                        <SelectItem value="5'2&quot;">5'2" (157 cm)</SelectItem>
-                        <SelectItem value="5'4&quot;">5'4" (163 cm)</SelectItem>
-                        <SelectItem value="5'6&quot;">5'6" (168 cm)</SelectItem>
-                        <SelectItem value="5'8&quot;">5'8" (173 cm)</SelectItem>
-                        <SelectItem value="5'10&quot;">5'10" (178 cm)</SelectItem>
-                        <SelectItem value="6'0&quot;">6'0" (183 cm)</SelectItem>
-                        <SelectItem value="6'2&quot;">6'2" (188 cm)</SelectItem>
+                        {HEIGHT_OPTIONS.map(h => (
+                          <SelectItem key={h.value} value={h.value}>{h.label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -3154,17 +3214,11 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <Select value={formData.partnerHeightMax || ''} onValueChange={(v) => updateField('partnerHeightMax', v)}>
                       <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'चुनें' : 'Select'} /></SelectTrigger>
                       <SelectContent className="z-[9999] max-h-60" position="popper">
-                        <SelectItem value="5'0&quot;">5'0" (152 cm)</SelectItem>
-                        <SelectItem value="5'2&quot;">5'2" (157 cm)</SelectItem>
-                        <SelectItem value="5'4&quot;">5'4" (163 cm)</SelectItem>
-                        <SelectItem value="5'6&quot;">5'6" (168 cm)</SelectItem>
-                        <SelectItem value="5'8&quot;">5'8" (173 cm)</SelectItem>
-                        <SelectItem value="5'10&quot;">5'10" (178 cm)</SelectItem>
-                        <SelectItem value="6'0&quot;">6'0" (183 cm)</SelectItem>
-                        <SelectItem value="6'2&quot;">6'2" (188 cm)</SelectItem>
-                        <SelectItem value="6'4&quot;">6'4" (193 cm)</SelectItem>
-                        <SelectItem value="6'6&quot;">6'6" (198 cm)</SelectItem>
-                        <SelectItem value="7'0&quot;">7'0" (213 cm)</SelectItem>
+                        {HEIGHT_OPTIONS
+                          .filter(h => !formData.partnerHeightMin || h.order >= getHeightOrder(formData.partnerHeightMin))
+                          .map(h => (
+                            <SelectItem key={h.value} value={h.value}>{h.label}</SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -3323,26 +3377,21 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <Label>{language === 'hi' ? 'न्यूनतम वार्षिक आय' : 'Minimum Annual Income'}</Label>
                     <Select 
                       value={formData.partnerAnnualIncomeMin || ''} 
-                      onValueChange={(v) => updateField('partnerAnnualIncomeMin', v)}
+                      onValueChange={(v) => {
+                        updateField('partnerAnnualIncomeMin', v)
+                        // If max income is less than new min income, reset it
+                        if (v && formData.partnerAnnualIncomeMax && getIncomeOrder(formData.partnerAnnualIncomeMax) < getIncomeOrder(v)) {
+                          updateField('partnerAnnualIncomeMax', '')
+                        }
+                      }}
                     >
                       <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
                       <SelectContent className="z-[9999] max-h-60" position="popper">
-                        <SelectItem value="no-income">{language === 'hi' ? 'कोई आय नहीं' : 'No Income'}</SelectItem>
-                        <SelectItem value="below-1-lakh">{language === 'hi' ? '₹1 लाख से कम' : 'Below ₹1 Lakh'}</SelectItem>
-                        <SelectItem value="1-2-lakh">{language === 'hi' ? '₹1-2 लाख' : '₹1-2 Lakh'}</SelectItem>
-                        <SelectItem value="2-3-lakh">{language === 'hi' ? '₹2-3 लाख' : '₹2-3 Lakh'}</SelectItem>
-                        <SelectItem value="3-4-lakh">{language === 'hi' ? '₹3-4 लाख' : '₹3-4 Lakh'}</SelectItem>
-                        <SelectItem value="4-5-lakh">{language === 'hi' ? '₹4-5 लाख' : '₹4-5 Lakh'}</SelectItem>
-                        <SelectItem value="5-7.5-lakh">{language === 'hi' ? '₹5-7.5 लाख' : '₹5-7.5 Lakh'}</SelectItem>
-                        <SelectItem value="7.5-10-lakh">{language === 'hi' ? '₹7.5-10 लाख' : '₹7.5-10 Lakh'}</SelectItem>
-                        <SelectItem value="10-15-lakh">{language === 'hi' ? '₹10-15 लाख' : '₹10-15 Lakh'}</SelectItem>
-                        <SelectItem value="15-20-lakh">{language === 'hi' ? '₹15-20 लाख' : '₹15-20 Lakh'}</SelectItem>
-                        <SelectItem value="20-25-lakh">{language === 'hi' ? '₹20-25 लाख' : '₹20-25 Lakh'}</SelectItem>
-                        <SelectItem value="25-35-lakh">{language === 'hi' ? '₹25-35 लाख' : '₹25-35 Lakh'}</SelectItem>
-                        <SelectItem value="35-50-lakh">{language === 'hi' ? '₹35-50 लाख' : '₹35-50 Lakh'}</SelectItem>
-                        <SelectItem value="50-75-lakh">{language === 'hi' ? '₹50-75 लाख' : '₹50-75 Lakh'}</SelectItem>
-                        <SelectItem value="75-1-crore">{language === 'hi' ? '₹75 लाख - 1 करोड़' : '₹75 Lakh - 1 Crore'}</SelectItem>
-                        <SelectItem value="above-1-crore">{language === 'hi' ? '₹1 करोड़ से अधिक' : 'Above ₹1 Crore'}</SelectItem>
+                        {INCOME_OPTIONS.map(i => (
+                          <SelectItem key={i.value} value={i.value}>
+                            {language === 'hi' ? i.labelHi : i.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -3354,21 +3403,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     >
                       <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'कोई भी' : 'Any'} /></SelectTrigger>
                       <SelectContent className="z-[9999] max-h-60" position="popper">
-                        <SelectItem value="below-1-lakh">{language === 'hi' ? '₹1 लाख से कम' : 'Below ₹1 Lakh'}</SelectItem>
-                        <SelectItem value="1-2-lakh">{language === 'hi' ? '₹1-2 लाख' : '₹1-2 Lakh'}</SelectItem>
-                        <SelectItem value="2-3-lakh">{language === 'hi' ? '₹2-3 लाख' : '₹2-3 Lakh'}</SelectItem>
-                        <SelectItem value="3-4-lakh">{language === 'hi' ? '₹3-4 लाख' : '₹3-4 Lakh'}</SelectItem>
-                        <SelectItem value="4-5-lakh">{language === 'hi' ? '₹4-5 लाख' : '₹4-5 Lakh'}</SelectItem>
-                        <SelectItem value="5-7.5-lakh">{language === 'hi' ? '₹5-7.5 लाख' : '₹5-7.5 Lakh'}</SelectItem>
-                        <SelectItem value="7.5-10-lakh">{language === 'hi' ? '₹7.5-10 लाख' : '₹7.5-10 Lakh'}</SelectItem>
-                        <SelectItem value="10-15-lakh">{language === 'hi' ? '₹10-15 लाख' : '₹10-15 Lakh'}</SelectItem>
-                        <SelectItem value="15-20-lakh">{language === 'hi' ? '₹15-20 लाख' : '₹15-20 Lakh'}</SelectItem>
-                        <SelectItem value="20-25-lakh">{language === 'hi' ? '₹20-25 लाख' : '₹20-25 Lakh'}</SelectItem>
-                        <SelectItem value="25-35-lakh">{language === 'hi' ? '₹25-35 लाख' : '₹25-35 Lakh'}</SelectItem>
-                        <SelectItem value="35-50-lakh">{language === 'hi' ? '₹35-50 लाख' : '₹35-50 Lakh'}</SelectItem>
-                        <SelectItem value="50-75-lakh">{language === 'hi' ? '₹50-75 लाख' : '₹50-75 Lakh'}</SelectItem>
-                        <SelectItem value="75-1-crore">{language === 'hi' ? '₹75 लाख - 1 करोड़' : '₹75 Lakh - 1 Crore'}</SelectItem>
-                        <SelectItem value="above-1-crore">{language === 'hi' ? '₹1 करोड़ से अधिक' : 'Above ₹1 Crore'}</SelectItem>
+                        {INCOME_OPTIONS
+                          .filter(i => !formData.partnerAnnualIncomeMin || i.order >= getIncomeOrder(formData.partnerAnnualIncomeMin))
+                          .map(i => (
+                            <SelectItem key={i.value} value={i.value}>
+                              {language === 'hi' ? i.labelHi : i.label}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
