@@ -305,6 +305,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   // View rejection reason dialog state
   const [showRejectionReasonDialog, setShowRejectionReasonDialog] = useState<Profile | null>(null)
   
+  // Bulk rejection with reason dialog state
+  const [showBulkRejectDialog, setShowBulkRejectDialog] = useState<{ ids: string[], source: 'pending' | 'database' } | null>(null)
+  const [bulkRejectReason, setBulkRejectReason] = useState('')
+  
   const t = {
     title: language === 'hi' ? 'प्रशासन पैनल' : 'Admin Panel',
     description: language === 'hi' ? 'प्रोफाइल सत्यापन और प्रबंधन' : 'Profile verification and management',
@@ -426,7 +430,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     expired: language === 'hi' ? 'समाप्त' : 'Expired',
     selectAll: language === 'hi' ? 'सभी चुनें' : 'Select All',
     bulkApprove: language === 'hi' ? 'एकसाथ स्वीकृत करें' : 'Bulk Approve',
-    bulkReject: language === 'hi' ? 'एकसाथ अस्वीकृत करें' : 'Bulk Reject',
+    bulkReject: language === 'hi' ? 'अस्वीकृत करें' : 'Reject',
+    enterRejectionReason: language === 'hi' ? 'अस्वीकृति का कारण दर्ज करें' : 'Enter Rejection Reason',
+    rejectionReasonPlaceholder: language === 'hi' ? 'प्रोफाइल अस्वीकृत करने का कारण बताएं...' : 'Enter reason for rejecting the profile(s)...',
+    confirmReject: language === 'hi' ? 'अस्वीकृत करें' : 'Confirm Reject',
     sortByName: language === 'hi' ? 'नाम से क्रमबद्ध करें' : 'Sort by Name',
     sortByDate: language === 'hi' ? 'तिथि से क्रमबद्ध करें' : 'Sort by Date',
     sortByExpiry: language === 'hi' ? 'समाप्ति से क्रमबद्ध करें' : 'Sort by Expiry',
@@ -450,7 +457,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     permanentDeleteSuccess: language === 'hi' ? 'प्रोफाइल स्थायी रूप से हटा दी गई!' : 'Profile permanently deleted!',
     // Rejection notification
     rejectionReason: language === 'hi' ? 'अस्वीकृति का कारण' : 'Rejection Reason',
-    rejectionReasonPlaceholder: language === 'hi' ? 'कृपया अस्वीकृति का कारण बताएं...' : 'Please provide reason for rejection...',
     sendNotification: language === 'hi' ? 'SMS और ईमेल सूचना भेजें' : 'Send SMS & Email Notification',
     notificationSent: language === 'hi' ? 'SMS और ईमेल सूचना भेजी गई!' : 'SMS and Email notification sent!',
     // Rejection details view
@@ -856,16 +862,37 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     setSelectedProfile(null)
   }
 
-  const handleReject = (profileId: string) => {
+  const handleReject = (profileId: string, reason?: string) => {
     setProfiles((current) => 
       (current || []).map(p => 
         p.id === profileId 
-          ? { ...p, status: 'rejected' as const }
+          ? { 
+              ...p, 
+              status: 'rejected' as const,
+              rejectionReason: reason || p.rejectionReason,
+              rejectedAt: new Date().toISOString()
+            }
           : p
       )
     )
     toast.error(t.rejectSuccess)
     setSelectedProfile(null)
+  }
+  
+  // Handle bulk rejection with reason
+  const handleBulkRejectWithReason = () => {
+    if (!showBulkRejectDialog) return
+    const { ids, source } = showBulkRejectDialog
+    const count = ids.length
+    ids.forEach(id => handleReject(id, bulkRejectReason))
+    if (source === 'pending') {
+      setSelectedProfiles([])
+    } else {
+      setSelectedDatabaseProfiles([])
+    }
+    toast.success(language === 'hi' ? `${count} प्रोफाइल अस्वीकृत!` : `${count} profiles rejected!`)
+    setShowBulkRejectDialog(null)
+    setBulkRejectReason('')
   }
 
   const handleMoveToPending = (profileId: string, reason?: string) => {
@@ -1453,11 +1480,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       <Button 
                         size="sm" 
                         variant="destructive"
-                        onClick={() => {
-                          selectedProfiles.forEach(id => handleReject(id))
-                          setSelectedProfiles([])
-                          toast.success(language === 'hi' ? `${selectedProfiles.length} प्रोफाइल अस्वीकृत!` : `${selectedProfiles.length} profiles rejected!`)
-                        }}
+                        onClick={() => setShowBulkRejectDialog({ ids: selectedProfiles, source: 'pending' })}
                         className="gap-1"
                       >
                         <X size={14} />
@@ -2042,12 +2065,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     <Button 
                       size="sm" 
                       variant="destructive"
-                      onClick={() => {
-                        const count = selectedDatabaseProfiles.length
-                        selectedDatabaseProfiles.forEach(id => handleReject(id))
-                        setSelectedDatabaseProfiles([])
-                        toast.success(language === 'hi' ? `${count} प्रोफाइल अस्वीकृत!` : `${count} profiles rejected!`)
-                      }}
+                      onClick={() => setShowBulkRejectDialog({ ids: selectedDatabaseProfiles, source: 'database' })}
                       className="gap-1"
                     >
                       <X size={14} />
@@ -4997,6 +5015,57 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
             >
               <ArrowCounterClockwise size={16} className="mr-1" />
               {t.undoRejection}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Rejection with Reason Dialog */}
+      <Dialog open={!!showBulkRejectDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowBulkRejectDialog(null)
+          setBulkRejectReason('')
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <X size={24} weight="bold" />
+              {t.enterRejectionReason}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'hi' 
+                ? `${showBulkRejectDialog?.ids.length || 0} प्रोफाइल अस्वीकृत की जाएंगी` 
+                : `${showBulkRejectDialog?.ids.length || 0} profile(s) will be rejected`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>{language === 'hi' ? 'अस्वीकृति का कारण' : 'Reason for Rejection'}</Label>
+              <Textarea 
+                value={bulkRejectReason}
+                onChange={(e) => setBulkRejectReason(e.target.value)}
+                placeholder={t.rejectionReasonPlaceholder}
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => {
+              setShowBulkRejectDialog(null)
+              setBulkRejectReason('')
+            }}>
+              {t.close}
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleBulkRejectWithReason}
+            >
+              <X size={16} className="mr-1" />
+              {t.confirmReject} ({showBulkRejectDialog?.ids.length || 0})
             </Button>
           </DialogFooter>
         </DialogContent>
