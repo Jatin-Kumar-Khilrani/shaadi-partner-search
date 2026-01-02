@@ -1,0 +1,105 @@
+{
+  "comment": "Performance budgets for bundle size monitoring",
+  "budgets": [
+    {
+      "path": "/",
+      "resourceCounts": [
+        {
+          "resourceType": "script",
+          "budget": 15,
+          "comment": "Limit total number of JavaScript files"
+        },
+        {
+          "resourceType": "stylesheet",
+          "budget": 5,
+          "comment": "Limit total number of CSS files"
+        },
+        {
+          "resourceType": "image",
+          "budget": 25,
+          "comment": "Limit total number of images on initial load"
+        },
+        {
+          "resourceType": "total",
+          "budget": 75,
+          "comment": "Total number of requests"
+        }
+      ],
+      "resourceSizes": [
+        {
+          "resourceType": "script",
+          "budget": 500,
+          "unit": "kb",
+          "comment": "Total JavaScript size (gzipped)"
+        },
+        {
+          "resourceType": "stylesheet",
+          "budget": 100,
+          "unit": "kb",
+          "comment": "Total CSS size (gzipped)"
+        },
+        {
+          "resourceType": "image",
+          "budget": 500,
+          "unit": "kb",
+          "comment": "Total image size"
+        },
+        {
+          "resourceType": "font",
+          "budget": 200,
+          "unit": "kb",
+          "comment": "Total font size"
+        },
+        {
+          "resourceType": "total",
+          "budget": 1500,
+          "unit": "kb",
+          "comment": "Total page weight"
+        }
+      ],
+      "timings": [
+        {
+          "metric": "first-contentful-paint",
+          "budget": 2000,
+          "unit": "ms",
+          "comment": "FCP should be under 2 seconds"
+        },
+        {
+          "metric": "largest-contentful-paint",
+          "budget": 2500,
+          "unit": "ms",
+          "comment": "LCP should be under 2.5 seconds"
+        },
+        {
+          "metric": "interactive",
+          "budget": 3500,
+          "unit": "ms",
+          "comment": "TTI should be under 3.5 seconds"
+        },
+        {
+          "metric": "total-blocking-time",
+          "budget": 300,
+          "unit": "ms",
+          "comment": "TBT should be under 300ms"
+        },
+        {
+          "metric": "cumulative-layout-shift",
+          "budget": 0.1,
+          "comment": "CLS should be under 0.1"
+        }
+      ]
+    }
+  ],
+  "thresholds": {
+    "maxBundleSizeKb": {
+      "main": 300,
+      "vendor": 400,
+      "total": 700,
+      "comment": "Individual chunk size limits (gzipped)"
+    },
+    "treeShaking": {
+      "unusedExportsAllowed": 0,
+      "comment": "No unused exports should remain after tree-shaking"
+    }
+  }
+}
