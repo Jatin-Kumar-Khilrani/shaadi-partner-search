@@ -34,6 +34,23 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Check bundle sizes
+        run: |
+          echo "📦 Bundle Size Report"
+          echo "====================="
+          # Check if any chunk exceeds 500KB (gzipped)
+          LARGE_BUNDLES=$(find dist/assets -name "*.js" -exec sh -c 'gzip -c "$1" | wc -c' _ {} \; | awk '$1 > 512000 {print}' | wc -l)
+          if [ "$LARGE_BUNDLES" -gt "0" ]; then
+            echo "⚠️ Warning: $LARGE_BUNDLES bundle(s) exceed 500KB gzipped"
+          fi
+          # Print sizes
+          echo ""
+          echo "Top 10 largest bundles (gzipped):"
+          for f in dist/assets/*.js; do
+            SIZE=$(gzip -c "$f" | wc -c)
+            echo "$(basename $f): $(echo "scale=2; $SIZE/1024" | bc) KB"
+          done | sort -t: -k2 -rn | head -10
+
   security:
     name: Security Audit
     runs-on: ubuntu-latest
@@ -53,3 +70,31 @@ jobs:
 
       - name: Run security audit
         run: npm audit --audit-level=high
+
+  lighthouse:
+    name: Lighthouse Audit
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Run Lighthouse
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          configPath: ./lighthouserc.json
