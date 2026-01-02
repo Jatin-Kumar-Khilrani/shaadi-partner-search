@@ -55,9 +55,11 @@ function SelectContent({
   children,
   position = "popper",
   container,
+  avoidCollisions = true,
   ...props
 }: ComponentProps<typeof SelectPrimitive.Content> & {
   container?: HTMLElement | null
+  avoidCollisions?: boolean
 }) {
   return (
     <SelectPrimitive.Portal container={container}>
@@ -70,6 +72,8 @@ function SelectContent({
           className
         )}
         position={position}
+        avoidCollisions={avoidCollisions}
+        onWheel={(e) => e.stopPropagation()}
         {...props}
       >
         <SelectScrollUpButton />
@@ -79,6 +83,7 @@ function SelectContent({
             position === "popper" &&
               "w-full min-w-[var(--radix-select-trigger-width)]"
           )}
+          onWheel={(e) => e.stopPropagation()}
         >
           {children}
         </SelectPrimitive.Viewport>

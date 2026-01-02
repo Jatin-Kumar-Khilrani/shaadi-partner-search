@@ -355,26 +355,61 @@ export const OCCUPATION_PROFESSION_OPTIONS: MultiSelectOption[] = [
 export const COUNTRY_OPTIONS: MultiSelectOption[] = [
   { value: "India", label: "🇮🇳 India" },
   { value: "United States", label: "🇺🇸 United States" },
-  { value: "United Kingdom", label: "🇬🇧 United Kingdom" },
   { value: "Canada", label: "🇨🇦 Canada" },
+  { value: "United Kingdom", label: "🇬🇧 United Kingdom" },
   { value: "Australia", label: "🇦🇺 Australia" },
-  { value: "UAE", label: "🇦🇪 UAE" },
-  { value: "Singapore", label: "🇸🇬 Singapore" },
-  { value: "Germany", label: "🇩🇪 Germany" },
   { value: "New Zealand", label: "🇳🇿 New Zealand" },
+  { value: "UAE", label: "🇦🇪 UAE" },
   { value: "Saudi Arabia", label: "🇸🇦 Saudi Arabia" },
   { value: "Qatar", label: "🇶🇦 Qatar" },
   { value: "Kuwait", label: "🇰🇼 Kuwait" },
   { value: "Oman", label: "🇴🇲 Oman" },
   { value: "Bahrain", label: "🇧🇭 Bahrain" },
+  { value: "Singapore", label: "🇸🇬 Singapore" },
   { value: "Malaysia", label: "🇲🇾 Malaysia" },
-  { value: "Netherlands", label: "🇳🇱 Netherlands" },
-  { value: "France", label: "🇫🇷 France" },
-  { value: "Ireland", label: "🇮🇪 Ireland" },
-  { value: "Switzerland", label: "🇨🇭 Switzerland" },
+  { value: "Hong Kong", label: "🇭🇰 Hong Kong" },
   { value: "Japan", label: "🇯🇵 Japan" },
   { value: "South Korea", label: "🇰🇷 South Korea" },
-  { value: "Hong Kong", label: "🇭🇰 Hong Kong" },
+  { value: "China", label: "🇨🇳 China" },
+  { value: "Thailand", label: "🇹🇭 Thailand" },
+  { value: "Philippines", label: "🇵🇭 Philippines" },
+  { value: "Vietnam", label: "🇻🇳 Vietnam" },
+  { value: "Indonesia", label: "🇮🇩 Indonesia" },
+  { value: "Germany", label: "🇩🇪 Germany" },
+  { value: "France", label: "🇫🇷 France" },
+  { value: "Netherlands", label: "🇳🇱 Netherlands" },
+  { value: "Switzerland", label: "🇨🇭 Switzerland" },
+  { value: "Ireland", label: "🇮🇪 Ireland" },
+  { value: "Italy", label: "🇮🇹 Italy" },
+  { value: "Spain", label: "🇪🇸 Spain" },
+  { value: "Portugal", label: "🇵🇹 Portugal" },
+  { value: "Austria", label: "🇦🇹 Austria" },
+  { value: "Belgium", label: "🇧🇪 Belgium" },
+  { value: "Sweden", label: "🇸🇪 Sweden" },
+  { value: "Norway", label: "🇳🇴 Norway" },
+  { value: "Denmark", label: "🇩🇰 Denmark" },
+  { value: "Finland", label: "🇫🇮 Finland" },
+  { value: "Poland", label: "🇵🇱 Poland" },
+  { value: "Russia", label: "🇷🇺 Russia" },
+  { value: "Turkey", label: "🇹🇷 Turkey" },
+  { value: "South Africa", label: "🇿🇦 South Africa" },
+  { value: "Nigeria", label: "🇳🇬 Nigeria" },
+  { value: "Kenya", label: "🇰🇪 Kenya" },
+  { value: "Ghana", label: "🇬🇭 Ghana" },
+  { value: "Uganda", label: "🇺🇬 Uganda" },
+  { value: "Tanzania", label: "🇹🇿 Tanzania" },
+  { value: "Zimbabwe", label: "🇿🇼 Zimbabwe" },
+  { value: "Egypt", label: "🇪🇬 Egypt" },
+  { value: "Morocco", label: "🇲🇦 Morocco" },
+  { value: "Tunisia", label: "🇹🇳 Tunisia" },
+  { value: "Mauritius", label: "🇲🇺 Mauritius" },
+  { value: "Pakistan", label: "🇵🇰 Pakistan" },
+  { value: "Bangladesh", label: "🇧🇩 Bangladesh" },
+  { value: "Sri Lanka", label: "🇱🇰 Sri Lanka" },
+  { value: "Nepal", label: "🇳🇵 Nepal" },
+  { value: "Brazil", label: "🇧🇷 Brazil" },
+  { value: "Mexico", label: "🇲🇽 Mexico" },
+  { value: "Fiji", label: "🇫🇯 Fiji" },
   { value: "Other", label: "🌍 Other" },
 ]
 
@@ -421,27 +456,100 @@ export const getStateOptionsForCountries = (countries: string[]): MultiSelectOpt
       'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 
       'Texas', 'Washington', 'District of Columbia'
     ],
-    'United Kingdom': [
-      'England', 'Scotland', 'Wales', 'Northern Ireland',
-      'Greater London', 'West Midlands', 'Greater Manchester'
-    ],
     'Canada': [
       'Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 
       'Newfoundland and Labrador', 'Nova Scotia', 'Ontario', 
       'Quebec', 'Saskatchewan'
     ],
+    'United Kingdom': [
+      'England', 'Scotland', 'Wales', 'Northern Ireland',
+      'Greater London', 'West Midlands', 'Greater Manchester'
+    ],
     'Australia': [
       'New South Wales', 'Victoria', 'Queensland', 'Western Australia', 
       'South Australia', 'Tasmania'
     ],
+    'New Zealand': [
+      'Auckland', 'Bay of Plenty', 'Canterbury', 'Gisborne', 'Hawkes Bay', 
+      'Manawatu-Whanganui', 'Marlborough', 'Nelson', 'Northland', 'Otago', 
+      'Southland', 'Taranaki', 'Tasman', 'Waikato', 'Wellington', 'West Coast'
+    ],
     'UAE': [
       'Abu Dhabi', 'Dubai', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah'
     ],
+    'Saudi Arabia': [
+      'Riyadh', 'Makkah', 'Madinah', 'Eastern Province', 'Asir', 
+      'Tabuk', 'Hail', 'Northern Borders', 'Jazan', 'Najran', 'Al Bahah', 'Al Jawf', 'Qassim'
+    ],
+    'Qatar': ['Doha', 'Al Rayyan', 'Al Wakrah', 'Al Khor', 'Umm Salal'],
+    'Kuwait': ['Al Asimah', 'Hawalli', 'Farwaniya', 'Mubarak Al-Kabeer', 'Ahmadi', 'Jahra'],
+    'Oman': ['Muscat', 'Dhofar', 'Musandam', 'Al Buraimi', 'Ad Dakhiliyah', 'Al Batinah'],
+    'Bahrain': ['Capital', 'Muharraq', 'Northern', 'Southern'],
     'Singapore': ['Singapore'],
+    'Malaysia': [
+      'Johor', 'Kedah', 'Kelantan', 'Malacca', 'Negeri Sembilan', 'Pahang', 
+      'Perak', 'Perlis', 'Penang', 'Sabah', 'Sarawak', 'Selangor', 'Terengganu',
+      'Kuala Lumpur', 'Labuan', 'Putrajaya'
+    ],
+    'Hong Kong': ['Hong Kong Island', 'Kowloon', 'New Territories'],
+    'Japan': [
+      'Tokyo', 'Osaka', 'Kyoto', 'Hokkaido', 'Aichi', 'Fukuoka', 'Kanagawa',
+      'Hyogo', 'Saitama', 'Chiba', 'Hiroshima', 'Miyagi', 'Shizuoka'
+    ],
+    'South Korea': [
+      'Seoul', 'Busan', 'Daegu', 'Incheon', 'Gwangju', 'Daejeon', 'Ulsan',
+      'Gyeonggi', 'Gangwon', 'Jeju'
+    ],
+    'China': [
+      'Beijing', 'Shanghai', 'Guangdong', 'Jiangsu', 'Zhejiang', 'Sichuan',
+      'Shandong', 'Henan', 'Hubei', 'Hunan', 'Fujian', 'Shaanxi'
+    ],
+    'Thailand': ['Bangkok', 'Chiang Mai', 'Phuket', 'Chonburi', 'Nonthaburi'],
+    'Philippines': ['Metro Manila', 'Cebu', 'Davao', 'Calabarzon', 'Central Luzon'],
+    'Vietnam': ['Ho Chi Minh City', 'Hanoi', 'Da Nang', 'Hai Phong', 'Can Tho'],
+    'Indonesia': ['Jakarta', 'West Java', 'East Java', 'Central Java', 'Bali', 'North Sumatra'],
     'Germany': [
       'Baden-Württemberg', 'Bavaria', 'Berlin', 'Hamburg', 'Hesse', 
       'North Rhine-Westphalia'
     ],
+    'France': [
+      'Île-de-France', 'Provence-Alpes-Côte d\'Azur', 'Auvergne-Rhône-Alpes', 
+      'Occitanie', 'Nouvelle-Aquitaine', 'Hauts-de-France'
+    ],
+    'Netherlands': ['North Holland', 'South Holland', 'Utrecht', 'North Brabant', 'Gelderland'],
+    'Switzerland': ['Zurich', 'Bern', 'Geneva', 'Basel', 'Lausanne', 'Lucerne'],
+    'Ireland': ['Dublin', 'Cork', 'Galway', 'Limerick', 'Waterford'],
+    'Italy': ['Lombardy', 'Lazio', 'Campania', 'Sicily', 'Veneto', 'Piedmont', 'Emilia-Romagna'],
+    'Spain': ['Madrid', 'Catalonia', 'Andalusia', 'Valencia', 'Basque Country', 'Galicia'],
+    'Portugal': ['Lisbon', 'Porto', 'Algarve', 'Centro', 'Norte'],
+    'Austria': ['Vienna', 'Salzburg', 'Tyrol', 'Upper Austria', 'Styria'],
+    'Belgium': ['Brussels', 'Flanders', 'Wallonia', 'Antwerp', 'East Flanders'],
+    'Sweden': ['Stockholm', 'Gothenburg', 'Malmö', 'Uppsala', 'Skåne'],
+    'Norway': ['Oslo', 'Bergen', 'Trondheim', 'Stavanger', 'Rogaland'],
+    'Denmark': ['Copenhagen', 'Aarhus', 'Odense', 'Aalborg', 'Central Denmark'],
+    'Finland': ['Uusimaa', 'Southwest Finland', 'Pirkanmaa', 'North Ostrobothnia'],
+    'Poland': ['Masovian', 'Lesser Poland', 'Greater Poland', 'Silesian', 'Lower Silesian'],
+    'Russia': ['Moscow', 'Saint Petersburg', 'Novosibirsk', 'Sverdlovsk', 'Tatarstan'],
+    'Turkey': ['Istanbul', 'Ankara', 'Izmir', 'Antalya', 'Bursa', 'Konya'],
+    'South Africa': ['Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape', 'Free State'],
+    'Nigeria': ['Lagos', 'Abuja', 'Kano', 'Rivers', 'Oyo', 'Kaduna'],
+    'Kenya': ['Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret'],
+    'Ghana': ['Greater Accra', 'Ashanti', 'Western', 'Eastern', 'Central'],
+    'Uganda': ['Central', 'Western', 'Eastern', 'Northern', 'Kampala'],
+    'Tanzania': ['Dar es Salaam', 'Dodoma', 'Mwanza', 'Arusha', 'Mbeya'],
+    'Zimbabwe': ['Harare', 'Bulawayo', 'Manicaland', 'Mashonaland', 'Matabeleland'],
+    'Egypt': ['Cairo', 'Alexandria', 'Giza', 'Shubra El Kheima', 'Port Said'],
+    'Morocco': ['Casablanca-Settat', 'Rabat-Salé-Kénitra', 'Marrakech-Safi', 'Fès-Meknès', 'Tangier-Tetouan'],
+    'Tunisia': ['Tunis', 'Sfax', 'Sousse', 'Kairouan', 'Bizerte'],
+    'Mauritius': ['Port Louis', 'Plaines Wilhems', 'Pamplemousses', 'Grand Port', 'Flacq'],
+    'Pakistan': ['Punjab', 'Sindh', 'Khyber Pakhtunkhwa', 'Balochistan', 'Islamabad'],
+    'Bangladesh': ['Dhaka', 'Chittagong', 'Khulna', 'Rajshahi', 'Sylhet'],
+    'Sri Lanka': ['Western', 'Central', 'Southern', 'Northern', 'Eastern'],
+    'Nepal': ['Province 1', 'Madhesh', 'Bagmati', 'Gandaki', 'Lumbini', 'Karnali', 'Sudurpashchim'],
+    'Brazil': ['São Paulo', 'Rio de Janeiro', 'Minas Gerais', 'Bahia', 'Paraná'],
+    'Mexico': ['Mexico City', 'Jalisco', 'Nuevo León', 'Estado de México', 'Veracruz'],
+    'Fiji': ['Central', 'Western', 'Northern', 'Eastern'],
+    'Other': ['Other'],
   }
 
   const states: MultiSelectOption[] = []

@@ -23,18 +23,64 @@ import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 import { TermsAndConditions } from '@/components/TermsAndConditions'
 import { uploadPhoto, isBlobStorageAvailable, dataUrlToFile } from '@/lib/blobService'
 
-// Country code to phone length mapping
-const COUNTRY_PHONE_LENGTHS: Record<string, { min: number; max: number; display: string }> = {
-  '+91': { min: 10, max: 10, display: '10' },      // India
-  '+1': { min: 10, max: 10, display: '10' },       // USA/Canada
-  '+44': { min: 10, max: 10, display: '10' },      // UK
-  '+971': { min: 9, max: 9, display: '9' },        // UAE
-  '+65': { min: 8, max: 8, display: '8' },         // Singapore
-  '+61': { min: 9, max: 9, display: '9' },         // Australia
-  '+49': { min: 10, max: 11, display: '10-11' },   // Germany
-  '+33': { min: 9, max: 9, display: '9' },         // France
-  '+81': { min: 10, max: 10, display: '10' },      // Japan
-  '+86': { min: 11, max: 11, display: '11' },      // China
+// Country code to phone length mapping - comprehensive list
+const COUNTRY_PHONE_LENGTHS: Record<string, { min: number; max: number; display: string; flag: string; name: string }> = {
+  '+91': { min: 10, max: 10, display: '10', flag: '🇮🇳', name: 'India' },
+  '+1': { min: 10, max: 10, display: '10', flag: '🇺🇸', name: 'USA/Canada' },
+  '+44': { min: 10, max: 10, display: '10', flag: '🇬🇧', name: 'UK' },
+  '+971': { min: 9, max: 9, display: '9', flag: '🇦🇪', name: 'UAE' },
+  '+65': { min: 8, max: 8, display: '8', flag: '🇸🇬', name: 'Singapore' },
+  '+61': { min: 9, max: 9, display: '9', flag: '🇦🇺', name: 'Australia' },
+  '+64': { min: 9, max: 10, display: '9-10', flag: '🇳🇿', name: 'New Zealand' },
+  '+49': { min: 10, max: 11, display: '10-11', flag: '🇩🇪', name: 'Germany' },
+  '+33': { min: 9, max: 9, display: '9', flag: '🇫🇷', name: 'France' },
+  '+81': { min: 10, max: 10, display: '10', flag: '🇯🇵', name: 'Japan' },
+  '+86': { min: 11, max: 11, display: '11', flag: '🇨🇳', name: 'China' },
+  '+966': { min: 9, max: 9, display: '9', flag: '🇸🇦', name: 'Saudi Arabia' },
+  '+974': { min: 8, max: 8, display: '8', flag: '🇶🇦', name: 'Qatar' },
+  '+973': { min: 8, max: 8, display: '8', flag: '🇧🇭', name: 'Bahrain' },
+  '+968': { min: 8, max: 8, display: '8', flag: '🇴🇲', name: 'Oman' },
+  '+965': { min: 8, max: 8, display: '8', flag: '🇰🇼', name: 'Kuwait' },
+  '+60': { min: 9, max: 10, display: '9-10', flag: '🇲🇾', name: 'Malaysia' },
+  '+353': { min: 9, max: 9, display: '9', flag: '🇮🇪', name: 'Ireland' },
+  '+31': { min: 9, max: 9, display: '9', flag: '🇳🇱', name: 'Netherlands' },
+  '+41': { min: 9, max: 9, display: '9', flag: '🇨🇭', name: 'Switzerland' },
+  '+82': { min: 10, max: 11, display: '10-11', flag: '🇰🇷', name: 'South Korea' },
+  '+852': { min: 8, max: 8, display: '8', flag: '🇭🇰', name: 'Hong Kong' },
+  '+39': { min: 10, max: 10, display: '10', flag: '🇮🇹', name: 'Italy' },
+  '+34': { min: 9, max: 9, display: '9', flag: '🇪🇸', name: 'Spain' },
+  '+351': { min: 9, max: 9, display: '9', flag: '🇵🇹', name: 'Portugal' },
+  '+43': { min: 10, max: 13, display: '10-13', flag: '🇦🇹', name: 'Austria' },
+  '+32': { min: 9, max: 9, display: '9', flag: '🇧🇪', name: 'Belgium' },
+  '+46': { min: 9, max: 9, display: '9', flag: '🇸🇪', name: 'Sweden' },
+  '+47': { min: 8, max: 8, display: '8', flag: '🇳🇴', name: 'Norway' },
+  '+45': { min: 8, max: 8, display: '8', flag: '🇩🇰', name: 'Denmark' },
+  '+358': { min: 9, max: 10, display: '9-10', flag: '🇫🇮', name: 'Finland' },
+  '+48': { min: 9, max: 9, display: '9', flag: '🇵🇱', name: 'Poland' },
+  '+27': { min: 9, max: 9, display: '9', flag: '🇿🇦', name: 'South Africa' },
+  '+234': { min: 10, max: 10, display: '10', flag: '🇳🇬', name: 'Nigeria' },
+  '+254': { min: 9, max: 9, display: '9', flag: '🇰🇪', name: 'Kenya' },
+  '+92': { min: 10, max: 10, display: '10', flag: '🇵🇰', name: 'Pakistan' },
+  '+880': { min: 10, max: 10, display: '10', flag: '🇧🇩', name: 'Bangladesh' },
+  '+94': { min: 9, max: 9, display: '9', flag: '🇱🇰', name: 'Sri Lanka' },
+  '+977': { min: 10, max: 10, display: '10', flag: '🇳🇵', name: 'Nepal' },
+  '+63': { min: 10, max: 10, display: '10', flag: '🇵🇭', name: 'Philippines' },
+  '+66': { min: 9, max: 9, display: '9', flag: '🇹🇭', name: 'Thailand' },
+  '+84': { min: 9, max: 10, display: '9-10', flag: '🇻🇳', name: 'Vietnam' },
+  '+62': { min: 10, max: 12, display: '10-12', flag: '🇮🇩', name: 'Indonesia' },
+  '+55': { min: 10, max: 11, display: '10-11', flag: '🇧🇷', name: 'Brazil' },
+  '+52': { min: 10, max: 10, display: '10', flag: '🇲🇽', name: 'Mexico' },
+  '+7': { min: 10, max: 10, display: '10', flag: '🇷🇺', name: 'Russia' },
+  '+90': { min: 10, max: 10, display: '10', flag: '🇹🇷', name: 'Turkey' },
+  '+20': { min: 10, max: 10, display: '10', flag: '🇪🇬', name: 'Egypt' },
+  '+212': { min: 9, max: 9, display: '9', flag: '🇲🇦', name: 'Morocco' },
+  '+216': { min: 8, max: 8, display: '8', flag: '🇹🇳', name: 'Tunisia' },
+  '+233': { min: 9, max: 9, display: '9', flag: '🇬🇭', name: 'Ghana' },
+  '+256': { min: 9, max: 9, display: '9', flag: '🇺🇬', name: 'Uganda' },
+  '+255': { min: 9, max: 9, display: '9', flag: '🇹🇿', name: 'Tanzania' },
+  '+263': { min: 9, max: 9, display: '9', flag: '🇿🇼', name: 'Zimbabwe' },
+  '+230': { min: 8, max: 8, display: '8', flag: '🇲🇺', name: 'Mauritius' },
+  '+679': { min: 7, max: 7, display: '7', flag: '🇫🇯', name: 'Fiji' },
 }
 
 // Helper function to get phone length for a country code
@@ -2634,20 +2680,23 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       value={formData.countryCode}
                       disabled={isEditMode && !isAdminMode}
                     >
-                      <SelectTrigger className={`w-[100px] ${isEditMode && !isAdminMode ? 'bg-muted' : ''}`}>
-                        <SelectValue placeholder="+91" />
+                      <SelectTrigger className={`w-[140px] ${isEditMode && !isAdminMode ? 'bg-muted' : ''}`}>
+                        <SelectValue placeholder="+91 🇮🇳" />
                       </SelectTrigger>
-                      <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
-                        <SelectItem value="+91">+91 🇮🇳</SelectItem>
-                        <SelectItem value="+1">+1 🇺🇸</SelectItem>
-                        <SelectItem value="+44">+44 🇬🇧</SelectItem>
-                        <SelectItem value="+971">+971 🇦🇪</SelectItem>
-                        <SelectItem value="+65">+65 🇸🇬</SelectItem>
-                        <SelectItem value="+61">+61 🇦🇺</SelectItem>
-                        <SelectItem value="+49">+49 🇩🇪</SelectItem>
-                        <SelectItem value="+33">+33 🇫🇷</SelectItem>
-                        <SelectItem value="+81">+81 🇯🇵</SelectItem>
-                        <SelectItem value="+86">+86 🇨🇳</SelectItem>
+                      <SelectContent 
+                        className="z-[9999] max-h-[280px]" 
+                        position="popper" 
+                        sideOffset={4}
+                        align="start"
+                        avoidCollisions={false}
+                      >
+                        {Object.entries(COUNTRY_PHONE_LENGTHS)
+                          .sort((a, b) => a[1].name.localeCompare(b[1].name))
+                          .map(([code, info]) => (
+                            <SelectItem key={code} value={code}>
+                              {code} {info.flag} {info.name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                     <Input
