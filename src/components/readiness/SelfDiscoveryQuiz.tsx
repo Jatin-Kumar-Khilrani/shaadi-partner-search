@@ -23,7 +23,6 @@ import {
   Handshake,
   Mountains,
   House,
-  Briefcase,
   Star,
   Trophy,
   Target,

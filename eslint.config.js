@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'api'] },
+  { ignores: ['dist', 'node_modules', 'api', 'coverage', 'scripts'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -28,6 +28,13 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-console': 'warn',
       'prefer-const': 'warn',
+    },
+  },
+  // Allow console in logger utility
+  {
+    files: ['**/lib/logger.ts'],
+    rules: {
+      'no-console': 'off',
     },
   },
 )

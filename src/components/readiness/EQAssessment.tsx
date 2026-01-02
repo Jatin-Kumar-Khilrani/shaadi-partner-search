@@ -17,9 +17,7 @@ import {
   ArrowRight,
   ArrowLeft,
   CheckCircle,
-  Sparkle,
   Handshake,
-  ChatCircle,
   ShieldCheck,
   Scales,
   Lightbulb

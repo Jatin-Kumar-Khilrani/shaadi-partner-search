@@ -34,3 +34,4 @@ api/local.settings.json
 
 # Runtime config with secrets (use runtime.config.template.json for reference)
 public/runtime.config.json
+coverage/
