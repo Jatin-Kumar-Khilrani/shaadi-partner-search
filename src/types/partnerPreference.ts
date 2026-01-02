@@ -1,4 +1,4 @@
-import type { Gender, DietPreference, DrinkingHabit, SmokingHabit, Manglik } from './profile'
+import type { Gender, DietPreference, DrinkingHabit, SmokingHabit, MaritalStatus } from './profile'
 
 export interface PartnerPreference {
   profileId: string
@@ -7,12 +7,12 @@ export interface PartnerPreference {
   ageMax?: number
   heightMin?: string
   heightMax?: string
-  maritalStatus?: string[]
+  maritalStatus?: MaritalStatus[]  // Multi-select marital status preference
   religion?: string[]
   caste?: string[]
   community?: string[]
   motherTongue?: string[]
-  education?: string[]
+  education?: string[]            // Multi-select education preference
   employmentStatus?: string[]     // Employment status preference
   occupation?: string[]           // Occupation/Profession preference
   livingCountry?: string[]        // Preferred countries partner is living in
@@ -22,7 +22,7 @@ export interface PartnerPreference {
   dietPreference?: DietPreference[]
   drinkingHabit?: DrinkingHabit[]
   smokingHabit?: SmokingHabit[]
-  manglik?: Manglik[]
+  manglik?: 'yes' | 'no' | 'doesnt-matter'
   annualIncomeMin?: string        // Minimum annual income preference
   annualIncomeMax?: string        // Maximum annual income preference
   salaryMin?: string              // Deprecated: use annualIncomeMin

@@ -281,7 +281,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
           ...msg,
           delivered: true,
           deliveredAt: new Date().toISOString(),
-          status: msg.read ? 'read' : 'delivered' as const
+          status: (msg.read ? 'read' : 'delivered') as 'sent' | 'delivered' | 'read'
         }
       }
       return msg
@@ -628,9 +628,10 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       }
 
       // Check chat limit for all plans (only for user-to-user chats, not admin chats)
-      if (otherProfileId && setProfiles) {
+      if (otherProfileId && setProfiles && currentUserProfile) {
         // Get the current user's profile ID for matching
         const currentProfileId = currentUserProfile.id
+        const currentProfileProfileId = currentUserProfile.profileId
         
         // Use actual chatted profiles from messages (most accurate) or stored values
         const chattedProfiles = chatRequestsUsed
@@ -653,7 +654,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
           setProfiles((current) => {
             const updated = (current || []).map(p => {
               // Match by both id and profileId for robustness
-              if (p.id === currentProfileId || p.profileId === currentUserProfile.profileId) {
+              if (p.id === currentProfileId || p.profileId === currentProfileProfileId) {
                 console.log(`[Chat] Updating chatRequestsUsed for profile ${p.profileId}:`, updatedChattedProfiles)
                 return { 
                   ...p, 

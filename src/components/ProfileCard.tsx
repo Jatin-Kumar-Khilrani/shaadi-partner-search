@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { MapPin, Briefcase, GraduationCap, UserCircle, ShieldCheck, Seal, Clock, Lock, Crown, Eye } from '@phosphor-icons/react'
 import type { Profile, MembershipPlan } from '@/types/profile'

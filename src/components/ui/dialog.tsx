@@ -63,7 +63,7 @@ function DialogContent({
         onOpenAutoFocus={(e) => {
           // Blur any focused element outside the dialog to prevent aria-hidden warning
           const activeElement = document.activeElement as HTMLElement
-          if (activeElement && !e.currentTarget.contains(activeElement)) {
+          if (activeElement && e.currentTarget && 'contains' in e.currentTarget && !(e.currentTarget as HTMLElement).contains(activeElement)) {
             activeElement.blur()
           }
           if (onOpenAutoFocus) {

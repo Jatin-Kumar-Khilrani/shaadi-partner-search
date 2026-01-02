@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react'
 import { useKV } from '@/hooks/useKV'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SearchableSelect, OCCUPATION_OPTIONS } from '@/components/ui/searchable-select'
-import { MultiSelect, EDUCATION_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, getStateOptionsForCountries, getCityOptionsForStates, COUNTRY_OPTIONS } from '@/components/ui/multi-select'
+import { MultiSelect, EDUCATION_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, getStateOptionsForCountries, getCityOptionsForStates } from '@/components/ui/multi-select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { ProfileCard } from './ProfileCard'
-import { MagnifyingGlass, Funnel, X, GraduationCap, Briefcase, MapPin, Globe, Calendar, Trophy, Sparkle } from '@phosphor-icons/react'
+import { MagnifyingGlass, Funnel, X, GraduationCap, Globe, Calendar, Trophy, Sparkle } from '@phosphor-icons/react'
 import type { Profile, SearchFilters, BlockedProfile, MembershipPlan, ProfileStatus } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 
@@ -103,6 +103,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     education: language === 'hi' ? 'शिक्षा' : 'Education',
     occupation: language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status',
     country: language === 'hi' ? 'देश' : 'Country',
+    state: language === 'hi' ? 'राज्य' : 'State',
     city: language === 'hi' ? 'शहर' : 'City',
     ageRange: language === 'hi' ? 'आयु सीमा' : 'Age Range',
     readinessBadge: language === 'hi' ? 'तैयारी बैज' : 'Readiness Badge',

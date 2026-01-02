@@ -310,7 +310,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
   const photos = profile.photos?.length > 0 ? profile.photos : []
   const isPaidUser = !!profile.membershipPlan && profile.membershipExpiry && new Date(profile.membershipExpiry) > new Date()
   const isFreePlan = profile.membershipPlan === 'free'
-  const isVerifiedOrApproved = profile.status === 'verified' || profile.status === 'approved'
+  const isVerifiedOrApproved = profile.status === 'verified'
   // Free users can generate biodata with watermark, premium users without watermark
   const canGenerateBiodata = isVerifiedOrApproved
   const canDownloadWithoutWatermark = isPaidUser && !isFreePlan && isVerifiedOrApproved
@@ -428,7 +428,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
         <BiodataGenerator
           profile={profile}
           language={language}
-          isPaidUser={isPaidUser}
+          isPaidUser={!!isPaidUser}
           open={showBiodataGenerator}
           onClose={() => setShowBiodataGenerator(false)}
         />

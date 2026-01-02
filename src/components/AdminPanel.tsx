@@ -12,13 +12,11 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { SearchableSelect, EDUCATION_OPTIONS, OCCUPATION_OPTIONS } from '@/components/ui/searchable-select'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, CaretLeft, CaretRight, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User, CreditCard, Upload, ShieldWarning, Prohibit, Warning } from '@phosphor-icons/react'
+import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, CaretLeft, CaretRight, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User as UserIcon, CreditCard, Upload, ShieldWarning, Prohibit, Warning } from '@phosphor-icons/react'
 import type { Profile, WeddingService, PaymentTransaction, BlockedProfile, ReportReason } from '@/types/profile'
 import type { User } from '@/types/user'
 import type { ChatMessage } from '@/types/chat'
@@ -709,7 +707,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const getUserCredentials = (profileId: string) => users?.find(u => u.profileId === profileId)
 
   const pendingProfiles = profiles?.filter(p => p.status === 'pending' && !p.isDeleted) || []
-  const approvedProfiles = profiles?.filter(p => (p.status === 'verified' || p.status === 'approved') && !p.isDeleted) || []
+  const approvedProfiles = profiles?.filter(p => p.status === 'verified' && !p.isDeleted) || []
   const rejectedProfiles = profiles?.filter(p => p.status === 'rejected' && !p.isDeleted) || []
   const deletedProfiles = profiles?.filter(p => p.isDeleted) || []
 
@@ -718,7 +716,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     if (!profiles) return []
     switch (dbStatusFilter) {
       case 'approved':
-        return profiles.filter(p => (p.status === 'verified' || p.status === 'approved') && !p.isDeleted)
+        return profiles.filter(p => p.status === 'verified' && !p.isDeleted)
       case 'pending':
         return profiles.filter(p => p.status === 'pending' && !p.isDeleted)
       case 'rejected':
@@ -1347,7 +1345,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     createdAt: new Date().toISOString(),
     emailVerified: true,
     mobileVerified: true,
-    isBlocked: false
+    isBlocked: false,
+    disability: 'none'
   }
 
   return (
@@ -1920,7 +1919,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     className="text-purple-600 focus:text-purple-600 focus:bg-purple-50"
                                     title={language === 'hi' ? 'नाम, DOB, ईमेल, मोबाइल सहित सभी फ़ील्ड संपादित करें' : 'Edit all fields including Name, DOB, Email, Mobile'}
                                   >
-                                    <User size={14} className="mr-2" />
+                                    <UserIcon size={14} className="mr-2" />
                                     {t.adminEditProfile}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
@@ -2219,15 +2218,16 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             case 'gender':
                               comparison = (a.gender || '').localeCompare(b.gender || '')
                               break
-                            case 'plan':
+                            case 'plan': {
                               const planOrder = { 'free': 0, '6-month': 1, '1-year': 2 }
                               comparison = (planOrder[a.membershipPlan || 'free'] || 0) - (planOrder[b.membershipPlan || 'free'] || 0)
                               break
+                            }
                             case 'userId':
                               comparison = aUserId.localeCompare(bUserId)
                               break
                             case 'relation':
-                              comparison = (a.profileCreatedBy || '').localeCompare(b.profileCreatedBy || '')
+                              comparison = (a.relationToProfile || '').localeCompare(b.relationToProfile || '')
                               break
                             case 'age':
                               comparison = (a.age || 0) - (b.age || 0)
@@ -2313,13 +2313,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 </Badge>
                               ) : (
                                 <Badge variant={
-                                  (profile.status === 'verified' || profile.status === 'approved') ? 'default' :
+                                  profile.status === 'verified' ? 'default' :
                                   profile.status === 'pending' ? 'secondary' :
                                   'destructive'
                                 } className={
-                                  (profile.status === 'verified' || profile.status === 'approved') ? 'bg-green-600' : ''
+                                  profile.status === 'verified' ? 'bg-green-600' : ''
                                 }>
-                                  {(profile.status === 'verified' || profile.status === 'approved') ? (language === 'hi' ? 'स्वीकृत' : 'Approved') :
+                                  {profile.status === 'verified' ? (language === 'hi' ? 'स्वीकृत' : 'Approved') :
                                    t.pending}
                                 </Badge>
                               )}
@@ -2415,7 +2415,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
                                   title={t.adminEditProfile}
                                 >
-                                  <User size={16} />
+                                  <UserIcon size={16} />
                                 </Button>
                                 {/* Conditional actions based on profile status */}
                                 {profile.isDeleted ? (
@@ -5373,7 +5373,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
 
                 // Calculate expiry date based on plan
                 const paymentDate = new Date(paymentFormData.paymentDate)
-                let expiryDate = new Date(paymentDate)
+                const expiryDate = new Date(paymentDate)
                 if (paymentFormData.plan === 'free') {
                   expiryDate.setMonth(expiryDate.getMonth() + 6)
                 } else if (paymentFormData.plan === '6-month') {
@@ -6139,7 +6139,7 @@ ShaadiPartnerSearch Team
             {/* Profile Details Section for Verification */}
             <div className="p-4 bg-muted/30 rounded-lg border">
               <h4 className="font-semibold mb-3 flex items-center gap-2">
-                <User size={18} />
+                <UserIcon size={18} />
                 {language === 'hi' ? 'प्रोफ़ाइल विवरण (मिलान के लिए)' : 'Profile Details (For Matching)'}
               </h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -6167,7 +6167,7 @@ ShaadiPartnerSearch Team
               {/* Profile Photo */}
               <div className="border rounded-lg p-3">
                 <Label className="text-sm font-medium flex items-center gap-2 mb-2">
-                  <User size={16} />
+                  <UserIcon size={16} />
                   {language === 'hi' ? 'प्रोफ़ाइल फोटो' : 'Profile Photo'}
                 </Label>
                 <div className="bg-muted/20 rounded-lg p-2 flex items-center justify-center min-h-[200px]">
@@ -6367,7 +6367,7 @@ ShaadiPartnerSearch Team
               {/* Profile Details Section for Verification */}
               <div className="p-4 bg-muted/30 rounded-lg border">
                 <h4 className="font-semibold mb-3 flex items-center gap-2">
-                  <User size={18} />
+                  <UserIcon size={18} />
                   {language === 'hi' ? 'प्रोफ़ाइल विवरण (मिलान के लिए)' : 'Profile Details (For Matching)'}
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -6395,7 +6395,7 @@ ShaadiPartnerSearch Team
                 {/* Profile Photo */}
                 <div className="border rounded-lg p-3">
                   <Label className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <User size={16} />
+                    <UserIcon size={16} />
                     {language === 'hi' ? 'प्रोफ़ाइल फोटो' : 'Profile Photo'}
                   </Label>
                   <div className="bg-muted/20 rounded-lg p-2 flex items-center justify-center min-h-[200px]">

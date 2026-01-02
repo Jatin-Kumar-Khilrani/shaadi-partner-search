@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise, CaretDown, User, IdentificationCard, Trophy } from '@phosphor-icons/react'
+import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise, CaretDown, User as UserIcon, Trophy } from '@phosphor-icons/react'
 import { HeroSearch } from '@/components/HeroSearch'
 import { ProfileCard } from '@/components/ProfileCard'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
@@ -26,7 +26,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { AdminPanel } from '@/components/AdminPanel'
 import { AdminLoginDialog } from '@/components/AdminLoginDialog'
 import { CookieConsent } from '@/components/CookieConsent'
-import { useTranslation, type Language } from '@/lib/translations'
+import { type Language } from '@/lib/translations'
 import { toast } from 'sonner'
 import { sampleWeddingServices } from '@/lib/sampleData'
 
@@ -776,7 +776,7 @@ function App() {
                     </div>
                   </div>
                   <DropdownMenuItem onClick={() => setCurrentView('my-profile')} className="gap-2 cursor-pointer">
-                    <User size={18} />
+                    <UserIcon size={18} />
                     {t.viewProfile}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowSettings(true)} className="gap-2 cursor-pointer">

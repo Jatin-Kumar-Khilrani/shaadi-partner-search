@@ -6,7 +6,7 @@ export type DrinkingHabit = 'never' | 'occasionally' | 'regularly'
 export type SmokingHabit = 'never' | 'occasionally' | 'regularly'
 export type MembershipPlan = 'free' | '6-month' | '1-year'
 export type Manglik = boolean
-export type DisabilityStatus = 'no' | 'yes'
+export type DisabilityStatus = 'no' | 'yes' | 'none' | 'physical' | 'visual' | 'hearing' | 'speech' | 'intellectual' | 'multiple'
 export type ResidentialStatus = 
   | 'citizen' 
   | 'permanent-resident' 
@@ -38,8 +38,10 @@ export interface Profile {
   salary?: string
   position?: string  // Job position/designation
   location: string
+  city?: string  // City (alias for location for compatibility)
   state?: string
   country: string
+  hobbies?: string[]  // List of hobbies/interests
   residentialStatus?: ResidentialStatus  // Required when living outside India
   maritalStatus: MaritalStatus
   email: string
@@ -73,6 +75,7 @@ export interface Profile {
   verifiedAt?: string
   membershipPlan?: MembershipPlan
   membershipExpiry?: string
+  membershipEndDate?: string  // Alias for membershipExpiry for backward compatibility
   emailVerified: boolean
   mobileVerified: boolean
   isBlocked: boolean
@@ -93,6 +96,9 @@ export interface Profile {
   digilockerVerifiedBy?: string  // Admin who verified or 'Self' for user verification
   digilockerDocumentType?: 'aadhaar' | 'pan' | 'driving-license' | 'passport'
   digilockerNotes?: string
+  digilockerID?: string  // DigiLocker ID for reference
+  digilockerVerifiedName?: string  // Name as per DigiLocker
+  digilockerVerifiedDob?: string  // DOB as per DigiLocker
   // Aadhaar OTP verification data (from registration)
   aadhaarVerified?: boolean
   aadhaarVerifiedAt?: string
@@ -253,19 +259,22 @@ export interface PartnerPreferenceData {
   ageMax?: number
   heightMin?: string
   heightMax?: string
-  maritalStatus?: string[]      // Multi-select marital status preference
+  maritalStatus?: MaritalStatus[]      // Multi-select marital status preference
   religion?: string[]           // Multi-select religion preference
   caste?: string[]
   community?: string[]
   motherTongue?: string[]       // Multi-select mother tongue preference
-  education?: string
+  education?: string[]          // Multi-select education preference
+  employmentStatus?: string[]   // Multi-select employment status preference
   occupation?: string[]         // Multi-select occupation preference
   livingCountry?: string[]      // Multi-select living country preference
   livingState?: string[]        // Multi-select living state preference
-  manglik?: Manglik
+  manglik?: 'yes' | 'no' | 'doesnt-matter'
   dietPreference?: DietPreference[]  // Multi-select diet preference
   drinkingHabit?: DrinkingHabit[]
   smokingHabit?: SmokingHabit[]
+  annualIncomeMin?: string      // Minimum annual income preference
+  annualIncomeMax?: string      // Maximum annual income preference
 }
 
 export interface Volunteer {
@@ -349,6 +358,7 @@ export type EQLevel = 'developing' | 'moderate' | 'high'
 export interface SelfDiscoveryData {
   // Core values
   topValues: ('family' | 'career' | 'spirituality' | 'adventure' | 'stability' | 'growth' | 'creativity' | 'service')[]
+  coreValues?: string[]  // Additional core values as free text
   
   // Personality traits
   personalityType: PersonalityDimension

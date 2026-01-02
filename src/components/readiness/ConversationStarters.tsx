@@ -269,7 +269,7 @@ export function ConversationStarters({
     
     if (targetProfile) {
       // Based on shared interests
-      if (myProfile.hobbies && targetProfile.hobbies) {
+      if (myProfile.hobbies && myProfile.hobbies.length > 0 && targetProfile.hobbies && targetProfile.hobbies.length > 0) {
         const sharedHobbies = myProfile.hobbies.filter(h => 
           targetProfile.hobbies?.includes(h)
         )
@@ -306,13 +306,14 @@ export function ConversationStarters({
         })
       }
       
-      // Based on city
-      if (targetProfile.city) {
+      // Based on city/location
+      const targetCity = targetProfile.city || targetProfile.location
+      if (targetCity) {
         starters.push({
           id: 'personal-city-1',
           category: 'lifestyle',
-          textEn: `${targetProfile.city} is such a great city! What's your favorite thing about living there?`,
-          textHi: `${targetProfile.city} एक बहुत अच्छा शहर है! वहां रहने के बारे में आपकी सबसे पसंदीदा बात क्या है?`,
+          textEn: `${targetCity} is such a great city! What's your favorite thing about living there?`,
+          textHi: `${targetCity} एक बहुत अच्छा शहर है! वहां रहने के बारे में आपकी सबसे पसंदीदा बात क्या है?`,
           personalizedFor: ['location']
         })
       }
@@ -320,12 +321,14 @@ export function ConversationStarters({
     
     // Based on my self-discovery data
     if (selfDiscoveryData) {
-      if (selfDiscoveryData.coreValues && selfDiscoveryData.coreValues.length > 0) {
+      // Use topValues (which is always present) or coreValues if available
+      const values = selfDiscoveryData.coreValues || selfDiscoveryData.topValues
+      if (values && values.length > 0) {
         starters.push({
           id: 'personal-values-1',
           category: 'values',
-          textEn: `I value ${selfDiscoveryData.coreValues.slice(0, 2).join(' and ')} a lot. What values do you hold closest to your heart?`,
-          textHi: `मैं ${selfDiscoveryData.coreValues.slice(0, 2).join(' और ')} को बहुत महत्व देता/देती हूं। आप किन मूल्यों को अपने दिल के सबसे करीब रखते हैं?`,
+          textEn: `I value ${values.slice(0, 2).join(' and ')} a lot. What values do you hold closest to your heart?`,
+          textHi: `मैं ${values.slice(0, 2).join(' और ')} को बहुत महत्व देता/देती हूं। आप किन मूल्यों को अपने दिल के सबसे करीब रखते हैं?`,
           personalizedFor: ['my-values']
         })
       }

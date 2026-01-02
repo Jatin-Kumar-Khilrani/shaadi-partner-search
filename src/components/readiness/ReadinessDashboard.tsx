@@ -212,7 +212,8 @@ export function ReadinessDashboard({ language, profile, onProfileUpdate }: Readi
     
     // Learning (max 100 based on articles read)
     const totalArticles = 8 // Total articles in learning hub
-    learningScore = Math.min(100, (completedArticles.length / totalArticles) * 100)
+    const articlesCompleted = completedArticles || []
+    learningScore = Math.min(100, (articlesCompleted.length / totalArticles) * 100)
     
     // Safety/Verification (max 100)
     if (profile.status === 'verified') safetyScore += 40
@@ -248,7 +249,7 @@ export function ReadinessDashboard({ language, profile, onProfileUpdate }: Readi
       overallScore,
       readinessLevel,
       hasBadge,
-      articlesRead: completedArticles,
+      articlesRead: completedArticles || [],
       videosWatched: [],
       lastCalculatedAt: new Date().toISOString()
     }
@@ -278,8 +279,9 @@ export function ReadinessDashboard({ language, profile, onProfileUpdate }: Readi
   }
   
   const handleArticleComplete = (articleId: string) => {
-    if (!completedArticles.includes(articleId)) {
-      setCompletedArticles([...completedArticles, articleId])
+    const articles = completedArticles || []
+    if (!articles.includes(articleId)) {
+      setCompletedArticles([...articles, articleId])
     }
   }
   
@@ -382,7 +384,7 @@ export function ReadinessDashboard({ language, profile, onProfileUpdate }: Readi
             { label: t.selfAwareness, score: readinessScore.selfAwarenessScore, icon: <Brain size={16} /> },
             { label: t.emotionalMaturity, score: readinessScore.eqScore, icon: <Heart size={16} /> },
             { label: t.expectationClarity, score: readinessScore.expectationClarityScore, icon: <Target size={16} /> },
-            { label: t.learningProgress, score: Math.round((completedArticles.length / 8) * 100), icon: <BookOpen size={16} /> },
+            { label: t.learningProgress, score: Math.round(((completedArticles || []).length / 8) * 100), icon: <BookOpen size={16} /> },
             { label: t.profileVerification, score: readinessScore.safetyScore, icon: <ShieldCheck size={16} /> }
           ].map((item, i) => (
             <div key={i} className="space-y-1">
@@ -485,14 +487,14 @@ export function ReadinessDashboard({ language, profile, onProfileUpdate }: Readi
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('learning')}>
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
-              <div className={`p-2 rounded-full ${completedArticles.length > 0 ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-muted'}`}>
-                <BookOpen size={24} className={completedArticles.length > 0 ? 'text-blue-600' : 'text-muted-foreground'} weight="fill" />
+              <div className={`p-2 rounded-full ${(completedArticles || []).length > 0 ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-muted'}`}>
+                <BookOpen size={24} className={(completedArticles || []).length > 0 ? 'text-blue-600' : 'text-muted-foreground'} weight="fill" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <h4 className="font-semibold">{t.sections.learning}</h4>
                   <Badge variant="outline" className="text-xs">
-                    {completedArticles.length}/8
+                    {(completedArticles || []).length}/8
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">{t.sections.learningDesc}</p>
@@ -628,7 +630,7 @@ export function ReadinessDashboard({ language, profile, onProfileUpdate }: Readi
         <TabsContent value="learning" className="mt-6">
           <LearningHub 
             language={language}
-            completedArticles={completedArticles}
+            completedArticles={completedArticles || []}
             onArticleComplete={handleArticleComplete}
           />
         </TabsContent>

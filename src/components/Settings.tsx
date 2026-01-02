@@ -14,7 +14,7 @@ import { MultiSelect, MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OP
 import { Checkbox } from '@/components/ui/checkbox'
 import { Gear, Heart, Phone, Info, FileText, ShieldCheck } from '@phosphor-icons/react'
 import { toast } from 'sonner'
-import type { Profile, PartnerPreferenceData, DietPreference, DrinkingHabit, SmokingHabit } from '@/types/profile'
+import type { Profile, PartnerPreferenceData, DietPreference, DrinkingHabit, SmokingHabit, MaritalStatus } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 
 interface SettingsProps {
@@ -372,7 +372,7 @@ Online Safety Tips
                       <MultiSelect
                         options={MARITAL_STATUS_OPTIONS}
                         value={formData.maritalStatus || []}
-                        onValueChange={(v) => setFormData({ ...formData, maritalStatus: v })}
+                        onValueChange={(v) => setFormData({ ...formData, maritalStatus: v as MaritalStatus[] })}
                         placeholder={t.selectAny}
                         searchPlaceholder={t.search}
                         showAnyOption
@@ -510,8 +510,8 @@ Online Safety Tips
                   <div className="space-y-2">
                     <Label>{t.manglik}</Label>
                     <Select
-                      value={formData.manglik === undefined ? 'doesnt-matter' : formData.manglik ? 'yes' : 'no'}
-                      onValueChange={(value) => setFormData({ ...formData, manglik: value === 'doesnt-matter' ? undefined : value === 'yes' })}
+                      value={formData.manglik || 'doesnt-matter'}
+                      onValueChange={(value) => setFormData({ ...formData, manglik: value as 'yes' | 'no' | 'doesnt-matter' })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder={t.manglik} />

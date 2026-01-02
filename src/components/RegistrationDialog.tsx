@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,11 +13,9 @@ import { Separator } from '@/components/ui/separator'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, ArrowDown, FloppyDisk, Sparkle, Warning, SpinnerGap, Gift, ShieldCheck, IdentificationCard, ArrowCounterClockwise, Upload } from '@phosphor-icons/react'
 import { toast } from 'sonner'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import type { Gender, MaritalStatus, Profile, MembershipPlan, DisabilityStatus, DietPreference, DrinkingHabit, SmokingHabit } from '@/types/profile'
+import type { Gender, MaritalStatus, Profile, MembershipPlan, DisabilityStatus, DietPreference, DrinkingHabit, SmokingHabit, ResidentialStatus } from '@/types/profile'
 import { useTranslation, type Language } from '@/lib/translations'
 import { generateBio, type BioGenerationParams } from '@/lib/aiFoundryService'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
@@ -335,7 +332,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     dateOfBirth: '',
     birthTime: '',
     birthPlace: '',
-    horoscopeMatching: 'not-mandatory' as 'mandatory' | 'not-mandatory' | 'decide-later',
+    horoscopeMatching: 'not-mandatory' as 'mandatory' | 'not-mandatory' | 'decide-later' | 'preferred',
     diet: '' as '' | 'veg' | 'non-veg' | 'occasionally-non-veg' | 'jain' | 'vegan',
     drinkingHabit: '' as '' | 'never' | 'occasionally' | 'regularly',
     smokingHabit: '' as '' | 'never' | 'occasionally' | 'regularly',
@@ -351,7 +348,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     location: '',
     state: '',
     country: 'India',
-    residentialStatus: '' as string,
+    residentialStatus: undefined as ResidentialStatus | undefined,
     maritalStatus: undefined as MaritalStatus | undefined,
     email: '',
     countryCode: '+91',
@@ -391,7 +388,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   // Default values for fields that should have a pre-selected value
   const defaultValues = {
     disability: 'no' as DisabilityStatus,
-    horoscopeMatching: 'not-mandatory' as 'mandatory' | 'not-mandatory' | 'decide-later',
+    horoscopeMatching: 'not-mandatory' as 'mandatory' | 'not-mandatory' | 'decide-later' | 'preferred',
     country: 'India',
     partnerManglik: 'doesnt-matter' as 'yes' | 'no' | 'doesnt-matter'
   }
@@ -478,7 +475,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         location: editProfile.location || '',
         state: editProfile.state || '',
         country: editProfile.country || 'India',
-        residentialStatus: editProfile.residentialStatus || '',
+        residentialStatus: editProfile.residentialStatus,
         maritalStatus: editProfile.maritalStatus,
         email: editProfile.email || '',
         countryCode: countryCode,
@@ -648,25 +645,66 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         localStorage.removeItem(STORAGE_KEY)
         // Reset all form states
         setFormData({
-          fullName: '', email: '', mobile: '', dateOfBirth: '', gender: '' as 'male' | 'female',
-          religion: '', caste: '', motherTongue: '', height: '', weight: '',
-          maritalStatus: '', education: '', occupation: '', income: '', city: '',
-          state: '', country: 'India', about: '', familyType: '', familyStatus: '',
-          fatherOccupation: '', motherOccupation: '', siblings: '', familyAbout: '',
-          partnerAgeMin: '', partnerAgeMax: '', partnerHeightMin: '', partnerHeightMax: '',
-          partnerEducation: '', partnerOccupation: '', partnerLocation: '', partnerAbout: '',
-          membershipPlan: '', profileCreatedFor: '', otherRelation: '', subcaste: '', gotram: '',
-          manglik: '', horoscope: '', residentialStatus: '', citizenship: '', employmentSector: '',
-          companyName: '', fatherStatus: '', motherStatus: '', brothersCount: '', sistersCount: '',
-          familyValues: '', physicalStatus: '', bloodGroup: '', skinTone: '',
-          bodyType: '', partnerReligion: '', partnerCaste: '', partnerMotherTongue: '',
-          partnerMaritalStatus: '', partnerIncomeMin: '', partnerIncomeMax: '', partnerCountry: '',
-          partnerState: '', alternateEmail: '', alternatePhone: '', landlinePhone: '', timeToCall: '',
-          address: '', pincode: '', nativePlace: '', birthTime: '', birthPlace: ''
+          fullName: '',
+          profileCreatedFor: undefined,
+          otherRelation: '',
+          dateOfBirth: '',
+          birthTime: '',
+          birthPlace: '',
+          horoscopeMatching: 'not-mandatory',
+          diet: '',
+          drinkingHabit: '',
+          smokingHabit: '',
+          annualIncome: '',
+          profession: '',
+          position: '',
+          gender: undefined,
+          religion: '',
+          caste: '',
+          motherTongue: '',
+          education: '',
+          occupation: '',
+          location: '',
+          state: '',
+          country: 'India',
+          residentialStatus: undefined,
+          maritalStatus: undefined,
+          email: '',
+          countryCode: '+91',
+          mobile: '',
+          height: '',
+          weight: '',
+          disability: 'no',
+          disabilityDetails: '',
+          bio: '',
+          familyDetails: '',
+          membershipPlan: undefined,
+          partnerAgeMin: undefined,
+          partnerAgeMax: undefined,
+          partnerHeightMin: '',
+          partnerHeightMax: '',
+          partnerEducation: [],
+          partnerEmploymentStatus: [],
+          partnerOccupation: [],
+          partnerLivingCountry: [],
+          partnerLivingState: [],
+          partnerLocation: [],
+          partnerCountry: [],
+          partnerReligion: [],
+          partnerCaste: [],
+          partnerMotherTongue: [],
+          partnerMaritalStatus: [],
+          partnerDiet: [],
+          partnerDrinking: [],
+          partnerSmoking: [],
+          partnerManglik: 'doesnt-matter',
+          partnerDisability: [],
+          partnerAnnualIncomeMin: '',
+          partnerAnnualIncomeMax: ''
         })
         setStep(1)
         setPhotos([])
-        setSelfiePreview(null)
+        setSelfiePreview(undefined)
         setEmailVerified(false)
         setMobileVerified(false)
         setDigilockerVerified(false)
@@ -683,7 +721,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     }
   }
 
-  const updateField = (field: string, value: string) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateField = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -1111,9 +1150,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     // Upload photos to blob storage if available
     setIsSubmitting(true)
     let photoUrls: string[] = []
-    let uploadedSelfieUrl: string | undefined = selfiePreview
-    let uploadedIdProofUrl: string | undefined = idProofPreview
-    let uploadedPaymentScreenshotUrl: string | undefined = paymentScreenshotPreview
+    let uploadedSelfieUrl: string | undefined = selfiePreview || undefined
+    let uploadedIdProofUrl: string | undefined = idProofPreview || undefined
+    let uploadedPaymentScreenshotUrl: string | undefined = paymentScreenshotPreview || undefined
 
     try {
       const blobAvailable = await isBlobStorageAvailable()
@@ -1346,7 +1385,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       birthPlace: '',
       horoscopeMatching: 'not-mandatory',
       diet: '',
-      habit: '',
+      drinkingHabit: '',
+      smokingHabit: '',
       annualIncome: '',
       profession: '',
       position: '',
@@ -1357,16 +1397,42 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       education: '',
       occupation: '',
       location: '',
-      country: '',
+      state: '',
+      country: 'India',
+      residentialStatus: undefined,
       maritalStatus: undefined,
       email: '',
       countryCode: '+91',
       mobile: '',
       height: '',
       weight: '',
+      disability: 'no',
+      disabilityDetails: '',
       bio: '',
       familyDetails: '',
-      membershipPlan: undefined
+      membershipPlan: undefined,
+      partnerAgeMin: undefined,
+      partnerAgeMax: undefined,
+      partnerHeightMin: '',
+      partnerHeightMax: '',
+      partnerEducation: [],
+      partnerEmploymentStatus: [],
+      partnerOccupation: [],
+      partnerLivingCountry: [],
+      partnerLivingState: [],
+      partnerLocation: [],
+      partnerCountry: [],
+      partnerReligion: [],
+      partnerCaste: [],
+      partnerMotherTongue: [],
+      partnerMaritalStatus: [],
+      partnerDiet: [],
+      partnerDrinking: [],
+      partnerSmoking: [],
+      partnerManglik: 'doesnt-matter',
+      partnerDisability: [],
+      partnerAnnualIncomeMin: '',
+      partnerAnnualIncomeMax: ''
     })
     setPhotos([])
     setSelfieFile(null)
@@ -2319,7 +2385,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           ...prev,
                           country: value,
                           state: '', // Clear state when country changes
-                          residentialStatus: value === 'India' ? '' : prev.residentialStatus
+                          residentialStatus: value === 'India' ? undefined : prev.residentialStatus
                         }))
                       }}
                     >

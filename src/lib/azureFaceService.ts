@@ -169,7 +169,7 @@ async function browserFaceDetection(imageData: string): Promise<FaceDetectionRes
       const img = new Image()
       img.onload = async () => {
         try {
-          // @ts-ignore - FaceDetector is a newer API
+          // FaceDetector is a newer browser API for face detection
           const FaceDetectorClass = (window as unknown as { FaceDetector: new (options: { fastMode: boolean; maxDetectedFaces: number }) => { detect: (source: HTMLImageElement) => Promise<Array<{ boundingBox: { x: number; y: number; width: number; height: number } }>> } }).FaceDetector
           const faceDetector = new FaceDetectorClass({ fastMode: false, maxDetectedFaces: 5 })
           const faces = await faceDetector.detect(img)
