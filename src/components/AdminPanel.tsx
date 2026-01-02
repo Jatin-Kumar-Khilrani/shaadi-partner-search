@@ -5214,7 +5214,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
 
       {/* Record Payment Dialog */}
       <Dialog open={showPaymentFormDialog} onOpenChange={setShowPaymentFormDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Receipt size={24} className="text-green-600" />
