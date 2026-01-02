@@ -441,7 +441,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           </h4>
           
           <div className="space-y-2">
-            <Label>{t.education} {language === 'hi' ? '(एक से अधिक चुनें)' : '(select multiple)'}</Label>
+            <Label>{t.education}</Label>
             <MultiSelect
               options={EDUCATION_OPTIONS}
               value={filters.educationLevels || []}
@@ -455,7 +455,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           </div>
 
           <div className="space-y-2">
-            <Label>{language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status'} {language === 'hi' ? '(एक से अधिक चुनें)' : '(select multiple)'}</Label>
+            <Label>{language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status'}</Label>
             <MultiSelect
               options={EMPLOYMENT_STATUS_OPTIONS}
               value={filters.employmentStatuses || []}

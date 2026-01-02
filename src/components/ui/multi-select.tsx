@@ -133,12 +133,19 @@ export function MultiSelect({
                 className="text-xs px-1.5 py-0.5 gap-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
               >
                 {anyOptionLabel}
-                <X
-                  size={12}
-                  className="cursor-pointer hover:text-destructive"
+                <span
+                  role="button"
+                  tabIndex={0}
+                  title="Remove selection"
+                  aria-label="Remove selection"
+                  className="cursor-pointer hover:text-destructive inline-flex"
                   onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); onValueChange([]); }}
-                />
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onValueChange([]); } }}
+                >
+                  <X size={12} />
+                </span>
               </Badge>
             ) : selectedOptions.length > 0 ? (
               selectedOptions.length <= 2 ? (
@@ -149,12 +156,19 @@ export function MultiSelect({
                     className="text-xs px-1.5 py-0.5 gap-1"
                   >
                     {option.label}
-                    <X
-                      size={12}
-                      className="cursor-pointer hover:text-destructive"
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      title={`Remove ${option.label}`}
+                      aria-label={`Remove ${option.label}`}
+                      className="cursor-pointer hover:text-destructive inline-flex"
                       onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                      onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                       onClick={(e) => handleRemove(option.value, e)}
-                    />
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); handleRemove(option.value, e as unknown as React.MouseEvent); } }}
+                    >
+                      <X size={12} />
+                    </span>
                   </Badge>
                 ))
               ) : (

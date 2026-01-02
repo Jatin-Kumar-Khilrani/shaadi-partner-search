@@ -125,11 +125,20 @@ export async function detectFace(imageData: string): Promise<FaceDetectionResult
     const faceArea = faceRect.width * faceRect.height
     const coverage = Math.round((faceArea / faceGuideArea) * 100)
 
-    // Check if face is centered (within middle 60% of frame)
+    // Check if face is centered (within middle 30% of frame horizontally, 40% vertically)
+    // This ensures face is positioned within the circular guide boundary
     const faceCenterX = faceRect.left + faceRect.width / 2
     const faceCenterY = faceRect.top + faceRect.height / 2
-    const isCenteredX = faceCenterX > imgDimensions.width * 0.2 && faceCenterX < imgDimensions.width * 0.8
-    const isCenteredY = faceCenterY > imgDimensions.height * 0.15 && faceCenterY < imgDimensions.height * 0.85
+    const imageCenterX = imgDimensions.width / 2
+    const imageCenterY = imgDimensions.height / 2
+    
+    // Calculate offset from center as percentage of image dimension
+    const offsetX = Math.abs(faceCenterX - imageCenterX) / imgDimensions.width
+    const offsetY = Math.abs(faceCenterY - imageCenterY) / imgDimensions.height
+    
+    // Face center must be within 15% of image center horizontally and 20% vertically
+    const isCenteredX = offsetX < 0.15
+    const isCenteredY = offsetY < 0.20
     const isCentered = isCenteredX && isCenteredY
 
     // Azure Face API only detects human faces, not hands/objects
@@ -213,8 +222,16 @@ async function browserFaceDetection(imageData: string): Promise<FaceDetectionRes
 
           const faceCenterX = face.x + face.width / 2
           const faceCenterY = face.y + face.height / 2
-          const isCenteredX = faceCenterX > img.width * 0.2 && faceCenterX < img.width * 0.8
-          const isCenteredY = faceCenterY > img.height * 0.15 && faceCenterY < img.height * 0.85
+          const imageCenterX = img.width / 2
+          const imageCenterY = img.height / 2
+          
+          // Calculate offset from center as percentage of image dimension
+          const offsetX = Math.abs(faceCenterX - imageCenterX) / img.width
+          const offsetY = Math.abs(faceCenterY - imageCenterY) / img.height
+          
+          // Face center must be within 15% of image center horizontally and 20% vertically
+          const isCenteredX = offsetX < 0.15
+          const isCenteredY = offsetY < 0.20
           const isCentered = isCenteredX && isCenteredY
 
           resolve({
@@ -365,11 +382,19 @@ function simulatedFaceDetection(img: HTMLImageElement): FaceDetectionResult {
       // Calculate coverage as percentage of face guide area
       actualCoverage = Math.round((skinArea / faceGuideArea) * 100)
       
-      // Check if skin region is centered (within middle 60% of frame)
+      // Check if skin region is centered (within 15% of center horizontally, 20% vertically)
       const skinCenterX = (minX + maxX) / 2
       const skinCenterY = (minY + maxY) / 2
-      const isCenteredX = skinCenterX > img.width * 0.2 && skinCenterX < img.width * 0.8
-      const isCenteredY = skinCenterY > img.height * 0.15 && skinCenterY < img.height * 0.85
+      const imageCenterX = img.width / 2
+      const imageCenterY = img.height / 2
+      
+      // Calculate offset from center as percentage of image dimension
+      const offsetX = Math.abs(skinCenterX - imageCenterX) / img.width
+      const offsetY = Math.abs(skinCenterY - imageCenterY) / img.height
+      
+      // Face center must be within 15% of image center horizontally and 20% vertically
+      const isCenteredX = offsetX < 0.15
+      const isCenteredY = offsetY < 0.20
       isCentered = isCenteredX && isCenteredY
     }
     
@@ -542,8 +567,8 @@ export async function validateSelfie(imageData: string, language: 'hi' | 'en'): 
       valid: false,
       coverage: result.coverage,
       message: language === 'hi' 
-        ? 'कृपया अपना चेहरा फ्रेम के केंद्र में रखें।'
-        : 'Please center your face in the frame.',
+        ? `चेहरा केंद्र में नहीं है (${result.coverage}% कवरेज)। कृपया अपना चेहरा गोले के बीच में रखें।`
+        : `Face not centered (${result.coverage}% coverage). Please position your face in the center of the circle.`,
     }
   }
 

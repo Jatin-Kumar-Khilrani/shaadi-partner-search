@@ -3508,12 +3508,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 {/* Marital Status & Religion - Multi-select */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'वैवाहिक स्थिति (एक से अधिक चुनें)' : 'Marital Status (select multiple)'}</Label>
+                    <Label>{language === 'hi' ? 'वैवाहिक स्थिति' : 'Marital Status'}</Label>
                     <MultiSelect
                       options={MARITAL_STATUS_OPTIONS}
                       value={formData.partnerMaritalStatus || []}
                       onValueChange={(v) => updateField('partnerMaritalStatus', v as MaritalStatus[])}
-                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      placeholder={language === 'hi' ? 'चुनें' : 'Select'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                       showSelectAll
                       selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
@@ -3523,12 +3523,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'धर्म (एक से अधिक चुनें)' : 'Religion (select multiple)'}</Label>
+                    <Label>{language === 'hi' ? 'धर्म' : 'Religion'}</Label>
                     <MultiSelect
                       options={RELIGION_OPTIONS}
                       value={formData.partnerReligion || []}
                       onValueChange={(v) => updateField('partnerReligion', v)}
-                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      placeholder={language === 'hi' ? 'चुनें' : 'Select'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                       showSelectAll
                       selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
@@ -3541,12 +3541,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
                 {/* Mother Tongue - Multi-select */}
                 <div className="space-y-2">
-                  <Label>{language === 'hi' ? 'मातृभाषा (एक से अधिक चुनें)' : 'Mother Tongue (select multiple)'}</Label>
+                  <Label>{language === 'hi' ? 'मातृभाषा' : 'Mother Tongue'}</Label>
                   <MultiSelect
                     options={MOTHER_TONGUE_OPTIONS}
                     value={formData.partnerMotherTongue || []}
                     onValueChange={(v) => updateField('partnerMotherTongue', v)}
-                    placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                    placeholder={language === 'hi' ? 'चुनें' : 'Select'}
                     searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                     showSelectAll
                     selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
@@ -3559,12 +3559,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 {/* Education & Employment Status */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'शिक्षा (एक से अधिक चुनें)' : 'Education (select multiple)'}</Label>
+                    <Label>{language === 'hi' ? 'शिक्षा' : 'Education'}</Label>
                     <MultiSelect
                       options={EDUCATION_OPTIONS}
                       value={formData.partnerEducation || []}
                       onValueChange={(v) => updateField('partnerEducation', v)}
-                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      placeholder={language === 'hi' ? 'चुनें' : 'Select'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                       showSelectAll
                       selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
@@ -3574,12 +3574,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'रोजगार स्थिति (एक से अधिक चुनें)' : 'Employment Status (select multiple)'}</Label>
+                    <Label>{language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status'}</Label>
                     <MultiSelect
                       options={EMPLOYMENT_STATUS_OPTIONS}
                       value={formData.partnerEmploymentStatus || []}
                       onValueChange={(v) => updateField('partnerEmploymentStatus', v)}
-                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      placeholder={language === 'hi' ? 'चुनें' : 'Select'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                       showSelectAll
                       selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
@@ -3592,12 +3592,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
                 {/* Occupation/Profession - Multi-select */}
                 <div className="space-y-2">
-                  <Label>{language === 'hi' ? 'व्यवसाय/पेशा (एक से अधिक चुनें)' : 'Occupation/Profession (select multiple)'}</Label>
+                  <Label>{language === 'hi' ? 'व्यवसाय/पेशा' : 'Occupation/Profession'}</Label>
                   <MultiSelect
                     options={OCCUPATION_PROFESSION_OPTIONS}
                     value={formData.partnerOccupation || []}
                     onValueChange={(v) => updateField('partnerOccupation', v)}
-                    placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                    placeholder={language === 'hi' ? 'चुनें' : 'Select'}
                     searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                     showSelectAll
                     selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
@@ -3610,7 +3610,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 {/* Living Country & State - Multi-select */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'रहने वाला देश (एक से अधिक चुनें)' : 'Living in Country (select multiple)'}</Label>
+                    <Label>{language === 'hi' ? 'रहने वाला देश' : 'Living in Country'}</Label>
                     <MultiSelect
                       options={COUNTRY_OPTIONS}
                       value={formData.partnerLivingCountry || []}
@@ -3625,7 +3625,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           updateField('partnerLivingState', updatedStates)
                         }
                       }}
-                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      placeholder={language === 'hi' ? 'चुनें' : 'Select'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                       showSelectAll
                       selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
@@ -3635,7 +3635,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'रहने वाला राज्य (एक से अधिक चुनें)' : 'Living in State (select multiple)'}</Label>
+                    <Label>{language === 'hi' ? 'रहने वाला राज्य' : 'Living in State'}</Label>
                     <MultiSelect
                       options={getStateOptionsForCountries(formData.partnerLivingCountry || [])}
                       value={formData.partnerLivingState || []}
@@ -3650,7 +3650,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           updateField('partnerLocation', updatedCities)
                         }
                       }}
-                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      placeholder={language === 'hi' ? 'चुनें' : 'Select'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                       disabled={!formData.partnerLivingCountry?.length || (formData.partnerLivingCountry?.length === 1 && formData.partnerLivingCountry[0] === 'any')}
                       showSelectAll
@@ -3664,12 +3664,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
                 {/* City - Multi-select based on selected states */}
                 <div className="space-y-2">
-                  <Label>{language === 'hi' ? 'शहर (एक से अधिक चुनें)' : 'City (select multiple)'}</Label>
+                  <Label>{language === 'hi' ? 'शहर' : 'City'}</Label>
                   <MultiSelect
                     options={getCityOptionsForStates(formData.partnerLivingState || [])}
                     value={formData.partnerLocation || []}
                     onValueChange={(v) => updateField('partnerLocation', v)}
-                    placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                    placeholder={language === 'hi' ? 'चुनें' : 'Select'}
                     searchPlaceholder={language === 'hi' ? 'शहर खोजें...' : 'Search cities...'}
                     disabled={!formData.partnerLivingState?.length || (formData.partnerLivingState?.length === 1 && formData.partnerLivingState[0] === 'any')}
                     showSelectAll
@@ -3727,12 +3727,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 {/* Diet & Lifestyle - Multi-select for Diet */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'आहार पसंद (एक से अधिक चुनें)' : 'Diet Preference (select multiple)'}</Label>
+                    <Label>{language === 'hi' ? 'आहार पसंद' : 'Diet Preference'}</Label>
                     <MultiSelect
                       options={DIET_PREFERENCE_OPTIONS}
                       value={formData.partnerDiet || []}
                       onValueChange={(v) => updateField('partnerDiet', v as DietPreference[])}
-                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      placeholder={language === 'hi' ? 'चुनें' : 'Select'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                       showSelectAll
                       selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
@@ -3760,12 +3760,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 {/* Drinking & Smoking Preferences */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'पीने की आदत (एक से अधिक चुनें)' : 'Drinking Habit (select multiple)'}</Label>
+                    <Label>{language === 'hi' ? 'पीने की आदत' : 'Drinking Habit'}</Label>
                     <MultiSelect
                       options={DRINKING_HABIT_OPTIONS}
                       value={formData.partnerDrinking || []}
                       onValueChange={(v) => updateField('partnerDrinking', v as DrinkingHabit[])}
-                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      placeholder={language === 'hi' ? 'चुनें' : 'Select'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                       showSelectAll
                       selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}
@@ -3775,12 +3775,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>{language === 'hi' ? 'धूम्रपान की आदत (एक से अधिक चुनें)' : 'Smoking Habit (select multiple)'}</Label>
+                    <Label>{language === 'hi' ? 'धूम्रपान की आदत' : 'Smoking Habit'}</Label>
                     <MultiSelect
                       options={SMOKING_HABIT_OPTIONS}
                       value={formData.partnerSmoking || []}
                       onValueChange={(v) => updateField('partnerSmoking', v as SmokingHabit[])}
-                      placeholder={language === 'hi' ? 'कोई भी चुनें' : 'Select any'}
+                      placeholder={language === 'hi' ? 'चुनें' : 'Select'}
                       searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                       showSelectAll
                       selectAllLabel={language === 'hi' ? 'सभी चुनें' : 'Select All'}

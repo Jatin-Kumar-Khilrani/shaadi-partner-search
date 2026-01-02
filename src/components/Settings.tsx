@@ -9,8 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { MultiSelect, MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS, OCCUPATION_PROFESSION_OPTIONS, COUNTRY_OPTIONS, EDUCATION_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, getStateOptionsForCountries } from '@/components/ui/multi-select'
-import { Checkbox } from '@/components/ui/checkbox'
+import { MultiSelect, MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS, OCCUPATION_PROFESSION_OPTIONS, COUNTRY_OPTIONS, EDUCATION_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, DIET_PREFERENCE_OPTIONS, DRINKING_HABIT_OPTIONS, SMOKING_HABIT_OPTIONS, getStateOptionsForCountries } from '@/components/ui/multi-select'
 import { Gear, Heart, Phone, Info, FileText, ShieldCheck } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Profile, PartnerPreferenceData, DietPreference, DrinkingHabit, SmokingHabit, MaritalStatus } from '@/types/profile'
@@ -121,8 +120,8 @@ export function Settings({ open, onClose, profileId, language, currentProfile, o
     religion: language === 'hi' ? 'धर्म' : 'Religion',
     livingCountry: language === 'hi' ? 'रहने वाला देश' : 'Living in Country',
     livingState: language === 'hi' ? 'रहने वाला राज्य' : 'Living in State',
-    selectMultiple: language === 'hi' ? '(एक से अधिक चुनें)' : '(select multiple)',
-    selectAny: language === 'hi' ? 'कोई भी चुनें' : 'Select any',
+    selectMultiple: '', // Removed per UX update
+    selectAny: language === 'hi' ? 'चुनें' : 'Select',
     search: language === 'hi' ? 'खोजें...' : 'Search...',
     
     termsContent: language === 'hi' ? `
@@ -526,79 +525,43 @@ Online Safety Tips
                   {/* Diet Preference */}
                   <div className="space-y-2">
                     <Label>{t.dietPreference}</Label>
-                    <div className="flex flex-wrap gap-4">
-                      {(['veg', 'non-veg', 'eggetarian'] as DietPreference[]).map((diet) => (
-                        <div key={diet} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`diet-${diet}`}
-                            checked={formData.dietPreference?.includes(diet) || false}
-                            onCheckedChange={(checked) => {
-                              const current = formData.dietPreference || []
-                              if (checked) {
-                                setFormData({ ...formData, dietPreference: [...current, diet] })
-                              } else {
-                                setFormData({ ...formData, dietPreference: current.filter(d => d !== diet) })
-                              }
-                            }}
-                          />
-                          <label htmlFor={`diet-${diet}`} className="text-sm">
-                            {diet === 'veg' ? t.veg : diet === 'non-veg' ? t.nonVeg : t.eggetarian}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
+                    <MultiSelect
+                      options={DIET_PREFERENCE_OPTIONS}
+                      value={formData.dietPreference || []}
+                      onValueChange={(v) => setFormData({ ...formData, dietPreference: v as DietPreference[] })}
+                      placeholder={t.selectAny}
+                      searchPlaceholder={t.search}
+                      showAnyOption
+                      anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+                    />
                   </div>
 
                   {/* Drinking Habit */}
                   <div className="space-y-2">
                     <Label>{t.drinkingHabit}</Label>
-                    <div className="flex flex-wrap gap-4">
-                      {(['never', 'occasionally', 'regularly'] as DrinkingHabit[]).map((habit) => (
-                        <div key={habit} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`drink-${habit}`}
-                            checked={formData.drinkingHabit?.includes(habit) || false}
-                            onCheckedChange={(checked) => {
-                              const current = formData.drinkingHabit || []
-                              if (checked) {
-                                setFormData({ ...formData, drinkingHabit: [...current, habit] })
-                              } else {
-                                setFormData({ ...formData, drinkingHabit: current.filter(d => d !== habit) })
-                              }
-                            }}
-                          />
-                          <label htmlFor={`drink-${habit}`} className="text-sm">
-                            {habit === 'never' ? t.never : habit === 'occasionally' ? t.occasionally : t.regularly}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
+                    <MultiSelect
+                      options={DRINKING_HABIT_OPTIONS}
+                      value={formData.drinkingHabit || []}
+                      onValueChange={(v) => setFormData({ ...formData, drinkingHabit: v as DrinkingHabit[] })}
+                      placeholder={t.selectAny}
+                      searchPlaceholder={t.search}
+                      showAnyOption
+                      anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+                    />
                   </div>
 
                   {/* Smoking Habit */}
                   <div className="space-y-2">
                     <Label>{t.smokingHabit}</Label>
-                    <div className="flex flex-wrap gap-4">
-                      {(['never', 'occasionally', 'regularly'] as SmokingHabit[]).map((habit) => (
-                        <div key={habit} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`smoke-${habit}`}
-                            checked={formData.smokingHabit?.includes(habit) || false}
-                            onCheckedChange={(checked) => {
-                              const current = formData.smokingHabit || []
-                              if (checked) {
-                                setFormData({ ...formData, smokingHabit: [...current, habit] })
-                              } else {
-                                setFormData({ ...formData, smokingHabit: current.filter(d => d !== habit) })
-                              }
-                            }}
-                          />
-                          <label htmlFor={`smoke-${habit}`} className="text-sm">
-                            {habit === 'never' ? t.never : habit === 'occasionally' ? t.occasionally : t.regularly}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
+                    <MultiSelect
+                      options={SMOKING_HABIT_OPTIONS}
+                      value={formData.smokingHabit || []}
+                      onValueChange={(v) => setFormData({ ...formData, smokingHabit: v as SmokingHabit[] })}
+                      placeholder={t.selectAny}
+                      searchPlaceholder={t.search}
+                      showAnyOption
+                      anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+                    />
                   </div>
 
                   <Button onClick={handleSave} className="w-full">
