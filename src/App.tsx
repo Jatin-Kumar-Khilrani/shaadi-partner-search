@@ -1308,8 +1308,8 @@ function App() {
         </nav>
       )}
 
-      {/* Hide footer on mobile when in chat view to prevent overlap */}
-      <footer className={`border-t bg-muted/30 py-8 ${loggedInUser && currentView === 'chat' ? 'hidden md:block' : ''}`}>
+      {/* Hide footer when in chat view to prevent overlap with chat input */}
+      <footer className={`border-t bg-muted/30 py-8 ${loggedInUser && currentView === 'chat' ? 'hidden' : ''}`}>
         <div className="container mx-auto px-4 md:px-8">
           <div className="max-w-5xl mx-auto text-center">
             <div className="flex items-center justify-center gap-2 mb-4">

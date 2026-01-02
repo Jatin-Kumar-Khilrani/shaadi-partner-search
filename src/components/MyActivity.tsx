@@ -44,7 +44,7 @@ interface MyActivityProps {
 export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, membershipPlan, membershipSettings, setProfiles }: MyActivityProps) {
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests] = useKV<ContactRequest[]>('contactRequests', [])
-  const [_messages] = useKV<ChatMessage[]>('chatMessages', [])
+  const [messages] = useKV<ChatMessage[]>('chatMessages', [])
   
   // Lightbox for photo zoom
   const { lightboxState, openLightbox, closeLightbox } = useLightbox()

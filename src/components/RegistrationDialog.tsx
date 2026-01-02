@@ -3952,7 +3952,6 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                   <CurrencyInr size={24} weight="bold" className="text-accent" />
                                   <span className="text-3xl font-bold text-accent">{membershipSettings?.oneYearPrice || 900}</span>
                                   <span className="text-muted-foreground">{t.registration.perYear}</span>
-                                  <span className="text-sm text-teal font-medium ml-2">{t.registration.savings}</span>
                                 </div>
                                 <ul className="space-y-2 text-sm text-muted-foreground">
                                   <li className="flex items-center gap-2">
