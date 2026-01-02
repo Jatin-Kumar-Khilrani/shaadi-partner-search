@@ -60,4 +60,71 @@ describe('Logger', () => {
     // @ts-expect-error - testing global helpers
     expect(typeof window.debugStatus).toBe('function')
   })
+
+  describe('logging methods', () => {
+    it('should have group and groupEnd methods', async () => {
+      const { logger } = await import('../logger')
+      expect(typeof logger.group).toBe('function')
+      expect(typeof logger.groupEnd).toBe('function')
+    })
+
+    it('should have table method', async () => {
+      const { logger } = await import('../logger')
+      expect(typeof logger.table).toBe('function')
+    })
+
+    it('should have time and timeEnd methods', async () => {
+      const { logger } = await import('../logger')
+      expect(typeof logger.time).toBe('function')
+      expect(typeof logger.timeEnd).toBe('function')
+    })
+  })
+
+  describe('global helper functions', () => {
+    it('enableDebug should set debug mode', async () => {
+      await import('../logger')
+      // @ts-expect-error - testing global helpers
+      window.enableDebug('debug')
+      expect(localStorageMock.getItem('debug')).toBe('true')
+      expect(localStorageMock.getItem('debugLevel')).toBe('debug')
+    })
+
+    it('disableDebug should clear debug mode', async () => {
+      localStorageMock.setItem('debug', 'true')
+      localStorageMock.setItem('debugLevel', 'debug')
+      
+      await import('../logger')
+      // @ts-expect-error - testing global helpers
+      window.disableDebug()
+      
+      expect(localStorageMock.getItem('debug')).toBeNull()
+      expect(localStorageMock.getItem('debugLevel')).toBeNull()
+    })
+
+    it('setDebugLevel should update the level', async () => {
+      await import('../logger')
+      // @ts-expect-error - testing global helpers
+      window.setDebugLevel('warn')
+      expect(localStorageMock.getItem('debugLevel')).toBe('warn')
+    })
+
+    it('debugStatus should not throw', async () => {
+      const { logger } = await import('../logger')
+      // @ts-expect-error - testing global helpers
+      expect(() => window.debugStatus()).not.toThrow()
+      expect(logger).toBeDefined()
+    })
+  })
+
+  describe('log level functionality', () => {
+    it('should accept different log levels', async () => {
+      await import('../logger')
+      const validLevels = ['none', 'error', 'warn', 'info', 'debug']
+      
+      for (const level of validLevels) {
+        // @ts-expect-error - testing global helpers
+        expect(() => window.setDebugLevel(level)).not.toThrow()
+      }
+    })
+  })
 })
