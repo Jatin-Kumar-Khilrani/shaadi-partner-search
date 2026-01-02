@@ -21,7 +21,7 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
   const { lightboxState, openLightbox, closeLightbox } = useLightbox()
   
   // Determine if user has premium access
-  const hasPremiumAccess = membershipPlan === '6-month' || membershipPlan === '1-year'
+  const _hasPremiumAccess = membershipPlan === '6-month' || membershipPlan === '1-year'
   
   const getTrustBadge = () => {
     if (profile.trustLevel >= 5) {

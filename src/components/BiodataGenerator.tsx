@@ -184,7 +184,7 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
     'preferred': { hi: 'पसंदीदा', en: 'Preferred' },
   }
 
-  const disabilityLabels: Record<string, { hi: string; en: string }> = {
+  const _disabilityLabels: Record<string, { hi: string; en: string }> = {
     'no': { hi: 'नहीं', en: 'No' },
     'yes': { hi: 'हां', en: 'Yes' },
   }
@@ -660,7 +660,7 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
       link.click()
       
       toast.success(language === 'hi' ? 'बायोडाटा डाउनलोड हो गया!' : 'Biodata downloaded!')
-    } catch (error) {
+    } catch (_error) {
       toast.error(language === 'hi' ? 'डाउनलोड विफल' : 'Download failed')
     } finally {
       setIsGenerating(false)

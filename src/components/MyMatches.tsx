@@ -596,7 +596,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               value={filters.manglik !== undefined ? (filters.manglik ? 'yes' : 'no') : ''} 
               onValueChange={(val) => {
                 if (val === 'any') {
-                  const { manglik, ...rest } = filters
+                  const { manglik: _manglik, ...rest } = filters
                   setFilters(rest)
                 } else {
                   setFilters({ ...filters, manglik: val === 'yes' })
@@ -627,7 +627,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               value={filters.dietPreference || ''} 
               onValueChange={(val: any) => {
                 if (val === 'any') {
-                  const { dietPreference, ...rest } = filters
+                  const { dietPreference: _dietPreference, ...rest } = filters
                   setFilters(rest)
                 } else {
                   setFilters({ ...filters, dietPreference: val })
@@ -652,7 +652,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               value={filters.drinkingHabit || ''} 
               onValueChange={(val: any) => {
                 if (val === 'any') {
-                  const { drinkingHabit, ...rest } = filters
+                  const { drinkingHabit: _drinkingHabit, ...rest } = filters
                   setFilters(rest)
                 } else {
                   setFilters({ ...filters, drinkingHabit: val })
@@ -677,7 +677,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               value={filters.smokingHabit || ''} 
               onValueChange={(val: any) => {
                 if (val === 'any') {
-                  const { smokingHabit, ...rest } = filters
+                  const { smokingHabit: _smokingHabit, ...rest } = filters
                   setFilters(rest)
                 } else {
                   setFilters({ ...filters, smokingHabit: val })

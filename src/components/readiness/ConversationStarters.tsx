@@ -348,12 +348,11 @@ export function ConversationStarters({
     return starters
   }, [myProfile, targetProfile, selfDiscoveryData, expectationsData])
   
-  const allStarters = [...personalizedStarters, ...baseStarters]
-  
   const filteredStarters = useMemo(() => {
+    const allStarters = [...personalizedStarters, ...baseStarters]
     if (selectedCategory === 'all') return allStarters
     return allStarters.filter(s => s.category === selectedCategory)
-  }, [allStarters, selectedCategory])
+  }, [personalizedStarters, selectedCategory])
   
   const handleCopy = (starter: StarterMessage) => {
     const text = language === 'en' ? starter.textEn : starter.textHi

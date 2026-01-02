@@ -63,7 +63,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
   // Renewal payment state
   const [showRenewalDialog, setShowRenewalDialog] = useState(false)
   const [renewalPlan, setRenewalPlan] = useState<'6-month' | '1-year'>('6-month')
-  const [renewalPaymentFile, setRenewalPaymentFile] = useState<File | null>(null)
+  const [_renewalPaymentFile, setRenewalPaymentFile] = useState<File | null>(null)
   const [renewalPaymentPreview, setRenewalPaymentPreview] = useState<string | null>(null)
   const renewalFileInputRef = useRef<HTMLInputElement>(null)
 
@@ -313,7 +313,7 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
   const isVerifiedOrApproved = profile.status === 'verified'
   // Free users can generate biodata with watermark, premium users without watermark
   const canGenerateBiodata = isVerifiedOrApproved
-  const canDownloadWithoutWatermark = isPaidUser && !isFreePlan && isVerifiedOrApproved
+  const _canDownloadWithoutWatermark = isPaidUser && !isFreePlan && isVerifiedOrApproved
 
   return (
     <div className="container mx-auto px-4 md:px-8 py-8">

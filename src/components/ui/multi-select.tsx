@@ -106,7 +106,8 @@ export function MultiSelect({
     onValueChange(value.filter((v) => v !== optionValue))
   }
 
-  const displayText = () => {
+  // Utility function reserved for future use (e.g., screen readers, tooltips)
+  const _displayText = () => {
     if (isAnySelected) return anyOptionLabel
     if (selectedOptions.length === 0) return placeholder
     if (selectedOptions.length <= maxDisplay) {

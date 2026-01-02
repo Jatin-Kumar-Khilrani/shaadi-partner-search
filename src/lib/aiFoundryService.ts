@@ -202,7 +202,7 @@ function generateDemoBio(params: BioGenerationParams): GeneratedBioResult {
 
   const pronounHe = gender === 'male' ? 'He' : 'She'
   const pronounHis = gender === 'male' ? 'His' : 'Her'
-  const pronounHim = gender === 'male' ? 'him' : 'her'
+  const _pronounHim = gender === 'male' ? 'him' : 'her'
 
   return {
     bio: `${firstName} is a well-educated and cultured ${gender === 'male' ? 'young man' : 'young woman'} residing in ${location}. At ${age} years of age, ${pronounHe.toLowerCase()} has completed ${pronounHis.toLowerCase()} ${education} and is currently working as a ${occupation}.${religion ? ` Coming from a ${religion} family` : ''}${caste ? ` of ${caste} community` : ''}, ${firstName} believes in traditional values while maintaining a modern outlook. ${pronounHe} is looking for a life partner who is understanding, educated, and committed to family values. ${pronounHis} ideal match would be someone who shares ${pronounHis.toLowerCase()} vision of building a happy and harmonious family life together.`,
@@ -446,7 +446,7 @@ function generateAdvancedDemoBio(params: AdvancedBioParams): GeneratedBioResult 
  * Analyze face coverage in an image
  * Returns the percentage of image covered by face
  */
-export async function analyzeFaceCoverage(imageBase64: string): Promise<{
+export async function analyzeFaceCoverage(_imageBase64: string): Promise<{
   coverage: number
   isValid: boolean
   message: string

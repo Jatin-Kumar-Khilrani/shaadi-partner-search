@@ -130,7 +130,7 @@ interface MembershipSettings {
 }
 
 export function AdminPanel({ profiles, setProfiles, users, language, onLogout, onLoginAsUser }: AdminPanelProps) {
-  const [blockedContacts, setBlockedContacts] = useKV<BlockedContact[]>('blockedContacts', [])
+  const [_blockedContacts, setBlockedContacts] = useKV<BlockedContact[]>('blockedContacts', [])
   const [blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
   const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
@@ -191,8 +191,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [selectedProfiles, setSelectedProfiles] = useState<string[]>([])
   const [selectedDatabaseProfiles, setSelectedDatabaseProfiles] = useState<string[]>([])
-  const [sortBy, setSortBy] = useState<'name' | 'date' | 'expiry'>('date')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [_sortBy, _setSortBy] = useState<'name' | 'date' | 'expiry'>('date')
+  const [_sortOrder, _setSortOrder] = useState<'asc' | 'desc'>('desc')
   // All Database table sorting
   const [dbSortBy, setDbSortBy] = useState<'profileId' | 'name' | 'gender' | 'plan' | 'userId' | 'relation' | 'age' | 'location' | 'status' | 'email' | 'mobile' | 'createdAt'>('createdAt')
   const [dbSortOrder, setDbSortOrder] = useState<'asc' | 'desc'>('desc')
@@ -204,7 +204,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [pendingPage, setPendingPage] = useState(1)
   const [databasePage, setDatabasePage] = useState(1)
   const [reportsPage, setReportsPage] = useState(1)
-  const [accountsPage, setAccountsPage] = useState(1)
+  const [_accountsPage, _setAccountsPage] = useState(1)
   const [transactionsPage, setTransactionsPage] = useState(1)
   const [servicesPage, setServicesPage] = useState(1)
   
@@ -1093,7 +1093,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
       } else {
         toast.warning(language === 'hi' ? 'चेहरा मेल नहीं खाता' : 'Face mismatch detected')
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error(language === 'hi' ? 'सत्यापन विफल' : 'Verification failed')
       setFaceVerificationResult({
         isMatch: false,
@@ -1144,7 +1144,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
       // Generate local AI suggestions (can be replaced with Azure AI Foundry in production)
       const suggestions = generateProfileSuggestions(profile)
       setAiSuggestions(suggestions)
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to get AI suggestions')
       setAiSuggestions([])
     } finally {
@@ -5231,7 +5231,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               <Select 
                 value={paymentFormData.profileId} 
                 onValueChange={(val) => {
-                  const profile = profiles?.find(p => p.id === val)
+                  const _profile = profiles?.find(p => p.id === val)
                   setPaymentFormData(prev => ({
                     ...prev, 
                     profileId: val,

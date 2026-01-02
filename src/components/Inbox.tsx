@@ -47,10 +47,10 @@ interface InboxProps {
 }
 
 export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, membershipPlan, membershipSettings, setProfiles }: InboxProps) {
-  const [interests, setInterests] = useKV<Interest[]>('interests', [])
+  const [interests, _setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests, setContactRequests] = useKV<ContactRequest[]>('contactRequests', [])
-  const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
-  const [blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
+  const [_messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
+  const [_blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [interestToDecline, setInterestToDecline] = useState<string | null>(null)
   const [interestToBlock, setInterestToBlock] = useState<{ interestId: string, profileId: string } | null>(null)
   const [viewContactProfile, setViewContactProfile] = useState<Profile | null>(null)

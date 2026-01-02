@@ -158,7 +158,7 @@ Respond ONLY with the JSON object, no additional text or markdown.`
         analysis: result.analysis,
         recommendations: result.recommendations
       }
-    } catch (parseError) {
+    } catch (_parseError) {
       logger.error('Failed to parse GPT-4o response:', content)
       // Return the raw analysis if JSON parsing fails
       return {

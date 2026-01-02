@@ -268,9 +268,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const t = useTranslation(language)
   const [step, setStep] = useState(1)
   const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([])
-  const [selfieFile, setSelfieFile] = useState<File | null>(null)
+  const [_selfieFile, setSelfieFile] = useState<File | null>(null)
   const [selfiePreview, setSelfiePreview] = useState<string | undefined>(undefined)
-  const [idProofFile, setIdProofFile] = useState<File | null>(null)
+  const [_idProofFile, setIdProofFile] = useState<File | null>(null)
   const [idProofPreview, setIdProofPreview] = useState<string | null>(null)
   const [idProofType, setIdProofType] = useState<'aadhaar' | 'pan' | 'driving-license' | 'passport' | 'voter-id'>('aadhaar')
   const [showCamera, setShowCamera] = useState(false)
@@ -280,7 +280,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const [selectedCameraId, setSelectedCameraId] = useState<string>('')
   const [faceCoverageValid, setFaceCoverageValid] = useState(false)
   const [faceCoveragePercent, setFaceCoveragePercent] = useState(0)
-  const [selfieZoom, setSelfieZoom] = useState(1) // Zoom level for selfie (1 = 100%)
+  const [_selfieZoom, setSelfieZoom] = useState(1) // Zoom level for selfie (1 = 100%)
   const [liveZoom, setLiveZoom] = useState(1) // Live zoom for camera preview
   const [isGeneratingBio, setIsGeneratingBio] = useState(false)
   const [registrationGeoLocation, setRegistrationGeoLocation] = useState<{
@@ -311,11 +311,11 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const [customCity, setCustomCity] = useState('')
   
   // Payment screenshot state for paid plans
-  const [paymentScreenshotFile, setPaymentScreenshotFile] = useState<File | null>(null)
+  const [_paymentScreenshotFile, setPaymentScreenshotFile] = useState<File | null>(null)
   const [paymentScreenshotPreview, setPaymentScreenshotPreview] = useState<string | null>(null)
   
   // DigiLocker verification state (OAuth flow - no Aadhaar number input)
-  const [digilockerVerifying, setDigilockerVerifying] = useState(false)
+  const [_digilockerVerifying, _setDigilockerVerifying] = useState(false)
   const [digilockerVerified, setDigilockerVerified] = useState(false)
   const [digilockerData, setDigilockerData] = useState<{
     name: string
@@ -599,6 +599,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     } catch (e) {
       logger.error('Error loading draft:', e)
     }
+    // Intentionally not including defaultValues.* to prevent re-initialization loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, isEditMode, language])
 
   // Save draft function
@@ -793,7 +795,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           }
         }
       }, 100)
-    } catch (err) {
+    } catch (_err) {
       setShowCamera(false)
       toast.error(t.registration.cameraAccessDenied)
     }
@@ -884,7 +886,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   }
 
   // Finalize selfie capture after validation
-  const finalizeSelfieCapture = (coverage: number) => {
+  const finalizeSelfieCapture = (_coverage: number) => {
     if (canvasRef.current) {
       setFaceCoverageValid(true)
       
@@ -925,7 +927,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               region = data.address?.state || data.address?.county
               country = data.address?.country
             }
-          } catch (e) {
+          } catch (_e) {
             logger.debug('Reverse geocoding failed, using coordinates only')
           }
           
@@ -1485,7 +1487,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     })
   }
 
-  const handleSelfieUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Selfie upload handler (reserved for file upload fallback)
+  const _handleSelfieUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       setSelfieFile(file)

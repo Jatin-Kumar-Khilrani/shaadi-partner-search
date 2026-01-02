@@ -18,7 +18,7 @@ interface WeddingServicesProps {
   membershipPlan?: MembershipPlan
 }
 
-export function WeddingServices({ language, shouldBlur = false, membershipPlan }: WeddingServicesProps) {
+export function WeddingServices({ language, shouldBlur = false, _membershipPlan }: WeddingServicesProps) {
   const [services] = useKV<WeddingService[]>('weddingServices', [])
   const [selectedService, setSelectedService] = useState<WeddingService | null>(null)
   const [searchQuery, setSearchQuery] = useState('')

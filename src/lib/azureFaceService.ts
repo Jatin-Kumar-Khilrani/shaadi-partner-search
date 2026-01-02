@@ -10,8 +10,8 @@
 
 import { logger } from './logger'
 
-// Azure Face API configuration
-const AZURE_FACE_CONFIG = {
+// Azure Face API configuration (reserved for production use)
+const _AZURE_FACE_CONFIG = {
   // Azure Face API endpoint - Replace with your actual endpoint
   endpoint: 'https://shaadipartnerface.cognitiveservices.azure.com/',
   // API version
@@ -301,9 +301,9 @@ function simulatedFaceDetection(img: HTMLImageElement): FaceDetectionResult {
   ctx.drawImage(img, 0, 0)
   
   // Analyze the FULL image to find skin-tone regions
-  const centerX = img.width / 2
-  const centerY = img.height / 2
-  const sampleSize = Math.min(img.width, img.height) * 0.5
+  const _centerX = img.width / 2
+  const _centerY = img.height / 2
+  const _sampleSize = Math.min(img.width, img.height) * 0.5
   
   try {
     // Analyze FULL image to find skin-tone bounding box

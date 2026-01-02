@@ -319,6 +319,7 @@ function App() {
         localStorage.setItem('shaadi_partner_azure_loaded', 'true')
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleSearch = (filters: SearchFilters) => {

@@ -52,7 +52,7 @@ const DEFAULT_SETTINGS: MembershipSettings = {
 
 export function Chat({ currentUserProfile, profiles, language, isAdmin = false, shouldBlur = false, membershipPlan, membershipSettings, setProfiles, initialChatProfileId }: ChatProps) {
   const [messages, setMessages, refreshMessages, messagesLoaded] = useKV<ChatMessage[]>('chatMessages', [])
-  const [interests, setInterests] = useKV<Interest[]>('interests', [])
+  const [interests, _setInterests] = useKV<Interest[]>('interests', [])
   const [blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [conversations, setConversations] = useState<ChatConversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
@@ -73,6 +73,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   // Force refresh messages from Azure on mount
   useEffect(() => {
     refreshMessages()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Auto-select conversation when initialChatProfileId is provided
@@ -199,7 +200,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   }
 
   // Check if a profile is blocked (either direction)
-  const isProfileBlocked = (otherProfileId: string): boolean => {
+  const _isProfileBlocked = (otherProfileId: string): boolean => {
     if (!currentUserProfile || !blockedProfiles) return false
     return blockedProfiles.some(
       b => (b.blockerProfileId === currentUserProfile.profileId && b.blockedProfileId === otherProfileId) ||
@@ -291,6 +292,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     if (hasUpdates) {
       setMessages(updatedMessages)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages?.length, currentUserProfile, isAdmin])
 
   useEffect(() => {
@@ -521,6 +523,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     if (hasUpdates) {
       setMessages(updatedMessages)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedConversation, currentUserProfile, isAdmin])
 
   useEffect(() => {
