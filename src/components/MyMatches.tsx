@@ -9,13 +9,12 @@ import { SearchableSelect, OCCUPATION_OPTIONS } from '@/components/ui/searchable
 import { MultiSelect, EDUCATION_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, getStateOptionsForCountries, getCityOptionsForStates } from '@/components/ui/multi-select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { ProfileCard } from './ProfileCard'
-import { MagnifyingGlass, Funnel, X, GraduationCap, Globe, Calendar, Trophy, Sparkle } from '@phosphor-icons/react'
+import { MagnifyingGlass, Funnel, X, GraduationCap, Globe, Calendar, Trophy, Sparkle, Heart, Users } from '@phosphor-icons/react'
 import type { Profile, SearchFilters, BlockedProfile, MembershipPlan, ProfileStatus } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 
@@ -379,14 +378,16 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
      currentUserProfile.partnerPreferences.dietPreference?.length)
 
   const FilterPanel = () => (
-    <ScrollArea className="h-[calc(100vh-200px)]">
-      <div className="space-y-6 pr-4">
+    <ScrollArea className="h-[calc(100vh-180px)]">
+      <div className="space-y-5 pr-4 pb-4">
         {/* Smart Matching Toggle */}
-        <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+        <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 shadow-sm">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkle size={18} className="text-primary" weight="fill" />
-              <Label className="font-medium">{t.smartMatching}</Label>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/20 rounded-lg">
+                <Sparkle size={18} className="text-primary" weight="fill" />
+              </div>
+              <Label className="font-semibold text-base">{t.smartMatching}</Label>
             </div>
             <Switch
               checked={usePartnerPreferences}
@@ -394,26 +395,26 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               disabled={!hasPartnerPreferences}
             />
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-xs text-muted-foreground mt-3 ml-11">
             {hasPartnerPreferences ? t.smartMatchingDesc : t.noPreferencesSet}
           </p>
           {hasPartnerPreferences && usePartnerPreferences && (
-            <Badge variant="secondary" className="mt-2 text-xs">
+            <Badge variant="secondary" className="mt-3 ml-11 text-xs bg-primary/10 text-primary border-primary/20">
               <Sparkle size={12} className="mr-1" weight="fill" />
               {t.preferencesApplied}
             </Badge>
           )}
         </div>
 
-        <Separator />
-
         {/* Age Range */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Calendar size={16} className="text-muted-foreground" />
-            <Label className="font-medium">{t.ageRange}</Label>
+        <div className="p-4 bg-muted/30 rounded-xl border">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-background rounded-lg border">
+              <Calendar size={16} className="text-primary" />
+            </div>
+            <Label className="font-semibold">{t.ageRange}</Label>
           </div>
-          <div className="px-2">
+          <div className="px-1">
             <Slider
               value={ageRange}
               onValueChange={(value) => {
@@ -423,285 +424,304 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               min={18}
               max={60}
               step={1}
+              className="my-2"
             />
-            <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-              <span>{ageRange[0]} {t.years}</span>
-              <span>{ageRange[1]} {t.years}</span>
+            <div className="flex justify-between mt-3 text-sm">
+              <span className="px-2 py-1 bg-background rounded-md border font-medium">{ageRange[0]} {t.years}</span>
+              <span className="px-2 py-1 bg-background rounded-md border font-medium">{ageRange[1]} {t.years}</span>
             </div>
           </div>
         </div>
-
-        <Separator />
 
         {/* Education & Career */}
-        <div className="space-y-4">
-          <h4 className="font-medium text-sm flex items-center gap-2">
-            <GraduationCap size={16} />
-            {t.educationCareer}
-          </h4>
+        <div className="p-4 bg-muted/30 rounded-xl border">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-background rounded-lg border">
+              <GraduationCap size={16} className="text-primary" />
+            </div>
+            <h4 className="font-semibold">{t.educationCareer}</h4>
+          </div>
           
-          <div className="space-y-2">
-            <Label>{t.education}</Label>
-            <MultiSelect
-              options={EDUCATION_OPTIONS}
-              value={filters.educationLevels || []}
-              onValueChange={(val) => setFilters({ ...filters, educationLevels: val.length > 0 ? val : undefined })}
-              placeholder={t.any}
-              searchPlaceholder={language === 'hi' ? 'शिक्षा खोजें...' : 'Search education...'}
-              emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
-              showAnyOption
-              anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
-            />
-          </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">{t.education}</Label>
+              <MultiSelect
+                options={EDUCATION_OPTIONS}
+                value={filters.educationLevels || []}
+                onValueChange={(val) => setFilters({ ...filters, educationLevels: val.length > 0 ? val : undefined })}
+                placeholder={t.any}
+                searchPlaceholder={language === 'hi' ? 'शिक्षा खोजें...' : 'Search education...'}
+                emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
+                showAnyOption
+                anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label>{language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status'}</Label>
-            <MultiSelect
-              options={EMPLOYMENT_STATUS_OPTIONS}
-              value={filters.employmentStatuses || []}
-              onValueChange={(val) => setFilters({ ...filters, employmentStatuses: val.length > 0 ? val : undefined })}
-              placeholder={t.any}
-              searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
-              emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
-              showAnyOption
-              anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">{language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status'}</Label>
+              <MultiSelect
+                options={EMPLOYMENT_STATUS_OPTIONS}
+                value={filters.employmentStatuses || []}
+                onValueChange={(val) => setFilters({ ...filters, employmentStatuses: val.length > 0 ? val : undefined })}
+                placeholder={t.any}
+                searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
+                showAnyOption
+                anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label>{t.occupation}</Label>
-            <SearchableSelect
-              options={[{ value: 'any', label: t.any }, ...OCCUPATION_OPTIONS]}
-              value={filters.occupationType || 'any'}
-              onValueChange={(val) => setFilters({ ...filters, occupationType: val === 'any' ? undefined : val })}
-              placeholder={t.any}
-              searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
-              emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
-            />
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">{t.occupation}</Label>
+              <SearchableSelect
+                options={[{ value: 'any', label: t.any }, ...OCCUPATION_OPTIONS]}
+                value={filters.occupationType || 'any'}
+                onValueChange={(val) => setFilters({ ...filters, occupationType: val === 'any' ? undefined : val })}
+                placeholder={t.any}
+                searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
+                emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
+              />
+            </div>
           </div>
         </div>
-
-        <Separator />
 
         {/* Location */}
-        <div className="space-y-4">
-          <h4 className="font-medium text-sm flex items-center gap-2">
-            <Globe size={16} />
-            {t.locationFilters}
-          </h4>
-          
-          <div className="space-y-2">
-            <Label>{t.country}</Label>
-            <Select 
-              value={filters.country || ''} 
-              onValueChange={(val) => setFilters({ ...filters, country: val || undefined, state: undefined, city: undefined })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t.any} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">{t.any}</SelectItem>
-                <SelectItem value="india">{t.india}</SelectItem>
-                <SelectItem value="usa">{t.usa}</SelectItem>
-                <SelectItem value="uk">{t.uk}</SelectItem>
-                <SelectItem value="canada">{t.canada}</SelectItem>
-                <SelectItem value="australia">{t.australia}</SelectItem>
-                <SelectItem value="uae">{t.uae}</SelectItem>
-                <SelectItem value="germany">{t.germany}</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="p-4 bg-muted/30 rounded-xl border">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-background rounded-lg border">
+              <Globe size={16} className="text-primary" />
+            </div>
+            <h4 className="font-semibold">{t.locationFilters}</h4>
           </div>
-
-          {filters.country && filters.country !== 'any' && (
+          
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label>{t.state}</Label>
+              <Label className="text-sm text-muted-foreground">{t.country}</Label>
               <Select 
-                value={filters.state || ''} 
-                onValueChange={(val) => setFilters({ ...filters, state: val || undefined, city: undefined })}
+                value={filters.country || ''} 
+                onValueChange={(val) => setFilters({ ...filters, country: val || undefined, state: undefined, city: undefined })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t.any} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="any">{t.any}</SelectItem>
-                  {getStateOptionsForCountries([filters.country]).map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="india">{t.india}</SelectItem>
+                  <SelectItem value="usa">{t.usa}</SelectItem>
+                  <SelectItem value="uk">{t.uk}</SelectItem>
+                  <SelectItem value="canada">{t.canada}</SelectItem>
+                  <SelectItem value="australia">{t.australia}</SelectItem>
+                  <SelectItem value="uae">{t.uae}</SelectItem>
+                  <SelectItem value="germany">{t.germany}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          )}
 
-          {filters.state && filters.state !== 'any' && (
-            <div className="space-y-2">
-              <Label>{t.city}</Label>
-              <Select 
-                value={filters.city || ''} 
-                onValueChange={(val) => setFilters({ ...filters, city: val || undefined })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t.any} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="any">{t.any}</SelectItem>
-                  {getCityOptionsForStates([filters.state]).map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+            {filters.country && filters.country !== 'any' && (
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">{t.state}</Label>
+                <Select 
+                  value={filters.state || ''} 
+                  onValueChange={(val) => setFilters({ ...filters, state: val || undefined, city: undefined })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t.any} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">{t.any}</SelectItem>
+                    {getStateOptionsForCountries([filters.country]).map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {filters.state && filters.state !== 'any' && (
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">{t.city}</Label>
+                <Select 
+                  value={filters.city || ''} 
+                  onValueChange={(val) => setFilters({ ...filters, city: val || undefined })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t.any} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">{t.any}</SelectItem>
+                    {getCityOptionsForStates([filters.state]).map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
         </div>
-
-        <Separator />
 
         {/* Community & Religion */}
-        <div className="space-y-4">
-          <h4 className="font-medium text-sm">{t.basicFilters}</h4>
+        <div className="p-4 bg-muted/30 rounded-xl border">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-background rounded-lg border">
+              <Users size={16} className="text-primary" />
+            </div>
+            <h4 className="font-semibold">{t.basicFilters}</h4>
+          </div>
           
-          <div className="space-y-2">
-            <Label>{t.caste}</Label>
-            <Input 
-              placeholder={t.caste}
-              value={filters.caste || ''}
-              onChange={(e) => setFilters({ ...filters, caste: e.target.value })}
-            />
-          </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">{t.caste}</Label>
+              <Input 
+                placeholder={t.caste}
+                value={filters.caste || ''}
+                onChange={(e) => setFilters({ ...filters, caste: e.target.value })}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label>{t.community}</Label>
-            <Input 
-              placeholder={t.community}
-              value={filters.community || ''}
-              onChange={(e) => setFilters({ ...filters, community: e.target.value })}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">{t.community}</Label>
+              <Input 
+                placeholder={t.community}
+                value={filters.community || ''}
+                onChange={(e) => setFilters({ ...filters, community: e.target.value })}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label>{t.motherTongue}</Label>
-            <Input 
-              placeholder={t.motherTongue}
-              value={filters.motherTongue || ''}
-              onChange={(e) => setFilters({ ...filters, motherTongue: e.target.value })}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">{t.motherTongue}</Label>
+              <Input 
+                placeholder={t.motherTongue}
+                value={filters.motherTongue || ''}
+                onChange={(e) => setFilters({ ...filters, motherTongue: e.target.value })}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label>{t.manglik}</Label>
-            <Select 
-              value={filters.manglik !== undefined ? (filters.manglik ? 'yes' : 'no') : ''} 
-              onValueChange={(val) => {
-                if (val === 'any') {
-                  const { manglik: _manglik, ...rest } = filters
-                  setFilters(rest)
-                } else {
-                  setFilters({ ...filters, manglik: val === 'yes' })
-                }
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t.any} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">{t.any}</SelectItem>
-                <SelectItem value="yes">{t.yes}</SelectItem>
-                <SelectItem value="no">{t.no}</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">{t.manglik}</Label>
+              <Select 
+                value={filters.manglik !== undefined ? (filters.manglik ? 'yes' : 'no') : ''} 
+                onValueChange={(val) => {
+                  if (val === 'any') {
+                    const { manglik: _manglik, ...rest } = filters
+                    setFilters(rest)
+                  } else {
+                    setFilters({ ...filters, manglik: val === 'yes' })
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t.any} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">{t.any}</SelectItem>
+                  <SelectItem value="yes">{t.yes}</SelectItem>
+                  <SelectItem value="no">{t.no}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
-
-        <Separator />
 
         {/* Lifestyle */}
-        <div className="space-y-4">
-          <h4 className="font-medium text-sm">{t.lifestyleFilters}</h4>
+        <div className="p-4 bg-muted/30 rounded-xl border">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-background rounded-lg border">
+              <Heart size={16} className="text-primary" />
+            </div>
+            <h4 className="font-semibold">{t.lifestyleFilters}</h4>
+          </div>
           
-          <div className="space-y-2">
-            <Label>{t.diet}</Label>
-            <Select 
-              value={filters.dietPreference || ''} 
-              onValueChange={(val: any) => {
-                if (val === 'any') {
-                  const { dietPreference: _dietPreference, ...rest } = filters
-                  setFilters(rest)
-                } else {
-                  setFilters({ ...filters, dietPreference: val })
-                }
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t.any} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">{t.any}</SelectItem>
-                <SelectItem value="veg">{t.veg}</SelectItem>
-                <SelectItem value="non-veg">{t.nonVeg}</SelectItem>
-                <SelectItem value="eggetarian">{t.eggetarian}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">{t.diet}</Label>
+              <Select 
+                value={filters.dietPreference || ''} 
+                onValueChange={(val: any) => {
+                  if (val === 'any') {
+                    const { dietPreference: _dietPreference, ...rest } = filters
+                    setFilters(rest)
+                  } else {
+                    setFilters({ ...filters, dietPreference: val })
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t.any} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">{t.any}</SelectItem>
+                  <SelectItem value="veg">{t.veg}</SelectItem>
+                  <SelectItem value="non-veg">{t.nonVeg}</SelectItem>
+                  <SelectItem value="eggetarian">{t.eggetarian}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label>{t.drinking}</Label>
-            <Select 
-              value={filters.drinkingHabit || ''} 
-              onValueChange={(val: any) => {
-                if (val === 'any') {
-                  const { drinkingHabit: _drinkingHabit, ...rest } = filters
-                  setFilters(rest)
-                } else {
-                  setFilters({ ...filters, drinkingHabit: val })
-                }
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t.any} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">{t.any}</SelectItem>
-                <SelectItem value="never">{t.never}</SelectItem>
-                <SelectItem value="occasionally">{t.occasionally}</SelectItem>
-                <SelectItem value="regularly">{t.regularly}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">{t.drinking}</Label>
+              <Select 
+                value={filters.drinkingHabit || ''} 
+                onValueChange={(val: any) => {
+                  if (val === 'any') {
+                    const { drinkingHabit: _drinkingHabit, ...rest } = filters
+                    setFilters(rest)
+                  } else {
+                    setFilters({ ...filters, drinkingHabit: val })
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t.any} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">{t.any}</SelectItem>
+                  <SelectItem value="never">{t.never}</SelectItem>
+                  <SelectItem value="occasionally">{t.occasionally}</SelectItem>
+                  <SelectItem value="regularly">{t.regularly}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label>{t.smoking}</Label>
-            <Select 
-              value={filters.smokingHabit || ''} 
-              onValueChange={(val: any) => {
-                if (val === 'any') {
-                  const { smokingHabit: _smokingHabit, ...rest } = filters
-                  setFilters(rest)
-                } else {
-                  setFilters({ ...filters, smokingHabit: val })
-                }
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t.any} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">{t.any}</SelectItem>
-                <SelectItem value="never">{t.never}</SelectItem>
-                <SelectItem value="occasionally">{t.occasionally}</SelectItem>
-                <SelectItem value="regularly">{t.regularly}</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">{t.smoking}</Label>
+              <Select 
+                value={filters.smokingHabit || ''} 
+                onValueChange={(val: any) => {
+                  if (val === 'any') {
+                    const { smokingHabit: _smokingHabit, ...rest } = filters
+                    setFilters(rest)
+                  } else {
+                    setFilters({ ...filters, smokingHabit: val })
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t.any} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">{t.any}</SelectItem>
+                  <SelectItem value="never">{t.never}</SelectItem>
+                  <SelectItem value="occasionally">{t.occasionally}</SelectItem>
+                  <SelectItem value="regularly">{t.regularly}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
-        <Separator />
-
         {/* Disability Filter */}
-        <div className="space-y-3">
-          <Label className="font-medium">{t.disability}</Label>
+        <div className="p-4 bg-muted/30 rounded-xl border">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-background rounded-lg border">
+              <Users size={16} className="text-primary" />
+            </div>
+            <h4 className="font-semibold">{t.disability}</h4>
+          </div>
+          
           <Select
             value={filters.disability || ''}
             onValueChange={(value) => setFilters({ ...filters, disability: value || undefined })}
@@ -717,56 +737,51 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           </Select>
         </div>
 
-        <Separator />
-
         {/* Special Filters */}
-        <div className="space-y-4">
-          <h4 className="font-medium text-sm flex items-center gap-2">
-            <Trophy size={16} />
-            {t.specialFilters}
-          </h4>
+        <div className="p-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-xl border border-amber-200/50">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-background rounded-lg border border-amber-200">
+              <Trophy size={16} className="text-amber-600" />
+            </div>
+            <h4 className="font-semibold">{t.specialFilters}</h4>
+          </div>
           
           <div className="space-y-3">
-            <div className="flex items-center space-x-2">
+            <label className="flex items-center gap-3 p-3 bg-background/80 rounded-lg border cursor-pointer hover:bg-background transition-colors">
               <Checkbox 
                 id="readinessBadge"
                 checked={filters.hasReadinessBadge || false}
                 onCheckedChange={(checked) => setFilters({ ...filters, hasReadinessBadge: !!checked })}
               />
-              <Label htmlFor="readinessBadge" className="text-sm cursor-pointer">
-                {t.readinessBadge} ⭐
-              </Label>
-            </div>
+              <span className="text-sm flex-1">{t.readinessBadge}</span>
+              <span className="text-lg">⭐</span>
+            </label>
             
-            <div className="flex items-center space-x-2">
+            <label className="flex items-center gap-3 p-3 bg-background/80 rounded-lg border cursor-pointer hover:bg-background transition-colors">
               <Checkbox 
                 id="verified"
                 checked={filters.isVerified || false}
                 onCheckedChange={(checked) => setFilters({ ...filters, isVerified: !!checked })}
               />
-              <Label htmlFor="verified" className="text-sm cursor-pointer">
-                {t.verifiedOnly} ✓
-              </Label>
-            </div>
+              <span className="text-sm flex-1">{t.verifiedOnly}</span>
+              <span className="text-lg">✓</span>
+            </label>
             
-            <div className="flex items-center space-x-2">
+            <label className="flex items-center gap-3 p-3 bg-background/80 rounded-lg border cursor-pointer hover:bg-background transition-colors">
               <Checkbox 
                 id="hasPhoto"
                 checked={filters.hasPhoto || false}
                 onCheckedChange={(checked) => setFilters({ ...filters, hasPhoto: !!checked })}
               />
-              <Label htmlFor="hasPhoto" className="text-sm cursor-pointer">
-                {t.withPhotoOnly} 📷
-              </Label>
-            </div>
+              <span className="text-sm flex-1">{t.withPhotoOnly}</span>
+              <span className="text-lg">📷</span>
+            </label>
           </div>
         </div>
 
-        <Separator />
-
         {/* Action Buttons */}
-        <div className="flex gap-2 sticky bottom-0 bg-background pt-2">
-          <Button onClick={() => setShowFilters(false)} className="flex-1">
+        <div className="flex gap-3 sticky bottom-0 bg-background pt-4 pb-2 border-t mt-2">
+          <Button onClick={() => setShowFilters(false)} className="flex-1 h-11 text-base font-medium">
             {t.applyFilters}
           </Button>
           <Button 
@@ -775,9 +790,9 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               setFilters({})
               setAgeRange([18, 60])
             }} 
-            className="flex-1"
+            className="flex-1 h-11 text-base"
           >
-            <X size={16} className="mr-1" />
+            <X size={16} className="mr-2" />
             {t.clearFilters}
           </Button>
         </div>

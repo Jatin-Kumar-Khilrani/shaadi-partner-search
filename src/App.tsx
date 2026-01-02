@@ -630,8 +630,8 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 md:px-8 flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="container mx-auto px-4 md:px-6 lg:px-8 flex h-16 items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button onClick={() => setCurrentView('home')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <Heart size={32} weight="fill" className="text-primary" />
               <div className="hidden sm:block">
@@ -641,73 +641,73 @@ function App() {
             </button>
           </div>
 
-          <nav className="hidden md:flex flex-wrap items-center justify-end gap-1 lg:gap-2">
+          <nav className="hidden md:flex items-center gap-1 xl:gap-2 overflow-x-auto scrollbar-hide">
             <Button
               variant={currentView === 'home' ? 'default' : 'ghost'}
               onClick={() => setCurrentView('home')}
-              className="gap-1 lg:gap-2 px-2 lg:px-4 text-sm"
+              className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
               size="sm"
             >
               <Heart size={18} weight="fill" />
-              <span className="hidden lg:inline">{t.homeButton}</span>
+              <span className="hidden xl:inline">{t.homeButton}</span>
             </Button>
             {loggedInUser && (
               <>
                 <Button
                   variant={currentView === 'my-matches' ? 'default' : 'ghost'}
                   onClick={() => setCurrentView('my-matches')}
-                  className="gap-1 lg:gap-2 px-2 lg:px-4 text-sm"
+                  className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
                   size="sm"
                 >
                   <MagnifyingGlass size={18} />
-                  <span className="hidden lg:inline">{t.myMatches}</span>
+                  <span className="hidden xl:inline">{t.myMatches}</span>
                 </Button>
                 <Button
                   variant={currentView === 'my-activity' ? 'default' : 'ghost'}
                   onClick={() => setCurrentView('my-activity')}
-                  className="gap-1 lg:gap-2 px-2 lg:px-4 text-sm"
+                  className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
                   size="sm"
                 >
                   <ClockCounterClockwise size={18} />
-                  <span className="hidden lg:inline">{t.myActivity}</span>
+                  <span className="hidden xl:inline">{t.myActivity}</span>
                 </Button>
                 <Button
                   variant={currentView === 'inbox' ? 'default' : 'ghost'}
                   onClick={() => setCurrentView('inbox')}
-                  className="gap-1 lg:gap-2 px-2 lg:px-4 text-sm"
+                  className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
                   size="sm"
                 >
                   <Envelope size={18} />
-                  <span className="hidden lg:inline">{t.inbox}</span>
+                  <span className="hidden xl:inline">{t.inbox}</span>
                 </Button>
                 <Button
                   variant={currentView === 'chat' ? 'default' : 'ghost'}
                   onClick={() => { setChatTargetProfileId(null); setCurrentView('chat'); }}
-                  className="gap-1 lg:gap-2 px-2 lg:px-4 text-sm"
+                  className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
                   size="sm"
                 >
                   <ChatCircle size={18} />
-                  <span className="hidden lg:inline">{t.chat}</span>
+                  <span className="hidden xl:inline">{t.chat}</span>
                 </Button>
                 <Button
                   variant={currentView === 'readiness' ? 'default' : 'ghost'}
                   onClick={() => setCurrentView('readiness')}
-                  className="gap-1 lg:gap-2 px-2 lg:px-4 text-sm"
+                  className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
                   size="sm"
                 >
                   <Trophy size={18} weight="fill" />
-                  <span className="hidden lg:inline">{language === 'hi' ? 'तत्परता' : 'Readiness'}</span>
+                  <span className="hidden xl:inline">{language === 'hi' ? 'तत्परता' : 'Readiness'}</span>
                 </Button>
               </>
             )}
             <Button
               variant={currentView === 'wedding-services' ? 'default' : 'ghost'}
               onClick={() => setCurrentView('wedding-services')}
-              className="gap-1 lg:gap-2 px-2 lg:px-4 text-sm"
+              className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
               size="sm"
             >
               <Storefront size={18} />
-              <span className="hidden lg:inline">{t.weddingServices}</span>
+              <span className="hidden xl:inline">{t.weddingServices}</span>
             </Button>
             <Button
               variant={currentView === 'admin' ? 'default' : 'ghost'}
@@ -718,30 +718,30 @@ function App() {
                   setCurrentView('admin')
                 }
               }}
-              className="gap-1 lg:gap-2 px-2 lg:px-4 text-sm"
+              className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
               size="sm"
             >
               <ShieldCheck size={18} weight="fill" />
-              <span className="hidden lg:inline">{t.adminButton}</span>
+              <span className="hidden xl:inline">{t.adminButton}</span>
             </Button>
             <Button 
               variant="ghost" 
               size="sm"
               onClick={() => setLanguage(language === 'hi' ? 'en' : 'hi')}
               title={language === 'hi' ? 'Switch to English' : 'हिंदी में बदलें'}
-              className="text-lg font-bold px-2"
+              className="text-lg font-bold px-2 flex-shrink-0"
             >
               {language === 'hi' ? 'A' : 'अ'}
             </Button>
             {!loggedInUser ? (
               <>
-                <Button onClick={() => setShowLogin(true)} variant="ghost" className="gap-1 lg:gap-2 px-2 lg:px-4 text-sm" size="sm">
+                <Button onClick={() => setShowLogin(true)} variant="ghost" className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0" size="sm">
                   <SignIn size={18} weight="bold" />
-                  <span className="hidden lg:inline">{t.login}</span>
+                  <span className="hidden xl:inline">{t.login}</span>
                 </Button>
-                <Button onClick={() => setShowRegistration(true)} className="gap-1 lg:gap-2 px-2 lg:px-4 text-sm bg-accent hover:bg-accent/90 text-accent-foreground" size="sm">
+                <Button onClick={() => setShowRegistration(true)} className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm bg-accent hover:bg-accent/90 text-accent-foreground flex-shrink-0" size="sm">
                   <UserPlus size={18} weight="bold" />
-                  <span className="hidden lg:inline">{t.register}</span>
+                  <span className="hidden xl:inline">{t.register}</span>
                 </Button>
               </>
             ) : (
