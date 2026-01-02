@@ -15,6 +15,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Checkbox } from '@/components/ui/checkbox'
 import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, ArrowDown, FloppyDisk, Sparkle, Warning, SpinnerGap, Gift, ShieldCheck, IdentificationCard, ArrowCounterClockwise, Upload } from '@phosphor-icons/react'
 import { toast } from 'sonner'
+import { logger } from '@/lib/logger'
 import type { Gender, MaritalStatus, Profile, MembershipPlan, DisabilityStatus, DietPreference, DrinkingHabit, SmokingHabit, ResidentialStatus } from '@/types/profile'
 import { useTranslation, type Language } from '@/lib/translations'
 import { generateBio, type BioGenerationParams } from '@/lib/aiFoundryService'
@@ -596,7 +597,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         )
       }
     } catch (e) {
-      console.error('Error loading draft:', e)
+      logger.error('Error loading draft:', e)
     }
   }, [open, isEditMode, language])
 
@@ -621,7 +622,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         { description: language === 'hi' ? 'आप बाद में जारी रख सकते हैं' : 'You can continue later' }
       )
     } catch (e) {
-      console.error('Error saving draft:', e)
+      logger.error('Error saving draft:', e)
       toast.error(language === 'hi' ? 'ड्राफ्ट सेव नहीं हो सका' : 'Could not save draft')
     }
   }
@@ -631,7 +632,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     try {
       localStorage.removeItem(STORAGE_KEY)
     } catch (e) {
-      console.error('Error clearing draft:', e)
+      logger.error('Error clearing draft:', e)
     }
   }
 
@@ -715,7 +716,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           { description: language === 'hi' ? 'आप नए सिरे से शुरू कर सकते हैं' : 'You can start fresh' }
         )
       } catch (e) {
-        console.error('Error resetting draft:', e)
+        logger.error('Error resetting draft:', e)
         toast.error(language === 'hi' ? 'ड्राफ्ट रीसेट नहीं हो सका' : 'Could not reset draft')
       }
     }
@@ -925,7 +926,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               country = data.address?.country
             }
           } catch (e) {
-            console.log('Reverse geocoding failed, using coordinates only')
+            logger.debug('Reverse geocoding failed, using coordinates only')
           }
           
           setRegistrationGeoLocation({
@@ -946,7 +947,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           )
         },
         (error) => {
-          console.log('Geolocation error:', error.message)
+          logger.debug('Geolocation error:', error.message)
           // Still allow registration even if location fails
           toast.warning(
             language === 'hi' 
@@ -1021,7 +1022,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         toast.error(result.message || (language === 'hi' ? 'परिचय बनाने में त्रुटि' : 'Error generating bio'))
       }
     } catch (error) {
-      console.error('Bio generation error:', error)
+      logger.error('Bio generation error:', error)
       toast.error(language === 'hi' ? 'परिचय बनाने में त्रुटि' : 'Error generating bio')
     } finally {
       setIsGeneratingBio(false)
@@ -1172,7 +1173,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             const { cdnUrl } = await uploadPhoto(tempProfileId, file)
             return cdnUrl
           } catch (err) {
-            console.warn(`Failed to upload photo ${index}:`, err)
+            logger.warn(`Failed to upload photo ${index}:`, err)
             return photo.preview // Fallback to base64
           }
         })
@@ -1186,7 +1187,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             const { cdnUrl } = await uploadPhoto(tempProfileId, selfieFile)
             uploadedSelfieUrl = cdnUrl
           } catch (err) {
-            console.warn('Failed to upload selfie:', err)
+            logger.warn('Failed to upload selfie:', err)
           }
         }
 
@@ -1197,7 +1198,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             const { cdnUrl } = await uploadPhoto(tempProfileId, idFile)
             uploadedIdProofUrl = cdnUrl
           } catch (err) {
-            console.warn('Failed to upload ID proof:', err)
+            logger.warn('Failed to upload ID proof:', err)
           }
         }
 
@@ -1208,7 +1209,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             const { cdnUrl } = await uploadPhoto(tempProfileId, paymentFile)
             uploadedPaymentScreenshotUrl = cdnUrl
           } catch (err) {
-            console.warn('Failed to upload payment screenshot:', err)
+            logger.warn('Failed to upload payment screenshot:', err)
           }
         }
       } else {
@@ -1216,7 +1217,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         photoUrls = photos.map(p => p.preview)
       }
     } catch (err) {
-      console.warn('Blob storage not available, using base64:', err)
+      logger.warn('Blob storage not available, using base64:', err)
       photoUrls = photos.map(p => p.preview)
     } finally {
       setIsSubmitting(false)

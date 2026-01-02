@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useKV } from '@/hooks/useKV'
+import { logger } from '@/lib/logger'
 import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -466,7 +467,7 @@ function App() {
         localStorage.setItem('shaadi_loggedInUser', userId)
         localStorage.setItem('shaadi_keepLoggedIn', 'true')
       } catch (e) {
-        console.warn('Failed to save login to localStorage:', e)
+        logger.warn('Failed to save login to localStorage:', e)
       }
     } else {
       // Session-only login - still use state but clear on browser close
@@ -476,7 +477,7 @@ function App() {
         localStorage.removeItem('shaadi_loggedInUser')
         localStorage.removeItem('shaadi_keepLoggedIn')
       } catch (e) {
-        console.warn('Failed to save session login:', e)
+        logger.warn('Failed to save session login:', e)
       }
     }
     
@@ -519,7 +520,7 @@ function App() {
       localStorage.removeItem('shaadi_keepLoggedIn')
       sessionStorage.removeItem('shaadi_loggedInUser')
     } catch (e) {
-      console.warn('Failed to clear login storage:', e)
+      logger.warn('Failed to clear login storage:', e)
     }
   }
 
@@ -586,7 +587,7 @@ function App() {
       localStorage.removeItem('shaadi_keepLoggedIn')
       sessionStorage.removeItem('shaadi_loggedInUser')
     } catch (e) {
-      console.warn('Failed to clear login storage:', e)
+      logger.warn('Failed to clear login storage:', e)
     }
     toast.success(language === 'hi' ? 'लॉगआउट सफल' : 'Logged out successfully')
   }
@@ -1165,7 +1166,7 @@ function App() {
           </section>
         )}
 
-        {currentView === 'admin' && <AdminPanel profiles={profiles} setProfiles={setProfiles} users={users} language={language} onLogout={() => { setIsAdminLoggedIn(false); setCurrentView('home'); try { localStorage.removeItem('adminLoggedIn'); } catch (e) { console.error(e); } toast.info(language === 'hi' ? 'एडमिन से लॉगआउट हो गया' : 'Logged out from admin'); }} onLoginAsUser={(userId) => { setLoggedInUser(userId); setCurrentView('home'); toast.success(language === 'hi' ? `उपयोगकर्ता ${userId} के रूप में लॉगिन` : `Logged in as user ${userId}`); }} />}
+        {currentView === 'admin' && <AdminPanel profiles={profiles} setProfiles={setProfiles} users={users} language={language} onLogout={() => { setIsAdminLoggedIn(false); setCurrentView('home'); try { localStorage.removeItem('adminLoggedIn'); } catch (e) { logger.error(e); } toast.info(language === 'hi' ? 'एडमिन से लॉगआउट हो गया' : 'Logged out from admin'); }} onLoginAsUser={(userId) => { setLoggedInUser(userId); setCurrentView('home'); toast.success(language === 'hi' ? `उपयोगकर्ता ${userId} के रूप में लॉगिन` : `Logged in as user ${userId}`); }} />}
 
         {currentView === 'my-matches' && (
           <MyMatches 
@@ -1397,7 +1398,7 @@ function App() {
             try {
               localStorage.setItem('adminLoggedIn', 'true')
             } catch (e) {
-              console.error('Could not save admin login state:', e)
+              logger.error('Could not save admin login state:', e)
             }
           }
           toast.success(language === 'hi' ? 'एडमिन पैनल में आपका स्वागत है!' : 'Welcome to Admin Panel!')

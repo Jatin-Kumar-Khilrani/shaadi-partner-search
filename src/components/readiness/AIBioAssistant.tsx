@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Badge } from '@/components/ui/badge'
+import { logger } from '@/lib/logger'
 import { 
   Robot,
   Sparkle,
@@ -268,7 +269,7 @@ export function AIBioAssistant({ language, profile, selfDiscoveryData, existingA
         toast.info(language === 'en' ? 'Bio generated (offline mode)' : 'बायो बनाया गया (ऑफलाइन मोड)')
       }
     } catch (error) {
-      console.error('Bio generation error:', error)
+      logger.error('Bio generation error:', error)
       // Fallback to local generation
       const bio = createLocalBio()
       setGeneratedBio(bio)

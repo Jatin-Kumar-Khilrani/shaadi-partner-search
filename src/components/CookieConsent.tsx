@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Cookie, X, ShieldCheck } from '@phosphor-icons/react'
+import { logger } from '@/lib/logger'
 import type { Language } from '@/lib/translations'
 
 interface CookieConsentProps {
@@ -36,7 +37,7 @@ export function CookieConsent({ language, onOpenTerms }: CookieConsentProps) {
         version: '1.0'
       }))
     } catch (e) {
-      console.warn('Could not save cookie consent:', e)
+      logger.warn('Could not save cookie consent:', e)
     }
     setShowBanner(false)
   }
@@ -51,7 +52,7 @@ export function CookieConsent({ language, onOpenTerms }: CookieConsentProps) {
         version: '1.0'
       }))
     } catch (e) {
-      console.warn('Could not save cookie preference:', e)
+      logger.warn('Could not save cookie preference:', e)
     }
     setShowBanner(false)
   }

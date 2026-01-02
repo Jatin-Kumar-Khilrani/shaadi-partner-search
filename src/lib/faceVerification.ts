@@ -3,6 +3,8 @@
  * Uses Azure AI Foundry Face API to verify if selfie matches uploaded photos
  */
 
+import { logger } from './logger'
+
 // Azure Face API endpoint - replace with your actual endpoint
 const FACE_API_ENDPOINT = 'https://shaadipartnerface.cognitiveservices.azure.com'
 const FACE_API_KEY = '' // In production, use Azure Key Vault
@@ -50,7 +52,7 @@ async function detectFace(imageBase64: string, apiKey: string): Promise<string |
     })
 
     if (!response.ok) {
-      console.error('Face detection failed:', await response.text())
+      logger.error('Face detection failed:', await response.text())
       return null
     }
 
@@ -60,7 +62,7 @@ async function detectFace(imageBase64: string, apiKey: string): Promise<string |
     }
     return null
   } catch (error) {
-    console.error('Error detecting face:', error)
+    logger.error('Error detecting face:', error)
     return null
   }
 }
@@ -83,7 +85,7 @@ async function verifyFaces(faceId1: string, faceId2: string, apiKey: string): Pr
     })
 
     if (!response.ok) {
-      console.error('Face verification failed:', await response.text())
+      logger.error('Face verification failed:', await response.text())
       return null
     }
 
@@ -93,7 +95,7 @@ async function verifyFaces(faceId1: string, faceId2: string, apiKey: string): Pr
       confidence: result.confidence
     }
   } catch (error) {
-    console.error('Error verifying faces:', error)
+    logger.error('Error verifying faces:', error)
     return null
   }
 }
@@ -176,7 +178,7 @@ export async function verifyFaceIdentity(
       }
     }
   } catch (error) {
-    console.error('Face verification error:', error)
+    logger.error('Face verification error:', error)
     return {
       isMatch: false,
       confidence: 0,

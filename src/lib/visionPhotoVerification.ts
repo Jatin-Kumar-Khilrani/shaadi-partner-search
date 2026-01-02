@@ -4,6 +4,8 @@
  * and determine if they are the same person
  */
 
+import { logger } from './logger'
+
 // Configuration from environment variables
 const getConfig = () => ({
   endpoint: import.meta.env.VITE_AZURE_OPENAI_ENDPOINT || 'https://eastus2.api.cognitive.microsoft.com/',
@@ -58,7 +60,7 @@ export async function verifyPhotosWithVision(
 
   // If no API key, return demo result
   if (!config.apiKey) {
-    console.log('No API key configured, using demo mode for photo verification')
+    logger.info('No API key configured, using demo mode for photo verification')
     return getDemoVerificationResult()
   }
 
@@ -128,7 +130,7 @@ Respond ONLY with the JSON object, no additional text or markdown.`
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Azure OpenAI Vision API error:', errorText)
+      logger.error('Azure OpenAI Vision API error:', errorText)
       throw new Error(`API error: ${response.status}`)
     }
 
@@ -157,7 +159,7 @@ Respond ONLY with the JSON object, no additional text or markdown.`
         recommendations: result.recommendations
       }
     } catch (parseError) {
-      console.error('Failed to parse GPT-4o response:', content)
+      logger.error('Failed to parse GPT-4o response:', content)
       // Return the raw analysis if JSON parsing fails
       return {
         isMatch: content.toLowerCase().includes('match') && !content.toLowerCase().includes('no match'),
@@ -173,7 +175,7 @@ Respond ONLY with the JSON object, no additional text or markdown.`
     }
 
   } catch (error) {
-    console.error('Photo verification error:', error)
+    logger.error('Photo verification error:', error)
     return {
       isMatch: false,
       confidence: 0,
@@ -279,7 +281,7 @@ Only return the JSON.`
     return JSON.parse(cleanedContent)
 
   } catch (error) {
-    console.error('Photo quality analysis error:', error)
+    logger.error('Photo quality analysis error:', error)
     return {
       hasFace: true,
       quality: 'acceptable',

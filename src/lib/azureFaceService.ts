@@ -8,6 +8,8 @@
  * - Face covers sufficient area (50%+ recommended)
  */
 
+import { logger } from './logger'
+
 // Azure Face API configuration
 const AZURE_FACE_CONFIG = {
   // Azure Face API endpoint - Replace with your actual endpoint
@@ -51,7 +53,7 @@ export async function detectFace(imageData: string): Promise<FaceDetectionResult
     const apiKey = await getFaceApiKey()
     
     if (!apiKey) {
-      console.warn('Azure Face API key not available, using browser Face Detection API fallback')
+      logger.warn('Azure Face API key not available, using browser Face Detection API fallback')
       return await browserFaceDetection(imageData)
     }
 
@@ -76,7 +78,7 @@ export async function detectFace(imageData: string): Promise<FaceDetectionResult
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('[AzureFaceAPI] Error response:', response.status, errorText)
+      logger.error('[AzureFaceAPI] Error response:', response.status, errorText)
       // Fall back to browser detection
       return await browserFaceDetection(imageData)
     }
@@ -142,7 +144,7 @@ export async function detectFace(imageData: string): Promise<FaceDetectionResult
       faceRectangle: faceRect,
     }
   } catch (error) {
-    console.error('Face detection error:', error)
+    logger.error('Face detection error:', error)
     // Fall back to browser detection
     return await browserFaceDetection(imageData)
   }
@@ -230,7 +232,7 @@ async function browserFaceDetection(imageData: string): Promise<FaceDetectionRes
             },
           })
         } catch (error) {
-          console.error('Browser face detection error:', error)
+          logger.error('Browser face detection error:', error)
           // Fall back to simulated detection
           resolve(simulatedFaceDetection(img))
         }
@@ -285,7 +287,7 @@ function simulatedFaceDetection(img: HTMLImageElement): FaceDetectionResult {
   
   if (!ctx) {
     // If we can't analyze, return low coverage to encourage proper positioning
-    console.warn('Could not create canvas context for face detection')
+    logger.warn('Could not create canvas context for face detection')
     return {
       success: true,
       faceDetected: true,
@@ -414,7 +416,7 @@ function simulatedFaceDetection(img: HTMLImageElement): FaceDetectionResult {
       errorMessage: 'Camera may not be working properly. Please ensure good lighting.',
     }
   } catch (error) {
-    console.error('Error in simulated face detection:', error)
+    logger.error('Error in simulated face detection:', error)
     // On error, return low coverage to encourage proper positioning
     return {
       success: true,

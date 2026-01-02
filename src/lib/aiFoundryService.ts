@@ -4,6 +4,7 @@
  */
 
 import type { Profile, SelfDiscoveryData } from '@/types/profile'
+import { logger } from './logger'
 
 // Azure OpenAI configuration - loaded from environment variables
 const getConfig = () => ({
@@ -94,7 +95,7 @@ The bio should reflect traditional values with a modern outlook.`
     })
 
     if (!response.ok) {
-      console.error('Azure OpenAI error:', await response.text())
+      logger.error('Azure OpenAI error:', await response.text())
       return generateDemoBio(params)
     }
 
@@ -110,7 +111,7 @@ The bio should reflect traditional values with a modern outlook.`
 
     return generateDemoBio(params)
   } catch (error) {
-    console.error('Bio generation error:', error)
+    logger.error('Bio generation error:', error)
     return generateDemoBio(params)
   }
 }
@@ -174,7 +175,7 @@ export async function refineBio(
       success: !!refinedBio
     }
   } catch (error) {
-    console.error('Bio refinement error:', error)
+    logger.error('Bio refinement error:', error)
     return {
       bio: currentBio,
       success: false,
@@ -350,7 +351,7 @@ Please write in first person (I, my, me).`
     })
 
     if (!response.ok) {
-      console.error('Azure OpenAI error:', await response.text())
+      logger.error('Azure OpenAI error:', await response.text())
       return generateAdvancedDemoBio(params)
     }
 
@@ -366,7 +367,7 @@ Please write in first person (I, my, me).`
 
     return generateAdvancedDemoBio(params)
   } catch (error) {
-    console.error('Advanced bio generation error:', error)
+    logger.error('Advanced bio generation error:', error)
     return generateAdvancedDemoBio(params)
   }
 }

@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { FilePdf, Download, Lock, CheckCircle, CurrencyInr, Star, Heart, Flower, Sun, Users } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import QRCode from 'qrcode'
+import { logger } from '@/lib/logger'
 import type { Profile } from '@/types/profile'
 import { formatDateDDMMYYYY } from '@/lib/utils'
 
@@ -81,7 +82,7 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
         })
         setQrCodeDataUrl(qrDataUrl)
       } catch (error) {
-        console.error('Failed to generate QR code:', error)
+        logger.error('Failed to generate QR code:', error)
       }
     }
     

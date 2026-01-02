@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useKV } from '@/hooks/useKV'
+import { logger } from '@/lib/logger'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -787,9 +788,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     if (sendRejectionNotification) {
       // In production, this would call an API to send SMS and Email
       // For now, we simulate the notification
-      console.log(`[Notification] Sending rejection SMS to: ${profile.mobile}`)
-      console.log(`[Notification] Sending rejection Email to: ${profile.email}`)
-      console.log(`[Notification] Rejection reason: ${rejectionReason}`)
+      logger.debug(`[Notification] Sending rejection SMS to: ${profile.mobile}`)
+      logger.debug(`[Notification] Sending rejection Email to: ${profile.email}`)
+      logger.debug(`[Notification] Rejection reason: ${rejectionReason}`)
       
       // Show success toast
       toast.info(t.notificationSent)

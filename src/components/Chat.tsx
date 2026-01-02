@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useKV } from '@/hooks/useKV'
+import { logger } from '@/lib/logger'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -655,7 +656,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
             const updated = (current || []).map(p => {
               // Match by both id and profileId for robustness
               if (p.id === currentProfileId || p.profileId === currentProfileProfileId) {
-                console.log(`[Chat] Updating chatRequestsUsed for profile ${p.profileId}:`, updatedChattedProfiles)
+                logger.debug(`[Chat] Updating chatRequestsUsed for profile ${p.profileId}:`, updatedChattedProfiles)
                 return { 
                   ...p, 
                   chatRequestsUsed: updatedChattedProfiles, 
@@ -665,7 +666,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
               }
               return p
             })
-            console.log(`[Chat] Profiles updated, saving to storage...`)
+            logger.debug(`[Chat] Profiles updated, saving to storage...`)
             return updated
           })
 

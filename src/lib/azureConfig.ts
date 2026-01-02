@@ -13,6 +13,8 @@
  * - Azure Blob Storage: File/image storage (via SAS tokens from API)
  */
 
+import { logger } from './logger'
+
 // Runtime config cache
 let runtimeConfig: { 
   api?: { 
@@ -47,7 +49,7 @@ export async function fetchRuntimeConfig(): Promise<typeof runtimeConfig> {
         const response = await fetch(path)
         if (response.ok) {
           runtimeConfig = await response.json()
-          console.log('✅ Runtime config loaded from:', path)
+          logger.info('Runtime config loaded from:', path)
           return runtimeConfig
         }
       } catch {
@@ -58,7 +60,7 @@ export async function fetchRuntimeConfig(): Promise<typeof runtimeConfig> {
     runtimeConfig = {}
     return runtimeConfig
   } catch (error) {
-    console.warn('⚠️ Could not load runtime.config.json:', error)
+    logger.warn('Could not load runtime.config.json:', error)
     runtimeConfig = {}
     return runtimeConfig
   }
@@ -99,17 +101,17 @@ export async function initializeAzureServices(): Promise<boolean> {
         if (healthResponse.ok) {
           useApiMode = true
           isInitialized = true
-          console.log('✅ Azure API backend connected:', apiBaseUrl)
+          logger.info('Azure API backend connected:', apiBaseUrl)
           return true
         }
       } catch (error) {
-        console.warn('⚠️ API backend not reachable, falling back to localStorage:', error)
+        logger.warn('API backend not reachable, falling back to localStorage:', error)
       }
     }
     
     // Check for direct Cosmos DB key (not recommended for production)
     if (config?.azure?.cosmosDb?.key && config.azure.cosmosDb.key.trim() !== '') {
-      console.log('🔑 Direct Cosmos DB key found - attempting connection...')
+      logger.info('Direct Cosmos DB key found - attempting connection...')
       
       try {
         const { CosmosClient } = await import('@azure/cosmos')
@@ -130,20 +132,20 @@ export async function initializeAzureServices(): Promise<boolean> {
         ;(globalThis as unknown as { _cosmosContainer: typeof container })._cosmosContainer = container
         
         isInitialized = true
-        console.log('✅ Azure Cosmos DB connected (direct mode)')
+        logger.info('Azure Cosmos DB connected (direct mode)')
         return true
       } catch (error) {
-        console.warn('⚠️ Direct Cosmos DB connection failed:', error)
+        logger.warn('Direct Cosmos DB connection failed:', error)
       }
     }
     
     // Fallback to localStorage
-    console.info('ℹ️ Running in localStorage mode (offline/demo)')
+    logger.info('Running in localStorage mode (offline/demo)')
     isInitialized = true
     return false
     
   } catch (error) {
-    console.warn('⚠️ Azure initialization failed:', error)
+    logger.warn('Azure initialization failed:', error)
     isInitialized = true // Mark as initialized to prevent retry loops
     return false
   }
@@ -177,7 +179,7 @@ export const azureStorage = {
         const data = await response.json()
         return data as T
       } catch (error) {
-        console.error(`API get error for key "${key}":`, error)
+        logger.error(`API get error for key "${key}":`, error)
         return null
       }
     }
@@ -190,7 +192,7 @@ export const azureStorage = {
         return resource ? (resource as T) : null
       } catch (error: unknown) {
         if ((error as { code?: number }).code === 404) return null
-        console.error(`Cosmos get error for key "${key}":`, error)
+        logger.error(`Cosmos get error for key "${key}":`, error)
         return null
       }
     }
@@ -216,7 +218,7 @@ export const azureStorage = {
         if (!response.ok) throw new Error(`API error: ${response.status}`)
         return true
       } catch (error) {
-        console.error(`API set error for key "${key}":`, error)
+        logger.error(`API set error for key "${key}":`, error)
         return false
       }
     }
@@ -228,7 +230,7 @@ export const azureStorage = {
         await container.items.upsert({ id: key, key: key, ...value as object })
         return true
       } catch (error) {
-        console.error(`Cosmos set error for key "${key}":`, error)
+        logger.error(`Cosmos set error for key "${key}":`, error)
         return false
       }
     }
@@ -251,7 +253,7 @@ export const azureStorage = {
         if (!response.ok) throw new Error(`API error: ${response.status}`)
         return true
       } catch (error) {
-        console.error(`API delete error for key "${key}":`, error)
+        logger.error(`API delete error for key "${key}":`, error)
         return false
       }
     }
@@ -264,7 +266,7 @@ export const azureStorage = {
         return true
       } catch (error: unknown) {
         if ((error as { code?: number }).code === 404) return true
-        console.error(`Cosmos delete error for key "${key}":`, error)
+        logger.error(`Cosmos delete error for key "${key}":`, error)
         return false
       }
     }
@@ -278,15 +280,15 @@ export const azureStorage = {
  * Note: For production, implement SAS token generation via API
  */
 export const azureBlobStorage = {
-  async uploadImage(fileName: string, data: Blob): Promise<string | null> {
+  async uploadImage(_fileName: string, _data: Blob): Promise<string | null> {
     // TODO: Implement via API with SAS tokens
-    console.warn('Blob upload not implemented in API mode')
+    logger.warn('Blob upload not implemented in API mode')
     return null
   },
 
-  async deleteImage(fileName: string): Promise<boolean> {
+  async deleteImage(_fileName: string): Promise<boolean> {
     // TODO: Implement via API with SAS tokens
-    console.warn('Blob delete not implemented in API mode')
+    logger.warn('Blob delete not implemented in API mode')
     return false
   },
 

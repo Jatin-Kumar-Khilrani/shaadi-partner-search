@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { initializeAzureServices, isAzureAvailable, azureStorage } from '@/lib/azureConfig'
+import { logger } from '@/lib/logger'
 
 /**
  * Custom useKV hook for persistent key-value storage
@@ -26,7 +27,7 @@ export function forceRefreshFromAzure(key: string) {
   // Clear localStorage first to ensure fresh data from Azure
   const storageKey = `${STORAGE_PREFIX}${key}`
   localStorage.removeItem(storageKey)
-  console.log(`[forceRefreshFromAzure] Cleared localStorage for "${key}"`)
+  logger.debug(`[forceRefreshFromAzure] Cleared localStorage for "${key}"`)
   emitForceRefresh(key)
 }
 
@@ -60,7 +61,7 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
       }
       return defaultValue
     } catch (error) {
-      console.warn(`Failed to parse stored value for key "${key}":`, error)
+      logger.warn(`Failed to parse stored value for key "${key}":`, error)
       return defaultValue
     }
   })
@@ -69,39 +70,39 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
   const loadFromAzure = useCallback(async (forceRefresh = false) => {
     // Skip if already loading
     if (isLoadingFromAzure.current && !forceRefresh) {
-      console.log(`[useKV] Already loading "${key}" from Azure, skipping...`)
+      logger.debug(`[useKV] Already loading "${key}" from Azure, skipping...`)
       return
     }
     
-    console.log(`[useKV] Loading "${key}" from Azure...`)
+    logger.debug(`[useKV] Loading "${key}" from Azure...`)
     isLoadingFromAzure.current = true
 
     try {
       await ensureAzureInitialized()
       
       if (isAzureAvailable()) {
-        console.log(`[useKV] Azure available, fetching "${key}"...`)
+        logger.debug(`[useKV] Azure available, fetching "${key}"...`)
         const azureValue = await azureStorage.get<{ data: T, updatedAt?: string }>(key)
-        console.log(`[useKV] Azure response for "${key}":`, azureValue)
+        logger.debug(`[useKV] Azure response for "${key}":`, azureValue)
         if (azureValue && azureValue.data !== undefined) {
-          console.log(`[useKV] Setting "${key}" data, count:`, Array.isArray(azureValue.data) ? azureValue.data.length : 'N/A')
+          logger.debug(`[useKV] Setting "${key}" data, count:`, Array.isArray(azureValue.data) ? azureValue.data.length : 'N/A')
           setValue(azureValue.data)
           // Sync to localStorage for faster subsequent loads
           localStorage.setItem(storageKey, JSON.stringify(azureValue.data))
         } else {
-          console.log(`[useKV] No data found in Azure for "${key}"`)
+          logger.debug(`[useKV] No data found in Azure for "${key}"`)
         }
         // Mark as loaded from Azure
         loadedFromAzure.add(key)
         setHasLoadedFromAzure(true)
       } else {
-        console.log(`[useKV] Azure not available for "${key}"`)
+        logger.debug(`[useKV] Azure not available for "${key}"`)
         // Still mark as "loaded" so we don't block operations
         loadedFromAzure.add(key)
         setHasLoadedFromAzure(true)
       }
     } catch (error) {
-      console.warn(`Failed to load from Azure for key "${key}":`, error)
+      logger.warn(`Failed to load from Azure for key "${key}":`, error)
       // Still mark as loaded to not block operations
       loadedFromAzure.add(key)
       setHasLoadedFromAzure(true)
@@ -139,7 +140,7 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
             setValue(JSON.parse(stored) as T)
           }
         } catch (error) {
-          console.warn(`Failed to sync value for key "${key}":`, error)
+          logger.warn(`Failed to sync value for key "${key}":`, error)
         }
       }
     }
@@ -155,7 +156,7 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
         try {
           setValue(JSON.parse(event.newValue) as T)
         } catch (error) {
-          console.warn(`Failed to parse storage event for key "${key}":`, error)
+          logger.warn(`Failed to parse storage event for key "${key}":`, error)
         }
       }
     }
@@ -175,20 +176,20 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (newValu
       try {
         localStorage.setItem(storageKey, JSON.stringify(resolvedValue))
         emitKVChange(key)
-        console.log(`[useKV] Saved "${key}" to localStorage, count:`, Array.isArray(resolvedValue) ? resolvedValue.length : 'N/A')
+        logger.debug(`[useKV] Saved "${key}" to localStorage, count:`, Array.isArray(resolvedValue) ? resolvedValue.length : 'N/A')
       } catch (error) {
-        console.error(`Failed to persist to localStorage for key "${key}":`, error)
+        logger.error(`Failed to persist to localStorage for key "${key}":`, error)
       }
       
       // Also save to Azure (async, in background)
       ensureAzureInitialized().then(() => {
         if (isAzureAvailable()) {
-          console.log(`[useKV] Saving "${key}" to Azure...`)
+          logger.debug(`[useKV] Saving "${key}" to Azure...`)
           azureStorage.set(key, { data: resolvedValue, updatedAt: new Date().toISOString() })
-            .then(() => console.log(`[useKV] ✅ Successfully saved "${key}" to Azure`))
-            .catch(error => console.warn(`[useKV] ❌ Failed to persist to Azure for key "${key}":`, error))
+            .then(() => logger.debug(`[useKV] ✅ Successfully saved "${key}" to Azure`))
+            .catch(error => logger.warn(`[useKV] ❌ Failed to persist to Azure for key "${key}":`, error))
         } else {
-          console.log(`[useKV] Azure not available, skipping Azure save for "${key}"`)
+          logger.debug(`[useKV] Azure not available, skipping Azure save for "${key}"`)
         }
       })
       
