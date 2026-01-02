@@ -52,6 +52,7 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
     optional: language === 'hi' ? 'वैकल्पिक' : 'Optional',
     select: language === 'hi' ? 'चुनें' : 'Select',
     any: language === 'hi' ? 'कोई भी' : 'Any',
+    selectCountryFirst: language === 'hi' ? 'पहले देश चुनें' : 'Select country first',
     male: language === 'hi' ? 'पुरुष' : 'Male',
     female: language === 'hi' ? 'महिला' : 'Female',
     searchButton: language === 'hi' ? 'खोजें' : 'Search',
@@ -101,8 +102,9 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="space-y-5">
+              {/* Row 1: Gender, Country, State */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="gender">{t.gender}</Label>
                   <Select onValueChange={(value: 'male' | 'female') => setFilters({ ...filters, gender: value })}>
@@ -136,28 +138,30 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
                   </Select>
                 </div>
 
-                {filters.country && filters.country !== 'any' && stateOptions.length > 0 && (
-                  <div className="space-y-2">
-                    <Label htmlFor="state">{t.state}</Label>
-                    <Select 
-                      value={filters.state || ''} 
-                      onValueChange={(value) => setFilters({ ...filters, state: value || undefined })}
-                    >
-                      <SelectTrigger id="state">
-                        <SelectValue placeholder={t.select} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="any">{t.any}</SelectItem>
-                        {stateOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="state">{t.state}</Label>
+                  <Select 
+                    value={filters.state || ''} 
+                    onValueChange={(value) => setFilters({ ...filters, state: value || undefined })}
+                    disabled={!filters.country || filters.country === 'any' || stateOptions.length === 0}
+                  >
+                    <SelectTrigger id="state">
+                      <SelectValue placeholder={filters.country && filters.country !== 'any' ? t.select : t.selectCountryFirst} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">{t.any}</SelectItem>
+                      {stateOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
+              {/* Row 2: Min Age, Max Age */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="age-min">{t.minAge}</Label>
                   <Input
@@ -183,7 +187,10 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
                     onChange={(e) => setFilters({ ...filters, ageMax: parseInt(e.target.value) || undefined })}
                   />
                 </div>
+              </div>
 
+              {/* Row 3: Religion, Mother Tongue, Caste */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="religion">{t.religion}</Label>
                   <Select 
