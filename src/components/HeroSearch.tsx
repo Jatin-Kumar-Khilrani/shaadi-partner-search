@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MagnifyingGlass, Heart, Users, ShieldCheck } from '@phosphor-icons/react'
 import { useState } from 'react'
 import type { SearchFilters } from '@/types/profile'
+import { COUNTRY_OPTIONS, getStateOptionsForCountries, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS } from '@/components/ui/multi-select'
 
 interface MembershipSettings {
   sixMonthPrice: number
@@ -41,13 +42,16 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
     searchTitle: language === 'hi' ? 'जीवनसाथी खोजें' : 'Find Life Partner',
     searchDesc: language === 'hi' ? 'सरल और सटीक खोज — अपने मानदंड भरें' : 'Simple and accurate search — fill your criteria',
     gender: language === 'hi' ? 'लिंग' : 'Gender',
-    location: language === 'hi' ? 'स्थान' : 'Location',
+    country: language === 'hi' ? 'देश' : 'Country',
+    state: language === 'hi' ? 'राज्य' : 'State',
     minAge: language === 'hi' ? 'न्यूनतम आयु' : 'Min Age',
     maxAge: language === 'hi' ? 'अधिकतम आयु' : 'Max Age',
     religion: language === 'hi' ? 'धर्म' : 'Religion',
+    motherTongue: language === 'hi' ? 'मातृभाषा' : 'Mother Tongue',
     caste: language === 'hi' ? 'जाति' : 'Caste',
     optional: language === 'hi' ? 'वैकल्पिक' : 'Optional',
     select: language === 'hi' ? 'चुनें' : 'Select',
+    any: language === 'hi' ? 'कोई भी' : 'Any',
     male: language === 'hi' ? 'पुरुष' : 'Male',
     female: language === 'hi' ? 'महिला' : 'Female',
     searchButton: language === 'hi' ? 'खोजें' : 'Search',
@@ -59,10 +63,11 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
     feature2Desc: language === 'hi' ? 'हर प्रोफ़ाइल AI और अनुभवी पेशेवरों द्वारा सत्यापित' : 'Every profile verified by AI and experienced professionals',
     feature3: language === 'hi' ? 'सभी समुदायों के लिए' : 'For All Communities',
     feature3Desc: language === 'hi' ? 'सभी धर्मों और समुदायों का स्वागत' : 'All religions and communities welcome',
-    locationPlaceholder: language === 'hi' ? 'शहर या देश' : 'City or Country',
-    religionPlaceholder: language === 'hi' ? 'उदाहरण: हिंदू, मुस्लिम, सिख, ईसाई' : 'Example: Hindu, Muslim, Sikh, Christian',
     castePlaceholder: language === 'hi' ? 'यदि ज्ञात हो' : 'If known',
   }
+
+  // Get state options based on selected country
+  const stateOptions = filters.country ? getStateOptionsForCountries([filters.country]) : []
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-primary/80">
@@ -112,14 +117,46 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="location">{t.location}</Label>
-                  <Input
-                    id="location"
-                    placeholder={t.locationPlaceholder}
-                    value={filters.location || ''}
-                    onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-                  />
+                  <Label htmlFor="country">{t.country}</Label>
+                  <Select 
+                    value={filters.country || ''} 
+                    onValueChange={(value) => setFilters({ ...filters, country: value || undefined, state: undefined })}
+                  >
+                    <SelectTrigger id="country">
+                      <SelectValue placeholder={t.select} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">{t.any}</SelectItem>
+                      {COUNTRY_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+
+                {filters.country && filters.country !== 'any' && stateOptions.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="state">{t.state}</Label>
+                    <Select 
+                      value={filters.state || ''} 
+                      onValueChange={(value) => setFilters({ ...filters, state: value || undefined })}
+                    >
+                      <SelectTrigger id="state">
+                        <SelectValue placeholder={t.select} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">{t.any}</SelectItem>
+                        {stateOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="age-min">{t.minAge}</Label>
@@ -149,12 +186,42 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
 
                 <div className="space-y-2">
                   <Label htmlFor="religion">{t.religion}</Label>
-                  <Input
-                    id="religion"
-                    placeholder={t.religionPlaceholder}
-                    value={filters.religion || ''}
-                    onChange={(e) => setFilters({ ...filters, religion: e.target.value })}
-                  />
+                  <Select 
+                    value={filters.religion || ''} 
+                    onValueChange={(value) => setFilters({ ...filters, religion: value === 'any' ? undefined : value })}
+                  >
+                    <SelectTrigger id="religion">
+                      <SelectValue placeholder={t.select} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">{t.any}</SelectItem>
+                      {RELIGION_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="motherTongue">{t.motherTongue}</Label>
+                  <Select 
+                    value={filters.motherTongue || ''} 
+                    onValueChange={(value) => setFilters({ ...filters, motherTongue: value === 'any' ? undefined : value })}
+                  >
+                    <SelectTrigger id="motherTongue">
+                      <SelectValue placeholder={t.select} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">{t.any}</SelectItem>
+                      {MOTHER_TONGUE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">

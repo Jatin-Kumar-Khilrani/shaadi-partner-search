@@ -193,6 +193,7 @@ export interface SearchFilters {
   ageMax?: number
   location?: string
   country?: string
+  state?: string
   religion?: string
   caste?: string
   community?: string
