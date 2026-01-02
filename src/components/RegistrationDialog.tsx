@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, ArrowDown, FloppyDisk, Sparkle, Warning, SpinnerGap, Gift, ShieldCheck, IdentificationCard, ArrowCounterClockwise, Upload } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -308,6 +309,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
   
+  // Custom city input when user selects "Other City"
+  const [customCity, setCustomCity] = useState('')
+  
   // Payment screenshot state for paid plans
   const [paymentScreenshotFile, setPaymentScreenshotFile] = useState<File | null>(null)
   const [paymentScreenshotPreview, setPaymentScreenshotPreview] = useState<string | null>(null)
@@ -383,6 +387,62 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     partnerAnnualIncomeMin: '',
     partnerAnnualIncomeMax: ''
   })
+
+  // Default values for fields that should have a pre-selected value
+  const defaultValues = {
+    disability: 'no' as DisabilityStatus,
+    horoscopeMatching: 'not-mandatory' as 'mandatory' | 'not-mandatory' | 'decide-later',
+    country: 'India',
+    partnerManglik: 'doesnt-matter' as 'yes' | 'no' | 'doesnt-matter'
+  }
+
+  // Helper function to get missing fields for each step
+  const getMissingFields = (stepNum: number): string[] => {
+    const missing: string[] = []
+    
+    if (stepNum === 1 && !isAdminMode) {
+      if (!(formData.fullName || '').trim()) missing.push(language === 'hi' ? 'पूरा नाम' : 'Full Name')
+      if (!formData.dateOfBirth) missing.push(language === 'hi' ? 'जन्म तिथि' : 'Date of Birth')
+      if (!formData.gender) missing.push(language === 'hi' ? 'लिंग' : 'Gender')
+      if (!(formData.religion || '').trim()) missing.push(language === 'hi' ? 'धर्म' : 'Religion')
+      if (!(formData.motherTongue || '').trim()) missing.push(language === 'hi' ? 'मातृभाषा' : 'Mother Tongue')
+      if (!formData.height) missing.push(language === 'hi' ? 'ऊंचाई' : 'Height')
+      if (!formData.maritalStatus) missing.push(language === 'hi' ? 'वैवाहिक स्थिति' : 'Marital Status')
+      if (!formData.profileCreatedFor) missing.push(language === 'hi' ? 'प्रोफ़ाइल किसके लिए' : 'Profile Created For')
+      if (formData.profileCreatedFor === 'Other' && !(formData.otherRelation || '').trim()) {
+        missing.push(language === 'hi' ? 'अन्य संबंध विवरण' : 'Other Relation Details')
+      }
+      if ((formData.horoscopeMatching || 'not-mandatory') === 'mandatory') {
+        if (!formData.birthTime) missing.push(language === 'hi' ? 'जन्म समय' : 'Birth Time')
+        if (!formData.birthPlace) missing.push(language === 'hi' ? 'जन्म स्थान' : 'Birth Place')
+      }
+      if (!formData.disability) missing.push(language === 'hi' ? 'दिव्यांग स्थिति' : 'Differently Abled')
+    } else if (stepNum === 1 && isAdminMode) {
+      if (!(formData.fullName || '').trim()) missing.push(language === 'hi' ? 'पूरा नाम' : 'Full Name')
+      if (!formData.gender) missing.push(language === 'hi' ? 'लिंग' : 'Gender')
+    } else if (stepNum === 2 && !isAdminMode) {
+      if (!formData.education) missing.push(language === 'hi' ? 'शिक्षा' : 'Education')
+      if (!formData.occupation) missing.push(language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status')
+    } else if (stepNum === 3 && !isAdminMode) {
+      if (!formData.location || formData.location === '__other__') missing.push(language === 'hi' ? 'शहर' : 'City')
+      if (!formData.state) missing.push(language === 'hi' ? 'राज्य/प्रांत' : 'State/Province')
+      if (!formData.country) missing.push(language === 'hi' ? 'देश' : 'Country')
+      if (!formData.email) missing.push(language === 'hi' ? 'ईमेल' : 'Email')
+      if (!formData.mobile) missing.push(language === 'hi' ? 'मोबाइल' : 'Mobile')
+      if (formData.country !== 'India' && !formData.residentialStatus) {
+        missing.push(language === 'hi' ? 'निवास स्थिति' : 'Residential Status')
+      }
+    } else if (stepNum === 4 && !isAdminMode) {
+      if (photos.length === 0) missing.push(language === 'hi' ? 'फोटो' : 'Photos')
+      if (!selfiePreview) missing.push(language === 'hi' ? 'सेल्फी' : 'Selfie')
+      if (!faceCoverageValid) missing.push(language === 'hi' ? 'चेहरा स्पष्ट नहीं' : 'Face not clear in selfie')
+      if (!isEditMode && !idProofPreview) missing.push(language === 'hi' ? 'पहचान प्रमाण' : 'ID Proof')
+    } else if (stepNum === 5 && !isAdminMode) {
+      if (!(formData.bio || '').trim()) missing.push(language === 'hi' ? 'परिचय' : 'About Me')
+    }
+    
+    return missing
+  }
 
   const STORAGE_KEY = 'registration_draft'
   const isEditMode = !!editProfile
@@ -496,7 +556,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       if (savedDraft) {
         const parsed = JSON.parse(savedDraft)
         if (parsed.formData) {
-          setFormData(prev => ({ ...prev, ...parsed.formData }))
+          // Merge draft with defaults - preserve default values if draft has empty/undefined values
+          setFormData(prev => {
+            const merged = { ...prev, ...parsed.formData }
+            // Ensure default values are preserved if draft has falsy values
+            if (!merged.disability) merged.disability = defaultValues.disability
+            if (!merged.horoscopeMatching) merged.horoscopeMatching = defaultValues.horoscopeMatching
+            if (!merged.country) merged.country = defaultValues.country
+            if (!merged.partnerManglik) merged.partnerManglik = defaultValues.partnerManglik
+            return merged
+          })
         }
         if (parsed.step) {
           setStep(parsed.step)
@@ -2296,6 +2365,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                             state: value,
                             location: '' // Clear city when state changes
                           }))
+                          setCustomCity('') // Also clear custom city
                         }}
                       >
                         <SelectTrigger className="w-full">
@@ -2320,6 +2390,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                             state: e.target.value,
                             location: '' // Clear city when state changes
                           }))
+                          setCustomCity('') // Also clear custom city
                         }}
                         required
                       />
@@ -2331,7 +2402,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     {formData.state && getCitiesForState(formData.state).length > 0 ? (
                       <Select 
                         value={formData.location || ''} 
-                        onValueChange={(value) => updateField('location', value)}
+                        onValueChange={(value) => {
+                          updateField('location', value)
+                          // Clear customCity when selecting a predefined city
+                          if (value !== '__other__') {
+                            setCustomCity('')
+                          }
+                        }}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder={language === 'hi' ? 'शहर चुनें' : 'Select City'} />
@@ -2361,13 +2438,17 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       <Input
                         id="location-other"
                         placeholder={language === 'hi' ? 'अपना शहर दर्ज करें' : 'Enter your city'}
-                        className="mt-2"
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            updateField('location', e.target.value)
+                        className="mt-2 border-primary"
+                        value={customCity}
+                        onChange={(e) => setCustomCity(e.target.value)}
+                        onBlur={() => {
+                          // When user finishes typing, update the location if they entered something
+                          if (customCity.trim()) {
+                            updateField('location', customCity.trim())
                           }
                         }}
                         autoFocus
+                        required
                       />
                     )}
                   </div>
@@ -4039,6 +4120,19 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         </Card>
         </div>
 
+        {/* Missing Fields Feedback */}
+        {step <= 5 && !showVerification && getMissingFields(step).length > 0 && (
+          <div className="px-1 pb-2">
+            <p className="text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1">
+              <Warning size={14} className="mt-0.5 flex-shrink-0" />
+              <span>
+                {language === 'hi' ? 'कृपया भरें: ' : 'Please fill: '}
+                <span className="font-medium">{getMissingFields(step).join(', ')}</span>
+              </span>
+            </p>
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t min-h-[60px] flex-shrink-0">
           <div className="flex items-center gap-2 flex-shrink-0">
             {step > 1 && !showVerification && (
@@ -4110,6 +4204,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   (step === 2 && !isAdminMode && (!formData.education || !formData.occupation)) ||
                   (step === 3 && !isAdminMode && (
                     !formData.location || 
+                    formData.location === '__other__' ||
                     !formData.state || 
                     !formData.country || 
                     !formData.email || 

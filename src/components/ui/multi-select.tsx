@@ -88,6 +88,7 @@ export function MultiSelect({
       onValueChange([]) // Deselect "any"
     } else {
       onValueChange(['any']) // Select "any" and clear all other selections
+      setOpen(false) // Close the popover when "Any" is selected
     }
   }
 
@@ -100,6 +101,7 @@ export function MultiSelect({
   }
 
   const handleRemove = (optionValue: string, e: React.MouseEvent) => {
+    e.preventDefault()
     e.stopPropagation()
     onValueChange(value.filter((v) => v !== optionValue))
   }
@@ -133,7 +135,8 @@ export function MultiSelect({
                 <X
                   size={12}
                   className="cursor-pointer hover:text-destructive"
-                  onClick={(e) => { e.stopPropagation(); onValueChange([]); }}
+                  onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onValueChange([]); }}
                 />
               </Badge>
             ) : selectedOptions.length > 0 ? (
@@ -148,6 +151,7 @@ export function MultiSelect({
                     <X
                       size={12}
                       className="cursor-pointer hover:text-destructive"
+                      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                       onClick={(e) => handleRemove(option.value, e)}
                     />
                   </Badge>
