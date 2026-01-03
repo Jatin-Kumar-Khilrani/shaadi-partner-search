@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useKV } from '@/hooks/useKV'
 import { logger } from '@/lib/logger'
+import { sanitizeChatMessage } from '@/lib/validation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -189,6 +190,16 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       ? 'एडमिन को सूचित कर दिया गया है और वे उचित कार्रवाई करेंगे।' 
       : 'Admin has been notified and will take appropriate action.',
     blockedUser: language === 'hi' ? 'यह प्रोफाइल ब्लॉक है' : 'This profile is blocked',
+    // Phone number filter translations
+    phoneNumberBlocked: language === 'hi' 
+      ? 'मोबाइल नंबर शेयर करना प्रतिबंधित है' 
+      : 'Sharing mobile numbers is not allowed',
+    useContactRequest: language === 'hi'
+      ? 'कृपया कॉन्टैक्ट रिक्वेस्ट का उपयोग करें'
+      : 'Please use Contact Request feature',
+    phoneNumberMasked: language === 'hi'
+      ? 'आपके संदेश में मोबाइल नंबर छुपा दिया गया है'
+      : 'Mobile number in your message has been masked',
   }
 
   const getOtherProfileIdFromConversation = (conversationId: string): string | null => {
@@ -624,6 +635,27 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     // Check if this is admin chat (always allowed for all users - free feature)
     const isAdminChat = selectedConversation.startsWith('admin-')
 
+    // Filter phone numbers for user-to-user chats (not admin chats)
+    let finalMessage = messageInput.trim()
+    if (!isAdmin && !isAdminChat) {
+      const sanitizeResult = sanitizeChatMessage(messageInput, {
+        allowPhoneNumbers: false,
+        isAdminChat: false,
+        language: language === 'hi' ? 'hi' : 'en'
+      })
+
+      if (sanitizeResult.originalContainedPhone) {
+        // Show warning toast
+        toast.warning(t.phoneNumberBlocked, {
+          description: t.useContactRequest,
+          duration: 5000,
+        })
+        // Use the masked message
+        finalMessage = sanitizeResult.sanitized
+        logger.info('[Chat] Phone number detected and masked in message')
+      }
+    }
+
     if (!isAdmin && selectedConversation.includes('-') && !isAdminChat) {
       const otherProfileId = getOtherProfileIdFromConversation(selectedConversation)
       if (otherProfileId && !canChatWith(otherProfileId)) {
@@ -692,7 +724,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       fromUserId: isAdmin ? 'admin' : currentUserProfile!.id,
       fromProfileId: isAdmin ? 'admin' : currentUserProfile!.profileId,
       toProfileId: '',
-      message: messageInput,
+      message: finalMessage,
       timestamp: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       read: false,

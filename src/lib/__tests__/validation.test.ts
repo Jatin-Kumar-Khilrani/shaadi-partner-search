@@ -14,6 +14,9 @@ import {
   generateProfileId,
   isValidProfileId,
   calculateBasicMatchScore,
+  containsPhoneNumber,
+  maskPhoneNumbers,
+  sanitizeChatMessage,
 } from '../validation'
 
 describe('Email Validation', () => {
@@ -326,5 +329,104 @@ describe('Match Score Calculation', () => {
     const score = calculateBasicMatchScore(baseProfile, preferences)
     expect(score).toBeGreaterThan(60)
     expect(score).toBeLessThan(70)
+  })
+})
+
+describe('Phone Number Filter', () => {
+  describe('containsPhoneNumber', () => {
+    it('should detect plain 10-digit Indian mobile numbers', () => {
+      expect(containsPhoneNumber('Call me at 9828585300').detected).toBe(true)
+      expect(containsPhoneNumber('My number is 8765432109').detected).toBe(true)
+      expect(containsPhoneNumber('Reach me on 7890123456').detected).toBe(true)
+      expect(containsPhoneNumber('Contact 6123456789').detected).toBe(true)
+    })
+
+    it('should detect numbers with separators (dash, space, dot)', () => {
+      expect(containsPhoneNumber('982-858-5300').detected).toBe(true)
+      expect(containsPhoneNumber('982 8585 300').detected).toBe(true)
+      expect(containsPhoneNumber('982.8585.300').detected).toBe(true)
+      expect(containsPhoneNumber('98-2858-5300').detected).toBe(true)
+    })
+
+    it('should detect numbers with country code', () => {
+      expect(containsPhoneNumber('+91-9828585300').detected).toBe(true)
+      expect(containsPhoneNumber('+91 982 8585 300').detected).toBe(true)
+      expect(containsPhoneNumber('91-9828585300').detected).toBe(true)
+    })
+
+    it('should detect spaced-out digits', () => {
+      expect(containsPhoneNumber('9 8 2 8 5 8 5 3 0 0').detected).toBe(true)
+    })
+
+    it('should detect phone keywords with numbers', () => {
+      expect(containsPhoneNumber('call me at 98285853').detected).toBe(true)
+      expect(containsPhoneNumber('whatsapp me 9828585300').detected).toBe(true)
+      expect(containsPhoneNumber('contact number: 9828585300').detected).toBe(true)
+    })
+
+    it('should detect partially obfuscated numbers', () => {
+      expect(containsPhoneNumber('98XXXX5300').detected).toBe(true)
+      expect(containsPhoneNumber('98*****300').detected).toBe(true)
+    })
+
+    it('should NOT detect non-phone numbers', () => {
+      expect(containsPhoneNumber('Hello how are you').detected).toBe(false)
+      expect(containsPhoneNumber('Meeting at 3pm tomorrow').detected).toBe(false)
+      expect(containsPhoneNumber('Born in 1995').detected).toBe(false)
+      expect(containsPhoneNumber('PIN code 110001').detected).toBe(false)
+    })
+
+    it('should NOT detect numbers starting with 0-5', () => {
+      expect(containsPhoneNumber('1234567890').detected).toBe(false)
+      expect(containsPhoneNumber('5555555555').detected).toBe(false)
+    })
+  })
+
+  describe('maskPhoneNumbers', () => {
+    it('should mask plain phone numbers', () => {
+      expect(maskPhoneNumbers('Call me at 9828585300')).toBe('Call me at **********')
+    })
+
+    it('should mask numbers with separators', () => {
+      expect(maskPhoneNumbers('982-8585-300')).toBe('**********')
+      expect(maskPhoneNumbers('My number: 982 8585 300')).toBe('My number: **********')
+    })
+
+    it('should mask spaced digits', () => {
+      expect(maskPhoneNumbers('9 8 2 8 5 8 5 3 0 0')).toBe('**********')
+    })
+
+    it('should NOT mask non-phone content', () => {
+      expect(maskPhoneNumbers('Hello how are you')).toBe('Hello how are you')
+      expect(maskPhoneNumbers('Born in 1995')).toBe('Born in 1995')
+    })
+  })
+
+  describe('sanitizeChatMessage', () => {
+    it('should sanitize and warn when phone detected', () => {
+      const result = sanitizeChatMessage('My number is 9828585300')
+      expect(result.originalContainedPhone).toBe(true)
+      expect(result.sanitized).toContain('*')
+      expect(result.blocked).toBe(false)
+    })
+
+    it('should skip filtering for admin chats', () => {
+      const result = sanitizeChatMessage('My number is 9828585300', { isAdminChat: true })
+      expect(result.originalContainedPhone).toBe(false)
+      expect(result.sanitized).toBe('My number is 9828585300')
+    })
+
+    it('should skip filtering when allowPhoneNumbers is true', () => {
+      const result = sanitizeChatMessage('My number is 9828585300', { allowPhoneNumbers: true })
+      expect(result.originalContainedPhone).toBe(false)
+      expect(result.sanitized).toBe('My number is 9828585300')
+    })
+
+    it('should return proper message when no phone detected', () => {
+      const result = sanitizeChatMessage('Hello, nice to meet you!')
+      expect(result.originalContainedPhone).toBe(false)
+      expect(result.sanitized).toBe('Hello, nice to meet you!')
+      expect(result.warning).toBe(null)
+    })
   })
 })

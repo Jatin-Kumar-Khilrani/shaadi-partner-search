@@ -330,3 +330,311 @@ export function calculateBasicMatchScore(
   if (weightTotal === 0) return 100 // No preferences = everyone matches
   return Math.round((score / weightTotal) * 100)
 }
+
+/**
+ * Phone Number Filter for Chat
+ * Detects and masks phone numbers in various formats to prevent users from sharing contact info
+ * This is used in matrimonial apps to enforce the contact request workflow
+ */
+
+// Number words mapping (English)
+const ENGLISH_NUMBER_WORDS: Record<string, string> = {
+  'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+  'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
+  'ten': '10', 'o': '0', 'oh': '0',
+}
+
+// Number words mapping (Hindi transliterated)
+const HINDI_NUMBER_WORDS: Record<string, string> = {
+  'ek': '1', 'do': '2', 'teen': '3', 'char': '4', 'paanch': '5', 'panch': '5',
+  'chhe': '6', 'che': '6', 'saat': '7', 'sat': '7', 'aath': '8', 'ath': '8',
+  'nau': '9', 'shunya': '0', 'shuny': '0',
+  // Alternative spellings
+  'eak': '1', 'dho': '2', 'tiin': '3', 'chaar': '4', 'paach': '5',
+  'chhah': '6', 'saath': '7', 'aathh': '8', 'nao': '9',
+  // Phonetic variations
+  'aik': '1', 'doo': '2', 'theen': '3', 'chhar': '4', 'pach': '5',
+  'cheh': '6', 'sath': '7', 'aatth': '8', 'nou': '9',
+}
+
+// Combined number words
+const ALL_NUMBER_WORDS: Record<string, string> = {
+  ...ENGLISH_NUMBER_WORDS,
+  ...HINDI_NUMBER_WORDS,
+}
+
+/**
+ * Convert a string with number words to digits
+ * e.g., "nine eight two" -> "982"
+ */
+function convertNumberWordsToDigits(text: string): string {
+  let result = text.toLowerCase()
+  
+  // Sort by length (longest first) to avoid partial replacements
+  const sortedWords = Object.keys(ALL_NUMBER_WORDS).sort((a, b) => b.length - a.length)
+  
+  for (const word of sortedWords) {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi')
+    result = result.replace(regex, ALL_NUMBER_WORDS[word])
+  }
+  
+  return result
+}
+
+/**
+ * Extract digits from text, removing separators
+ * e.g., "982-8585-300" -> "9828585300"
+ */
+function extractDigitsOnly(text: string): string {
+  return text.replace(/\D/g, '')
+}
+
+/**
+ * Check if a string contains a potential phone number pattern
+ * Returns true if it looks like someone is trying to share a phone number
+ */
+export function containsPhoneNumber(message: string): {
+  detected: boolean
+  patterns: string[]
+  reason: string
+} {
+  const patterns: string[] = []
+  let detected = false
+  let reason = ''
+
+  // 1. Direct 10+ digit sequences (with or without separators)
+  // Matches: 9828585300, 982-8585-300, 982 8585 300, 982.8585.300, +91-9828585300
+  const phoneWithSeparators = /(?:\+?\d{1,3}[-.\s]?)?\d{3,5}[-.\s]?\d{3,5}[-.\s]?\d{2,5}/g
+  const separatorMatches = message.match(phoneWithSeparators)
+  if (separatorMatches) {
+    for (const match of separatorMatches) {
+      const digits = extractDigitsOnly(match)
+      // Indian mobile numbers are 10 digits, with country code it's 12-13
+      if (digits.length >= 10 && digits.length <= 13) {
+        // Check if it starts with valid Indian mobile prefix (6-9)
+        const checkDigits = digits.length > 10 ? digits.slice(-10) : digits
+        if (/^[6-9]/.test(checkDigits)) {
+          patterns.push(match)
+          detected = true
+          reason = 'Phone number with separators detected'
+        }
+      }
+    }
+  }
+
+  // 2. Spaced out digits: 9 8 2 8 5 8 5 3 0 0
+  const spacedDigits = /(?:\d\s+){9,}\d/g
+  const spacedMatches = message.match(spacedDigits)
+  if (spacedMatches) {
+    for (const match of spacedMatches) {
+      const digits = extractDigitsOnly(match)
+      if (digits.length >= 10) {
+        patterns.push(match)
+        detected = true
+        reason = 'Spaced-out phone number detected'
+      }
+    }
+  }
+
+  // 3. Number words (English/Hindi): "nine eight two eight five eight five three zero zero"
+  // Convert words to digits, remove spaces, then check for sequences
+  const convertedText = convertNumberWordsToDigits(message)
+  const convertedNoSpaces = convertedText.replace(/\s+/g, '')
+  const convertedDigits = extractDigitsOnly(convertedNoSpaces)
+  
+  // Check if we have 10+ consecutive digits after conversion
+  if (convertedDigits.length >= 10 && !detected) {
+    // Look for valid Indian mobile number pattern (starts with 6-9)
+    for (let i = 0; i <= convertedDigits.length - 10; i++) {
+      const seq = convertedDigits.substring(i, i + 10)
+      if (/^[6-9]/.test(seq)) {
+        patterns.push(`Number words detected: ${seq}`)
+        detected = true
+        reason = 'Phone number written in words detected'
+        break
+      }
+    }
+  }
+
+  // 4. Mixed patterns: "98two8585300" or "9 8 two 8 5 8 5 3 0 0"
+  // First convert words to digits, then extract all digits
+  const mixedConverted = convertNumberWordsToDigits(message.replace(/\s+/g, ''))
+  const mixedDigits = extractDigitsOnly(mixedConverted)
+  if (mixedDigits.length >= 10 && !detected) {
+    // Check for a 10-digit sequence starting with 6-9
+    for (let i = 0; i <= mixedDigits.length - 10; i++) {
+      const substring = mixedDigits.substring(i, i + 10)
+      if (/^[6-9]/.test(substring)) {
+        // Verify this isn't just random numbers (e.g., birth date + random)
+        // by checking if it forms a valid mobile pattern
+        patterns.push(`Mixed pattern: ${substring}`)
+        detected = true
+        reason = 'Mixed number pattern detected'
+        break
+      }
+    }
+  }
+
+  // 5. Partially obfuscated: "call me at 98XXXXXXXX" or "whatsapp 98*****300"
+  const obfuscatedPattern = /(?:\d{2,}[xX*]+\d{2,})|(?:\d+[xX*]{3,}\d+)/gi
+  const obfuscatedMatches = message.match(obfuscatedPattern)
+  if (obfuscatedMatches) {
+    patterns.push(...obfuscatedMatches)
+    detected = true
+    reason = 'Partially hidden phone number detected'
+  }
+
+  // 6. Check for keywords + numbers combo
+  const phoneKeywords = /(?:call|phone|mobile|number|whatsapp|contact|reach|msg|message|dial)\s*(?:me\s*)?(?:at|on|@)?\s*:?\s*[\d\s\-.()]{8,}/gi
+  const keywordMatches = message.match(phoneKeywords)
+  if (keywordMatches) {
+    for (const match of keywordMatches) {
+      const digits = extractDigitsOnly(match)
+      if (digits.length >= 8) {
+        patterns.push(match)
+        detected = true
+        reason = 'Phone number with keyword detected'
+      }
+    }
+  }
+
+  return { detected, patterns, reason }
+}
+
+/**
+ * Mask phone numbers in a message
+ * Replaces detected phone numbers with asterisks
+ */
+export function maskPhoneNumbers(message: string): string {
+  let masked = message
+
+  // 1. Mask direct phone patterns with separators
+  masked = masked.replace(
+    /(?:\+?\d{1,3}[-.\s]?)?\d{3,5}[-.\s]?\d{3,5}[-.\s]?\d{2,5}/g,
+    (match) => {
+      const digits = extractDigitsOnly(match)
+      if (digits.length >= 10 && digits.length <= 13) {
+        const checkDigits = digits.length > 10 ? digits.slice(-10) : digits
+        if (/^[6-9]/.test(checkDigits)) {
+          return '**********'
+        }
+      }
+      return match
+    }
+  )
+
+  // 2. Mask spaced out digits
+  masked = masked.replace(
+    /(?:\d\s+){9,}\d/g,
+    '**********'
+  )
+
+  // 3. Mask number words (convert and check, then mask original)
+  // This is tricky - we need to find sequences of number words
+  
+  // Find all positions of number words
+  const wordMatches: { start: number; end: number; value: string }[] = []
+  let wordMatch
+  const tempText = message.toLowerCase()
+  const numberWordRegex = new RegExp(
+    `\\b(${Object.keys(ALL_NUMBER_WORDS).join('|')})\\b`,
+    'gi'
+  )
+  
+  while ((wordMatch = numberWordRegex.exec(tempText)) !== null) {
+    wordMatches.push({
+      start: wordMatch.index,
+      end: wordMatch.index + wordMatch[0].length,
+      value: ALL_NUMBER_WORDS[wordMatch[0].toLowerCase()] || wordMatch[0]
+    })
+  }
+
+  // Check for consecutive number words (with allowed gaps)
+  if (wordMatches.length >= 8) {
+    // Group consecutive matches (within 10 chars of each other)
+    const groups: typeof wordMatches[] = []
+    let currentGroup: typeof wordMatches = []
+    
+    for (let i = 0; i < wordMatches.length; i++) {
+      if (currentGroup.length === 0) {
+        currentGroup.push(wordMatches[i])
+      } else {
+        const lastMatch = currentGroup[currentGroup.length - 1]
+        if (wordMatches[i].start - lastMatch.end <= 10) {
+          currentGroup.push(wordMatches[i])
+        } else {
+          if (currentGroup.length >= 8) groups.push(currentGroup)
+          currentGroup = [wordMatches[i]]
+        }
+      }
+    }
+    if (currentGroup.length >= 8) groups.push(currentGroup)
+
+    // Mask groups that form phone numbers
+    for (const group of groups) {
+      const digits = group.map(m => m.value).join('')
+      if (/^[6-9]/.test(digits) && digits.length >= 10) {
+        // Replace the entire span with asterisks
+        const start = group[0].start
+        const end = group[group.length - 1].end
+        const originalSpan = message.substring(start, end)
+        masked = masked.replace(originalSpan, '**********')
+      }
+    }
+  }
+
+  return masked
+}
+
+/**
+ * Validate and sanitize chat message
+ * Returns sanitized message or null if message should be blocked entirely
+ */
+export function sanitizeChatMessage(
+  message: string,
+  options: {
+    allowPhoneNumbers?: boolean
+    isAdminChat?: boolean
+    language?: 'en' | 'hi'
+  } = {}
+): {
+  sanitized: string
+  blocked: boolean
+  warning: string | null
+  originalContainedPhone: boolean
+} {
+  const { allowPhoneNumbers = false, isAdminChat = false, language = 'en' } = options
+
+  // Admin chats are not filtered
+  if (isAdminChat || allowPhoneNumbers) {
+    return {
+      sanitized: message,
+      blocked: false,
+      warning: null,
+      originalContainedPhone: false
+    }
+  }
+
+  const detection = containsPhoneNumber(message)
+  
+  if (detection.detected) {
+    const maskedMessage = maskPhoneNumbers(message)
+    const warning = language === 'hi'
+      ? 'मोबाइल नंबर शेयर करना प्रतिबंधित है। कृपया कॉन्टैक्ट रिक्वेस्ट का उपयोग करें।'
+      : 'Sharing mobile numbers is not allowed. Please use Contact Request feature.'
+
+    return {
+      sanitized: maskedMessage,
+      blocked: false, // We mask instead of blocking
+      warning,
+      originalContainedPhone: true
+    }
+  }
+
+  return {
+    sanitized: message,
+    blocked: false,
+    warning: null,
+    originalContainedPhone: false
+  }
+}
