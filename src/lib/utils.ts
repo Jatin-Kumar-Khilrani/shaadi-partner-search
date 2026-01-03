@@ -14,15 +14,21 @@ export function formatEducation(value: string | undefined, language: 'hi' | 'en'
     '10th': { hi: '10वीं पास', en: '10th Pass' },
     '12th': { hi: '12वीं पास', en: '12th Pass' },
     'diploma': { hi: 'डिप्लोमा', en: 'Diploma' },
-    'graduate': { hi: 'स्नातक (B.A./B.Sc/B.Com)', en: 'Graduate (B.A./B.Sc/B.Com)' },
+    'graduate': { hi: 'स्नातक', en: 'Graduate' },
     'btech-be': { hi: 'बी.टेक/बी.ई.', en: 'B.Tech/B.E.' },
     'bba': { hi: 'बीबीए', en: 'BBA' },
     'bca': { hi: 'बीसीए', en: 'BCA' },
+    'bsc': { hi: 'बी.एससी', en: 'B.Sc' },
+    'bcom': { hi: 'बी.कॉम', en: 'B.Com' },
+    'ba': { hi: 'बी.ए.', en: 'B.A.' },
     'llb': { hi: 'एलएलबी', en: 'LLB' },
-    'post-graduate': { hi: 'परास्नातक (M.A./M.Sc/M.Com)', en: 'Post Graduate (M.A./M.Sc/M.Com)' },
+    'post-graduate': { hi: 'परास्नातक', en: 'Post Graduate' },
     'mtech-me': { hi: 'एम.टेक/एम.ई.', en: 'M.Tech/M.E.' },
     'mba': { hi: 'एमबीए', en: 'MBA' },
     'mca': { hi: 'एमसीए', en: 'MCA' },
+    'msc': { hi: 'एम.एससी', en: 'M.Sc' },
+    'mcom': { hi: 'एम.कॉम', en: 'M.Com' },
+    'ma': { hi: 'एम.ए.', en: 'M.A.' },
     'llm': { hi: 'एलएलएम', en: 'LLM' },
     'phd': { hi: 'पीएचडी', en: 'PhD/Doctorate' },
     'mbbs': { hi: 'एमबीबीएस', en: 'MBBS' },
@@ -39,6 +45,22 @@ export function formatEducation(value: string | undefined, language: 'hi' | 'en'
   }
   const label = educationLabels[value]
   return label ? label[language] : value
+}
+
+/**
+ * Format an array of education values to human-readable labels
+ */
+export function formatEducationArray(values: string[] | undefined, language: 'hi' | 'en' = 'en'): string {
+  if (!values || values.length === 0) return language === 'hi' ? 'कोई भी' : 'Any'
+  return values.map(v => formatEducation(v, language)).join(', ')
+}
+
+/**
+ * Format an array of occupation values to human-readable labels
+ */
+export function formatOccupationArray(values: string[] | undefined, language: 'hi' | 'en' = 'en'): string {
+  if (!values || values.length === 0) return language === 'hi' ? 'कोई भी' : 'Any'
+  return values.map(v => formatOccupation(v, language)).join(', ')
 }
 
 /**

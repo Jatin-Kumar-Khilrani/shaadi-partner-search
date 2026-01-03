@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import QRCode from 'qrcode'
 import { logger } from '@/lib/logger'
 import type { Profile } from '@/types/profile'
-import { formatDateDDMMYYYY } from '@/lib/utils'
+import { formatDateDDMMYYYY, formatEducation, formatOccupation, formatEducationArray, formatOccupationArray } from '@/lib/utils'
 
 interface BiodataGeneratorProps {
   profile: Profile
@@ -438,7 +438,7 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
       
       // Education & Career Section
       drawSectionHeader(t.educationCareer)
-      drawFieldRow(t.education, profile.education, t.occupation, profile.occupation)
+      drawFieldRow(t.education, formatEducation(profile.education, language), t.occupation, formatOccupation(profile.occupation, language))
       if (profile.position) {
         drawFieldRow(t.position, profile.position)
       }
@@ -530,7 +530,7 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
         }
         // Education
         if (pp.education && pp.education.length > 0 && yPos < canvas.height - 150) {
-          drawFieldRow(t.preferredEducation, formatArrayValues(pp.education))
+          drawFieldRow(t.preferredEducation, formatEducationArray(pp.education, language))
         }
         // Religion & Caste
         if ((pp.religion && pp.religion.length > 0) || (pp.caste && pp.caste.length > 0)) {
@@ -910,8 +910,8 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
                 </CardHeader>
                 <CardContent className="py-2">
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><span className="font-semibold text-gray-600">{t.education}:</span> {profile.education}</div>
-                    <div><span className="font-semibold text-gray-600">{t.occupation}:</span> {profile.occupation}</div>
+                    <div><span className="font-semibold text-gray-600">{t.education}:</span> {formatEducation(profile.education, language)}</div>
+                    <div><span className="font-semibold text-gray-600">{t.occupation}:</span> {formatOccupation(profile.occupation, language)}</div>
                     {profile.position && <div><span className="font-semibold text-gray-600">{t.position}:</span> {profile.position}</div>}
                     {profile.salary && <div><span className="font-semibold text-gray-600">{t.salary}:</span> {profile.salary}</div>}
                   </div>
@@ -1056,14 +1056,14 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
                       {profile.partnerPreferences?.education && profile.partnerPreferences.education.length > 0 && (
                         <div className="col-span-2">
                           <span className="font-semibold text-gray-600">{t.preferredEducation}:</span>{' '}
-                          {formatArrayValues(profile.partnerPreferences.education)}
+                          {formatEducationArray(profile.partnerPreferences.education, language)}
                         </div>
                       )}
                       {/* Occupation */}
                       {profile.partnerPreferences?.occupation && profile.partnerPreferences.occupation.length > 0 && (
                         <div className="col-span-2">
                           <span className="font-semibold text-gray-600">{t.preferredOccupation}:</span>{' '}
-                          {formatArrayValues(profile.partnerPreferences.occupation)}
+                          {formatOccupationArray(profile.partnerPreferences.occupation, language)}
                         </div>
                       )}
                       {/* Location/Country */}

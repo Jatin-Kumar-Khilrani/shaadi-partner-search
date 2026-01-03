@@ -876,13 +876,13 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                   <InfoItem 
                     icon={<GraduationCap size={18} />} 
                     label={t.preferredEducation} 
-                    value={formatPreferenceValue(profile.partnerPreferences.education)} 
+                    value={formatPreferenceValue(profile.partnerPreferences.education, v => formatEducation(v, language))} 
                   />
                   {/* Occupation Preference */}
                   <InfoItem 
                     icon={<Briefcase size={18} />} 
                     label={t.preferredOccupation} 
-                    value={formatPreferenceValue(profile.partnerPreferences.occupation)} 
+                    value={formatPreferenceValue(profile.partnerPreferences.occupation, v => formatOccupation(v, language))} 
                   />
                   {/* Employment Status Preference */}
                   <InfoItem 
