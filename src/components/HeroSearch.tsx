@@ -44,8 +44,8 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
     gender: language === 'hi' ? 'लिंग' : 'Gender',
     country: language === 'hi' ? 'देश' : 'Country',
     state: language === 'hi' ? 'राज्य' : 'State',
-    minAge: language === 'hi' ? 'न्यूनतम आयु' : 'Min Age',
-    maxAge: language === 'hi' ? 'अधिकतम आयु' : 'Max Age',
+    age: language === 'hi' ? 'आयु' : 'Age',
+    to: language === 'hi' ? 'से' : 'to',
     religion: language === 'hi' ? 'धर्म' : 'Religion',
     motherTongue: language === 'hi' ? 'मातृभाषा' : 'Mother Tongue',
     caste: language === 'hi' ? 'जाति' : 'Caste',
@@ -160,37 +160,41 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
                 </div>
               </div>
 
-              {/* Row 2: Min Age, Max Age */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="age-min">{t.minAge}</Label>
-                  <Input
-                    id="age-min"
-                    type="number"
-                    placeholder="21"
-                    min="18"
-                    max="80"
-                    value={filters.ageMin || ''}
-                    onChange={(e) => setFilters({ ...filters, ageMin: parseInt(e.target.value) || undefined })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="age-max">{t.maxAge}</Label>
-                  <Input
-                    id="age-max"
-                    type="number"
-                    placeholder="35"
-                    min="18"
-                    max="80"
-                    value={filters.ageMax || ''}
-                    onChange={(e) => setFilters({ ...filters, ageMax: parseInt(e.target.value) || undefined })}
-                  />
-                </div>
-              </div>
-
-              {/* Row 3: Religion, Mother Tongue, Caste */}
+              {/* Row 2: Age Range (compact inline), Religion, Mother Tongue */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>{t.age}</Label>
+                  <div className="flex items-center gap-2">
+                    <Select 
+                      value={filters.ageMin?.toString() || ''} 
+                      onValueChange={(value) => setFilters({ ...filters, ageMin: parseInt(value) || undefined })}
+                    >
+                      <SelectTrigger className="w-[75px]">
+                        <SelectValue placeholder="21" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 53 }, (_, i) => 18 + i).map((age) => (
+                          <SelectItem key={age} value={age.toString()}>{age}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-muted-foreground text-sm font-medium">{t.to}</span>
+                    <Select 
+                      value={filters.ageMax?.toString() || ''} 
+                      onValueChange={(value) => setFilters({ ...filters, ageMax: parseInt(value) || undefined })}
+                    >
+                      <SelectTrigger className="w-[75px]">
+                        <SelectValue placeholder="35" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 53 }, (_, i) => 18 + i).map((age) => (
+                          <SelectItem key={age} value={age.toString()}>{age}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="religion">{t.religion}</Label>
                   <Select 
@@ -230,7 +234,10 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
 
+              {/* Row 3: Caste (optional) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="caste">{t.caste} ({t.optional})</Label>
                   <Input
