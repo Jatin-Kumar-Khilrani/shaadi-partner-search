@@ -364,6 +364,18 @@ describe('Phone Number Filter', () => {
       expect(containsPhoneNumber('contact number: 9828585300').detected).toBe(true)
     })
 
+    it('should detect English number words', () => {
+      expect(containsPhoneNumber('nine eight two eight five eight five three zero zero').detected).toBe(true)
+      expect(containsPhoneNumber('my number is nine eight two eight five eight five three zero zero').detected).toBe(true)
+      expect(containsPhoneNumber('call me on six one two three four five six seven eight nine').detected).toBe(true)
+    })
+
+    it('should detect Hindi number words (transliterated)', () => {
+      expect(containsPhoneNumber('nau aath do aath paanch aath paanch teen shunya shunya').detected).toBe(true)
+      expect(containsPhoneNumber('ek do teen char paanch chhe saat aath nau shunya').detected).toBe(false) // starts with 1, not valid Indian mobile
+      expect(containsPhoneNumber('saat aath nau ek do teen char paanch chhe saat').detected).toBe(true) // starts with 7, valid
+    })
+
     it('should detect partially obfuscated numbers', () => {
       expect(containsPhoneNumber('98XXXX5300').detected).toBe(true)
       expect(containsPhoneNumber('98*****300').detected).toBe(true)
@@ -394,6 +406,18 @@ describe('Phone Number Filter', () => {
 
     it('should mask spaced digits', () => {
       expect(maskPhoneNumbers('9 8 2 8 5 8 5 3 0 0')).toBe('**********')
+    })
+
+    it('should mask English number words', () => {
+      const masked = maskPhoneNumbers('nine eight two eight five eight five three zero zero')
+      expect(masked).toContain('*')
+      expect(masked).not.toContain('nine')
+    })
+
+    it('should mask Hindi number words', () => {
+      const masked = maskPhoneNumbers('nau aath do aath paanch aath paanch teen shunya shunya')
+      expect(masked).toContain('*')
+      expect(masked).not.toContain('nau')
     })
 
     it('should NOT mask non-phone content', () => {
