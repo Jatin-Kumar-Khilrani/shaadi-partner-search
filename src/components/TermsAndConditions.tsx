@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { FileText, Shield, User, Scales, Lock, Warning, Envelope, Handshake, CurrencyInr, Calendar, Trash, Eye } from '@phosphor-icons/react'
+import { FileText, Shield, User, Scales, Lock, Warning, Envelope, Handshake, CurrencyInr, Calendar, Trash, Eye, Heart, ChatCircle } from '@phosphor-icons/react'
 import type { Language } from '@/lib/translations'
 
 interface MembershipSettings {
@@ -214,8 +214,81 @@ Refund Policy:
 • Refunds processed within 7-10 business days`
     },
     {
+      icon: <Heart size={24} weight="bold" className="text-primary" />,
+      title: isHindi ? '6. रुचि और संपर्क अनुरोध' : '6. Interest and Contact Requests',
+      content: isHindi
+        ? `रुचि अनुरोध (Interest Request):
+
+कैसे काम करता है:
+• रुचि भेजने वाला: अपनी रुचि व्यक्त करता है
+• रुचि प्राप्तकर्ता: स्वीकार या अस्वीकार कर सकता है
+• स्वीकृति पर: भेजने वाले का 1 चैट स्लॉट उपयोग होता है (प्राप्तकर्ता का नहीं)
+
+महत्वपूर्ण नियम:
+• लंबित अनुरोध: भेजने वाला कभी भी रद्द कर सकता है (कोई स्लॉट प्रभाव नहीं)
+• स्वीकृत अनुरोध: दोनों पक्ष कभी भी वापस ले सकते हैं (स्लॉट वापस मिलेगा)
+
+संपर्क अनुरोध (Contact Request):
+
+पूर्व-शर्त:
+• संपर्क अनुरोध भेजने पर स्वचालित रूप से रुचि अनुरोध भी भेजा जाता है
+• संपर्क स्वीकार करने से पहले रुचि स्वीकृत होनी चाहिए
+
+स्लॉट उपयोग:
+• संपर्क स्वीकृति पर: दोनों पक्षों का 1-1 संपर्क स्लॉट उपयोग होता है
+• (भेजने वाले का भी और प्राप्तकर्ता का भी)
+
+रद्द करना और वापस लेना:
+• लंबित संपर्क: भेजने वाला रद्द कर सकता है (कोई स्लॉट प्रभाव नहीं)
+• स्वीकृत संपर्क: दोनों पक्ष वापस ले सकते हैं (दोनों के स्लॉट वापस)
+
+चैट सीमा योजना के अनुसार:
+• मुफ्त योजना: 5 चैट प्रोफाइल
+• 6 महीने: 50 चैट प्रोफाइल
+• 1 साल: 120 चैट प्रोफाइल
+
+संपर्क सीमा योजना के अनुसार:
+• मुफ्त योजना: 0 संपर्क (उपलब्ध नहीं)
+• 6 महीने: 20 संपर्क
+• 1 साल: 50 संपर्क`
+        : `Interest Request:
+
+How it works:
+• Sender: Expresses interest in a profile
+• Receiver: Can accept or decline the interest
+• On acceptance: Sender's 1 chat slot is used (not receiver's)
+
+Important Rules:
+• Pending request: Sender can cancel anytime (no slot impact)
+• Accepted request: Either party can revoke anytime (slot refunded)
+
+Contact Request:
+
+Pre-condition:
+• Sending contact request automatically sends interest request too
+• Interest must be accepted before contact can be approved
+
+Slot Usage:
+• On contact approval: BOTH parties use 1 contact slot each
+• (Both sender's and receiver's slots are consumed)
+
+Cancellation and Revocation:
+• Pending contact: Sender can cancel (no slot impact)
+• Approved contact: Either party can revoke (both slots refunded)
+
+Chat Limits by Plan:
+• Free plan: 5 chat profiles
+• 6 months: 50 chat profiles
+• 1 year: 120 chat profiles
+
+Contact Limits by Plan:
+• Free plan: 0 contacts (not available)
+• 6 months: 20 contacts
+• 1 year: 50 contacts`
+    },
+    {
       icon: <Calendar size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '6. सदस्यता समाप्ति और नवीनीकरण' : '6. Membership Expiry and Renewal',
+      title: isHindi ? '7. सदस्यता समाप्ति और नवीनीकरण' : '7. Membership Expiry and Renewal',
       content: isHindi
         ? `सदस्यता समाप्ति:
 • सदस्यता समाप्ति से 7 दिन पहले दैनिक रिमाइंडर भेजे जाएंगे
@@ -246,7 +319,7 @@ Grace Period:
     },
     {
       icon: <Shield size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '7. सत्यापन और सुरक्षा' : '7. Verification and Safety',
+      title: isHindi ? '8. सत्यापन और सुरक्षा' : '8. Verification and Safety',
       content: isHindi
         ? `सत्यापन प्रक्रिया:
 • सभी प्रोफाइल मैन्युअल समीक्षा से गुजरती हैं
@@ -303,7 +376,7 @@ Disclaimer:
     },
     {
       icon: <Trash size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '8. प्रोफाइल निष्क्रियता और विलोपन' : '8. Profile Deactivation and Deletion',
+      title: isHindi ? '9. प्रोफाइल निष्क्रियता और विलोपन' : '9. Profile Deactivation and Deletion',
       content: isHindi
         ? `प्रोफाइल निष्क्रियता:
 • आप कभी भी अपनी प्रोफाइल निष्क्रिय कर सकते हैं
@@ -336,7 +409,7 @@ Admin Removal:
     },
     {
       icon: <Warning size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '9. दायित्व की सीमा' : '9. Limitation of Liability',
+      title: isHindi ? '10. दायित्व की सीमा' : '10. Limitation of Liability',
       content: isHindi
         ? `ShaadiPartnerSearch निम्नलिखित के लिए उत्तरदायी नहीं है:
 
@@ -367,7 +440,7 @@ In no event shall ShaadiPartnerSearch's liability exceed the membership fee paid
     },
     {
       icon: <Shield size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '10. क्षतिपूर्ति (Indemnification)' : '10. Indemnification',
+      title: isHindi ? '11. क्षतिपूर्ति (Indemnification)' : '11. Indemnification',
       content: isHindi
         ? `क्षतिपूर्ति की शर्तें:
 
@@ -416,7 +489,7 @@ This indemnification obligation shall survive the termination of your membership
     },
     {
       icon: <Handshake size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '11. विवाद समाधान' : '11. Dispute Resolution',
+      title: isHindi ? '12. विवाद समाधान' : '12. Dispute Resolution',
       content: isHindi
         ? `विवाद समाधान प्रक्रिया:
 
@@ -461,7 +534,7 @@ These Terms and Conditions shall be governed by Indian law.`
     },
     {
       icon: <Eye size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '12. बौद्धिक संपदा' : '12. Intellectual Property',
+      title: isHindi ? '13. बौद्धिक संपदा' : '13. Intellectual Property',
       content: isHindi
         ? `ShaadiPartnerSearch की सभी सामग्री, जिसमें शामिल हैं:
 • लोगो, डिज़ाइन और ट्रेडमार्क
@@ -490,7 +563,7 @@ User Content:
     },
     {
       icon: <Envelope size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '13. संपर्क और शिकायत' : '13. Contact and Grievance',
+      title: isHindi ? '14. संपर्क और शिकायत' : '14. Contact and Grievance',
       content: isHindi
         ? `शिकायत निवारण अधिकारी:
 (सूचना प्रौद्योगिकी अधिनियम, 2000 और DPDP Act, 2023 के अनुसार)

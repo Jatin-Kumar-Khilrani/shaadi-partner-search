@@ -3879,6 +3879,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                     <X size={16} weight="bold" />
                                     {language === 'hi' ? 'वेडिंग सर्विसेज एक्सेस नहीं' : 'No Wedding Services access'}
                                   </li>
+                                  <li className="flex items-center gap-2 text-amber-600">
+                                    <X size={16} weight="bold" />
+                                    {language === 'hi' ? 'विवाह तैयारी मूल्यांकन नहीं' : 'No Marriage Readiness Assessment'}
+                                  </li>
                                 </ul>
                               </div>
                             </div>
@@ -3928,6 +3932,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                   <li className="flex items-center gap-2">
                                     <CheckCircle size={16} weight="fill" className="text-teal" />
                                     {language === 'hi' ? 'वेडिंग सर्विसेज एक्सेस' : 'Wedding Services access'}
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <CheckCircle size={16} weight="fill" className="text-amber-500" />
+                                    {language === 'hi' ? '✨ विवाह तैयारी मूल्यांकन (AI-संचालित)' : '✨ Marriage Readiness Assessment (AI-powered)'}
                                   </li>
                                 </ul>
                               </div>
@@ -3985,6 +3993,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                   <li className="flex items-center gap-2">
                                     <CheckCircle size={16} weight="fill" className="text-teal" />
                                     {language === 'hi' ? 'वेडिंग सर्विसेज एक्सेस' : 'Wedding Services access'}
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <CheckCircle size={16} weight="fill" className="text-amber-500" />
+                                    {language === 'hi' ? '✨ विवाह तैयारी मूल्यांकन (AI-संचालित)' : '✨ Marriage Readiness Assessment (AI-powered)'}
                                   </li>
                                 </ul>
                               </div>
