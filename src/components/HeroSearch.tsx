@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { MagnifyingGlass, Heart, Users, ShieldCheck } from '@phosphor-icons/react'
+import { MagnifyingGlass, Heart, Users, ShieldCheck, Brain } from '@phosphor-icons/react'
 import { useState } from 'react'
 import type { SearchFilters } from '@/types/profile'
 import { COUNTRY_OPTIONS, getStateOptionsForCountries, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS } from '@/components/ui/multi-select'
@@ -64,6 +64,8 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
     feature2Desc: language === 'hi' ? 'हर प्रोफ़ाइल AI और अनुभवी पेशेवरों द्वारा सत्यापित' : 'Every profile verified by AI and experienced professionals',
     feature3: language === 'hi' ? 'सभी समुदायों के लिए' : 'For All Communities',
     feature3Desc: language === 'hi' ? 'सभी धर्मों और समुदायों का स्वागत' : 'All religions and communities welcome',
+    feature4: language === 'hi' ? 'विवाह तैयारी' : 'Marriage Readiness',
+    feature4Desc: language === 'hi' ? 'AI-संचालित आत्म-खोज और EQ मूल्यांकन' : 'AI-powered self-discovery & EQ assessment',
     castePlaceholder: language === 'hi' ? 'यदि ज्ञात हो' : 'If known',
   }
 
@@ -257,7 +259,7 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
           </CardContent>
         </Card>
 
-        <div className="max-w-5xl mx-auto mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="max-w-6xl mx-auto mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <FeatureCard
             icon={<Heart size={32} weight="fill" />}
             title={t.feature1}
@@ -273,19 +275,28 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
             title={t.feature3}
             description={t.feature3Desc}
           />
+          <FeatureCard
+            icon={<Brain size={32} weight="fill" />}
+            title={t.feature4}
+            description={t.feature4Desc}
+            highlight
+          />
         </div>
       </div>
     </div>
   )
 }
 
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+function FeatureCard({ icon, title, description, highlight }: { icon: React.ReactNode; title: string; description: string; highlight?: boolean }) {
   return (
-    <Card className="bg-white/95 backdrop-blur border-white/50 hover:shadow-lg transition-shadow duration-300">
+    <Card className={`backdrop-blur hover:shadow-lg transition-all duration-300 ${highlight ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-300 ring-2 ring-amber-200/50 dark:from-amber-950/30 dark:to-orange-950/30 dark:border-amber-700' : 'bg-white/95 border-white/50'}`}>
       <CardContent className="pt-6 text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/20 text-accent mb-4">
+        <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${highlight ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-accent/20 text-accent'}`}>
           {icon}
         </div>
+        {highlight && (
+          <span className="inline-block px-2 py-0.5 text-xs font-bold bg-amber-500 text-white rounded-full mb-2">NEW</span>
+        )}
         <h3 className="font-bold text-lg mb-2">{title}</h3>
         <p className="text-sm text-muted-foreground">{description}</p>
       </CardContent>

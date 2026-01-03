@@ -6,7 +6,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise, CaretDown, User as UserIcon, Trophy } from '@phosphor-icons/react'
+import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise, CaretDown, User as UserIcon, Trophy, Brain, Sparkle, ChartLine, Target, Robot, ArrowRight } from '@phosphor-icons/react'
 import { HeroSearch } from '@/components/HeroSearch'
 import { ProfileCard } from '@/components/ProfileCard'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
@@ -1078,6 +1078,79 @@ function App() {
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Marriage Readiness - Unique USP Highlight */}
+                <Card className="bg-gradient-to-r from-amber-50 via-orange-50 to-yellow-50 border-2 border-amber-300 dark:from-amber-950/30 dark:via-orange-950/30 dark:to-yellow-950/30 dark:border-amber-700 mb-12 overflow-hidden relative">
+                  <div className="absolute top-0 right-0 bg-gradient-to-l from-amber-500 to-orange-500 text-white px-4 py-1 text-sm font-bold rounded-bl-lg">
+                    ✨ {language === 'hi' ? 'अनोखी सुविधा' : 'Unique Feature'}
+                  </div>
+                  <CardContent className="py-8 px-6">
+                    <div className="flex flex-col lg:flex-row items-center gap-8">
+                      {/* Left: Icon and Title */}
+                      <div className="flex-shrink-0 text-center lg:text-left">
+                        <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white mb-4 shadow-lg">
+                          <Brain size={48} weight="fill" />
+                        </div>
+                        <h3 className="font-bold text-2xl md:text-3xl text-amber-800 dark:text-amber-300 mb-2">
+                          {language === 'hi' ? '💡 विवाह तैयारी मूल्यांकन' : '💡 Marriage Readiness Assessment'}
+                        </h3>
+                        <p className="text-amber-700 dark:text-amber-400 font-medium">
+                          {language === 'hi' ? 'भारत का पहला AI-संचालित विवाह तैयारी प्लेटफॉर्म' : "India's First AI-Powered Marriage Readiness Platform"}
+                        </p>
+                      </div>
+
+                      {/* Right: Features Grid */}
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-start gap-3 p-3 bg-white/60 dark:bg-white/10 rounded-lg">
+                          <Sparkle size={24} weight="fill" className="text-amber-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <h4 className="font-semibold text-sm">{language === 'hi' ? 'आत्म-खोज प्रश्नावली' : 'Self-Discovery Quiz'}</h4>
+                            <p className="text-xs text-muted-foreground">{language === 'hi' ? 'अपने मूल्य और व्यक्तित्व जानें' : 'Know your values & personality'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3 p-3 bg-white/60 dark:bg-white/10 rounded-lg">
+                          <ChartLine size={24} weight="fill" className="text-amber-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <h4 className="font-semibold text-sm">{language === 'hi' ? 'भावनात्मक बुद्धिमत्ता (EQ)' : 'Emotional Intelligence (EQ)'}</h4>
+                            <p className="text-xs text-muted-foreground">{language === 'hi' ? 'रिश्तों के लिए भावनात्मक परिपक्वता जांचें' : 'Assess emotional maturity for relationships'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3 p-3 bg-white/60 dark:bg-white/10 rounded-lg">
+                          <Target size={24} weight="fill" className="text-amber-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <h4 className="font-semibold text-sm">{language === 'hi' ? 'साथी अपेक्षाएं' : 'Partner Expectations'}</h4>
+                            <p className="text-xs text-muted-foreground">{language === 'hi' ? 'स्पष्ट करें क्या चाहते हैं और क्या नहीं' : 'Define must-haves & dealbreakers'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3 p-3 bg-white/60 dark:bg-white/10 rounded-lg">
+                          <Robot size={24} weight="fill" className="text-amber-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <h4 className="font-semibold text-sm">{language === 'hi' ? 'AI बायो सहायक' : 'AI Bio Assistant'}</h4>
+                            <p className="text-xs text-muted-foreground">{language === 'hi' ? 'आकर्षक प्रोफाइल विवरण बनाएं' : 'Create compelling profile description'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CTA */}
+                    <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-900/30 rounded-full">
+                        <Trophy size={20} weight="fill" className="text-amber-600" />
+                        <span className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                          {language === 'hi' ? '"तैयार" बैज अर्जित करें' : 'Earn "Ready" Badge'}
+                        </span>
+                      </div>
+                      <Button 
+                        onClick={() => loggedInUser ? setCurrentView('readiness') : setShowRegistration(true)}
+                        size="lg"
+                        className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white gap-2 shadow-lg"
+                      >
+                        {language === 'hi' ? 'अभी शुरू करें' : 'Start Now'}
+                        <ArrowRight size={18} weight="bold" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Free Biodata Advertisement */}
                 <Card className="bg-gradient-to-r from-red-50 to-amber-50 border-2 border-red-200 dark:from-red-950/20 dark:to-amber-950/20 dark:border-red-800">
