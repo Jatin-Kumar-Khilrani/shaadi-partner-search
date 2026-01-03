@@ -160,15 +160,16 @@ Your Rights:
 
 मुफ्त योजना (6 महीने परिचयात्मक):
 • प्रोफाइल बनाना और देखना
-• बायोडेटा जनरेशन उपलब्ध नहीं
+• बायोडेटा जनरेशन (वॉटरमार्क के साथ)
 • वेडिंग सर्विसेज एक्सेस नहीं
 • सीमित संपर्क सुविधाएं
 
 6 महीने की योजना (₹${sixMonthPrice}):
 • असीमित प्रोफाइल देखना
 • संपर्क विवरण एक्सेस
-• बायोडेटा जनरेशन
+• बायोडेटा जनरेशन (बिना वॉटरमार्क)
 • वेडिंग सर्विसेज एक्सेस
+• विवाह तैयारी मूल्यांकन (AI-संचालित)
 
 1 साल की योजना (₹${oneYearPrice}):
 • सभी 6 महीने की सुविधाएं
@@ -188,15 +189,16 @@ Your Rights:
 
 Free Plan (6 months introductory):
 • Create and view profiles
-• Biodata generation not available
+• Biodata generation (with watermark)
 • No Wedding Services access
 • Limited contact features
 
 6 Month Plan (₹${sixMonthPrice}):
 • Unlimited profile viewing
 • Contact details access
-• Biodata generation
+• Biodata generation (without watermark)
 • Wedding Services access
+• Marriage Readiness Assessment (AI-powered)
 
 1 Year Plan (₹${oneYearPrice}):
 • All 6-month features

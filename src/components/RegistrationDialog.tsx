@@ -3871,9 +3871,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                     <X size={16} weight="bold" />
                                     {language === 'hi' ? 'संपर्क देखने की सुविधा नहीं' : 'No contact view access'}
                                   </li>
-                                  <li className="flex items-center gap-2 text-amber-600">
-                                    <X size={16} weight="bold" />
-                                    {language === 'hi' ? 'बायोडेटा जनरेट/डाउनलोड नहीं' : 'No biodata generation/download'}
+                                  <li className="flex items-center gap-2">
+                                    <CheckCircle size={16} weight="fill" className="text-green-500" />
+                                    {language === 'hi' ? 'बायोडेटा (वॉटरमार्क के साथ)' : 'Biodata (with watermark)'}
                                   </li>
                                   <li className="flex items-center gap-2 text-amber-600">
                                     <X size={16} weight="bold" />
