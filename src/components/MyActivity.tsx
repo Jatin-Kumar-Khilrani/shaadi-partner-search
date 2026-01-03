@@ -10,6 +10,7 @@ import type { ChatMessage } from '@/types/chat'
 import type { Language } from '@/lib/translations'
 import { toast } from 'sonner'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
+import { notifyInterestAccepted, notifyInterestDeclined, notifyContactAccepted } from '@/lib/notificationService'
 
 // Membership settings interface for plan limits
 interface MembershipSettings {
@@ -212,6 +213,22 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
           : interest
       )
     )
+
+    // Send notification to the sender (A) that their interest was accepted by recipient (B)
+    notifyInterestAccepted(
+      { 
+        profileId: senderProfile.profileId, 
+        fullName: senderProfile.fullName, 
+        mobile: senderProfile.mobile, 
+        email: senderProfile.email 
+      },
+      { 
+        profileId: currentUserProfile.profileId, 
+        fullName: currentUserProfile.fullName 
+      },
+      language
+    )
+
     toast.success(
       language === 'hi' ? 'रुचि स्वीकार की गई' : 'Interest accepted',
       {
@@ -223,13 +240,37 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
   }
 
   const handleDeclineInterest = (interestId: string) => {
+    const interest = interests?.find(i => i.id === interestId)
+    if (!interest || !currentUserProfile) return
+
+    const senderProfile = profiles.find(p => p.profileId === interest.fromProfileId)
+
     setInterests((current) => 
-      (current || []).map(interest => 
-        interest.id === interestId 
-          ? { ...interest, status: 'declined' as const }
-          : interest
+      (current || []).map(i => 
+        i.id === interestId 
+          ? { ...i, status: 'declined' as const }
+          : i
       )
     )
+
+    // Optionally notify the sender that their interest was declined
+    // (Some platforms don't notify on decline to avoid negative emotions)
+    if (senderProfile) {
+      notifyInterestDeclined(
+        { 
+          profileId: senderProfile.profileId, 
+          fullName: senderProfile.fullName, 
+          mobile: senderProfile.mobile, 
+          email: senderProfile.email 
+        },
+        { 
+          profileId: currentUserProfile.profileId, 
+          fullName: currentUserProfile.fullName 
+        },
+        language
+      )
+    }
+
     toast.success(language === 'hi' ? 'रुचि अस्वीकार की गई' : 'Interest declined')
   }
 
@@ -354,6 +395,21 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
           ? { ...req, status: 'approved' as const }
           : req
       )
+    )
+
+    // Send notification to the sender that their contact request was accepted
+    notifyContactAccepted(
+      { 
+        profileId: senderProfile.profileId, 
+        fullName: senderProfile.fullName, 
+        mobile: senderProfile.mobile, 
+        email: senderProfile.email 
+      },
+      { 
+        profileId: currentUserProfile.profileId, 
+        fullName: currentUserProfile.fullName 
+      },
+      language
     )
     
     toast.success(
@@ -551,7 +607,12 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
           <TabsContent value="sent-interests">
             <Card>
               <CardHeader>
-                <CardTitle>{t.sentInterests}</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>{t.sentInterests}</CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    {t.chatsRemaining}: {chatLimit - chatRequestsUsed.length}/{chatLimit}
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[500px]">

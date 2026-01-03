@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Checkbox } from '@/components/ui/checkbox'
 import { SignIn, Info, Eye, EyeSlash, Key, ArrowLeft, SpinnerGap, ShieldCheck, LockKey } from '@phosphor-icons/react'
 import { toast } from 'sonner'
+import { sendPasswordResetOtp } from '@/lib/notificationService'
 import type { User } from '@/types/user'
 import type { Profile } from '@/types/profile'
 
@@ -182,20 +183,26 @@ export function LoginDialog({ open, onClose, onLogin, onUpdatePassword, users, p
       return
     }
 
+    // Find profile to get mobile/email
+    const profile = profiles.find(p => p.profileId === user.profileId || p.id === user.profileId)
+
     setIsLoading(true)
     
-    // Simulate OTP sending
+    // Use notification service to send OTP
     setTimeout(() => {
-      const otp = Math.floor(100000 + Math.random() * 900000).toString()
-      setGeneratedOtp(otp)
-      setOtpSent(true)
-      setResetUserId(user.userId)
-      setIsLoading(false)
+      const { otp, success } = sendPasswordResetOtp(
+        profile?.mobile,
+        profile?.email,
+        language
+      )
       
-      toast.success(t.otpSentSuccess, {
-        description: `Demo OTP: ${otp}`,
-        duration: 10000
-      })
+      if (success) {
+        setGeneratedOtp(otp)
+        setOtpSent(true)
+        setResetUserId(user.userId)
+      }
+      
+      setIsLoading(false)
     }, 1500)
   }
 

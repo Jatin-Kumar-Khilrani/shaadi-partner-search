@@ -16,6 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, ArrowDown, FloppyDisk, Sparkle, Warning, SpinnerGap, Gift, ShieldCheck, IdentificationCard, ArrowCounterClockwise, Upload } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { logger } from '@/lib/logger'
+import { sendRegistrationEmailOtp, sendRegistrationMobileOtp } from '@/lib/notificationService'
 import type { Gender, MaritalStatus, Profile, MembershipPlan, DisabilityStatus, DietPreference, DrinkingHabit, SmokingHabit, ResidentialStatus } from '@/types/profile'
 import { useTranslation, type Language } from '@/lib/translations'
 import { generateBio, type BioGenerationParams } from '@/lib/aiFoundryService'
@@ -1547,40 +1548,26 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   }
 
   const sendOtps = (emailOnly?: boolean, mobileOnly?: boolean) => {
-    let emailOtpCode = generatedEmailOtp
-    let mobileOtpCode = generatedMobileOtp
-    
-    // Only generate new OTP for channels that are not verified
-    if (!emailVerified && !mobileOnly) {
-      emailOtpCode = Math.floor(100000 + Math.random() * 900000).toString()
-      setGeneratedEmailOtp(emailOtpCode)
-    }
-    
-    if (!mobileVerified && !emailOnly) {
-      mobileOtpCode = Math.floor(100000 + Math.random() * 900000).toString()
-      setGeneratedMobileOtp(mobileOtpCode)
-    }
-    
     setShowVerification(true)
     
-    // Build message based on what was sent
-    let message = ''
-    if (!emailVerified && !mobileOnly) {
-      message += `Email: ${emailOtpCode}`
-    }
-    if (!mobileVerified && !emailOnly) {
-      if (message) message += ' | '
-      message += `Mobile: ${mobileOtpCode}`
+    // Send Email OTP via notification service
+    if (!emailVerified && !mobileOnly && formData.email) {
+      const { otp } = sendRegistrationEmailOtp(
+        formData.email,
+        formData.fullName,
+        language
+      )
+      setGeneratedEmailOtp(otp)
     }
     
-    if (message) {
-      toast.success(
-        language === 'hi' ? 'OTP भेजा गया!' : 'OTP Sent!',
-        {
-          description: message,
-          duration: 30000
-        }
+    // Send Mobile OTP via notification service
+    if (!mobileVerified && !emailOnly && formData.mobile) {
+      const { otp } = sendRegistrationMobileOtp(
+        formData.mobile,
+        formData.fullName,
+        language
       )
+      setGeneratedMobileOtp(otp)
     }
   }
 

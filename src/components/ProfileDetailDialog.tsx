@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { useKV } from '@/hooks/useKV'
 import { formatDateDDMMYYYY, formatEducation, formatOccupation } from '@/lib/utils'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
+import { notifyInterestReceived, notifyContactRequestReceived } from '@/lib/notificationService'
 
 // Membership settings interface for plan limits
 interface MembershipSettings {
@@ -118,9 +119,9 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
 
   if (!profile) return null
 
-  // Helper function to format preference arrays - shows "Any / No Preference" if ['any'] is stored
+  // Helper function to format preference arrays - shows "Any / No Preference" if empty or ['any']
   const formatPreferenceValue = (values: string[] | undefined, mapFn?: (v: string) => string): string => {
-    if (!values || values.length === 0) return ''
+    if (!values || values.length === 0) return language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'
     if (values.length === 1 && values[0] === 'any') {
       return language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'
     }
@@ -225,6 +226,21 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     }
 
     setInterests(current => [...(current || []), newInterest])
+
+    // Send notification to the recipient (B) that they received an interest from sender (A)
+    notifyInterestReceived(
+      { 
+        profileId: profile.profileId, 
+        fullName: profile.fullName, 
+        mobile: profile.mobile, 
+        email: profile.email 
+      },
+      { 
+        profileId: currentUserProfile.profileId, 
+        fullName: currentUserProfile.fullName 
+      },
+      language
+    )
 
     toast.success(
       language === 'hi' ? 'रुचि दर्ज की गई!' : 'Interest recorded!',
@@ -857,53 +873,43 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                     />
                   )}
                   {/* Education Preference */}
-                  {hasPreferenceValue(profile.partnerPreferences.education) && (
-                    <InfoItem 
-                      icon={<GraduationCap size={18} />} 
-                      label={t.preferredEducation} 
-                      value={formatPreferenceValue(profile.partnerPreferences.education)} 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<GraduationCap size={18} />} 
+                    label={t.preferredEducation} 
+                    value={formatPreferenceValue(profile.partnerPreferences.education)} 
+                  />
                   {/* Occupation Preference */}
-                  {hasPreferenceValue(profile.partnerPreferences.occupation) && (
-                    <InfoItem 
-                      icon={<Briefcase size={18} />} 
-                      label={t.preferredOccupation} 
-                      value={formatPreferenceValue(profile.partnerPreferences.occupation)} 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<Briefcase size={18} />} 
+                    label={t.preferredOccupation} 
+                    value={formatPreferenceValue(profile.partnerPreferences.occupation)} 
+                  />
                   {/* Employment Status Preference */}
-                  {hasPreferenceValue(profile.partnerPreferences.employmentStatus) && (
-                    <InfoItem 
-                      icon={<Briefcase size={18} />} 
-                      label={t.preferredEmploymentStatus} 
-                      value={formatPreferenceValue(profile.partnerPreferences.employmentStatus, s => 
-                        s === 'employed' ? (language === 'hi' ? 'नौकरी' : 'Employed') :
-                        s === 'self-employed' ? (language === 'hi' ? 'स्वरोजगार' : 'Self-Employed') :
-                        s === 'business-owner' ? (language === 'hi' ? 'व्यापारी' : 'Business Owner') :
-                        s === 'govt-employee' ? (language === 'hi' ? 'सरकारी कर्मचारी' : 'Government Employee') :
-                        s === 'student' ? (language === 'hi' ? 'विद्यार्थी' : 'Student') :
-                        s === 'homemaker' ? (language === 'hi' ? 'गृहिणी' : 'Homemaker') :
-                        s === 'not-working' ? (language === 'hi' ? 'काम नहीं करते' : 'Not Working') : s
-                      )} 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<Briefcase size={18} />} 
+                    label={t.preferredEmploymentStatus} 
+                    value={formatPreferenceValue(profile.partnerPreferences.employmentStatus, s => 
+                      s === 'employed' ? (language === 'hi' ? 'नौकरी' : 'Employed') :
+                      s === 'self-employed' ? (language === 'hi' ? 'स्वरोजगार' : 'Self-Employed') :
+                      s === 'business-owner' ? (language === 'hi' ? 'व्यापारी' : 'Business Owner') :
+                      s === 'govt-employee' ? (language === 'hi' ? 'सरकारी कर्मचारी' : 'Government Employee') :
+                      s === 'student' ? (language === 'hi' ? 'विद्यार्थी' : 'Student') :
+                      s === 'homemaker' ? (language === 'hi' ? 'गृहिणी' : 'Homemaker') :
+                      s === 'not-working' ? (language === 'hi' ? 'काम नहीं करते' : 'Not Working') : s
+                    )} 
+                  />
                   {/* Living Country Preference */}
-                  {hasPreferenceValue(profile.partnerPreferences.livingCountry) && (
-                    <InfoItem 
-                      icon={<Globe size={18} />} 
-                      label={t.preferredLivingCountry} 
-                      value={formatPreferenceValue(profile.partnerPreferences.livingCountry)} 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<Globe size={18} />} 
+                    label={t.preferredLivingCountry} 
+                    value={formatPreferenceValue(profile.partnerPreferences.livingCountry)} 
+                  />
                   {/* Living State Preference */}
-                  {hasPreferenceValue(profile.partnerPreferences.livingState) && (
-                    <InfoItem 
-                      icon={<MapPin size={18} />} 
-                      label={t.preferredLivingState} 
-                      value={formatPreferenceValue(profile.partnerPreferences.livingState)} 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<MapPin size={18} />} 
+                    label={t.preferredLivingState} 
+                    value={formatPreferenceValue(profile.partnerPreferences.livingState)} 
+                  />
                   {/* Annual Income Preference */}
                   {(profile.partnerPreferences.annualIncomeMin || profile.partnerPreferences.annualIncomeMax) && (
                     <InfoItem 
@@ -919,126 +925,96 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                     />
                   )}
                   {/* Location Preference */}
-                  {hasPreferenceValue(profile.partnerPreferences.location) && (
-                    <InfoItem 
-                      icon={<MapPin size={18} />} 
-                      label={t.preferredLocation} 
-                      value={formatPreferenceValue(profile.partnerPreferences.location)} 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<MapPin size={18} />} 
+                    label={t.preferredLocation} 
+                    value={formatPreferenceValue(profile.partnerPreferences.location)} 
+                  />
                   {/* Country Preference */}
-                  {hasPreferenceValue(profile.partnerPreferences.country) && (
-                    <InfoItem 
-                      icon={<Globe size={18} />} 
-                      label={t.preferredCountry} 
-                      value={formatPreferenceValue(profile.partnerPreferences.country)} 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<Globe size={18} />} 
+                    label={t.preferredCountry} 
+                    value={formatPreferenceValue(profile.partnerPreferences.country)} 
+                  />
                   {/* Religion Preference */}
-                  {hasPreferenceValue(profile.partnerPreferences.religion) && (
-                    <InfoItem 
-                      icon={<UserCircle size={18} />} 
-                      label={t.preferredReligion} 
-                      value={formatPreferenceValue(profile.partnerPreferences.religion)} 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<UserCircle size={18} />} 
+                    label={t.preferredReligion} 
+                    value={formatPreferenceValue(profile.partnerPreferences.religion)} 
+                  />
                   {/* Caste Preference */}
-                  {hasPreferenceValue(profile.partnerPreferences.caste) && (
-                    <InfoItem 
-                      icon={<UsersThree size={18} />} 
-                      label={t.preferredCaste} 
-                      value={formatPreferenceValue(profile.partnerPreferences.caste)} 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<UsersThree size={18} />} 
+                    label={t.preferredCaste} 
+                    value={formatPreferenceValue(profile.partnerPreferences.caste)} 
+                  />
                   {/* Mother Tongue Preference */}
-                  {hasPreferenceValue(profile.partnerPreferences.motherTongue) && (
-                    <InfoItem 
-                      icon={<Translate size={18} />} 
-                      label={t.preferredMotherTongue} 
-                      value={formatPreferenceValue(profile.partnerPreferences.motherTongue)} 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<Translate size={18} />} 
+                    label={t.preferredMotherTongue} 
+                    value={formatPreferenceValue(profile.partnerPreferences.motherTongue)} 
+                  />
                   {/* Marital Status Preference */}
-                  {hasPreferenceValue(profile.partnerPreferences.maritalStatus) && (
-                    <InfoItem 
-                      icon={<Heart size={18} />} 
-                      label={t.preferredMaritalStatus} 
-                      value={formatPreferenceValue(profile.partnerPreferences.maritalStatus, s => 
-                        s === 'never-married' ? (language === 'hi' ? 'अविवाहित' : 'Never Married') :
-                        s === 'divorced' ? (language === 'hi' ? 'तलाकशुदा' : 'Divorced') :
-                        s === 'widowed' ? (language === 'hi' ? 'विधुर/विधवा' : 'Widowed') : s
-                      )} 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<Heart size={18} />} 
+                    label={t.preferredMaritalStatus} 
+                    value={formatPreferenceValue(profile.partnerPreferences.maritalStatus, s => 
+                      s === 'never-married' ? (language === 'hi' ? 'अविवाहित' : 'Never Married') :
+                      s === 'divorced' ? (language === 'hi' ? 'तलाकशुदा' : 'Divorced') :
+                      s === 'widowed' ? (language === 'hi' ? 'विधुर/विधवा' : 'Widowed') : s
+                    )} 
+                  />
                   {/* Diet Preference */}
-                  {hasPreferenceValue(profile.partnerPreferences.dietPreference) && (
-                    <InfoItem 
-                      icon={<ForkKnife size={18} />} 
-                      label={t.preferredDiet} 
-                      value={formatPreferenceValue(profile.partnerPreferences.dietPreference, d => 
-                        d === 'veg' ? t.veg :
-                        d === 'non-veg' ? t.nonVeg :
-                        d === 'eggetarian' ? t.eggetarian : d
-                      )} 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<ForkKnife size={18} />} 
+                    label={t.preferredDiet} 
+                    value={formatPreferenceValue(profile.partnerPreferences.dietPreference, d => 
+                      d === 'veg' ? t.veg :
+                      d === 'non-veg' ? t.nonVeg :
+                      d === 'eggetarian' ? t.eggetarian : d
+                    )} 
+                  />
                   {/* Drinking Habit Preference */}
-                  {hasPreferenceValue(profile.partnerPreferences.drinkingHabit) && (
-                    <InfoItem 
-                      icon={<Wine size={18} />} 
-                      label={t.preferredDrinking} 
-                      value={formatPreferenceValue(profile.partnerPreferences.drinkingHabit, h => 
-                        h === 'never' ? t.never :
-                        h === 'occasionally' ? t.occasionally :
-                        h === 'regularly' ? t.regularly : h
-                      )} 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<Wine size={18} />} 
+                    label={t.preferredDrinking} 
+                    value={formatPreferenceValue(profile.partnerPreferences.drinkingHabit, h => 
+                      h === 'never' ? t.never :
+                      h === 'occasionally' ? t.occasionally :
+                      h === 'regularly' ? t.regularly : h
+                    )} 
+                  />
                   {/* Smoking Habit Preference */}
-                  {hasPreferenceValue(profile.partnerPreferences.smokingHabit) && (
-                    <InfoItem 
-                      icon={<Cigarette size={18} />} 
-                      label={t.preferredSmoking} 
-                      value={formatPreferenceValue(profile.partnerPreferences.smokingHabit, h => 
-                        h === 'never' ? t.never :
-                        h === 'occasionally' ? t.occasionally :
-                        h === 'regularly' ? t.regularly : h
-                      )} 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<Cigarette size={18} />} 
+                    label={t.preferredSmoking} 
+                    value={formatPreferenceValue(profile.partnerPreferences.smokingHabit, h => 
+                      h === 'never' ? t.never :
+                      h === 'occasionally' ? t.occasionally :
+                      h === 'regularly' ? t.regularly : h
+                    )} 
+                  />
                   {/* Manglik Preference */}
-                  {profile.partnerPreferences.manglik && (
-                    <InfoItem 
-                      icon={<Star size={18} />} 
-                      label={t.preferredManglik} 
-                      value={
-                        profile.partnerPreferences.manglik === 'yes' ? t.yes :
-                        profile.partnerPreferences.manglik === 'no' ? t.no :
-                        profile.partnerPreferences.manglik === 'doesnt-matter' ? t.doesntMatter : t.noPreference
-                      } 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<Star size={18} />} 
+                    label={t.preferredManglik} 
+                    value={
+                      profile.partnerPreferences.manglik === 'yes' ? t.yes :
+                      profile.partnerPreferences.manglik === 'no' ? t.no :
+                      profile.partnerPreferences.manglik === 'doesnt-matter' ? t.doesntMatter : 
+                      (language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference')
+                    } 
+                  />
                   {/* Disability Preference */}
-                  {hasPreferenceValue(profile.partnerPreferences.disability) && (
-                    <InfoItem 
-                      icon={<Wheelchair size={18} />} 
-                      label={t.preferredDisability} 
-                      value={formatPreferenceValue(profile.partnerPreferences.disability, d => 
-                        d === 'no' ? t.no :
-                        d === 'yes' ? t.yes : d
-                      )} 
-                    />
-                  )}
+                  <InfoItem 
+                    icon={<Wheelchair size={18} />} 
+                    label={t.preferredDisability} 
+                    value={formatPreferenceValue(profile.partnerPreferences.disability, d => 
+                      d === 'no' ? t.no :
+                      d === 'yes' ? t.yes : d
+                    )} 
+                  />
                 </div>
-                {/* Show message if no preferences set */}
-                {!profile.partnerPreferences.ageMin && !profile.partnerPreferences.ageMax && 
-                 !profile.partnerPreferences.heightMin && !profile.partnerPreferences.heightMax &&
-                 (!profile.partnerPreferences.education || profile.partnerPreferences.education.length === 0) &&
-                 (!profile.partnerPreferences.occupation || profile.partnerPreferences.occupation.length === 0) &&
-                 (!profile.partnerPreferences.location || profile.partnerPreferences.location.length === 0) &&
-                 (!profile.partnerPreferences.religion || profile.partnerPreferences.religion.length === 0) && (
-                  <p className="text-sm text-muted-foreground italic">{t.noPreference}</p>
-                )}
               </section>
             </>
           )}
