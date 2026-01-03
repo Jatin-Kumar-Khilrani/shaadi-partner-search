@@ -95,7 +95,19 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
     >
-      <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 hover:border-teal/30">
+      <Card 
+        className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/40 cursor-pointer group/card bg-background hover:bg-primary/[0.02] active:scale-[0.99]"
+        onClick={() => onViewProfile(profile)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onViewProfile(profile)
+          }
+        }}
+        aria-label={`${language === 'hi' ? 'प्रोफाइल देखें:' : 'View profile:'} ${displayName}`}
+      >
         <CardHeader className="pb-4">
           <div className="flex items-start gap-4">
             <div 
@@ -132,8 +144,7 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <h3 
-                  className="font-bold text-xl leading-tight cursor-pointer hover:text-primary hover:underline transition-colors"
-                  onClick={() => onViewProfile(profile)}
+                  className="font-bold text-xl leading-tight group-hover/card:text-primary transition-colors"
                 >
                   {displayName}
                   {shouldHideSurname && <span className="text-muted-foreground"> ...</span>}

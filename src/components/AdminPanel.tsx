@@ -288,6 +288,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   // ID Proof viewing dialog state
   const [showIdProofViewDialog, setShowIdProofViewDialog] = useState(false)
   const [idProofViewProfile, setIdProofViewProfile] = useState<Profile | null>(null)
+  const [idProofRejectionReason, setIdProofRejectionReason] = useState('')
+  const [showIdProofRejectDialog, setShowIdProofRejectDialog] = useState(false)
   
   // Payment Screenshot viewing dialog state
   const [showPaymentViewDialog, setShowPaymentViewDialog] = useState(false)
@@ -541,6 +543,12 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     idProofNotUploaded: language === 'hi' ? 'पहचान प्रमाण अपलोड नहीं किया गया' : 'ID Proof not uploaded',
     idProofType: language === 'hi' ? 'दस्तावेज़ का प्रकार' : 'Document Type',
     voterId: language === 'hi' ? 'मतदाता पहचान पत्र' : 'Voter ID',
+    markAsNotVerified: language === 'hi' ? 'असत्यापित के रूप में चिह्नित करें' : 'Mark as Not Verified',
+    idProofRejectionReason: language === 'hi' ? 'अस्वीकृति का कारण' : 'Rejection Reason',
+    idProofRejected: language === 'hi' ? 'ID प्रमाण अस्वीकृत!' : 'ID Proof rejected!',
+    idProofRejectionReasonPlaceholder: language === 'hi' ? 'कृपया ID प्रमाण अस्वीकृत करने का कारण दर्ज करें...' : 'Please enter the reason for rejecting ID proof...',
+    rejectIdProof: language === 'hi' ? 'ID प्रमाण अस्वीकृत करें' : 'Reject ID Proof',
+    idProofRejectedStatus: language === 'hi' ? 'अस्वीकृत' : 'Rejected',
     // Reports tab translations
     reports: language === 'hi' ? 'रिपोर्ट्स' : 'Reports',
     reportedUsers: language === 'hi' ? 'रिपोर्ट किए गए उपयोगकर्ता' : 'Reported Users',
@@ -6484,10 +6492,15 @@ ShaadiPartnerSearch Team
                 </div>
                 <div className="flex-1">
                   <Label className="text-xs text-muted-foreground">{t.status}</Label>
-                  <Badge variant={idProofViewProfile.idProofVerified ? 'default' : 'secondary'} className={idProofViewProfile.idProofVerified ? 'bg-green-600' : ''}>
+                  <Badge 
+                    variant={idProofViewProfile.idProofVerified ? 'default' : idProofViewProfile.idProofRejected ? 'destructive' : 'secondary'} 
+                    className={idProofViewProfile.idProofVerified ? 'bg-green-600' : idProofViewProfile.idProofRejected ? '' : ''}
+                  >
                     {idProofViewProfile.idProofVerified 
                       ? (language === 'hi' ? '✓ सत्यापित' : '✓ Verified') 
-                      : (language === 'hi' ? 'लंबित' : 'Pending')}
+                      : idProofViewProfile.idProofRejected
+                        ? (language === 'hi' ? '✗ अस्वीकृत' : '✗ Rejected')
+                        : (language === 'hi' ? 'लंबित' : 'Pending')}
                   </Badge>
                 </div>
               </div>
@@ -6504,7 +6517,7 @@ ShaadiPartnerSearch Team
 
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-2">
-                {!idProofViewProfile.idProofVerified && idProofViewProfile.idProofUrl && (
+                {!idProofViewProfile.idProofVerified && !idProofViewProfile.idProofRejected && idProofViewProfile.idProofUrl && (
                   <Button 
                     size="sm"
                     className="bg-green-600 hover:bg-green-700"
@@ -6517,6 +6530,9 @@ ShaadiPartnerSearch Team
                                 idProofVerified: true,
                                 idProofVerifiedAt: new Date().toISOString(),
                                 idProofVerifiedBy: 'Admin',
+                                idProofRejected: false,
+                                idProofRejectedAt: undefined,
+                                idProofRejectionReason: undefined,
                                 // Also mark digilocker as verified since ID is verified
                                 digilockerVerified: true,
                                 digilockerVerifiedAt: new Date().toISOString(),
@@ -6526,12 +6542,25 @@ ShaadiPartnerSearch Team
                             : p
                         )
                       )
-                      setIdProofViewProfile(prev => prev ? {...prev, idProofVerified: true, idProofVerifiedAt: new Date().toISOString(), digilockerVerified: true} : null)
+                      setIdProofViewProfile(prev => prev ? {...prev, idProofVerified: true, idProofVerifiedAt: new Date().toISOString(), idProofRejected: false, idProofRejectionReason: undefined, digilockerVerified: true} : null)
                       toast.success(language === 'hi' ? 'पहचान प्रमाण सत्यापित!' : 'ID Proof verified!')
                     }}
                   >
                     <CheckCircle size={16} className="mr-2" />
                     {t.markAsVerified}
+                  </Button>
+                )}
+                {!idProofViewProfile.idProofVerified && !idProofViewProfile.idProofRejected && idProofViewProfile.idProofUrl && (
+                  <Button 
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => {
+                      setIdProofRejectionReason('')
+                      setShowIdProofRejectDialog(true)
+                    }}
+                  >
+                    <XCircle size={16} className="mr-2" />
+                    {t.markAsNotVerified}
                   </Button>
                 )}
                 {idProofViewProfile.idProofVerified && (
@@ -6563,6 +6592,38 @@ ShaadiPartnerSearch Team
                     {t.removeVerification}
                   </Button>
                 )}
+                {idProofViewProfile.idProofRejected && (
+                  <Button 
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={() => {
+                      setProfiles((current) => 
+                        (current || []).map(p => 
+                          p.id === idProofViewProfile.id 
+                            ? { 
+                                ...p, 
+                                idProofVerified: true,
+                                idProofVerifiedAt: new Date().toISOString(),
+                                idProofVerifiedBy: 'Admin',
+                                idProofRejected: false,
+                                idProofRejectedAt: undefined,
+                                idProofRejectionReason: undefined,
+                                digilockerVerified: true,
+                                digilockerVerifiedAt: new Date().toISOString(),
+                                digilockerVerifiedBy: 'Admin',
+                                digilockerDocumentType: idProofViewProfile.idProofType as any
+                              } 
+                            : p
+                        )
+                      )
+                      setIdProofViewProfile(prev => prev ? {...prev, idProofVerified: true, idProofVerifiedAt: new Date().toISOString(), idProofRejected: false, idProofRejectionReason: undefined, digilockerVerified: true} : null)
+                      toast.success(language === 'hi' ? 'पहचान प्रमाण सत्यापित!' : 'ID Proof verified!')
+                    }}
+                  >
+                    <CheckCircle size={16} className="mr-2" />
+                    {t.markAsVerified}
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" onClick={() => setShowIdProofViewDialog(false)}>
                   {t.cancel}
                 </Button>
@@ -6578,8 +6639,115 @@ ShaadiPartnerSearch Team
                   </AlertDescription>
                 </Alert>
               )}
+
+              {idProofViewProfile.idProofRejected && (
+                <Alert className="bg-red-50 border-red-400">
+                  <XCircle size={18} className="text-red-600" />
+                  <AlertDescription className="text-red-700">
+                    <div className="space-y-1">
+                      <p className="font-medium">
+                        {language === 'hi' 
+                          ? `${idProofViewProfile.idProofRejectedAt ? formatDateDDMMYYYY(idProofViewProfile.idProofRejectedAt) : ''} को अस्वीकृत` 
+                          : `Rejected on ${idProofViewProfile.idProofRejectedAt ? formatDateDDMMYYYY(idProofViewProfile.idProofRejectedAt) : ''}`}
+                      </p>
+                      {idProofViewProfile.idProofRejectionReason && (
+                        <p><strong>{language === 'hi' ? 'कारण:' : 'Reason:'}</strong> {idProofViewProfile.idProofRejectionReason}</p>
+                      )}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ID Proof Rejection Dialog */}
+      <Dialog open={showIdProofRejectDialog} onOpenChange={setShowIdProofRejectDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <XCircle size={24} weight="fill" />
+              {t.rejectIdProof}
+            </DialogTitle>
+            <DialogDescription>
+              {idProofViewProfile?.fullName} - {idProofViewProfile?.profileId}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="idProofRejectionReason">{t.idProofRejectionReason} <span className="text-red-500">*</span></Label>
+              <Textarea
+                id="idProofRejectionReason"
+                value={idProofRejectionReason}
+                onChange={(e) => setIdProofRejectionReason(e.target.value)}
+                placeholder={t.idProofRejectionReasonPlaceholder}
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+            
+            <Alert>
+              <Warning size={18} className="text-amber-600" />
+              <AlertDescription>
+                {language === 'hi' 
+                  ? 'यूजर को ID प्रमाण पुनः अपलोड करने के लिए सूचित किया जाएगा।' 
+                  : 'The user will be notified to re-upload their ID proof.'}
+              </AlertDescription>
+            </Alert>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowIdProofRejectDialog(false)
+                setIdProofRejectionReason('')
+              }}
+            >
+              {t.cancel}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={!idProofRejectionReason.trim()}
+              onClick={() => {
+                if (!idProofRejectionReason.trim() || !idProofViewProfile) return
+                
+                setProfiles((current) => 
+                  (current || []).map(p => 
+                    p.id === idProofViewProfile.id 
+                      ? { 
+                          ...p, 
+                          idProofVerified: false,
+                          idProofRejected: true,
+                          idProofRejectedAt: new Date().toISOString(),
+                          idProofRejectionReason: idProofRejectionReason.trim(),
+                          digilockerVerified: false,
+                          digilockerVerifiedAt: undefined,
+                          digilockerVerifiedBy: undefined
+                        } 
+                      : p
+                  )
+                )
+                setIdProofViewProfile(prev => prev ? {
+                  ...prev, 
+                  idProofVerified: false, 
+                  idProofRejected: true, 
+                  idProofRejectedAt: new Date().toISOString(),
+                  idProofRejectionReason: idProofRejectionReason.trim(),
+                  digilockerVerified: false
+                } : null)
+                
+                toast.success(t.idProofRejected)
+                setShowIdProofRejectDialog(false)
+                setIdProofRejectionReason('')
+              }}
+            >
+              <XCircle size={16} className="mr-2" />
+              {t.rejectIdProof}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { SearchableSelect, OCCUPATION_OPTIONS } from '@/components/ui/searchable-select'
-import { MultiSelect, EDUCATION_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, getStateOptionsForCountries, getCityOptionsForStates } from '@/components/ui/multi-select'
+import { SearchableSelect } from '@/components/ui/searchable-select'
+import { MultiSelect, EDUCATION_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, OCCUPATION_PROFESSION_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS, DIET_PREFERENCE_OPTIONS, DRINKING_HABIT_OPTIONS, SMOKING_HABIT_OPTIONS, getStateOptionsForCountries, getCityOptionsForStates } from '@/components/ui/multi-select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -61,7 +61,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
   const activeFilterCount = useMemo(() => {
     let count = 0
     if (filters.caste) count++
-    if (filters.community) count++
+    if (filters.religion) count++
     if (filters.motherTongue) count++
     if (filters.manglik !== undefined) count++
     if (filters.dietPreference) count++
@@ -90,8 +90,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     clearFilters: language === 'hi' ? 'साफ़ करें' : 'Clear All',
     
     // Basic filters
+    religion: language === 'hi' ? 'धर्म' : 'Religion',
     caste: language === 'hi' ? 'जाति' : 'Caste',
-    community: language === 'hi' ? 'समुदाय' : 'Community',
     motherTongue: language === 'hi' ? 'मातृभाषा' : 'Mother Tongue',
     manglik: language === 'hi' ? 'मांगलिक' : 'Manglik',
     diet: language === 'hi' ? 'आहार' : 'Diet',
@@ -100,7 +100,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     
     // New enhanced filters
     education: language === 'hi' ? 'शिक्षा' : 'Education',
-    occupation: language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status',
+    occupation: language === 'hi' ? 'व्यवसाय' : 'Occupation',
     country: language === 'hi' ? 'देश' : 'Country',
     state: language === 'hi' ? 'राज्य' : 'State',
     city: language === 'hi' ? 'शहर' : 'City',
@@ -113,6 +113,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     veg: language === 'hi' ? 'शाकाहारी' : 'Vegetarian',
     nonVeg: language === 'hi' ? 'मांसाहारी' : 'Non-Vegetarian',
     eggetarian: language === 'hi' ? 'अंडा खाने वाले' : 'Eggetarian',
+    vegan: language === 'hi' ? 'वीगन' : 'Vegan',
+    jain: language === 'hi' ? 'जैन' : 'Jain',
     never: language === 'hi' ? 'कभी नहीं' : 'Never',
     occasionally: language === 'hi' ? 'कभी-कभी' : 'Occasionally',
     regularly: language === 'hi' ? 'नियमित' : 'Regularly',
@@ -474,7 +476,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">{t.occupation}</Label>
               <SearchableSelect
-                options={[{ value: 'any', label: t.any }, ...OCCUPATION_OPTIONS]}
+                options={[{ value: 'any', label: t.any }, ...OCCUPATION_PROFESSION_OPTIONS]}
                 value={filters.occupationType || 'any'}
                 onValueChange={(val) => setFilters({ ...filters, occupationType: val === 'any' ? undefined : val })}
                 placeholder={t.any}
@@ -563,7 +565,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           </div>
         </div>
 
-        {/* Community & Religion */}
+        {/* Religion & Caste */}
         <div className="p-4 bg-muted/30 rounded-xl border">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-background rounded-lg border">
@@ -574,6 +576,26 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">{t.religion}</Label>
+              <Select 
+                value={filters.religion || ''} 
+                onValueChange={(val) => setFilters({ ...filters, religion: val === 'any' ? undefined : val })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t.any} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">{t.any}</SelectItem>
+                  {RELIGION_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">{t.caste}</Label>
               <Input 
                 placeholder={t.caste}
@@ -583,21 +605,23 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">{t.community}</Label>
-              <Input 
-                placeholder={t.community}
-                value={filters.community || ''}
-                onChange={(e) => setFilters({ ...filters, community: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">{t.motherTongue}</Label>
-              <Input 
-                placeholder={t.motherTongue}
-                value={filters.motherTongue || ''}
-                onChange={(e) => setFilters({ ...filters, motherTongue: e.target.value })}
-              />
+              <Select 
+                value={filters.motherTongue || ''} 
+                onValueChange={(val) => setFilters({ ...filters, motherTongue: val === 'any' ? undefined : val })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t.any} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">{t.any}</SelectItem>
+                  {MOTHER_TONGUE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -640,7 +664,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               <Label className="text-sm text-muted-foreground">{t.diet}</Label>
               <Select 
                 value={filters.dietPreference || ''} 
-                onValueChange={(val: any) => {
+                onValueChange={(val: string) => {
                   if (val === 'any') {
                     const { dietPreference: _dietPreference, ...rest } = filters
                     setFilters(rest)
@@ -654,9 +678,11 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="any">{t.any}</SelectItem>
-                  <SelectItem value="veg">{t.veg}</SelectItem>
-                  <SelectItem value="non-veg">{t.nonVeg}</SelectItem>
-                  <SelectItem value="eggetarian">{t.eggetarian}</SelectItem>
+                  {DIET_PREFERENCE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -665,7 +691,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               <Label className="text-sm text-muted-foreground">{t.drinking}</Label>
               <Select 
                 value={filters.drinkingHabit || ''} 
-                onValueChange={(val: any) => {
+                onValueChange={(val: string) => {
                   if (val === 'any') {
                     const { drinkingHabit: _drinkingHabit, ...rest } = filters
                     setFilters(rest)
@@ -679,9 +705,11 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="any">{t.any}</SelectItem>
-                  <SelectItem value="never">{t.never}</SelectItem>
-                  <SelectItem value="occasionally">{t.occasionally}</SelectItem>
-                  <SelectItem value="regularly">{t.regularly}</SelectItem>
+                  {DRINKING_HABIT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -690,7 +718,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               <Label className="text-sm text-muted-foreground">{t.smoking}</Label>
               <Select 
                 value={filters.smokingHabit || ''} 
-                onValueChange={(val: any) => {
+                onValueChange={(val: string) => {
                   if (val === 'any') {
                     const { smokingHabit: _smokingHabit, ...rest } = filters
                     setFilters(rest)
@@ -704,9 +732,11 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="any">{t.any}</SelectItem>
-                  <SelectItem value="never">{t.never}</SelectItem>
-                  <SelectItem value="occasionally">{t.occasionally}</SelectItem>
-                  <SelectItem value="regularly">{t.regularly}</SelectItem>
+                  {SMOKING_HABIT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

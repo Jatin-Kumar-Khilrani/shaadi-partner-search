@@ -113,6 +113,9 @@ export interface Profile {
   idProofVerifiedAt?: string
   idProofVerifiedBy?: string  // Admin who verified
   idProofNotes?: string  // Admin notes about ID verification
+  idProofRejected?: boolean  // Whether ID proof was rejected
+  idProofRejectedAt?: string  // When ID proof was rejected
+  idProofRejectionReason?: string  // Reason for ID proof rejection
   // Photo/Face verification (selfie matches uploaded photos)
   photoVerified?: boolean
   photoVerifiedAt?: string
