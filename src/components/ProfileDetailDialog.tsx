@@ -392,7 +392,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     annualIncome: language === 'hi' ? 'वार्षिक आय' : 'Annual Income',
     profession: language === 'hi' ? 'पेशा' : 'Profession',
     position: language === 'hi' ? 'पद/पदनाम' : 'Position/Designation',
-    relation: language === 'hi' ? 'संबंध' : 'Relation',
+    relation: language === 'hi' ? 'प्रोफाइल किसके लिए बनाई' : 'Profile Created For',
     registeredBy: language === 'hi' ? 'पंजीकरणकर्ता' : 'Registered By',
     notProvided: language === 'hi' ? 'प्रदान नहीं किया गया' : 'Not Provided',
     mandatory: language === 'hi' ? 'अनिवार्य' : 'Mandatory',
@@ -708,26 +708,28 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                     label={t.relation} 
                     value={profile.relationToProfile || (language === 'hi' ? 'स्वयं' : 'Self')} 
                   />
-                  {/* Membership Plan */}
-                  <InfoItem 
-                    icon={<Star size={18} className="text-amber-500" />} 
-                    label={t.membershipPlan} 
-                    value={
-                      profile.membershipPlan === '1-year' ? t.oneYearPlan :
-                      profile.membershipPlan === '6-month' ? t.sixMonthPlan :
-                      t.freePlan
-                    } 
-                  />
-                  {/* Membership Expiry */}
-                  {profile.membershipExpiry && (
+                  {/* Membership Plan - Only visible to Admin or Self */}
+                  {(isAdmin || isSelf) && (
+                    <InfoItem 
+                      icon={<Star size={18} className="text-amber-500" />} 
+                      label={t.membershipPlan} 
+                      value={
+                        profile.membershipPlan === '1-year' ? t.oneYearPlan :
+                        profile.membershipPlan === '6-month' ? t.sixMonthPlan :
+                        t.freePlan
+                      } 
+                    />
+                  )}
+                  {/* Membership Expiry - Only visible to Admin or Self */}
+                  {(isAdmin || isSelf) && profile.membershipExpiry && (
                     <InfoItem 
                       icon={<Calendar size={18} />} 
                       label={t.membershipExpiry} 
                       value={formatDateDDMMYYYY(profile.membershipExpiry)} 
                     />
                   )}
-                  {/* ID Proof Type */}
-                  {profile.idProofType && (
+                  {/* ID Proof Type - Only visible to Admin or Self */}
+                  {(isAdmin || isSelf) && profile.idProofType && (
                     <InfoItem 
                       icon={<IdentificationCard size={18} />} 
                       label={t.idProofType} 
