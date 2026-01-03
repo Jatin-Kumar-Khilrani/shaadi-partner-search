@@ -47,7 +47,7 @@ interface InboxProps {
 }
 
 export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, membershipPlan, membershipSettings, setProfiles }: InboxProps) {
-  const [interests, _setInterests] = useKV<Interest[]>('interests', [])
+  const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests, setContactRequests] = useKV<ContactRequest[]>('contactRequests', [])
   const [_messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
   const [_blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
@@ -152,40 +152,51 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, me
     if (!interest || !currentUserProfile) return
 
     const senderProfileId = interest.fromProfileId
+    const senderProfile = getProfileByProfileId(senderProfileId)
+    
+    if (!senderProfile) {
+      toast.error(language === 'hi' ? 'प्रेषक प्रोफाइल नहीं मिला' : 'Sender profile not found')
+      return
+    }
 
-    // Check if already chatted with this profile (already counted)
-    const alreadyChatted = chatRequestsUsed.includes(senderProfileId)
+    // Business Logic: Use SENDER's chat slot when interest is accepted
+    const senderChatUsed = senderProfile.chatRequestsUsed || senderProfile.freeChatProfiles || []
+    const acceptorProfileId = currentUserProfile.profileId
+    
+    // Check if sender already used a chat slot for this acceptor
+    const senderAlreadyUsedSlot = senderChatUsed.includes(acceptorProfileId)
 
-    // Check chat limit before accepting (if not already chatted)
-    if (!alreadyChatted && setProfiles) {
-      if (chatRequestsUsed.length >= chatLimit) {
-        toast.error(t.chatLimitReached, {
-          description: t.upgradeForMoreChats,
-          duration: 6000
-        })
+    if (!senderAlreadyUsedSlot && setProfiles) {
+      // Check sender's chat limit
+      const senderPlan = senderProfile.membershipPlan || 'free'
+      const senderChatLimit = senderPlan === '1-year' ? settings.oneYearChatLimit 
+        : senderPlan === '6-month' ? settings.sixMonthChatLimit 
+        : settings.freePlanChatLimit
+
+      if (senderChatUsed.length >= senderChatLimit) {
+        toast.error(
+          language === 'hi' 
+            ? 'प्रेषक की चैट सीमा समाप्त हो गई है' 
+            : 'Sender has reached their chat limit',
+          {
+            description: language === 'hi' 
+              ? 'वे अपनी सदस्यता अपग्रेड करने के बाद आपसे चैट कर सकते हैं' 
+              : 'They can chat with you after upgrading their membership',
+            duration: 6000
+          }
+        )
         return
       }
 
-      // Add to chatted profiles for the acceptor (uses one chat slot)
-      const updatedChattedProfiles = [...chatRequestsUsed, senderProfileId]
+      // Add to sender's chat used list
+      const updatedSenderChatUsed = [...senderChatUsed, acceptorProfileId]
       setProfiles((current) => 
         (current || []).map(p => 
-          p.id === currentUserProfile.id 
-            ? { ...p, chatRequestsUsed: updatedChattedProfiles, freeChatProfiles: updatedChattedProfiles }
+          p.id === senderProfile.id 
+            ? { ...p, chatRequestsUsed: updatedSenderChatUsed, freeChatProfiles: updatedSenderChatUsed }
             : p
         )
       )
-
-      // Notify user about remaining chats
-      const remaining = chatLimit - updatedChattedProfiles.length
-      if (remaining > 0) {
-        toast.info(t.chatRemaining(remaining), { duration: 3000 })
-      } else {
-        toast.warning(t.lastChat, {
-          description: t.upgradeForMoreChats,
-          duration: 5000
-        })
-      }
     }
 
     setInterests(current => 
@@ -194,7 +205,7 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, me
       )
     )
 
-    const senderProfile = getProfileByProfileId(interest.fromProfileId)
+    // Send welcome messages (senderProfile already defined above)
     if (senderProfile) {
       const welcomeMessage: ChatMessage = {
         id: `msg-${Date.now()}`,

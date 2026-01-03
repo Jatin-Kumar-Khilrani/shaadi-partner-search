@@ -94,17 +94,35 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     accepted: language === 'hi' ? 'स्वीकृत' : 'Accepted',
     declined: language === 'hi' ? 'अस्वीकृत' : 'Declined',
     approved: language === 'hi' ? 'स्वीकृत' : 'Approved',
+    cancelled: language === 'hi' ? 'रद्द' : 'Cancelled',
+    revoked: language === 'hi' ? 'वापस लिया' : 'Revoked',
     to: language === 'hi' ? 'को' : 'To',
     from: language === 'hi' ? 'से' : 'From',
     noActivity: language === 'hi' ? 'कोई गतिविधि नहीं' : 'No activity',
     viewProfile: language === 'hi' ? 'प्रोफाइल देखें' : 'View Profile',
     accept: language === 'hi' ? 'स्वीकार करें' : 'Accept',
     decline: language === 'hi' ? 'अस्वीकार करें' : 'Decline',
+    cancel: language === 'hi' ? 'रद्द करें' : 'Cancel',
+    revoke: language === 'hi' ? 'वापस लें' : 'Revoke',
     sentRequests: language === 'hi' ? 'भेजे गए अनुरोध' : 'Sent Requests',
     receivedRequests: language === 'hi' ? 'प्राप्त अनुरोध' : 'Received Requests',
     contactsRemaining: language === 'hi' ? 'संपर्क शेष' : 'Contacts remaining',
     chatsRemaining: language === 'hi' ? 'चैट शेष' : 'Chats remaining',
     usageInfo: language === 'hi' ? 'उपयोग जानकारी' : 'Usage Info',
+    acceptInterestFirst: language === 'hi' ? 'पहले रुचि स्वीकार करें' : 'Accept interest first',
+    interestNotAccepted: language === 'hi' ? 'संपर्क अनुरोध स्वीकार करने से पहले रुचि स्वीकार होनी चाहिए' : 'Interest must be accepted before accepting contact request',
+    // Business flow info messages
+    interestFlowInfo: language === 'hi' 
+      ? '💡 रुचि स्वीकार करने पर प्रेषक का 1 चैट स्लॉट उपयोग होगा' 
+      : '💡 Accepting interest will use 1 chat slot from sender',
+    contactFlowInfo: language === 'hi' 
+      ? '💡 संपर्क स्वीकार करने पर दोनों का 1-1 संपर्क स्लॉट उपयोग होगा' 
+      : '💡 Accepting contact will use 1 slot from each party',
+    revokeInfo: language === 'hi' 
+      ? '↩️ कभी भी वापस ले सकते हैं - स्लॉट वापस मिलेगा' 
+      : '↩️ Can revoke anytime - slots will be refunded',
+    slotRefunded: language === 'hi' ? 'स्लॉट वापस कर दिया गया' : 'Slot refunded',
+    noSlotImpact: language === 'hi' ? 'कोई स्लॉट प्रभाव नहीं' : 'No slot impact',
   }
 
   const sentInterests = interests?.filter(i => i.fromProfileId === currentUserProfile?.profileId) || []
@@ -140,57 +158,51 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     if (!interest || !currentUserProfile) return
 
     const senderProfileId = interest.fromProfileId
+    const senderProfile = profiles.find(p => p.profileId === senderProfileId)
+    
+    if (!senderProfile) {
+      toast.error(language === 'hi' ? 'प्रेषक प्रोफाइल नहीं मिला' : 'Sender profile not found')
+      return
+    }
 
-    // Check if already chatted with this profile (already counted)
-    const alreadyChatted = chatRequestsUsed.includes(senderProfileId)
+    // Business Logic: Use SENDER's chat slot when interest is accepted
+    const senderChatUsed = senderProfile.chatRequestsUsed || []
+    const acceptorProfileId = currentUserProfile.profileId
+    
+    // Check if sender already used a chat slot for this acceptor
+    const senderAlreadyUsedSlot = senderChatUsed.includes(acceptorProfileId)
 
-    // Check chat limit before accepting (if not already chatted)
-    if (!alreadyChatted && setProfiles) {
-      if (chatRequestsUsed.length >= chatLimit) {
+    if (!senderAlreadyUsedSlot && setProfiles) {
+      // Check sender's chat limit
+      const senderPlan = senderProfile.membershipPlan || 'free'
+      const senderChatLimit = senderPlan === '1-year' ? settings.oneYearChatLimit 
+        : senderPlan === '6-month' ? settings.sixMonthChatLimit 
+        : settings.freePlanChatLimit
+
+      if (senderChatUsed.length >= senderChatLimit) {
         toast.error(
           language === 'hi' 
-            ? `चैट सीमा समाप्त: आप केवल ${chatLimit} प्रोफाइल के साथ चैट कर सकते हैं` 
-            : `Chat limit reached: You can only chat with ${chatLimit} profiles`,
+            ? 'प्रेषक की चैट सीमा समाप्त हो गई है' 
+            : 'Sender has reached their chat limit',
           {
             description: language === 'hi' 
-              ? 'और चैट के लिए सदस्यता अपग्रेड करें' 
-              : 'Upgrade membership for more chats',
+              ? 'वे अपनी सदस्यता अपग्रेड करने के बाद आपसे चैट कर सकते हैं' 
+              : 'They can chat with you after upgrading their membership',
             duration: 6000
           }
         )
         return
       }
 
-      // Add to chatted profiles for the acceptor
-      const updatedChattedProfiles = [...chatRequestsUsed, senderProfileId]
+      // Add to sender's chat used list
+      const updatedSenderChatUsed = [...senderChatUsed, acceptorProfileId]
       setProfiles((current) => 
         (current || []).map(p => 
-          p.id === currentUserProfile.id 
-            ? { ...p, chatRequestsUsed: updatedChattedProfiles, freeChatProfiles: updatedChattedProfiles }
+          p.id === senderProfile.id 
+            ? { ...p, chatRequestsUsed: updatedSenderChatUsed, freeChatProfiles: updatedSenderChatUsed }
             : p
         )
       )
-
-      // Notify user about remaining chats
-      const remaining = chatLimit - updatedChattedProfiles.length
-      if (remaining > 0) {
-        toast.info(
-          language === 'hi' 
-            ? `चैट शेष: ${remaining} प्रोफाइल` 
-            : `Chats remaining: ${remaining} profiles`,
-          { duration: 3000 }
-        )
-      } else {
-        toast.warning(
-          language === 'hi' ? 'यह आपकी अंतिम चैट थी!' : 'This was your last chat!',
-          {
-            description: language === 'hi' 
-              ? 'और चैट के लिए सदस्यता अपग्रेड करें' 
-              : 'Upgrade membership for more chats',
-            duration: 5000
-          }
-        )
-      }
     }
 
     setInterests((current) => 
@@ -200,7 +212,14 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
           : interest
       )
     )
-    toast.success(language === 'hi' ? 'रुचि स्वीकार की गई' : 'Interest accepted')
+    toast.success(
+      language === 'hi' ? 'रुचि स्वीकार की गई' : 'Interest accepted',
+      {
+        description: language === 'hi' 
+          ? 'अब आप एक-दूसरे से चैट कर सकते हैं' 
+          : 'You can now chat with each other'
+      }
+    )
   }
 
   const handleDeclineInterest = (interestId: string) => {
@@ -221,16 +240,45 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     const senderProfile = profiles.find(p => p.id === request.fromUserId)
     const senderProfileId = senderProfile?.profileId || request.fromProfileId || ''
     
-    // Check if already used contact slot for this profile
-    const alreadyViewed = contactViewsUsed.includes(senderProfileId)
+    // Business Logic: Interest MUST be accepted before contact request can be accepted
+    const interestFromSender = interests?.find(
+      i => i.fromProfileId === senderProfileId && 
+           i.toProfileId === currentUserProfile.profileId
+    )
     
-    // Check contact limit before accepting (if not already viewed)
-    if (!alreadyViewed && setProfiles) {
-      if (contactViewsUsed.length >= contactLimit) {
+    if (!interestFromSender || interestFromSender.status !== 'accepted') {
+      toast.error(
+        t.acceptInterestFirst,
+        {
+          description: t.interestNotAccepted,
+          duration: 6000
+        }
+      )
+      return
+    }
+
+    if (!senderProfile) {
+      toast.error(language === 'hi' ? 'प्रेषक प्रोफाइल नहीं मिला' : 'Sender profile not found')
+      return
+    }
+
+    // Business Logic: Use BOTH sender's and accepter's contact slot
+    const acceptorContactUsed = contactViewsUsed
+    const senderContactUsed = senderProfile.contactViewsUsed || []
+    const acceptorProfileId = currentUserProfile.profileId
+
+    // Check if already used contact slot for this profile (for acceptor)
+    const acceptorAlreadyViewed = acceptorContactUsed.includes(senderProfileId)
+    // Check if sender already used contact slot for acceptor
+    const senderAlreadyViewed = senderContactUsed.includes(acceptorProfileId)
+    
+    // Check ACCEPTOR's contact limit
+    if (!acceptorAlreadyViewed && setProfiles) {
+      if (acceptorContactUsed.length >= contactLimit) {
         toast.error(
           language === 'hi' 
-            ? `संपर्क सीमा समाप्त: आप केवल ${contactLimit} प्रोफाइल का संपर्क देख सकते हैं` 
-            : `Contact limit reached: You can only view ${contactLimit} profile contacts`,
+            ? `आपकी संपर्क सीमा समाप्त: आप केवल ${contactLimit} प्रोफाइल का संपर्क देख सकते हैं` 
+            : `Your contact limit reached: You can only view ${contactLimit} profile contacts`,
           {
             description: language === 'hi' 
               ? 'और संपर्क के लिए सदस्यता अपग्रेड करें' 
@@ -240,36 +288,62 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
         )
         return
       }
+    }
 
-      // Add to viewed contacts for the acceptor
-      const updatedContactViews = [...contactViewsUsed, senderProfileId]
-      setProfiles((current) => 
-        (current || []).map(p => 
-          p.id === currentUserProfile.id 
-            ? { ...p, contactViewsUsed: updatedContactViews }
-            : p
-        )
-      )
+    // Check SENDER's contact limit
+    if (!senderAlreadyViewed && setProfiles) {
+      const senderPlan = senderProfile.membershipPlan || 'free'
+      const senderContactLimit = senderPlan === '1-year' ? settings.oneYearContactLimit 
+        : senderPlan === '6-month' ? settings.sixMonthContactLimit 
+        : settings.freePlanContactLimit
 
-      // Notify user about remaining contacts
-      const remaining = contactLimit - updatedContactViews.length
-      if (remaining > 0) {
-        toast.info(
+      if (senderContactUsed.length >= senderContactLimit) {
+        toast.error(
           language === 'hi' 
-            ? `संपर्क शेष: ${remaining} प्रोफाइल` 
-            : `Contacts remaining: ${remaining} profiles`,
-          { duration: 3000 }
-        )
-      } else {
-        toast.warning(
-          language === 'hi' ? 'यह आपका अंतिम संपर्क था!' : 'This was your last contact!',
+            ? 'प्रेषक की संपर्क सीमा समाप्त हो गई है' 
+            : 'Sender has reached their contact limit',
           {
             description: language === 'hi' 
-              ? 'और संपर्क के लिए सदस्यता अपग्रेड करें' 
-              : 'Upgrade membership for more contacts',
-            duration: 5000
+              ? 'वे अपनी सदस्यता अपग्रेड करने के बाद संपर्क देख सकते हैं' 
+              : 'They can view contacts after upgrading their membership',
+            duration: 6000
           }
         )
+        return
+      }
+    }
+
+    // Update BOTH profiles' contact views
+    if (setProfiles) {
+      const updatedAcceptorContactViews = acceptorAlreadyViewed ? acceptorContactUsed : [...acceptorContactUsed, senderProfileId]
+      const updatedSenderContactViews = senderAlreadyViewed ? senderContactUsed : [...senderContactUsed, acceptorProfileId]
+      
+      setProfiles((current) => 
+        (current || []).map(p => {
+          if (p.id === currentUserProfile.id) {
+            return { ...p, contactViewsUsed: updatedAcceptorContactViews }
+          }
+          if (p.id === senderProfile.id) {
+            return { ...p, contactViewsUsed: updatedSenderContactViews }
+          }
+          return p
+        })
+      )
+
+      // Notify acceptor about remaining contacts
+      if (!acceptorAlreadyViewed) {
+        const remaining = contactLimit - updatedAcceptorContactViews.length
+        if (remaining <= 0) {
+          toast.warning(
+            language === 'hi' ? 'यह आपका अंतिम संपर्क था!' : 'This was your last contact!',
+            {
+              description: language === 'hi' 
+                ? 'और संपर्क के लिए सदस्यता अपग्रेड करें' 
+                : 'Upgrade membership for more contacts',
+              duration: 5000
+            }
+          )
+        }
       }
     }
     
@@ -281,24 +355,6 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
           : req
       )
     )
-
-    // Also automatically accept any pending interest from the same sender
-    const senderProfileIdForInterest = senderProfile?.profileId || ''
-    const pendingInterestFromSender = interests?.find(
-      i => i.fromProfileId === senderProfileIdForInterest && 
-           i.toProfileId === currentUserProfile?.profileId && 
-           i.status === 'pending'
-    )
-    
-    if (pendingInterestFromSender) {
-      setInterests((current) => 
-        (current || []).map(interest => 
-          interest.id === pendingInterestFromSender.id 
-            ? { ...interest, status: 'accepted' as const }
-            : interest
-        )
-      )
-    }
     
     toast.success(
       language === 'hi' 
@@ -306,8 +362,8 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
         : `Contact request from ${senderProfile?.fullName || 'user'} accepted`,
       {
         description: language === 'hi' 
-          ? 'रुचि भी स्वीकार हो गई। अब आप एक-दूसरे की संपर्क जानकारी देख सकते हैं।' 
-          : 'Interest also accepted. You can now view each other\'s contact details.'
+          ? 'अब आप दोनों एक-दूसरे की संपर्क जानकारी देख सकते हैं।' 
+          : 'You both can now view each other\'s contact details.'
       }
     )
   }
@@ -332,6 +388,147 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
         description: language === 'hi' 
           ? `${senderProfile?.fullName || 'उपयोगकर्ता'} को सूचित किया जाएगा` 
           : `${senderProfile?.fullName || 'User'} will be notified`
+      }
+    )
+  }
+
+  // Cancel handlers for pending requests
+  const handleCancelInterest = (interestId: string) => {
+    const interest = interests?.find(i => i.id === interestId)
+    if (!interest) return
+
+    const receiverProfile = getProfileByProfileId(interest.toProfileId)
+    
+    setInterests((current) => 
+      (current || []).filter(i => i.id !== interestId)
+    )
+    
+    toast.success(
+      language === 'hi' 
+        ? 'रुचि रद्द की गई' 
+        : 'Interest cancelled',
+      {
+        description: language === 'hi' 
+          ? `${receiverProfile?.fullName || 'उपयोगकर्ता'} को अब यह अनुरोध नहीं दिखेगा` 
+          : `${receiverProfile?.fullName || 'User'} will no longer see this request`
+      }
+    )
+  }
+
+  const handleCancelContactRequest = (requestId: string) => {
+    const request = contactRequests?.find(r => r.id === requestId)
+    if (!request) return
+
+    const receiverProfile = profiles.find(p => p.id === request.toUserId)
+    
+    setContactRequests((current) => 
+      (current || []).filter(r => r.id !== requestId)
+    )
+    
+    toast.success(
+      language === 'hi' 
+        ? 'संपर्क अनुरोध रद्द किया गया' 
+        : 'Contact request cancelled',
+      {
+        description: language === 'hi' 
+          ? `${receiverProfile?.fullName || 'उपयोगकर्ता'} को अब यह अनुरोध नहीं दिखेगा` 
+          : `${receiverProfile?.fullName || 'User'} will no longer see this request`
+      }
+    )
+  }
+
+  // Revoke handlers - can revoke after accepting, slots will be refunded
+  const handleRevokeInterest = (interestId: string) => {
+    const interest = interests?.find(i => i.id === interestId)
+    if (!interest || !currentUserProfile) return
+
+    const senderProfile = getProfileByProfileId(interest.fromProfileId)
+    
+    // Refund sender's chat slot
+    if (senderProfile && setProfiles) {
+      const senderChatUsed = senderProfile.chatRequestsUsed || senderProfile.freeChatProfiles || []
+      const acceptorProfileId = currentUserProfile.profileId
+      
+      // Remove acceptor from sender's used list
+      const updatedSenderChatUsed = senderChatUsed.filter(pid => pid !== acceptorProfileId)
+      setProfiles((current) => 
+        (current || []).map(p => 
+          p.id === senderProfile.id 
+            ? { ...p, chatRequestsUsed: updatedSenderChatUsed, freeChatProfiles: updatedSenderChatUsed }
+            : p
+        )
+      )
+    }
+
+    // Update interest status to revoked/declined
+    setInterests((current) => 
+      (current || []).map(i => 
+        i.id === interestId 
+          ? { ...i, status: 'declined' as const, declinedAt: new Date().toISOString() }
+          : i
+      )
+    )
+    
+    toast.success(
+      language === 'hi' 
+        ? 'रुचि वापस ली गई' 
+        : 'Interest revoked',
+      {
+        description: language === 'hi' 
+          ? `${senderProfile?.fullName || 'उपयोगकर्ता'} का चैट स्लॉट वापस कर दिया गया` 
+          : `${senderProfile?.fullName || 'User'}'s chat slot has been refunded`
+      }
+    )
+  }
+
+  const handleRevokeContactRequest = (requestId: string) => {
+    const request = contactRequests?.find(r => r.id === requestId)
+    if (!request || !currentUserProfile) return
+
+    const senderProfile = profiles.find(p => p.id === request.fromUserId)
+    const senderProfileId = senderProfile?.profileId || request.fromProfileId || ''
+    const acceptorProfileId = currentUserProfile.profileId
+
+    // Refund BOTH parties' contact slots
+    if (setProfiles) {
+      // Refund acceptor's slot
+      const acceptorContactUsed = contactViewsUsed
+      const updatedAcceptorContactViews = acceptorContactUsed.filter(pid => pid !== senderProfileId)
+      
+      // Refund sender's slot
+      const senderContactUsed = senderProfile?.contactViewsUsed || []
+      const updatedSenderContactViews = senderContactUsed.filter(pid => pid !== acceptorProfileId)
+
+      setProfiles((current) => 
+        (current || []).map(p => {
+          if (p.id === currentUserProfile.id) {
+            return { ...p, contactViewsUsed: updatedAcceptorContactViews }
+          }
+          if (senderProfile && p.id === senderProfile.id) {
+            return { ...p, contactViewsUsed: updatedSenderContactViews }
+          }
+          return p
+        })
+      )
+    }
+
+    // Update contact request status to declined
+    setContactRequests((current) => 
+      (current || []).map(req => 
+        req.id === requestId 
+          ? { ...req, status: 'declined' as const }
+          : req
+      )
+    )
+    
+    toast.success(
+      language === 'hi' 
+        ? 'संपर्क अनुमति वापस ली गई' 
+        : 'Contact permission revoked',
+      {
+        description: language === 'hi' 
+          ? 'दोनों के संपर्क स्लॉट वापस कर दिए गए' 
+          : 'Contact slots refunded for both parties'
       }
     )
   }
@@ -403,6 +600,30 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {getStatusBadge(interest.status)}
+                                  {/* Cancel button for pending interests */}
+                                  {interest.status === 'pending' && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleCancelInterest(interest.id)}
+                                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    >
+                                      <X size={14} className="mr-1" />
+                                      {t.cancel}
+                                    </Button>
+                                  )}
+                                  {/* Revoke button for accepted interests - sender can also revoke */}
+                                  {interest.status === 'accepted' && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleRevokeInterest(interest.id)}
+                                      className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
+                                    >
+                                      <X size={14} className="mr-1" />
+                                      {t.revoke}
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
                             </CardContent>
@@ -492,7 +713,32 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       </Button>
                                     </>
                                   )}
+                                  {/* Revoke button for accepted interests */}
+                                  {interest.status === 'accepted' && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleRevokeInterest(interest.id)}
+                                      className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
+                                    >
+                                      <X size={14} className="mr-1" />
+                                      {t.revoke}
+                                    </Button>
+                                  )}
                                 </div>
+                                {/* Info text for pending */}
+                                {interest.status === 'pending' && (
+                                  <div className="text-xs text-muted-foreground space-y-1 bg-muted/50 p-2 rounded">
+                                    <p>{t.interestFlowInfo}</p>
+                                    <p className="text-green-600">{t.revokeInfo}</p>
+                                  </div>
+                                )}
+                                {/* Info text for accepted */}
+                                {interest.status === 'accepted' && (
+                                  <p className="text-xs text-green-600">
+                                    {t.revokeInfo}
+                                  </p>
+                                )}
                               </div>
                             </CardContent>
                           </Card>
@@ -567,7 +813,33 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                         <p className="text-xs text-muted-foreground">{formatDate(request.createdAt)}</p>
                                       </div>
                                     </div>
-                                    {getStatusBadge(request.status)}
+                                    <div className="flex items-center gap-2">
+                                      {getStatusBadge(request.status)}
+                                      {/* Cancel button for pending contact requests */}
+                                      {request.status === 'pending' && (
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm"
+                                          onClick={() => handleCancelContactRequest(request.id)}
+                                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                        >
+                                          <X size={14} className="mr-1" />
+                                          {t.cancel}
+                                        </Button>
+                                      )}
+                                      {/* Revoke button for approved contact requests */}
+                                      {request.status === 'approved' && (
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm"
+                                          onClick={() => handleRevokeContactRequest(request.id)}
+                                          className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
+                                        >
+                                          <X size={14} className="mr-1" />
+                                          {t.revoke}
+                                        </Button>
+                                      )}
+                                    </div>
                                   </div>
                                 </CardContent>
                               </Card>
@@ -627,32 +899,66 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       {getStatusBadge(request.status)}
                                     </div>
                                     {/* Accept/Decline buttons for pending requests */}
-                                    {request.status === 'pending' && (
-                                      <div className="space-y-2">
-                                        <div className="flex gap-2">
-                                          <Button 
-                                            variant="default" 
-                                            size="sm"
-                                            onClick={() => handleAcceptContactRequest(request.id)}
-                                            className="flex-1 bg-teal hover:bg-teal/90"
-                                          >
-                                            <Check size={16} className="mr-2" />
-                                            {t.accept}
-                                          </Button>
-                                          <Button 
-                                            variant="destructive" 
-                                            size="sm"
-                                            onClick={() => handleDeclineContactRequest(request.id)}
-                                            className="flex-1"
-                                          >
-                                            <X size={16} className="mr-2" />
-                                            {t.decline}
-                                          </Button>
+                                    {request.status === 'pending' && (() => {
+                                      // Check if interest from sender is accepted
+                                      const senderProfileId = profile?.profileId || request.fromProfileId
+                                      const interestFromSender = interests?.find(
+                                        i => i.fromProfileId === senderProfileId && 
+                                             i.toProfileId === currentUserProfile?.profileId
+                                      )
+                                      const isInterestAccepted = interestFromSender?.status === 'accepted'
+                                      
+                                      return (
+                                        <div className="space-y-2">
+                                          <div className="flex gap-2">
+                                            <Button 
+                                              variant="default" 
+                                              size="sm"
+                                              onClick={() => handleAcceptContactRequest(request.id)}
+                                              className="flex-1 bg-teal hover:bg-teal/90"
+                                              disabled={!isInterestAccepted}
+                                            >
+                                              <Check size={16} className="mr-2" />
+                                              {t.accept}
+                                            </Button>
+                                            <Button 
+                                              variant="destructive" 
+                                              size="sm"
+                                              onClick={() => handleDeclineContactRequest(request.id)}
+                                              className="flex-1"
+                                            >
+                                              <X size={16} className="mr-2" />
+                                              {t.decline}
+                                            </Button>
+                                          </div>
+                                          {!isInterestAccepted && (
+                                            <p className="text-xs text-amber-600 text-center font-medium">
+                                              ⚠️ {t.acceptInterestFirst}
+                                            </p>
+                                          )}
+                                          <p className="text-xs text-muted-foreground text-center">
+                                            {t.contactFlowInfo}
+                                          </p>
+                                          <p className="text-xs text-green-600 text-center">
+                                            {t.revokeInfo}
+                                          </p>
                                         </div>
-                                        <p className="text-xs text-muted-foreground text-center">
-                                          {language === 'hi' 
-                                            ? '⚡ स्वीकार करने पर रुचि भी स्वीकार हो जाएगी' 
-                                            : '⚡ Accepting will also accept their interest'}
+                                      )
+                                    })()}
+                                    {/* Revoke button for approved contact requests */}
+                                    {request.status === 'approved' && (
+                                      <div className="space-y-2">
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm"
+                                          onClick={() => handleRevokeContactRequest(request.id)}
+                                          className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
+                                        >
+                                          <X size={14} className="mr-1" />
+                                          {t.revoke}
+                                        </Button>
+                                        <p className="text-xs text-green-600">
+                                          {t.revokeInfo}
                                         </p>
                                       </div>
                                     )}

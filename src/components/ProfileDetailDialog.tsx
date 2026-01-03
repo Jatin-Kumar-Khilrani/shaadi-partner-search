@@ -309,14 +309,35 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
 
     setContactRequests(current => [...(current || []), newRequest])
 
-    toast.info(
-      language === 'hi' ? 'संपर्क अनुरोध भेजा गया' : 'Contact request sent',
-      {
-        description: language === 'hi' 
-          ? 'दूसरे व्यक्ति को आपके संपर्क अनुरोध की सूचना मिल गई है।'
-          : 'The other person has been notified of your contact request.'
+    // Business Logic: Auto-send interest when sending contact request (if not already sent)
+    if (!existingInterest && !hasReceivedInterestFromProfile) {
+      const newInterest: Interest = {
+        id: `interest-${Date.now()}`,
+        fromProfileId: currentUserProfile.profileId,
+        toProfileId: profile.profileId,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
       }
-    )
+      setInterests(current => [...(current || []), newInterest])
+      
+      toast.info(
+        language === 'hi' ? 'संपर्क और रुचि अनुरोध भेजा गया' : 'Contact and interest request sent',
+        {
+          description: language === 'hi' 
+            ? 'दूसरे व्यक्ति को पहले आपकी रुचि स्वीकार करनी होगी, फिर संपर्क अनुरोध।'
+            : 'The other person must first accept your interest, then the contact request.'
+        }
+      )
+    } else {
+      toast.info(
+        language === 'hi' ? 'संपर्क अनुरोध भेजा गया' : 'Contact request sent',
+        {
+          description: language === 'hi' 
+            ? 'दूसरे व्यक्ति को पहले रुचि स्वीकार करनी होगी, फिर संपर्क अनुरोध।'
+            : 'The other person must first accept interest, then contact request.'
+        }
+      )
+    }
   }
 
   const badge = getTrustBadge()
