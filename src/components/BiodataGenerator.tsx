@@ -580,7 +580,7 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
       ctx.font = '12px Arial'
       ctx.fillStyle = '#1a1a1a'
       ctx.fillText(`${t.email}: ${profile.email}`, leftMargin, contactY + 20)
-      ctx.fillText(`${t.mobile}: ${profile.mobile}`, leftMargin, contactY + 38)
+      ctx.fillText(`${t.mobile}: ${profile.mobile?.replace(/^undefined\s*/i, '') || ''}`, leftMargin, contactY + 38)
       
       // QR Code
       if (qrCodeDataUrl) {
@@ -1148,7 +1148,7 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
                   <div className="flex justify-between items-start">
                     <div className="grid grid-cols-1 gap-1 text-xs">
                       <div><span className="font-semibold text-gray-600">{t.email}:</span> {profile.email}</div>
-                      <div><span className="font-semibold text-gray-600">{t.mobile}:</span> {profile.mobile}</div>
+                      <div><span className="font-semibold text-gray-600">{t.mobile}:</span> {profile.mobile?.replace(/^undefined\s*/i, '') || ''}</div>
                     </div>
                     {/* QR Code */}
                     {qrCodeDataUrl && (

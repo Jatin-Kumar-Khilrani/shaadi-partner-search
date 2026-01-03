@@ -685,7 +685,7 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, me
                     <div className="flex-1">
                       <p className="text-sm font-medium text-muted-foreground mb-1">{t.mobile}</p>
                       <p className="text-lg font-semibold">
-                        {viewContactProfile.hideMobile ? t.notProvided : viewContactProfile.mobile}
+                        {viewContactProfile.hideMobile ? t.notProvided : (viewContactProfile.mobile?.replace(/^undefined\s*/i, '') || t.notProvided)}
                       </p>
                     </div>
                   </div>

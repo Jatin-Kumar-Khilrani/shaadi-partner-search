@@ -43,7 +43,7 @@ interface MyActivityProps {
 
 export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, membershipPlan, membershipSettings, setProfiles }: MyActivityProps) {
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
-  const [contactRequests] = useKV<ContactRequest[]>('contactRequests', [])
+  const [contactRequests, setContactRequests] = useKV<ContactRequest[]>('contactRequests', [])
   const [messages] = useKV<ChatMessage[]>('chatMessages', [])
   
   // Lightbox for photo zoom
@@ -66,8 +66,22 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     return settings.freePlanChatLimit
   }
 
+  // Get contact limit based on current plan
+  const getContactLimit = (): number => {
+    if (!membershipPlan || membershipPlan === 'free') {
+      return settings.freePlanContactLimit
+    } else if (membershipPlan === '6-month') {
+      return settings.sixMonthContactLimit
+    } else if (membershipPlan === '1-year') {
+      return settings.oneYearContactLimit
+    }
+    return settings.freePlanContactLimit
+  }
+
   const chatLimit = getChatLimit()
+  const contactLimit = getContactLimit()
   const chatRequestsUsed = currentUserProfile?.chatRequestsUsed || currentUserProfile?.freeChatProfiles || []
+  const contactViewsUsed = currentUserProfile?.contactViewsUsed || []
 
   const t = {
     title: language === 'hi' ? 'मेरी गतिविधि' : 'My Activity',
@@ -88,6 +102,9 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     decline: language === 'hi' ? 'अस्वीकार करें' : 'Decline',
     sentRequests: language === 'hi' ? 'भेजे गए अनुरोध' : 'Sent Requests',
     receivedRequests: language === 'hi' ? 'प्राप्त अनुरोध' : 'Received Requests',
+    contactsRemaining: language === 'hi' ? 'संपर्क शेष' : 'Contacts remaining',
+    chatsRemaining: language === 'hi' ? 'चैट शेष' : 'Chats remaining',
+    usageInfo: language === 'hi' ? 'उपयोग जानकारी' : 'Usage Info',
   }
 
   const sentInterests = interests?.filter(i => i.fromProfileId === currentUserProfile?.profileId) || []
@@ -195,6 +212,128 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
       )
     )
     toast.success(language === 'hi' ? 'रुचि अस्वीकार की गई' : 'Interest declined')
+  }
+
+  const handleAcceptContactRequest = (requestId: string) => {
+    const request = contactRequests?.find(r => r.id === requestId)
+    if (!request || !currentUserProfile) return
+
+    const senderProfile = profiles.find(p => p.id === request.fromUserId)
+    const senderProfileId = senderProfile?.profileId || request.fromProfileId || ''
+    
+    // Check if already used contact slot for this profile
+    const alreadyViewed = contactViewsUsed.includes(senderProfileId)
+    
+    // Check contact limit before accepting (if not already viewed)
+    if (!alreadyViewed && setProfiles) {
+      if (contactViewsUsed.length >= contactLimit) {
+        toast.error(
+          language === 'hi' 
+            ? `संपर्क सीमा समाप्त: आप केवल ${contactLimit} प्रोफाइल का संपर्क देख सकते हैं` 
+            : `Contact limit reached: You can only view ${contactLimit} profile contacts`,
+          {
+            description: language === 'hi' 
+              ? 'और संपर्क के लिए सदस्यता अपग्रेड करें' 
+              : 'Upgrade membership for more contacts',
+            duration: 6000
+          }
+        )
+        return
+      }
+
+      // Add to viewed contacts for the acceptor
+      const updatedContactViews = [...contactViewsUsed, senderProfileId]
+      setProfiles((current) => 
+        (current || []).map(p => 
+          p.id === currentUserProfile.id 
+            ? { ...p, contactViewsUsed: updatedContactViews }
+            : p
+        )
+      )
+
+      // Notify user about remaining contacts
+      const remaining = contactLimit - updatedContactViews.length
+      if (remaining > 0) {
+        toast.info(
+          language === 'hi' 
+            ? `संपर्क शेष: ${remaining} प्रोफाइल` 
+            : `Contacts remaining: ${remaining} profiles`,
+          { duration: 3000 }
+        )
+      } else {
+        toast.warning(
+          language === 'hi' ? 'यह आपका अंतिम संपर्क था!' : 'This was your last contact!',
+          {
+            description: language === 'hi' 
+              ? 'और संपर्क के लिए सदस्यता अपग्रेड करें' 
+              : 'Upgrade membership for more contacts',
+            duration: 5000
+          }
+        )
+      }
+    }
+    
+    // Update the contact request status
+    setContactRequests((current) => 
+      (current || []).map(req => 
+        req.id === requestId 
+          ? { ...req, status: 'approved' as const }
+          : req
+      )
+    )
+
+    // Also automatically accept any pending interest from the same sender
+    const senderProfileIdForInterest = senderProfile?.profileId || ''
+    const pendingInterestFromSender = interests?.find(
+      i => i.fromProfileId === senderProfileIdForInterest && 
+           i.toProfileId === currentUserProfile?.profileId && 
+           i.status === 'pending'
+    )
+    
+    if (pendingInterestFromSender) {
+      setInterests((current) => 
+        (current || []).map(interest => 
+          interest.id === pendingInterestFromSender.id 
+            ? { ...interest, status: 'accepted' as const }
+            : interest
+        )
+      )
+    }
+    
+    toast.success(
+      language === 'hi' 
+        ? `${senderProfile?.fullName || 'उपयोगकर्ता'} का संपर्क अनुरोध स्वीकार किया गया` 
+        : `Contact request from ${senderProfile?.fullName || 'user'} accepted`,
+      {
+        description: language === 'hi' 
+          ? 'रुचि भी स्वीकार हो गई। अब आप एक-दूसरे की संपर्क जानकारी देख सकते हैं।' 
+          : 'Interest also accepted. You can now view each other\'s contact details.'
+      }
+    )
+  }
+
+  const handleDeclineContactRequest = (requestId: string) => {
+    const request = contactRequests?.find(r => r.id === requestId)
+    const senderProfile = profiles.find(p => p.id === request?.fromUserId)
+    
+    setContactRequests((current) => 
+      (current || []).map(req => 
+        req.id === requestId 
+          ? { ...req, status: 'declined' as const }
+          : req
+      )
+    )
+    
+    toast.success(
+      language === 'hi' 
+        ? 'संपर्क अनुरोध अस्वीकार किया गया' 
+        : 'Contact request declined',
+      {
+        description: language === 'hi' 
+          ? `${senderProfile?.fullName || 'उपयोगकर्ता'} को सूचित किया जाएगा` 
+          : `${senderProfile?.fullName || 'User'} will be notified`
+      }
+    )
   }
 
   return (
@@ -369,7 +508,12 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
           <TabsContent value="contact-requests">
             <Card>
               <CardHeader>
-                <CardTitle>{t.myContactRequests}</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>{t.myContactRequests}</CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    {t.contactsRemaining}: {contactLimit - contactViewsUsed.length}/{contactLimit}
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="sent-requests">
@@ -482,6 +626,36 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       </div>
                                       {getStatusBadge(request.status)}
                                     </div>
+                                    {/* Accept/Decline buttons for pending requests */}
+                                    {request.status === 'pending' && (
+                                      <div className="space-y-2">
+                                        <div className="flex gap-2">
+                                          <Button 
+                                            variant="default" 
+                                            size="sm"
+                                            onClick={() => handleAcceptContactRequest(request.id)}
+                                            className="flex-1 bg-teal hover:bg-teal/90"
+                                          >
+                                            <Check size={16} className="mr-2" />
+                                            {t.accept}
+                                          </Button>
+                                          <Button 
+                                            variant="destructive" 
+                                            size="sm"
+                                            onClick={() => handleDeclineContactRequest(request.id)}
+                                            className="flex-1"
+                                          >
+                                            <X size={16} className="mr-2" />
+                                            {t.decline}
+                                          </Button>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground text-center">
+                                          {language === 'hi' 
+                                            ? '⚡ स्वीकार करने पर रुचि भी स्वीकार हो जाएगी' 
+                                            : '⚡ Accepting will also accept their interest'}
+                                        </p>
+                                      </div>
+                                    )}
                                   </div>
                                 </CardContent>
                               </Card>

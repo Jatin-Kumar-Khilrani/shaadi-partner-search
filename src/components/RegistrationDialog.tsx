@@ -1307,7 +1307,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       age,
       gender: formData.gender!,
       maritalStatus: formData.maritalStatus!,
-      mobile: `${formData.countryCode} ${formData.mobile}`,
+      mobile: `${formData.countryCode || '+91'} ${formData.mobile}`,
       membershipPlan: formData.membershipPlan!,
       relationToProfile: formData.profileCreatedFor === 'Other' ? formData.otherRelation : formData.profileCreatedFor!,
       hideEmail: editProfile?.hideEmail ?? false,
