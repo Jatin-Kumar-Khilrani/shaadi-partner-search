@@ -1536,18 +1536,15 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                         </div>
                                       )
                                     })()}
-                                    {/* Revoke button for approved contact requests */}
+                                    {/* Revoke button for approved RECEIVED contact requests */}
+                                    {/* Note: Receiver does NOT get to view sender's contact - they only allowed sender to view THEIR contact */}
                                     {request.status === 'approved' && profile && (
-                                      <div className="flex gap-2">
-                                        <Button 
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => setViewContactProfile(profile)}
-                                          className="gap-2"
-                                        >
-                                          <Eye size={16} />
-                                          {t.viewContact}
-                                        </Button>
+                                      <div className="flex flex-col gap-2">
+                                        <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                                          ℹ️ {language === 'hi' 
+                                            ? 'आपने उन्हें अपना संपर्क देखने की अनुमति दी है। उनका संपर्क देखने के लिए आपको भी उन्हें अनुरोध भेजना होगा।'
+                                            : 'You allowed them to view your contact. To view their contact, you need to send them a request too.'}
+                                        </p>
                                         <Button 
                                           variant="outline" 
                                           size="sm"
