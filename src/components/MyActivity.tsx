@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useKV } from '@/hooks/useKV'
 import { Eye, Heart, ChatCircle, Check, X, MagnifyingGlassPlus, ProhibitInset, Phone, Envelope as EnvelopeIcon, User, Clock, ArrowCounterClockwise, Warning } from '@phosphor-icons/react'
 import type { Interest, ContactRequest, Profile, BlockedProfile, MembershipPlan, DeclinedProfile } from '@/types/profile'
@@ -122,6 +123,9 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     accept: language === 'hi' ? 'स्वीकार करें' : 'Accept',
     decline: language === 'hi' ? 'अस्वीकार करें' : 'Decline',
     block: language === 'hi' ? 'ब्लॉक करें' : 'Block',
+    blockTooltip: language === 'hi' 
+      ? 'इस प्रोफाइल को ब्लॉक करें - वे आपको दोबारा नहीं दिखेंगे' 
+      : 'Block this profile - they won\'t appear in your matches again',
     cancel: language === 'hi' ? 'रद्द करें' : 'Cancel',
     revoke: language === 'hi' ? 'वापस लें' : 'Revoke',
     sentRequests: language === 'hi' ? 'भेजे गए अनुरोध' : 'Sent Requests',
@@ -154,9 +158,9 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
       ? '💡 संपर्क स्वीकार करने पर दोनों का 1-1 संपर्क स्लॉट उपयोग होगा' 
       : '💡 Accepting contact will use 1 slot from each party',
     revokeInfo: language === 'hi' 
-      ? '↩️ कभी भी वापस ले सकते हैं - स्लॉट वापस मिलेगा' 
-      : '↩️ Can revoke anytime - slots will be refunded',
-    slotRefunded: language === 'hi' ? 'स्लॉट वापस कर दिया गया' : 'Slot refunded',
+      ? '↩️ कभी भी वापस ले सकते हैं - स्लॉट वापस नहीं मिलेगा' 
+      : '↩️ Can revoke anytime - slots will NOT be refunded',
+    slotConsumed: language === 'hi' ? 'स्लॉट उपभोग हो गया' : 'Slot consumed',
     noSlotImpact: language === 'hi' ? 'कोई स्लॉट प्रभाव नहीं' : 'No slot impact',
     chatLimitInfo: language === 'hi' 
       ? 'रुचि स्वीकार करने पर चैट सीमा से एक घटेगी' 
@@ -446,6 +450,49 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     setInterestToDecline(null)
   }
 
+  // Handler to undo a declined interest - sets status back to pending
+  const handleUndoDeclineInterest = (interestId: string) => {
+    const interest = interests?.find(i => i.id === interestId)
+    const senderProfile = profiles.find(p => p.profileId === interest?.fromProfileId)
+    
+    setInterests((current) => 
+      (current || []).map(i => 
+        i.id === interestId 
+          ? { ...i, status: 'pending' as const, declinedAt: undefined, declinedBy: undefined, contactAutoDeclined: undefined }
+          : i
+      )
+    )
+    
+    // Also restore any auto-declined contact request from this sender
+    if (interest?.contactAutoDeclined) {
+      const autoDeclinedContact = contactRequests?.find(
+        r => r.fromProfileId === interest.fromProfileId && 
+             r.toUserId === loggedInUserId && 
+             r.autoDeclinedDueToInterest === true
+      )
+      if (autoDeclinedContact) {
+        setContactRequests((current) =>
+          (current || []).map(r =>
+            r.id === autoDeclinedContact.id
+              ? { ...r, status: 'pending' as const, declinedAt: undefined, declinedBy: undefined, autoDeclinedDueToInterest: undefined }
+              : r
+          )
+        )
+      }
+    }
+    
+    toast.success(
+      language === 'hi' 
+        ? 'अस्वीकृति वापस ली गई' 
+        : 'Decline undone',
+      {
+        description: language === 'hi' 
+          ? `${senderProfile?.fullName || 'उपयोगकर्ता'} की रुचि फिर से लंबित है` 
+          : `${senderProfile?.fullName || 'User'}'s interest is pending again`
+      }
+    )
+  }
+
   const handleBlockProfile = (interestId: string, profileIdToBlock: string) => {
     if (!currentUserProfile) return
 
@@ -701,6 +748,31 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     )
   }
 
+  // Handler to undo a declined contact request - sets status back to pending
+  const handleUndoDeclineContactRequest = (requestId: string) => {
+    const request = contactRequests?.find(r => r.id === requestId)
+    const senderProfile = profiles.find(p => p.id === request?.fromUserId)
+    
+    setContactRequests((current) => 
+      (current || []).map(req => 
+        req.id === requestId 
+          ? { ...req, status: 'pending' as const }
+          : req
+      )
+    )
+    
+    toast.success(
+      language === 'hi' 
+        ? 'अस्वीकृति वापस ली गई' 
+        : 'Decline undone',
+      {
+        description: language === 'hi' 
+          ? `${senderProfile?.fullName || 'उपयोगकर्ता'} का अनुरोध फिर से लंबित है` 
+          : `${senderProfile?.fullName || 'User'}'s request is pending again`
+      }
+    )
+  }
+
   // Cancel handlers for pending requests
   const handleCancelInterest = (interestId: string) => {
     const interest = interests?.find(i => i.id === interestId)
@@ -746,28 +818,15 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     )
   }
 
-  // Revoke handlers - can revoke after accepting, slots will be refunded
+  // Revoke handlers - can revoke after accepting, but slots are NOT refunded (consumed permanently)
   const handleRevokeInterest = (interestId: string) => {
     const interest = interests?.find(i => i.id === interestId)
     if (!interest || !currentUserProfile) return
 
     const senderProfile = getProfileByProfileId(interest.fromProfileId)
     
-    // Refund sender's chat slot
-    if (senderProfile && setProfiles) {
-      const senderChatUsed = senderProfile.chatRequestsUsed || senderProfile.freeChatProfiles || []
-      const acceptorProfileId = currentUserProfile.profileId
-      
-      // Remove acceptor from sender's used list
-      const updatedSenderChatUsed = senderChatUsed.filter(pid => pid !== acceptorProfileId)
-      setProfiles((current) => 
-        (current || []).map(p => 
-          p.id === senderProfile.id 
-            ? { ...p, chatRequestsUsed: updatedSenderChatUsed, freeChatProfiles: updatedSenderChatUsed }
-            : p
-        )
-      )
-    }
+    // Note: Slots are NOT refunded on revoke - they remain consumed
+    // This is the business policy to prevent abuse of the system
 
     // Update interest status to revoked/declined
     setInterests((current) => 
@@ -784,8 +843,8 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
         : 'Interest revoked',
       {
         description: language === 'hi' 
-          ? `${senderProfile?.fullName || 'उपयोगकर्ता'} का चैट स्लॉट वापस कर दिया गया` 
-          : `${senderProfile?.fullName || 'User'}'s chat slot has been refunded`
+          ? 'स्लॉट पहले ही उपभोग हो चुका है और वापस नहीं होगा' 
+          : 'Slot has been consumed and will not be refunded'
       }
     )
   }
@@ -794,32 +853,8 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     const request = contactRequests?.find(r => r.id === requestId)
     if (!request || !currentUserProfile) return
 
-    const senderProfile = profiles.find(p => p.id === request.fromUserId)
-    const senderProfileId = senderProfile?.profileId || request.fromProfileId || ''
-    const acceptorProfileId = currentUserProfile.profileId
-
-    // Refund BOTH parties' contact slots
-    if (setProfiles) {
-      // Refund acceptor's slot
-      const acceptorContactUsed = contactViewsUsed
-      const updatedAcceptorContactViews = acceptorContactUsed.filter(pid => pid !== senderProfileId)
-      
-      // Refund sender's slot
-      const senderContactUsed = senderProfile?.contactViewsUsed || []
-      const updatedSenderContactViews = senderContactUsed.filter(pid => pid !== acceptorProfileId)
-
-      setProfiles((current) => 
-        (current || []).map(p => {
-          if (p.id === currentUserProfile.id) {
-            return { ...p, contactViewsUsed: updatedAcceptorContactViews }
-          }
-          if (senderProfile && p.id === senderProfile.id) {
-            return { ...p, contactViewsUsed: updatedSenderContactViews }
-          }
-          return p
-        })
-      )
-    }
+    // Note: Slots are NOT refunded on revoke - they remain consumed
+    // This is the business policy to prevent abuse of the system
 
     // Update contact request status to declined
     setContactRequests((current) => 
@@ -836,8 +871,8 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
         : 'Contact permission revoked',
       {
         description: language === 'hi' 
-          ? 'दोनों के संपर्क स्लॉट वापस कर दिए गए' 
-          : 'Contact slots refunded for both parties'
+          ? 'स्लॉट पहले ही उपभोग हो चुका है और वापस नहीं होगा' 
+          : 'Slots have been consumed and will not be refunded'
       }
     )
   }
@@ -897,16 +932,20 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                         const canAccept = alreadyChatted || remainingChats > 0
                         
                         return (
-                          <Card key={interest.id}>
+                          <Card key={interest.id} className="hover:shadow-md transition-shadow">
                             <CardContent className="pt-6">
                               <div className="flex flex-col gap-4">
-                                <div className="flex items-center justify-between">
+                                <div 
+                                  className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                                  onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                  title={t.clickToViewProfile}
+                                >
                                   <div className="flex items-center gap-4">
                                     {/* Profile Photo */}
                                     {profile?.photos?.[0] ? (
                                       <div 
                                         className="relative cursor-pointer group"
-                                        onClick={() => openLightbox(profile.photos || [], 0)}
+                                        onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
                                         title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
                                       >
                                         <img 
@@ -924,11 +963,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       </div>
                                     )}
                                     <div>
-                                      <p 
-                                        className="font-semibold text-primary hover:underline cursor-pointer inline-flex items-center gap-1"
-                                        onClick={() => profile && setSelectedProfileForDetails(profile)}
-                                        title={t.clickToViewProfile}
-                                      >
+                                      <p className="font-semibold text-primary hover:underline inline-flex items-center gap-1">
                                         {profile?.fullName || 'Unknown'}
                                         <User size={12} weight="bold" className="opacity-60" />
                                       </p>
@@ -964,13 +999,24 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                         <X size={16} className="mr-2" />
                                         {t.decline}
                                       </Button>
-                                      <Button 
-                                        variant="destructive" 
-                                        size="sm"
-                                        onClick={() => setInterestToBlock({ interestId: interest.id, profileId: interest.fromProfileId })}
-                                      >
-                                        <ProhibitInset size={16} />
-                                      </Button>
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button 
+                                              variant="destructive" 
+                                              size="sm"
+                                              onClick={() => setInterestToBlock({ interestId: interest.id, profileId: interest.fromProfileId })}
+                                              className="gap-1"
+                                            >
+                                              <ProhibitInset size={16} />
+                                              <span className="hidden sm:inline">{t.block}</span>
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="top" className="max-w-[200px] text-center">
+                                            <p>{t.blockTooltip}</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
                                     </div>
                                     {!canAccept && (
                                       <p className="text-xs text-destructive text-center">
@@ -1001,6 +1047,23 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       <X size={14} className="mr-1" />
                                       {t.revoke}
                                     </Button>
+                                  </div>
+                                )}
+                                {/* Undo button for declined interests */}
+                                {interest.status === 'declined' && (
+                                  <div className="flex items-center gap-3 mt-2 p-3 bg-muted/30 rounded-lg border border-muted">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleUndoDeclineInterest(interest.id)}
+                                      className="text-teal hover:text-teal hover:bg-teal/10 border-teal/30"
+                                    >
+                                      <ArrowCounterClockwise size={14} className="mr-1" />
+                                      {t.undo}
+                                    </Button>
+                                    <p className="text-xs text-muted-foreground">
+                                      {language === 'hi' ? 'पुनर्विचार करने के लिए क्लिक करें' : 'Changed your mind? Click to reconsider'}
+                                    </p>
                                   </div>
                                 )}
                               </div>
@@ -1037,15 +1100,19 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                         const isSentByMe = interest.fromProfileId === currentUserProfile?.profileId
                         
                         return (
-                          <Card key={interest.id}>
+                          <Card key={interest.id} className="hover:shadow-md transition-shadow">
                             <CardContent className="pt-6">
                               <div className="flex flex-col gap-4">
-                                <div className="flex items-center justify-between">
+                                <div 
+                                  className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                                  onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                  title={t.clickToViewProfile}
+                                >
                                   <div className="flex items-center gap-4">
                                     {profile?.photos?.[0] ? (
                                       <div 
                                         className="relative cursor-pointer group"
-                                        onClick={() => openLightbox(profile.photos || [], 0)}
+                                        onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
                                         title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
                                       >
                                         <img 
@@ -1063,11 +1130,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       </div>
                                     )}
                                     <div>
-                                      <p 
-                                        className="font-semibold text-primary hover:underline cursor-pointer inline-flex items-center gap-1"
-                                        onClick={() => profile && setSelectedProfileForDetails(profile)}
-                                        title={t.clickToViewProfile}
-                                      >
+                                      <p className="font-semibold text-primary hover:underline inline-flex items-center gap-1">
                                         {profile?.fullName || 'Unknown'}
                                         <User size={12} weight="bold" className="opacity-60" />
                                       </p>
@@ -1101,14 +1164,23 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                     <X size={18} />
                                     {t.decline}
                                   </Button>
-                                  <Button 
-                                    variant="destructive"
-                                    onClick={() => setInterestToBlock({ interestId: interest.id, profileId: otherProfileId })}
-                                    className="gap-2"
-                                  >
-                                    <ProhibitInset size={18} weight="fill" />
-                                    {t.block}
-                                  </Button>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button 
+                                          variant="destructive"
+                                          onClick={() => setInterestToBlock({ interestId: interest.id, profileId: otherProfileId })}
+                                          className="gap-2"
+                                        >
+                                          <ProhibitInset size={18} weight="fill" />
+                                          <span className="hidden sm:inline">{t.block}</span>
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="max-w-[200px] text-center">
+                                        <p>{t.blockTooltip}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                 </div>
                               </div>
                             </CardContent>
@@ -1144,15 +1216,19 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                       {sentInterests.map((interest) => {
                         const profile = getProfileByProfileId(interest.toProfileId)
                         return (
-                          <Card key={interest.id}>
+                          <Card key={interest.id} className="hover:shadow-md transition-shadow">
                             <CardContent className="pt-6">
-                              <div className="flex items-center justify-between">
+                              <div 
+                                className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                                onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                title={t.clickToViewProfile}
+                              >
                                 <div className="flex items-center gap-4">
                                   {/* Profile Photo */}
                                   {profile?.photos?.[0] ? (
                                     <div 
                                       className="relative cursor-pointer group"
-                                      onClick={() => openLightbox(profile.photos || [], 0)}
+                                      onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
                                       title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
                                     >
                                       <img 
@@ -1170,17 +1246,14 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                     </div>
                                   )}
                                   <div>
-                                    <p 
-                                      className={`font-semibold ${profile && onViewProfile ? 'cursor-pointer hover:text-primary hover:underline transition-colors' : ''}`}
-                                      onClick={() => profile && onViewProfile?.(profile)}
-                                    >
+                                    <p className="font-semibold text-primary hover:underline">
                                       {profile?.fullName || 'Unknown'}
                                     </p>
                                     <p className="text-sm text-muted-foreground">{profile?.profileId || interest.toProfileId}</p>
                                     <p className="text-xs text-muted-foreground">{formatDate(interest.createdAt)}</p>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                                   {getStatusBadge(interest.status)}
                                   {/* Cancel button for pending interests */}
                                   {interest.status === 'pending' && (
@@ -1245,15 +1318,19 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                           {sentContactRequests.map((request) => {
                             const profile = profiles.find(p => p.id === request.toUserId)
                             return (
-                              <Card key={request.id}>
+                              <Card key={request.id} className="hover:shadow-md transition-shadow">
                                 <CardContent className="pt-6">
-                                  <div className="flex items-center justify-between">
+                                  <div 
+                                    className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                                    onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                    title={t.clickToViewProfile}
+                                  >
                                     <div className="flex items-center gap-4">
                                       {/* Profile Photo */}
                                       {profile?.photos?.[0] ? (
                                         <div 
                                           className="relative cursor-pointer group"
-                                          onClick={() => openLightbox(profile.photos || [], 0)}
+                                          onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
                                           title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
                                         >
                                           <img 
@@ -1271,17 +1348,14 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                         </div>
                                       )}
                                       <div>
-                                        <p 
-                                          className={`font-semibold ${profile && onViewProfile ? 'cursor-pointer hover:text-primary hover:underline transition-colors' : ''}`}
-                                          onClick={() => profile && onViewProfile?.(profile)}
-                                        >
+                                        <p className="font-semibold text-primary hover:underline">
                                           {profile?.fullName || 'Unknown'}
                                         </p>
                                         <p className="text-sm text-muted-foreground">{profile?.profileId || 'Unknown'}</p>
                                         <p className="text-xs text-muted-foreground">{formatDate(request.createdAt)}</p>
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                                       {getStatusBadge(request.status)}
                                       {/* Cancel button for pending contact requests */}
                                       {request.status === 'pending' && (
@@ -1338,16 +1412,20 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                           {receivedContactRequests.map((request) => {
                             const profile = profiles.find(p => p.id === request.fromUserId)
                             return (
-                              <Card key={request.id}>
+                              <Card key={request.id} className="hover:shadow-md transition-shadow">
                                 <CardContent className="pt-6">
                                   <div className="flex flex-col gap-4">
-                                    <div className="flex items-center justify-between">
+                                    <div 
+                                      className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                                      onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                      title={t.clickToViewProfile}
+                                    >
                                       <div className="flex items-center gap-4">
                                         {/* Profile Photo */}
                                         {profile?.photos?.[0] ? (
                                           <div 
                                             className="relative cursor-pointer group"
-                                            onClick={() => openLightbox(profile.photos || [], 0)}
+                                            onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
                                             title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
                                           >
                                             <img 
@@ -1365,10 +1443,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                           </div>
                                         )}
                                         <div>
-                                          <p 
-                                            className={`font-semibold ${profile && onViewProfile ? 'cursor-pointer hover:text-primary hover:underline transition-colors' : ''}`}
-                                            onClick={() => profile && onViewProfile?.(profile)}
-                                          >
+                                          <p className="font-semibold text-primary hover:underline">
                                             {profile?.fullName || 'Unknown'}
                                           </p>
                                           <p className="text-sm text-muted-foreground">{profile?.profileId || 'Unknown'}</p>
@@ -1445,6 +1520,23 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                           <X size={14} className="mr-1" />
                                           {t.revoke}
                                         </Button>
+                                      </div>
+                                    )}
+                                    {/* Undo button for declined contact requests */}
+                                    {request.status === 'declined' && (
+                                      <div className="flex gap-2 mt-2">
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm"
+                                          onClick={() => handleUndoDeclineContactRequest(request.id)}
+                                          className="text-teal hover:text-teal hover:bg-teal/10 border-teal/30"
+                                        >
+                                          <ArrowCounterClockwise size={14} className="mr-1" />
+                                          {t.undo}
+                                        </Button>
+                                        <p className="text-xs text-muted-foreground flex items-center">
+                                          {language === 'hi' ? 'पुनर्विचार करने के लिए क्लिक करें' : 'Click to reconsider'}
+                                        </p>
                                       </div>
                                     )}
                                   </div>

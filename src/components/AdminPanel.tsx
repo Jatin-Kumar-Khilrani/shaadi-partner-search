@@ -2120,11 +2120,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   </Alert>
                 ) : (
                   <>
-                  <div className="overflow-auto max-h-[600px]">
-                      <Table className="min-w-[1200px]">
-                        <TableHeader>
+                  <div className="overflow-auto max-h-[70vh] sm:max-h-[600px] relative -mx-2 sm:mx-0">
+                      <Table className="min-w-[900px] sm:min-w-[1200px] border-separate border-spacing-0">
+                        <TableHeader className="sticky top-0 z-30 bg-background">
                           <TableRow>
-                            <TableHead className="whitespace-nowrap w-10">
+                            <TableHead className="whitespace-nowrap w-8 sm:w-10 sticky left-0 z-40 bg-background border-r border-b">
                               <Checkbox 
                                 checked={selectedDatabaseProfiles.length === filteredDatabaseProfiles.length && filteredDatabaseProfiles.length > 0}
                                 onCheckedChange={(checked) => {
@@ -2136,79 +2136,79 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 }}
                               />
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('profileId'); setDbSortOrder(prev => dbSortBy === 'profileId' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 sticky left-8 sm:left-10 z-40 bg-background border-b" onClick={() => { setDbSortBy('profileId'); setDbSortOrder(prev => dbSortBy === 'profileId' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.profileId}
                                 {dbSortBy === 'profileId' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('name'); setDbSortOrder(prev => dbSortBy === 'name' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 sticky left-[6rem] sm:left-[7.5rem] z-40 bg-background min-w-[100px] sm:min-w-[120px] border-b" onClick={() => { setDbSortBy('name'); setDbSortOrder(prev => dbSortBy === 'name' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.name}
                                 {dbSortBy === 'name' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('gender'); setDbSortOrder(prev => dbSortBy === 'gender' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 sticky left-[12rem] sm:left-[15rem] z-40 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b" onClick={() => { setDbSortBy('gender'); setDbSortOrder(prev => dbSortBy === 'gender' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.gender}
                                 {dbSortBy === 'gender' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('plan'); setDbSortOrder(prev => dbSortBy === 'plan' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('plan'); setDbSortOrder(prev => dbSortBy === 'plan' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.planType}
                                 {dbSortBy === 'plan' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('userId'); setDbSortOrder(prev => dbSortBy === 'userId' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('userId'); setDbSortOrder(prev => dbSortBy === 'userId' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.userId}
                                 {dbSortBy === 'userId' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('relation'); setDbSortOrder(prev => dbSortBy === 'relation' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('relation'); setDbSortOrder(prev => dbSortBy === 'relation' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.relation}
                                 {dbSortBy === 'relation' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('age'); setDbSortOrder(prev => dbSortBy === 'age' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('age'); setDbSortOrder(prev => dbSortBy === 'age' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.age}
                                 {dbSortBy === 'age' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('location'); setDbSortOrder(prev => dbSortBy === 'location' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('location'); setDbSortOrder(prev => dbSortBy === 'location' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.location}
                                 {dbSortBy === 'location' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('status'); setDbSortOrder(prev => dbSortBy === 'status' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('status'); setDbSortOrder(prev => dbSortBy === 'status' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.status}
                                 {dbSortBy === 'status' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('email'); setDbSortOrder(prev => dbSortBy === 'email' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('email'); setDbSortOrder(prev => dbSortBy === 'email' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.email}
                                 {dbSortBy === 'email' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('mobile'); setDbSortOrder(prev => dbSortBy === 'mobile' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('mobile'); setDbSortOrder(prev => dbSortBy === 'mobile' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.mobile}
                                 {dbSortBy === 'mobile' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => { setDbSortBy('createdAt'); setDbSortOrder(prev => dbSortBy === 'createdAt' ? (prev === 'asc' ? 'desc' : 'asc') : 'desc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('createdAt'); setDbSortOrder(prev => dbSortBy === 'createdAt' ? (prev === 'asc' ? 'desc' : 'asc') : 'desc') }}>
                               <div className="flex items-center gap-1">
                                 {t.createdAt}
                                 {dbSortBy === 'createdAt' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap">{t.actions}</TableHead>
+                            <TableHead className="whitespace-nowrap bg-background border-b">{t.actions}</TableHead>
                           </TableRow>
                         </TableHeader>
                       <TableBody>
@@ -2262,8 +2262,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         }).slice((databasePage - 1) * ITEMS_PER_PAGE, databasePage * ITEMS_PER_PAGE).map((profile) => {
                           const creds = getUserCredentials(profile.id)
                           return (
-                            <TableRow key={profile.id} className={`${profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20' : ''} ${selectedDatabaseProfiles.includes(profile.id) ? 'bg-primary/5' : ''}`}>
-                              <TableCell>
+                            <TableRow key={profile.id} className={`${profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20' : ''} ${selectedDatabaseProfiles.includes(profile.id) ? 'bg-primary/5' : ''} group`}>
+                              <TableCell className={`sticky left-0 z-10 border-r w-8 sm:w-10 ${profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20' : selectedDatabaseProfiles.includes(profile.id) ? 'bg-primary/5' : 'bg-background'} group-hover:bg-muted/50`}>
                                 <Checkbox 
                                   checked={selectedDatabaseProfiles.includes(profile.id)}
                                   onCheckedChange={(checked) => {
@@ -2275,15 +2275,15 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   }}
                                 />
                               </TableCell>
-                              <TableCell className={`font-mono font-semibold ${profile.isDeleted ? 'text-red-600' : ''}`}>{profile.profileId}</TableCell>
-                              <TableCell className={`font-medium ${profile.isDeleted ? 'text-red-600' : ''}`}>
+                              <TableCell className={`font-mono font-semibold text-xs sm:text-sm sticky left-8 sm:left-10 z-10 ${profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20 text-red-600' : selectedDatabaseProfiles.includes(profile.id) ? 'bg-primary/5' : 'bg-background'} group-hover:bg-muted/50`}>{profile.profileId}</TableCell>
+                              <TableCell className={`font-medium sticky left-[6rem] sm:left-[7.5rem] z-10 min-w-[100px] sm:min-w-[120px] max-w-[120px] sm:max-w-[150px] truncate ${profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20 text-red-600' : selectedDatabaseProfiles.includes(profile.id) ? 'bg-primary/5' : 'bg-background'} group-hover:bg-muted/50`} title={profile.fullName}>
                                 {profile.fullName}
                                 {profile.isDeleted && (
-                                  <Badge variant="destructive" className="ml-2 text-xs">{language === 'hi' ? 'हटाया गया' : 'Deleted'}</Badge>
+                                  <Badge variant="destructive" className="ml-1 sm:ml-2 text-xs">{language === 'hi' ? 'हटाया गया' : 'Deleted'}</Badge>
                                 )}
                               </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className={profile.gender === 'male' ? 'border-blue-500 text-blue-600' : 'border-pink-500 text-pink-600'}>
+                              <TableCell className={`sticky left-[12rem] sm:left-[15rem] z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20' : selectedDatabaseProfiles.includes(profile.id) ? 'bg-primary/5' : 'bg-background'} group-hover:bg-muted/50`}>
+                                <Badge variant="outline" className={`text-xs sm:text-sm ${profile.gender === 'male' ? 'border-blue-500 text-blue-600' : 'border-pink-500 text-pink-600'}`}>
                                   {profile.gender === 'male' ? t.male : t.female}
                                 </Badge>
                               </TableCell>

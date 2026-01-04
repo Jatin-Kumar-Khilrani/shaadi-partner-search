@@ -243,7 +243,7 @@ Refund Policy:
 
 महत्वपूर्ण नियम:
 • लंबित अनुरोध: भेजने वाला कभी भी रद्द कर सकता है (कोई स्लॉट प्रभाव नहीं)
-• स्वीकृत अनुरोध: दोनों पक्ष कभी भी वापस ले सकते हैं (स्लॉट वापस मिलेगा)
+• स्वीकृत अनुरोध: दोनों पक्ष कभी भी वापस ले सकते हैं (स्लॉट वापस नहीं होगा - उपभोग हो चुका है)
 
 संपर्क अनुरोध (Contact Request):
 
@@ -263,7 +263,7 @@ Refund Policy:
 
 रद्द करना और वापस लेना:
 • लंबित संपर्क: भेजने वाला रद्द कर सकता है (कोई स्लॉट प्रभाव नहीं)
-• स्वीकृत संपर्क: दोनों पक्ष वापस ले सकते हैं (दोनों के स्लॉट वापस)
+• स्वीकृत संपर्क: दोनों पक्ष वापस ले सकते हैं (स्लॉट वापस नहीं होगा - उपभोग हो चुका है)
 
 स्वचालित अस्वीकृति नियम:
 • यदि B ने A की रुचि अस्वीकार की: A का लंबित संपर्क अनुरोध भी स्वचालित रूप से अस्वीकृत हो जाएगा
@@ -302,7 +302,7 @@ How it works:
 
 Important Rules:
 • Pending request: Sender can cancel anytime (no slot impact)
-• Accepted request: Either party can revoke anytime (slot refunded)
+• Accepted request: Either party can revoke anytime (slot NOT refunded - consumed permanently)
 
 Contact Request:
 
@@ -322,7 +322,7 @@ Slot Usage:
 
 Cancellation and Revocation:
 • Pending contact: Sender can cancel (no slot impact)
-• Approved contact: Either party can revoke (both slots refunded)
+• Approved contact: Either party can revoke (slots NOT refunded - consumed permanently)
 
 Auto-Decline Rules:
 • If B declines A's interest: A's pending contact request is also auto-declined
