@@ -69,14 +69,14 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     if (!currentUserProfile) return { isDeclinedByMe: false, isDeclinedByThem: false, isBlocked: false, isBlockedByThem: false }
     
     // Check if I declined them
-    const declinedByMe = declinedProfiles?.some(
+    const isDeclinedByMe = declinedProfiles?.some(
       d => d.declinerProfileId === currentUserProfile.profileId && 
            d.declinedProfileId === profileId &&
            !d.isReconsidered
     ) || false
 
     // Check if they declined me (from interest data)
-    const declinedByThem = interests?.some(
+    const isDeclinedByThem = interests?.some(
       i => i.fromProfileId === currentUserProfile.profileId && 
            i.toProfileId === profileId && 
            i.status === 'declined'
