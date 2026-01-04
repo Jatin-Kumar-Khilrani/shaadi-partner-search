@@ -168,6 +168,9 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     chatLimitInfo: language === 'hi' 
       ? 'रुचि स्वीकार करने पर चैट सीमा से एक घटेगी' 
       : 'Accepting an interest uses 1 chat slot',
+    chatLimitInfoReceiver: language === 'hi'
+      ? 'स्वीकार करने पर भेजने वाले का 1 चैट स्लॉट उपयोग होगा'
+      : 'Accepting interest will use 1 chat slot from sender',
     chatLimitReached: language === 'hi' ? 'चैट सीमा समाप्त - अपग्रेड करें' : 'Chat limit reached - Upgrade',
     // New translations for enhanced features
     autoDeclinedContact: language === 'hi' 
@@ -921,10 +924,8 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                   <CardTitle>{t.receivedInterests}</CardTitle>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <ChatCircle size={16} />
-                    <span>{t.chatLimitInfo}</span>
-                    <Badge variant={remainingChats > 0 ? "outline" : "destructive"}>
-                      {t.chatsRemaining}: {remainingChats}/{chatLimit}
-                    </Badge>
+                    <span>{t.chatLimitInfoReceiver}</span>
+                    {/* Note: Receiver's chat slots are NOT shown here because accepting uses SENDER's slot, not receiver's */}
                   </div>
                 </div>
               </CardHeader>
