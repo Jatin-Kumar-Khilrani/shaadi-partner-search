@@ -4,8 +4,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { MapPin, Briefcase, GraduationCap, UserCircle, Phone, Envelope, Heart, ShieldCheck, Seal, Calendar, Clock, Eye, CheckCircle, XCircle, ClockCountdown, UsersThree, Star, Ruler, CurrencyInr, Buildings, Globe, Translate, HandHeart, ForkKnife, Wine, Cigarette, Sun, Wheelchair, IdentificationCard } from '@phosphor-icons/react'
-import type { Profile, Interest, ContactRequest, MembershipPlan } from '@/types/profile'
+import type { Profile, Interest, ContactRequest, MembershipPlan, UserNotification } from '@/types/profile'
 import { toast } from 'sonner'
 import { useKV } from '@/hooks/useKV'
 import { formatDateDDMMYYYY, formatEducation, formatOccupation } from '@/lib/utils'
@@ -49,6 +50,7 @@ interface ProfileDetailDialogProps {
 export function ProfileDetailDialog({ profile, open, onClose, language, currentUserProfile, isLoggedIn = false, isAdmin = false, shouldBlur = false, membershipPlan, membershipSettings, setProfiles }: ProfileDetailDialogProps) {
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests, setContactRequests] = useKV<ContactRequest[]>('contactRequests', [])
+  const [userNotifications, setUserNotifications] = useKV<UserNotification[]>('userNotifications', [])
   const [showContactInfo, setShowContactInfo] = useState(false)
   const { lightboxState, openLightbox, closeLightbox } = useLightbox()
 
@@ -226,6 +228,22 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     }
 
     setInterests(current => [...(current || []), newInterest])
+
+    // Store in-app notification for recipient (they'll see it when they log in)
+    const notification: UserNotification = {
+      id: `notif-${Date.now()}`,
+      recipientProfileId: profile.profileId,
+      type: 'interest_received',
+      title: 'New Interest Received',
+      titleHi: 'नई रुचि प्राप्त',
+      description: `${currentUserProfile.fullName} has expressed interest in your profile`,
+      descriptionHi: `${currentUserProfile.fullName} ने आपकी प्रोफाइल में रुचि दर्ज की है`,
+      senderProfileId: currentUserProfile.profileId,
+      senderName: currentUserProfile.fullName,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    }
+    setUserNotifications(current => [...(current || []), notification])
 
     // Send notification to the recipient (B) that they received an interest from sender (A)
     notifyInterestReceived(
@@ -1115,37 +1133,81 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                           ? 'मुफ्त प्लान में संपर्क अनुरोध उपलब्ध नहीं है। पेड प्लान में अपग्रेड करें।' 
                           : 'Contact requests not available on Free plan. Upgrade to a paid plan.'}
                       </p>
-                      <Button 
-                        onClick={handleExpressInterest} 
-                        className="flex-1 bg-primary hover:bg-primary/90"
-                        disabled={!!existingInterest || !!hasReceivedInterestFromProfile}
-                        variant={(existingInterest || hasReceivedInterestFromProfile) ? "secondary" : "default"}
-                      >
-                        <Heart size={20} weight="fill" className="mr-2" />
-                        {existingInterest 
-                          ? (language === 'hi' ? 'रुचि भेजी गई' : 'Interest Sent')
-                          : hasReceivedInterestFromProfile
-                          ? (language === 'hi' ? 'रुचि प्राप्त' : 'Interest Received')
-                          : t.expressInterest
-                        }
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="w-full">
+                              <Button 
+                                onClick={handleExpressInterest} 
+                                className="w-full bg-primary hover:bg-primary/90"
+                                disabled={!!existingInterest || !!hasReceivedInterestFromProfile}
+                                variant={(existingInterest || hasReceivedInterestFromProfile) ? "secondary" : "default"}
+                              >
+                                <Heart size={20} weight="fill" className="mr-2" />
+                                {existingInterest 
+                                  ? (language === 'hi' ? 'रुचि भेजी गई' : 'Interest Sent')
+                                  : hasReceivedInterestFromProfile
+                                  ? (language === 'hi' ? 'रुचि प्राप्त' : 'Interest Received')
+                                  : t.expressInterest
+                                }
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          {(existingInterest || hasReceivedInterestFromProfile) && (
+                            <TooltipContent side="top" className="max-w-[250px] text-center">
+                              <p>
+                                {existingInterest 
+                                  ? (language === 'hi' 
+                                    ? 'आपने पहले ही इस प्रोफाइल पर रुचि भेजी है। प्रतिक्रिया का इंतज़ार करें।' 
+                                    : 'You have already sent interest to this profile. Wait for their response.')
+                                  : (language === 'hi' 
+                                    ? 'इस प्रोफाइल ने आपको पहले ही रुचि भेजी है। "मेरी गतिविधि" में जाकर स्वीकार करें।' 
+                                    : 'This profile has already sent you interest. Go to "My Activity" to accept.')
+                                }
+                              </p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   ) : (
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <Button 
-                        onClick={handleExpressInterest} 
-                        className="flex-1 bg-primary hover:bg-primary/90"
-                        disabled={!!existingInterest || !!hasReceivedInterestFromProfile}
-                        variant={(existingInterest || hasReceivedInterestFromProfile) ? "secondary" : "default"}
-                      >
-                        <Heart size={20} weight="fill" className="mr-2" />
-                        {existingInterest 
-                          ? (language === 'hi' ? 'रुचि भेजी गई' : 'Interest Sent')
-                          : hasReceivedInterestFromProfile
-                          ? (language === 'hi' ? 'रुचि प्राप्त' : 'Interest Received')
-                          : t.expressInterest
-                        }
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="flex-1">
+                              <Button 
+                                onClick={handleExpressInterest} 
+                                className="w-full bg-primary hover:bg-primary/90"
+                                disabled={!!existingInterest || !!hasReceivedInterestFromProfile}
+                                variant={(existingInterest || hasReceivedInterestFromProfile) ? "secondary" : "default"}
+                              >
+                                <Heart size={20} weight="fill" className="mr-2" />
+                                {existingInterest 
+                                  ? (language === 'hi' ? 'रुचि भेजी गई' : 'Interest Sent')
+                                  : hasReceivedInterestFromProfile
+                                  ? (language === 'hi' ? 'रुचि प्राप्त' : 'Interest Received')
+                                  : t.expressInterest
+                                }
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          {(existingInterest || hasReceivedInterestFromProfile) && (
+                            <TooltipContent side="top" className="max-w-[250px] text-center">
+                              <p>
+                                {existingInterest 
+                                  ? (language === 'hi' 
+                                    ? 'आपने पहले ही इस प्रोफाइल पर रुचि भेजी है। प्रतिक्रिया का इंतज़ार करें।' 
+                                    : 'You have already sent interest to this profile. Wait for their response.')
+                                  : (language === 'hi' 
+                                    ? 'इस प्रोफाइल ने आपको पहले ही रुचि भेजी है। "मेरी गतिविधि" में जाकर स्वीकार करें।' 
+                                    : 'This profile has already sent you interest. Go to "My Activity" to accept.')
+                                }
+                              </p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                       {/* Contact Request Button - Shows different states based on request status */}
                       {contactRequestStatus === 'pending' ? (
                         <Button 

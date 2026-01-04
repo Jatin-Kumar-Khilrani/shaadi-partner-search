@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { toast } from 'sonner'
 import { useKV } from '@/hooks/useKV'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -47,8 +48,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
   const [filters, setFilters] = useState<ExtendedFilters>({})
   const [showFilters, setShowFilters] = useState(false)
   const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
-  const [interests] = useKV<Interest[]>('interests', [])
-  const [declinedProfiles] = useKV<DeclinedProfile[]>('declinedProfiles', [])
+  const [interests, setInterests] = useKV<Interest[]>('interests', [])
+  const [declinedProfiles, setDeclinedProfiles] = useKV<DeclinedProfile[]>('declinedProfiles', [])
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 60])
   const [usePartnerPreferences, setUsePartnerPreferences] = useState(true) // Smart matching toggle
 
@@ -97,6 +98,37 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     ) || false
 
     return { isDeclinedByMe, isDeclinedByThem, isBlocked, isBlockedByThem }
+  }
+
+  // Handler to reconsider a declined profile - synced with MyActivity logic
+  const handleReconsiderProfile = (profileId: string) => {
+    if (!currentUserProfile) return
+
+    // Mark as reconsidered in declined profiles
+    setDeclinedProfiles((current) =>
+      (current || []).map(d =>
+        d.declinerProfileId === currentUserProfile.profileId && d.declinedProfileId === profileId
+          ? { ...d, isReconsidered: true, reconsideredAt: new Date().toISOString() }
+          : d
+      )
+    )
+    
+    // Also remove the declined interest so user can receive new ones
+    setInterests((current) =>
+      (current || []).filter(i => 
+        !(i.toProfileId === currentUserProfile.profileId && i.fromProfileId === profileId && i.status === 'declined')
+      )
+    )
+    
+    // Show success message
+    toast.success(
+      language === 'hi' ? 'प्रोफाइल पुनर्विचार की गई' : 'Profile reconsidered',
+      {
+        description: language === 'hi' 
+          ? 'अब आप इस प्रोफाइल से रुचि प्राप्त कर सकते हैं'
+          : 'You can now receive interest from this profile'
+      }
+    )
   }
 
   // Count active filters (don't count 'any' selections as active filters)
@@ -981,11 +1013,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                   membershipPlan={membershipPlan}
                   isDeclinedByMe={status.isDeclinedByMe}
                   isDeclinedByThem={status.isDeclinedByThem}
-                  onReconsider={(profileId) => {
-                    // Navigate to activity page or handle reconsider inline
-                    // For now, just show a toast indicating they can send new interest
-                    console.log('Reconsider profile:', profileId)
-                  }}
+                  onReconsider={handleReconsiderProfile}
                 />
               )
             })}

@@ -6,7 +6,10 @@ import { Toaster } from '@/components/ui/sonner'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise, CaretDown, User as UserIcon, Trophy, Brain, Sparkle, ChartLine, Target, Robot, ArrowRight } from '@phosphor-icons/react'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Badge } from '@/components/ui/badge'
+import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise, CaretDown, User as UserIcon, Trophy, Brain, Sparkle, ChartLine, Target, Robot, ArrowRight, Bell, Check } from '@phosphor-icons/react'
 import { HeroSearch } from '@/components/HeroSearch'
 import { ProfileCard } from '@/components/ProfileCard'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
@@ -19,7 +22,7 @@ import { MyProfile } from '@/components/MyProfile'
 import { Settings } from '@/components/Settings'
 import { WeddingServices } from '@/components/WeddingServicesPage'
 import { ReadinessDashboard } from '@/components/readiness'
-import type { Profile, SearchFilters, WeddingService, BlockedProfile } from '@/types/profile'
+import type { Profile, SearchFilters, WeddingService, BlockedProfile, UserNotification } from '@/types/profile'
 import type { User } from '@/types/user'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
@@ -85,6 +88,7 @@ function App() {
   const [profiles, setProfiles, , isProfilesLoaded] = useKV<Profile[]>('profiles', [])
   const [users, setUsers, , isUsersLoaded] = useKV<User[]>('users', [])
   const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
+  const [userNotifications, setUserNotifications] = useKV<UserNotification[]>('userNotifications', [])
   // IMPORTANT: Login state must be stored in localStorage, NOT in shared KV store!
   // Each device/browser should have its own independent login session
   const [loggedInUser, setLoggedInUser] = useState<string | null>(() => {
@@ -734,8 +738,227 @@ function App() {
                 </Button>
               </>
             ) : (
-              /* Logged-in User Profile Dropdown */
-              <DropdownMenu>
+              <div className="flex items-center gap-2">
+                {/* Notification Bell with Popover */}
+                {(() => {
+                  const myNotifications = userNotifications?.filter(
+                    n => n.recipientProfileId === currentUserProfile?.profileId
+                  ) || []
+                  const unreadCount = myNotifications.filter(n => !n.isRead).length
+                  const totalCount = myNotifications.length
+                  
+                  // Helper to format relative time
+                  const formatRelativeTime = (dateStr: string): string => {
+                    const now = new Date()
+                    const date = new Date(dateStr)
+                    const diffMs = now.getTime() - date.getTime()
+                    const diffMins = Math.floor(diffMs / 60000)
+                    const diffHours = Math.floor(diffMs / 3600000)
+                    const diffDays = Math.floor(diffMs / 86400000)
+                    
+                    if (diffMins < 1) return language === 'hi' ? 'अभी' : 'Just now'
+                    if (diffMins < 60) return language === 'hi' ? `${diffMins} मिनट पहले` : `${diffMins}m ago`
+                    if (diffHours < 24) return language === 'hi' ? `${diffHours} घंटे पहले` : `${diffHours}h ago`
+                    if (diffDays < 7) return language === 'hi' ? `${diffDays} दिन पहले` : `${diffDays}d ago`
+                    return date.toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short' })
+                  }
+                  
+                  // Get icon for notification type
+                  const getNotificationIcon = (type: string) => {
+                    if (type.includes('interest_received')) return <Heart size={16} weight="fill" className="text-pink-500" />
+                    if (type.includes('interest_accepted')) return <Check size={16} className="text-green-500" />
+                    if (type.includes('interest_declined')) return <SignOut size={16} className="text-red-500" />
+                    if (type.includes('contact')) return <Envelope size={16} className="text-blue-500" />
+                    if (type.includes('message')) return <ChatCircle size={16} className="text-purple-500" />
+                    return <Bell size={16} className="text-muted-foreground" />
+                  }
+                  
+                  const handleMarkAsRead = (notifId: string) => {
+                    setUserNotifications(current =>
+                      (current || []).map(n =>
+                        n.id === notifId ? { ...n, isRead: true } : n
+                      )
+                    )
+                  }
+                  
+                  const handleMarkAllAsRead = () => {
+                    setUserNotifications(current =>
+                      (current || []).map(n =>
+                        n.recipientProfileId === currentUserProfile?.profileId
+                          ? { ...n, isRead: true }
+                          : n
+                      )
+                    )
+                  }
+                  
+                  const handleClearAll = () => {
+                    setUserNotifications(current =>
+                      (current || []).filter(n => n.recipientProfileId !== currentUserProfile?.profileId)
+                    )
+                  }
+                  
+                  const handleDeleteNotification = (notifId: string, e: React.MouseEvent) => {
+                    e.stopPropagation()
+                    setUserNotifications(current =>
+                      (current || []).filter(n => n.id !== notifId)
+                    )
+                  }
+                  
+                  return (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="relative group">
+                          <Bell 
+                            size={20} 
+                            weight={unreadCount > 0 ? "fill" : "regular"} 
+                            className={unreadCount > 0 ? "text-primary animate-pulse" : ""}
+                          />
+                          {unreadCount > 0 && (
+                            <span className="absolute -top-1 -right-1 h-5 w-5 bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center animate-bounce">
+                              {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end" className="w-96 p-0 shadow-xl">
+                        {/* Header with unread count */}
+                        <div className="flex items-center justify-between p-3 border-b bg-muted/30">
+                          <div className="flex items-center gap-2">
+                            <Bell size={18} weight="fill" className="text-primary" />
+                            <h4 className="font-semibold text-sm">
+                              {language === 'hi' ? 'सूचनाएं' : 'Notifications'}
+                            </h4>
+                            {unreadCount > 0 && (
+                              <Badge variant="destructive" className="h-5 px-1.5 text-xs">
+                                {unreadCount} {language === 'hi' ? 'नई' : 'new'}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {unreadCount > 0 && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-7 text-xs px-2"
+                                onClick={handleMarkAllAsRead}
+                                title={language === 'hi' ? 'सभी पढ़े गए के रूप में चिह्नित करें' : 'Mark all as read'}
+                              >
+                                <Check size={14} />
+                              </Button>
+                            )}
+                            {totalCount > 0 && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-7 text-xs px-2 text-destructive hover:text-destructive"
+                                onClick={handleClearAll}
+                                title={language === 'hi' ? 'सभी हटाएं' : 'Clear all'}
+                              >
+                                <SignOut size={14} />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Notification list */}
+                        <ScrollArea className="h-[350px]">
+                          {myNotifications.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center p-8 text-center">
+                              <Bell size={48} weight="thin" className="text-muted-foreground/30 mb-3" />
+                              <p className="text-muted-foreground text-sm font-medium">
+                                {language === 'hi' ? 'कोई सूचना नहीं' : 'No notifications yet'}
+                              </p>
+                              <p className="text-muted-foreground/70 text-xs mt-1">
+                                {language === 'hi' 
+                                  ? 'जब कोई आपमें रुचि दिखाएगा, आपको यहां सूचित किया जाएगा' 
+                                  : "When someone shows interest in you, you'll be notified here"}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="divide-y">
+                              {myNotifications
+                                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                                .slice(0, 30)
+                                .map((notif) => (
+                                  <div 
+                                    key={notif.id} 
+                                    className={`p-3 hover:bg-muted/50 cursor-pointer transition-all group/item ${
+                                      !notif.isRead ? 'bg-primary/5 border-l-2 border-l-primary' : ''
+                                    }`}
+                                    onClick={() => {
+                                      handleMarkAsRead(notif.id)
+                                      if (notif.type.includes('interest') || notif.type.includes('contact')) {
+                                        setCurrentView('my-activity')
+                                      }
+                                    }}
+                                  >
+                                    <div className="flex items-start gap-3">
+                                      {/* Icon based on notification type */}
+                                      <div className={`mt-0.5 p-1.5 rounded-full ${
+                                        !notif.isRead ? 'bg-primary/10' : 'bg-muted'
+                                      }`}>
+                                        {getNotificationIcon(notif.type)}
+                                      </div>
+                                      
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-start justify-between gap-2">
+                                          <p className={`text-sm truncate ${!notif.isRead ? 'font-semibold' : 'font-medium'}`}>
+                                            {language === 'hi' ? notif.titleHi : notif.title}
+                                          </p>
+                                          {/* Delete button - shows on hover */}
+                                          <button
+                                            onClick={(e) => handleDeleteNotification(notif.id, e)}
+                                            className="opacity-0 group-hover/item:opacity-100 transition-opacity p-1 hover:bg-destructive/10 rounded"
+                                            title={language === 'hi' ? 'हटाएं' : 'Delete'}
+                                          >
+                                            <SignOut size={12} className="text-destructive" />
+                                          </button>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                                          {language === 'hi' ? notif.descriptionHi : notif.description}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-1.5">
+                                          <span className="text-[10px] text-muted-foreground/70">
+                                            {formatRelativeTime(notif.createdAt)}
+                                          </span>
+                                          {!notif.isRead && (
+                                            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        </ScrollArea>
+                        
+                        {/* Footer with stats and action */}
+                        {myNotifications.length > 0 && (
+                          <div className="p-2 border-t bg-muted/20 flex items-center justify-between">
+                            <span className="text-[10px] text-muted-foreground px-2">
+                              {language === 'hi' 
+                                ? `कुल ${totalCount} सूचनाएं` 
+                                : `${totalCount} notification${totalCount !== 1 ? 's' : ''}`}
+                            </span>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="text-xs h-7 gap-1"
+                              onClick={() => setCurrentView('my-activity')}
+                            >
+                              {language === 'hi' ? 'सभी गतिविधि' : 'All activity'}
+                              <ArrowRight size={12} />
+                            </Button>
+                          </div>
+                        )}
+                      </PopoverContent>
+                    </Popover>
+                  )
+                })()}
+                
+                {/* Logged-in User Profile Dropdown */}
+                <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="gap-2 px-2">
                     <Avatar className="h-8 w-8 border-2 border-primary/20">
@@ -781,6 +1004,7 @@ function App() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              </div>
             )}
           </nav>
 

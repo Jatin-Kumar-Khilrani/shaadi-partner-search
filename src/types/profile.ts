@@ -538,3 +538,18 @@ export interface ConversationStarter {
   textHi: string
   isDefault: boolean
 }
+
+// User notification for in-app notifications (stored per profile)
+export interface UserNotification {
+  id: string
+  recipientProfileId: string
+  type: 'interest_received' | 'interest_accepted' | 'interest_declined' | 'contact_request_received' | 'contact_accepted' | 'contact_declined' | 'message_received' | 'profile_viewed'
+  title: string
+  titleHi: string
+  description: string
+  descriptionHi: string
+  senderProfileId?: string
+  senderName?: string
+  isRead: boolean
+  createdAt: string
+}
