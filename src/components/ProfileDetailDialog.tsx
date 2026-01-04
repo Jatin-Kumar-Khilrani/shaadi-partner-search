@@ -11,7 +11,6 @@ import { toast } from 'sonner'
 import { useKV } from '@/hooks/useKV'
 import { formatDateDDMMYYYY, formatEducation, formatOccupation } from '@/lib/utils'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
-import { notifyInterestReceived, notifyContactRequestReceived } from '@/lib/notificationService'
 
 // Membership settings interface for plan limits
 interface MembershipSettings {
@@ -245,21 +244,8 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     }
     setUserNotifications(current => [...(current || []), notification])
 
-    // Send notification to the recipient (B) that they received an interest from sender (A)
-    notifyInterestReceived(
-      { 
-        profileId: profile.profileId, 
-        fullName: profile.fullName, 
-        mobile: profile.mobile, 
-        email: profile.email 
-      },
-      { 
-        profileId: currentUserProfile.profileId, 
-        fullName: currentUserProfile.fullName 
-      },
-      language
-    )
-
+    // Notification is stored in bell icon - no toast for other profile
+    // Toast only shown for current user's action confirmation
     toast.success(
       language === 'hi' ? 'रुचि दर्ज की गई!' : 'Interest recorded!',
       {
@@ -342,6 +328,22 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     }
 
     setContactRequests(current => [...(current || []), newRequest])
+
+    // Store in-app notification for the recipient (they'll see it in their bell icon)
+    const contactNotification: UserNotification = {
+      id: `notif-${Date.now()}-contact`,
+      recipientProfileId: profile.profileId,
+      type: 'contact_request_received',
+      title: 'New Contact Request',
+      titleHi: 'नया संपर्क अनुरोध',
+      description: `${currentUserProfile.fullName} has requested your contact details`,
+      descriptionHi: `${currentUserProfile.fullName} ने आपका संपर्क विवरण मांगा है`,
+      senderProfileId: currentUserProfile.profileId,
+      senderName: currentUserProfile.fullName,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    }
+    setUserNotifications(current => [...(current || []), contactNotification])
 
     // Business Logic: Auto-send interest when sending contact request (if not already sent)
     if (!existingInterest && !hasReceivedInterestFromProfile) {

@@ -10,13 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useKV } from '@/hooks/useKV'
 import { Eye, Heart, ChatCircle, Check, X, MagnifyingGlassPlus, ProhibitInset, Phone, Envelope as EnvelopeIcon, User, Clock, ArrowCounterClockwise, Warning } from '@phosphor-icons/react'
-import type { Interest, ContactRequest, Profile, BlockedProfile, MembershipPlan, DeclinedProfile } from '@/types/profile'
+import type { Interest, ContactRequest, Profile, BlockedProfile, MembershipPlan, DeclinedProfile, UserNotification } from '@/types/profile'
 import type { ChatMessage } from '@/types/chat'
 import type { Language } from '@/lib/translations'
 import { toast } from 'sonner'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
-import { notifyInterestAccepted, notifyInterestDeclined, notifyContactAccepted, notifyContactDeclined } from '@/lib/notificationService'
 import { formatDateDDMMYYYY } from '@/lib/utils'
 
 // Membership settings interface for plan limits
@@ -56,6 +55,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
   const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
   const [_blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [declinedProfiles, setDeclinedProfiles] = useKV<DeclinedProfile[]>('declinedProfiles', [])
+  const [, setUserNotifications] = useKV<UserNotification[]>('userNotifications', [])
   
   // State for tab navigation
   const [activeTab, setActiveTab] = useState<string>('received-interests')
@@ -333,20 +333,21 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
 
     setMessages(current => [...(current || []), welcomeMessage, responseMessage])
 
-    // Send notification to the sender (A) that their interest was accepted by recipient (B)
-    notifyInterestAccepted(
-      { 
-        profileId: senderProfile.profileId, 
-        fullName: senderProfile.fullName, 
-        mobile: senderProfile.mobile, 
-        email: senderProfile.email 
-      },
-      { 
-        profileId: currentUserProfile.profileId, 
-        fullName: currentUserProfile.fullName 
-      },
-      language
-    )
+    // Store in-app notification for the sender (they'll see it in their bell icon)
+    const notification: UserNotification = {
+      id: `notif-${Date.now()}`,
+      recipientProfileId: senderProfile.profileId,
+      type: 'interest_accepted',
+      title: 'Interest Accepted!',
+      titleHi: 'रुचि स्वीकार हुई!',
+      description: `${currentUserProfile.fullName} has accepted your interest. You can now chat!`,
+      descriptionHi: `${currentUserProfile.fullName} ने आपकी रुचि स्वीकार कर ली है। अब आप चैट कर सकते हैं!`,
+      senderProfileId: currentUserProfile.profileId,
+      senderName: currentUserProfile.fullName,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    }
+    setUserNotifications(current => [...(current || []), notification])
 
     toast.success(
       language === 'hi' ? 'रुचि स्वीकार की गई' : 'Interest accepted',
@@ -435,21 +436,22 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     }
     setDeclinedProfiles(current => [...(current || []), newDeclined])
 
-    // Notify the sender that their interest was declined
+    // Store in-app notification for the sender (they'll see it in their bell icon)
     if (senderProfile) {
-      notifyInterestDeclined(
-        { 
-          profileId: senderProfile.profileId, 
-          fullName: senderProfile.fullName, 
-          mobile: senderProfile.mobile, 
-          email: senderProfile.email 
-        },
-        { 
-          profileId: currentUserProfile.profileId, 
-          fullName: currentUserProfile.fullName 
-        },
-        language
-      )
+      const notification: UserNotification = {
+        id: `notif-${Date.now()}`,
+        recipientProfileId: senderProfile.profileId,
+        type: 'interest_declined',
+        title: 'Interest Declined',
+        titleHi: 'रुचि अस्वीकार',
+        description: `${currentUserProfile.fullName} has declined your interest`,
+        descriptionHi: `${currentUserProfile.fullName} ने आपकी रुचि अस्वीकार कर दी है`,
+        senderProfileId: currentUserProfile.profileId,
+        senderName: currentUserProfile.fullName,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      }
+      setUserNotifications(current => [...(current || []), notification])
     }
 
     toast.success(language === 'hi' ? 'रुचि अस्वीकार की गई' : 'Interest declined')
@@ -710,20 +712,21 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
       )
     )
 
-    // Send notification to the sender that their contact request was accepted
-    notifyContactAccepted(
-      { 
-        profileId: senderProfile.profileId, 
-        fullName: senderProfile.fullName, 
-        mobile: senderProfile.mobile, 
-        email: senderProfile.email 
-      },
-      { 
-        profileId: currentUserProfile.profileId, 
-        fullName: currentUserProfile.fullName 
-      },
-      language
-    )
+    // Store in-app notification for the sender (they'll see it in their bell icon)
+    const notification: UserNotification = {
+      id: `notif-${Date.now()}`,
+      recipientProfileId: senderProfile.profileId,
+      type: 'contact_accepted',
+      title: 'Contact Request Accepted!',
+      titleHi: 'संपर्क अनुरोध स्वीकार!',
+      description: `${currentUserProfile.fullName} has accepted your contact request. You can now view their contact details!`,
+      descriptionHi: `${currentUserProfile.fullName} ने आपका संपर्क अनुरोध स्वीकार कर लिया है। अब आप उनका संपर्क विवरण देख सकते हैं!`,
+      senderProfileId: currentUserProfile.profileId,
+      senderName: currentUserProfile.fullName,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    }
+    setUserNotifications(current => [...(current || []), notification])
     
     toast.success(
       language === 'hi' 
@@ -748,16 +751,29 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
           : req
       )
     )
+
+    // Store in-app notification for the sender (they'll see it in their bell icon)
+    if (senderProfile && currentUserProfile) {
+      const notification: UserNotification = {
+        id: `notif-${Date.now()}`,
+        recipientProfileId: senderProfile.profileId,
+        type: 'contact_declined',
+        title: 'Contact Request Declined',
+        titleHi: 'संपर्क अनुरोध अस्वीकार',
+        description: `${currentUserProfile.fullName} has declined your contact request`,
+        descriptionHi: `${currentUserProfile.fullName} ने आपका संपर्क अनुरोध अस्वीकार कर दिया है`,
+        senderProfileId: currentUserProfile.profileId,
+        senderName: currentUserProfile.fullName,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      }
+      setUserNotifications(current => [...(current || []), notification])
+    }
     
     toast.success(
       language === 'hi' 
         ? 'संपर्क अनुरोध अस्वीकार किया गया' 
-        : 'Contact request declined',
-      {
-        description: language === 'hi' 
-          ? `${senderProfile?.fullName || 'उपयोगकर्ता'} को सूचित किया जाएगा` 
-          : `${senderProfile?.fullName || 'User'} will be notified`
-      }
+        : 'Contact request declined'
     )
   }
 
