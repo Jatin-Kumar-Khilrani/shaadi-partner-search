@@ -57,6 +57,9 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
   const [_blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [declinedProfiles, setDeclinedProfiles] = useKV<DeclinedProfile[]>('declinedProfiles', [])
   
+  // State for tab navigation
+  const [activeTab, setActiveTab] = useState<string>('received-interests')
+  
   // State for dialogs
   const [interestToDecline, setInterestToDecline] = useState<string | null>(null)
   const [interestToBlock, setInterestToBlock] = useState<{ interestId: string, profileId: string } | null>(null)
@@ -581,13 +584,20 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     const senderProfile = profiles.find(p => p.id === request.fromUserId)
     const senderProfileId = senderProfile?.profileId || request.fromProfileId || ''
     
-    // Business Logic: Interest MUST be accepted before contact request can be accepted
+    // Business Logic: There must be an accepted interest BETWEEN the two profiles (either direction)
     const interestFromSender = interests?.find(
       i => i.fromProfileId === senderProfileId && 
-           i.toProfileId === currentUserProfile.profileId
+           i.toProfileId === currentUserProfile.profileId &&
+           i.status === 'accepted'
     )
+    const interestToSender = interests?.find(
+      i => i.fromProfileId === currentUserProfile.profileId && 
+           i.toProfileId === senderProfileId &&
+           i.status === 'accepted'
+    )
+    const isAnyInterestAccepted = !!interestFromSender || !!interestToSender
     
-    if (!interestFromSender || interestFromSender.status !== 'accepted') {
+    if (!isAnyInterestAccepted) {
       toast.error(
         t.acceptInterestFirst,
         {
@@ -884,7 +894,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
           <h2 className="text-3xl font-bold mb-2">{t.title}</h2>
         </div>
 
-        <Tabs defaultValue="received-interests">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto gap-1 p-1">
             <TabsTrigger value="received-interests" className="relative">
               {t.receivedInterests}
@@ -1454,13 +1464,24 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                     </div>
                                     {/* Accept/Decline buttons for pending requests */}
                                     {request.status === 'pending' && (() => {
-                                      // Check if interest from sender is accepted
+                                      // Check if there's any accepted interest between the two profiles (either direction)
                                       const senderProfileId = profile?.profileId || request.fromProfileId
                                       const interestFromSender = interests?.find(
                                         i => i.fromProfileId === senderProfileId && 
-                                             i.toProfileId === currentUserProfile?.profileId
+                                             i.toProfileId === currentUserProfile?.profileId &&
+                                             i.status === 'accepted'
                                       )
-                                      const isInterestAccepted = interestFromSender?.status === 'accepted'
+                                      const interestToSender = interests?.find(
+                                        i => i.fromProfileId === currentUserProfile?.profileId && 
+                                             i.toProfileId === senderProfileId &&
+                                             i.status === 'accepted'
+                                      )
+                                      const isAnyInterestAccepted = !!interestFromSender || !!interestToSender
+                                      const hasPendingInterest = interests?.find(
+                                        i => ((i.fromProfileId === senderProfileId && i.toProfileId === currentUserProfile?.profileId) ||
+                                              (i.fromProfileId === currentUserProfile?.profileId && i.toProfileId === senderProfileId)) &&
+                                             i.status === 'pending'
+                                      )
                                       
                                       return (
                                         <div className="space-y-2">
@@ -1470,7 +1491,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                               size="sm"
                                               onClick={() => handleAcceptContactRequest(request.id)}
                                               className="flex-1 bg-teal hover:bg-teal/90"
-                                              disabled={!isInterestAccepted}
+                                              disabled={!isAnyInterestAccepted}
                                             >
                                               <Check size={16} className="mr-2" />
                                               {t.accept}
@@ -1485,10 +1506,26 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                               {t.decline}
                                             </Button>
                                           </div>
-                                          {!isInterestAccepted && (
-                                            <p className="text-xs text-amber-600 text-center font-medium">
-                                              ⚠️ {t.acceptInterestFirst}
-                                            </p>
+                                          {!isAnyInterestAccepted && (
+                                            <div className="text-center space-y-1">
+                                              <p className="text-xs text-amber-600 font-medium">
+                                                ⚠️ {t.acceptInterestFirst}
+                                              </p>
+                                              {hasPendingInterest ? (
+                                                <Button
+                                                  variant="link"
+                                                  size="sm"
+                                                  className="text-xs h-auto p-0 text-primary underline"
+                                                  onClick={() => setActiveTab('received-interests')}
+                                                >
+                                                  {language === 'hi' ? '→ प्राप्त रुचि में जाएं' : '→ Go to Received Interests'}
+                                                </Button>
+                                              ) : (
+                                                <p className="text-xs text-muted-foreground">
+                                                  {language === 'hi' ? 'इस प्रोफाइल के साथ कोई स्वीकृत रुचि नहीं' : 'No accepted interest with this profile'}
+                                                </p>
+                                              )}
+                                            </div>
                                           )}
                                           <p className="text-xs text-muted-foreground text-center">
                                             {t.contactFlowInfo}

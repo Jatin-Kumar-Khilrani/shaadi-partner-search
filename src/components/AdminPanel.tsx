@@ -2120,11 +2120,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   </Alert>
                 ) : (
                   <>
-                  <div className="overflow-auto max-h-[70vh] sm:max-h-[600px] relative -mx-2 sm:mx-0">
-                      <Table className="min-w-[900px] sm:min-w-[1200px] border-separate border-spacing-0">
+                  <div className="overflow-x-auto overflow-y-auto max-h-[70vh] sm:max-h-[600px] relative border rounded-lg">
+                      <Table className="w-full table-auto">
                         <TableHeader className="sticky top-0 z-30 bg-background">
                           <TableRow>
-                            <TableHead className="whitespace-nowrap w-8 sm:w-10 sticky left-0 z-40 bg-background border-r border-b">
+                            <TableHead className="whitespace-nowrap w-10 bg-background border-b px-2">
                               <Checkbox 
                                 checked={selectedDatabaseProfiles.length === filteredDatabaseProfiles.length && filteredDatabaseProfiles.length > 0}
                                 onCheckedChange={(checked) => {
@@ -2136,79 +2136,55 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 }}
                               />
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 sticky left-8 sm:left-10 z-40 bg-background border-b" onClick={() => { setDbSortBy('profileId'); setDbSortOrder(prev => dbSortBy === 'profileId' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b min-w-[85px]" onClick={() => { setDbSortBy('profileId'); setDbSortOrder(prev => dbSortBy === 'profileId' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.profileId}
                                 {dbSortBy === 'profileId' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 sticky left-[6rem] sm:left-[7.5rem] z-40 bg-background min-w-[100px] sm:min-w-[120px] border-b" onClick={() => { setDbSortBy('name'); setDbSortOrder(prev => dbSortBy === 'name' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b min-w-[120px]" onClick={() => { setDbSortBy('name'); setDbSortOrder(prev => dbSortBy === 'name' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.name}
                                 {dbSortBy === 'name' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 sticky left-[12rem] sm:left-[15rem] z-40 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b" onClick={() => { setDbSortBy('gender'); setDbSortOrder(prev => dbSortBy === 'gender' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b min-w-[70px]" onClick={() => { setDbSortBy('gender'); setDbSortOrder(prev => dbSortBy === 'gender' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.gender}
                                 {dbSortBy === 'gender' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('plan'); setDbSortOrder(prev => dbSortBy === 'plan' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
-                              <div className="flex items-center gap-1">
-                                {t.planType}
-                                {dbSortBy === 'plan' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
-                              </div>
-                            </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('userId'); setDbSortOrder(prev => dbSortBy === 'userId' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
-                              <div className="flex items-center gap-1">
-                                {t.userId}
-                                {dbSortBy === 'userId' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
-                              </div>
-                            </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('relation'); setDbSortOrder(prev => dbSortBy === 'relation' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
-                              <div className="flex items-center gap-1">
-                                {t.relation}
-                                {dbSortBy === 'relation' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
-                              </div>
-                            </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('age'); setDbSortOrder(prev => dbSortBy === 'age' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
-                              <div className="flex items-center gap-1">
-                                {t.age}
-                                {dbSortBy === 'age' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
-                              </div>
-                            </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('location'); setDbSortOrder(prev => dbSortBy === 'location' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b min-w-[90px]" onClick={() => { setDbSortBy('location'); setDbSortOrder(prev => dbSortBy === 'location' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.location}
                                 {dbSortBy === 'location' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('status'); setDbSortOrder(prev => dbSortBy === 'status' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b min-w-[80px]" onClick={() => { setDbSortBy('status'); setDbSortOrder(prev => dbSortBy === 'status' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.status}
                                 {dbSortBy === 'status' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('email'); setDbSortOrder(prev => dbSortBy === 'email' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b min-w-[180px]" onClick={() => { setDbSortBy('email'); setDbSortOrder(prev => dbSortBy === 'email' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.email}
                                 {dbSortBy === 'email' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('mobile'); setDbSortOrder(prev => dbSortBy === 'mobile' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b min-w-[140px]" onClick={() => { setDbSortBy('mobile'); setDbSortOrder(prev => dbSortBy === 'mobile' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}>
                               <div className="flex items-center gap-1">
                                 {t.mobile}
                                 {dbSortBy === 'mobile' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b" onClick={() => { setDbSortBy('createdAt'); setDbSortOrder(prev => dbSortBy === 'createdAt' ? (prev === 'asc' ? 'desc' : 'asc') : 'desc') }}>
+                            <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50 bg-background border-b min-w-[95px]" onClick={() => { setDbSortBy('createdAt'); setDbSortOrder(prev => dbSortBy === 'createdAt' ? (prev === 'asc' ? 'desc' : 'asc') : 'desc') }}>
                               <div className="flex items-center gap-1">
                                 {t.createdAt}
                                 {dbSortBy === 'createdAt' ? (dbSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                               </div>
                             </TableHead>
-                            <TableHead className="whitespace-nowrap bg-background border-b">{t.actions}</TableHead>
+                            <TableHead className="whitespace-nowrap bg-background border-b min-w-[200px]">{t.actions}</TableHead>
                           </TableRow>
                         </TableHeader>
                       <TableBody>
@@ -2262,8 +2238,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         }).slice((databasePage - 1) * ITEMS_PER_PAGE, databasePage * ITEMS_PER_PAGE).map((profile) => {
                           const creds = getUserCredentials(profile.id)
                           return (
-                            <TableRow key={profile.id} className={`${profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20' : ''} ${selectedDatabaseProfiles.includes(profile.id) ? 'bg-primary/5' : ''} group`}>
-                              <TableCell className={`sticky left-0 z-10 border-r w-8 sm:w-10 ${profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20' : selectedDatabaseProfiles.includes(profile.id) ? 'bg-primary/5' : 'bg-background'} group-hover:bg-muted/50`}>
+                            <TableRow key={profile.id} className={`${profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20' : ''} ${selectedDatabaseProfiles.includes(profile.id) ? 'bg-primary/5' : ''} hover:bg-muted/50`}>
+                              <TableCell className="px-2 w-10">
                                 <Checkbox 
                                   checked={selectedDatabaseProfiles.includes(profile.id)}
                                   onCheckedChange={(checked) => {
@@ -2275,39 +2251,34 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   }}
                                 />
                               </TableCell>
-                              <TableCell className={`font-mono font-semibold text-xs sm:text-sm sticky left-8 sm:left-10 z-10 ${profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20 text-red-600' : selectedDatabaseProfiles.includes(profile.id) ? 'bg-primary/5' : 'bg-background'} group-hover:bg-muted/50`}>{profile.profileId}</TableCell>
-                              <TableCell className={`font-medium sticky left-[6rem] sm:left-[7.5rem] z-10 min-w-[100px] sm:min-w-[120px] max-w-[120px] sm:max-w-[150px] truncate ${profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20 text-red-600' : selectedDatabaseProfiles.includes(profile.id) ? 'bg-primary/5' : 'bg-background'} group-hover:bg-muted/50`} title={profile.fullName}>
-                                {profile.fullName}
-                                {profile.isDeleted && (
-                                  <Badge variant="destructive" className="ml-1 sm:ml-2 text-xs">{language === 'hi' ? 'हटाया गया' : 'Deleted'}</Badge>
-                                )}
-                              </TableCell>
-                              <TableCell className={`sticky left-[12rem] sm:left-[15rem] z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${profile.isDeleted ? 'bg-red-50 dark:bg-red-950/20' : selectedDatabaseProfiles.includes(profile.id) ? 'bg-primary/5' : 'bg-background'} group-hover:bg-muted/50`}>
-                                <Badge variant="outline" className={`text-xs sm:text-sm ${profile.gender === 'male' ? 'border-blue-500 text-blue-600' : 'border-pink-500 text-pink-600'}`}>
-                                  {profile.gender === 'male' ? t.male : t.female}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
+                              <TableCell className={`font-mono font-semibold text-xs whitespace-nowrap ${profile.isDeleted ? 'text-red-600' : ''}`}>
                                 <Badge variant={
                                   profile.membershipPlan === '1-year' ? 'default' :
                                   profile.membershipPlan === '6-month' ? 'secondary' :
                                   'outline'
-                                } className={
+                                } className={`mr-1 text-[10px] px-1 ${
                                   profile.membershipPlan === '1-year' ? 'bg-green-600' :
                                   profile.membershipPlan === '6-month' ? 'bg-blue-500 text-white' :
                                   ''
-                                }>
-                                  {profile.membershipPlan === '1-year' ? t.oneYearPlanLabel :
-                                   profile.membershipPlan === '6-month' ? t.sixMonthPlanLabel :
-                                   t.freePlanLabel}
+                                }`}>
+                                  {profile.membershipPlan === '1-year' ? '1Year' :
+                                   profile.membershipPlan === '6-month' ? '6Mo' :
+                                   'Free'}
+                                </Badge>
+                                {profile.profileId}
+                              </TableCell>
+                              <TableCell className={`font-medium max-w-[130px] truncate ${profile.isDeleted ? 'text-red-600' : ''}`} title={profile.fullName}>
+                                {profile.fullName}
+                                {profile.isDeleted && (
+                                  <Badge variant="destructive" className="ml-1 text-[10px] px-1">{language === 'hi' ? 'हटाया' : 'Del'}</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={`text-xs ${profile.gender === 'male' ? 'border-blue-500 text-blue-600 bg-blue-50' : 'border-pink-500 text-pink-600 bg-pink-50'}`}>
+                                  {profile.gender === 'male' ? t.male : t.female}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="font-mono text-primary">{creds?.userId || '-'}</TableCell>
-                              <TableCell className="text-sm">
-                                {profile.relationToProfile || (language === 'hi' ? 'स्वयं' : 'Self')}
-                              </TableCell>
-                              <TableCell>{profile.age}</TableCell>
-                              <TableCell className="text-sm">{profile.location}</TableCell>
+                              <TableCell className="text-sm whitespace-nowrap">{profile.location}</TableCell>
                               <TableCell>
                               {profile.isDeleted ? (
                                 <Badge variant="destructive">{language === 'hi' ? 'हटाया गया' : 'Deleted'}</Badge>
@@ -2333,16 +2304,17 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 </Badge>
                               )}
                             </TableCell>
-                            <TableCell className="text-sm">{profile.email}</TableCell>
-                            <TableCell className="font-mono text-sm">{profile.mobile}</TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
+                            <TableCell className="text-sm max-w-[200px] truncate" title={profile.email}>{profile.email}</TableCell>
+                            <TableCell className="font-mono text-sm whitespace-nowrap">{profile.mobile?.replace(/^undefined\s*/i, '') || '-'}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                               {formatDateDDMMYYYY(profile.createdAt)}
                             </TableCell>
                             <TableCell>
-                              <div className="flex gap-1">
+                              <div className="flex gap-0.5 flex-nowrap">
                                 <Button 
                                   variant="ghost" 
-                                  size="sm"
+                                  size="icon"
+                                  className="h-8 w-8"
                                   onClick={() => setViewProfileDialog(profile)}
                                   title={t.viewProfile}
                                 >
@@ -2350,7 +2322,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 </Button>
                                 <Button 
                                   variant="ghost" 
-                                  size="sm"
+                                  size="icon"
+                                  className="h-8 w-8"
                                   onClick={() => {
                                     setSelectedProfile(profile)
                                     setShowChatDialog(true)
@@ -2361,18 +2334,18 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 </Button>
                                 <Button 
                                   variant="ghost" 
-                                  size="sm"
-                                  onClick={() => {
-                                    setDigilockerProfile(profile)
-                                    setShowDigilockerDialog(true)
-                                  }}
-                                  className={
+                                  size="icon"
+                                  className={`h-8 w-8 ${
                                     profile.digilockerVerified 
                                       ? 'text-green-600 hover:text-green-700 hover:bg-green-50' 
                                       : profile.idProofUrl 
                                         ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50' 
                                         : 'text-gray-400 hover:text-gray-500'
-                                  }
+                                  }`}
+                                  onClick={() => {
+                                    setDigilockerProfile(profile)
+                                    setShowDigilockerDialog(true)
+                                  }}
                                   title={
                                     profile.digilockerVerified 
                                       ? t.digilockerVerified 
@@ -2383,35 +2356,32 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 >
                                   <ShieldCheck size={16} />
                                 </Button>
-                                {/* Photo Verification button (selfie vs uploaded photos) */}
                                 <Button 
                                   variant="ghost" 
-                                  size="sm"
+                                  size="icon"
+                                  className={`h-8 w-8 ${profile.photoVerified === true ? 'text-green-600 hover:text-green-700' : profile.photoVerified === false ? 'text-red-500 hover:text-red-600' : 'text-amber-500 hover:text-amber-600'}`}
                                   onClick={() => setFaceVerificationDialog(profile)}
-                                  className={profile.photoVerified === true ? 'text-green-600 hover:text-green-700' : profile.photoVerified === false ? 'text-red-500 hover:text-red-600' : 'text-amber-500 hover:text-amber-600'}
                                   title={profile.photoVerified === true ? t.photoVerifiedBadge : t.verifyFace}
                                 >
                                   <ScanSmiley size={16} />
                                 </Button>
-                                {/* Login as User button */}
                                 {onLoginAsUser && creds?.userId && (
                                   <Button 
                                     variant="ghost" 
-                                    size="sm"
+                                    size="icon"
+                                    className="h-8 w-8 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
                                     onClick={() => onLoginAsUser(creds.userId)}
-                                    className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
                                     title={t.loginAsUser}
                                   >
                                     <Key size={16} />
                                   </Button>
                                 )}
-                                {/* Unblock button for blocked profiles */}
                                 {profile.isBlocked && (
                                   <Button 
                                     variant="ghost" 
-                                    size="sm"
+                                    size="icon"
+                                    className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
                                     onClick={() => handleUnblock(profile)}
-                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
                                     title={t.unblock}
                                   >
                                     <ArrowCounterClockwise size={16} />
@@ -2419,30 +2389,29 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 )}
                                 <Button 
                                   variant="ghost" 
-                                  size="sm"
+                                  size="icon"
+                                  className="h-8 w-8 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
                                   onClick={() => handleOpenAdminEdit(profile)}
-                                  className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
                                   title={t.adminEditProfile}
                                 >
                                   <UserIcon size={16} />
                                 </Button>
-                                {/* Conditional actions based on profile status */}
                                 {profile.isDeleted ? (
                                   <>
                                     <Button 
                                       variant="ghost" 
-                                      size="sm"
+                                      size="icon"
+                                      className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
                                       onClick={() => handleRestoreProfile(profile.id)}
-                                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
                                       title={t.restoreProfile}
                                     >
                                       <ArrowCounterClockwise size={16} />
                                     </Button>
                                     <Button 
                                       variant="ghost" 
-                                      size="sm"
+                                      size="icon"
+                                      className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                                       onClick={() => handlePermanentDelete(profile.id)}
-                                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                       title={t.permanentDelete}
                                     >
                                       <Trash size={16} weight="fill" />
@@ -2451,9 +2420,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 ) : (
                                   <Button 
                                     variant="ghost" 
-                                    size="sm"
+                                    size="icon"
+                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                                     onClick={() => handleDeleteProfile(profile.id)}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                     title={t.deleteProfile}
                                   >
                                     <Trash size={16} />
@@ -3620,8 +3589,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           value={localMembershipSettings.sixMonthPrice}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
-                            sixMonthPrice: parseInt(e.target.value) || 0
+                            sixMonthPrice: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0)
                           }))}
+                          onFocus={(e) => e.target.select()}
                         />
                       </div>
                       <div className="space-y-2">
@@ -3631,8 +3601,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           value={localMembershipSettings.sixMonthDuration}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
-                            sixMonthDuration: parseInt(e.target.value) || 6
+                            sixMonthDuration: e.target.value === '' ? 6 : Math.max(1, parseInt(e.target.value) || 6)
                           }))}
+                          onFocus={(e) => e.target.select()}
                         />
                       </div>
                     </div>
@@ -3650,8 +3621,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           value={localMembershipSettings.oneYearPrice}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
-                            oneYearPrice: parseInt(e.target.value) || 0
+                            oneYearPrice: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0)
                           }))}
+                          onFocus={(e) => e.target.select()}
                         />
                       </div>
                       <div className="space-y-2">
@@ -3661,8 +3633,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           value={localMembershipSettings.oneYearDuration}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
-                            oneYearDuration: parseInt(e.target.value) || 12
+                            oneYearDuration: e.target.value === '' ? 12 : Math.max(1, parseInt(e.target.value) || 12)
                           }))}
+                          onFocus={(e) => e.target.select()}
                         />
                       </div>
                     </div>
@@ -3694,8 +3667,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           value={localMembershipSettings.discountPercentage}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
-                            discountPercentage: parseInt(e.target.value) || 0
+                            discountPercentage: e.target.value === '' ? 0 : Math.min(100, Math.max(0, parseInt(e.target.value) || 0))
                           }))}
+                          onFocus={(e) => e.target.select()}
                           disabled={!localMembershipSettings.discountEnabled}
                         />
                       </div>
@@ -3734,8 +3708,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             value={localMembershipSettings.freePlanChatLimit}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              freePlanChatLimit: parseInt(e.target.value) || 0
+                              freePlanChatLimit: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0)
                             }))}
+                            onFocus={(e) => e.target.select()}
                           />
                         </div>
                         <div className="space-y-2">
@@ -3746,8 +3721,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             value={localMembershipSettings.freePlanContactLimit}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              freePlanContactLimit: parseInt(e.target.value) || 0
+                              freePlanContactLimit: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0)
                             }))}
+                            onFocus={(e) => e.target.select()}
                           />
                           <p className="text-xs text-muted-foreground">{language === 'hi' ? '0 = कोई संपर्क नहीं' : '0 = No contacts'}</p>
                         </div>
@@ -3766,8 +3742,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             value={localMembershipSettings.sixMonthChatLimit}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              sixMonthChatLimit: parseInt(e.target.value) || 0
+                              sixMonthChatLimit: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0)
                             }))}
+                            onFocus={(e) => e.target.select()}
                           />
                         </div>
                         <div className="space-y-2">
@@ -3778,8 +3755,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             value={localMembershipSettings.sixMonthContactLimit}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              sixMonthContactLimit: parseInt(e.target.value) || 0
+                              sixMonthContactLimit: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0)
                             }))}
+                            onFocus={(e) => e.target.select()}
                           />
                         </div>
                       </div>
@@ -3797,8 +3775,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             value={localMembershipSettings.oneYearChatLimit}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              oneYearChatLimit: parseInt(e.target.value) || 0
+                              oneYearChatLimit: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0)
                             }))}
+                            onFocus={(e) => e.target.select()}
                           />
                         </div>
                         <div className="space-y-2">
@@ -3809,8 +3788,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             value={localMembershipSettings.oneYearContactLimit}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              oneYearContactLimit: parseInt(e.target.value) || 0
+                              oneYearContactLimit: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0)
                             }))}
+                            onFocus={(e) => e.target.select()}
                           />
                         </div>
                       </div>
