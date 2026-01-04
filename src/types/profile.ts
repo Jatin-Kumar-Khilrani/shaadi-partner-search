@@ -213,12 +213,18 @@ export interface Interest {
   id: string
   fromProfileId: string
   toProfileId: string
-  status: 'pending' | 'accepted' | 'declined' | 'blocked'
+  status: 'pending' | 'accepted' | 'declined' | 'blocked' | 'revoked'
   message?: string
   createdAt: string
   approvedBy?: string
   declinedAt?: string
   blockedAt?: string
+  revokedAt?: string
+  // Track who performed the action for UI display
+  declinedBy?: 'sender' | 'receiver'  // Who declined the interest
+  revokedBy?: 'sender' | 'receiver'   // Who revoked after acceptance
+  // Auto-decline linked to this interest
+  contactAutoDeclined?: boolean  // True if contact request was auto-declined when interest was declined
 }
 
 export type ReportReason = 
@@ -244,6 +250,22 @@ export interface BlockedProfile {
   adminReviewedAt?: string
   adminAction?: 'dismissed' | 'warned' | 'removed'
   adminNotes?: string
+  // Undo/Unblock tracking
+  unblockedAt?: string
+  isUnblocked?: boolean  // Soft unblock - keeps history but restores visibility
+}
+
+// Track declined profiles for undo/reconsider feature
+export interface DeclinedProfile {
+  id: string
+  declinerProfileId: string  // Who did the declining
+  declinedProfileId: string  // Who was declined
+  type: 'interest' | 'contact'  // What was declined
+  declinedAt: string
+  reason?: string
+  // Reconsider/Undo tracking
+  reconsideredAt?: string
+  isReconsidered?: boolean  // If user wants to reconsider this profile
 }
 
 export interface ContactRequest {
@@ -252,8 +274,16 @@ export interface ContactRequest {
   toUserId: string
   fromProfileId: string
   toProfileId?: string
-  status: 'pending' | 'approved' | 'declined'
+  status: 'pending' | 'approved' | 'declined' | 'revoked'
   createdAt: string
+  approvedAt?: string
+  declinedAt?: string
+  revokedAt?: string
+  // Track who performed the action for UI display
+  declinedBy?: 'sender' | 'receiver'  // Who declined the contact request
+  revokedBy?: 'sender' | 'receiver'   // Who revoked after approval
+  // Auto-decline linked to interest decline
+  autoDeclinedDueToInterest?: boolean  // True if auto-declined when interest was declined
 }
 
 export interface PartnerPreferenceData {

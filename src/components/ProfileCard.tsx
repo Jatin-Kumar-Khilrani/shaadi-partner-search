@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MapPin, Briefcase, GraduationCap, UserCircle, ShieldCheck, Seal, Clock, Lock, Crown, Eye } from '@phosphor-icons/react'
+import { MapPin, Briefcase, GraduationCap, UserCircle, ShieldCheck, Seal, Clock, Lock, Crown, Eye, XCircle, ArrowCounterClockwise, ProhibitInset } from '@phosphor-icons/react'
 import type { Profile, MembershipPlan } from '@/types/profile'
 import { motion } from 'framer-motion'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
@@ -13,9 +13,13 @@ interface ProfileCardProps {
   isLoggedIn?: boolean
   shouldBlur?: boolean
   membershipPlan?: MembershipPlan
+  // New props for declined/blocked status
+  isDeclinedByMe?: boolean
+  isDeclinedByThem?: boolean
+  onReconsider?: (profileId: string) => void
 }
 
-export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedIn = false, shouldBlur = false, membershipPlan }: ProfileCardProps) {
+export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedIn = false, shouldBlur = false, membershipPlan, isDeclinedByMe = false, isDeclinedByThem = false, onReconsider }: ProfileCardProps) {
   
   // Lightbox for photo zoom
   const { lightboxState, openLightbox, closeLightbox } = useLightbox()
@@ -63,7 +67,16 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
     caste: language === 'hi' ? 'जाति' : 'Caste',
     viewProfile: language === 'hi' ? 'प्रोफाइल देखें' : 'View Profile',
     lastSeen: language === 'hi' ? 'अंतिम लॉगिन' : 'Last seen',
+    declinedByMe: language === 'hi' ? 'मेरे द्वारा अस्वीकृत' : 'Declined by me',
+    declinedByThem: language === 'hi' ? 'उनके द्वारा अस्वीकृत' : 'Declined by them',
+    reconsider: language === 'hi' ? 'पुनर्विचार' : 'Reconsider',
   }
+
+  // Determine if this card should have special styling for declined status
+  const hasDeclinedStatus = isDeclinedByMe || isDeclinedByThem
+  const declinedCardClass = hasDeclinedStatus ? 'opacity-70 border-gray-300' : ''
+  const declinedByMeClass = isDeclinedByMe ? 'bg-rose-50/50 dark:bg-rose-950/10' : ''
+  const declinedByThemClass = isDeclinedByThem && !isDeclinedByMe ? 'bg-amber-50/50 dark:bg-amber-950/10' : ''
 
   // Format last login time
   const formatLastLogin = (lastLoginAt?: string) => {
@@ -96,7 +109,7 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
     >
       <Card 
-        className="overflow-hidden hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/40 cursor-pointer group/card bg-background hover:bg-primary/[0.02] active:scale-[0.99]"
+        className={`overflow-hidden hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/40 cursor-pointer group/card bg-background hover:bg-primary/[0.02] active:scale-[0.99] ${declinedCardClass} ${declinedByMeClass} ${declinedByThemClass}`}
         onClick={() => onViewProfile(profile)}
         role="button"
         tabIndex={0}
@@ -108,6 +121,28 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
         }}
         aria-label={`${language === 'hi' ? 'प्रोफाइल देखें:' : 'View profile:'} ${displayName}`}
       >
+        {/* Declined status banner */}
+        {hasDeclinedStatus && (
+          <div className={`px-4 py-2 flex items-center justify-between text-xs font-medium ${isDeclinedByMe ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'}`}>
+            <div className="flex items-center gap-2">
+              <XCircle size={14} weight="fill" />
+              <span>{isDeclinedByMe ? t.declinedByMe : t.declinedByThem}</span>
+            </div>
+            {isDeclinedByMe && onReconsider && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onReconsider(profile.profileId)
+                }}
+                className="flex items-center gap-1 px-2 py-1 rounded bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300"
+              >
+                <ArrowCounterClockwise size={12} weight="bold" />
+                {t.reconsider}
+              </button>
+            )}
+          </div>
+        )}
+        
         <CardHeader className="pb-4">
           <div className="flex items-start gap-4">
             <div 

@@ -15,7 +15,7 @@ import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { ProfileCard } from './ProfileCard'
 import { MagnifyingGlass, Funnel, X, GraduationCap, Globe, Calendar, Trophy, Sparkle, Heart, Users } from '@phosphor-icons/react'
-import type { Profile, SearchFilters, BlockedProfile, MembershipPlan, ProfileStatus } from '@/types/profile'
+import type { Profile, SearchFilters, BlockedProfile, MembershipPlan, ProfileStatus, Interest, DeclinedProfile } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 
 // Extended filters interface with additional fields
@@ -47,6 +47,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
   const [filters, setFilters] = useState<ExtendedFilters>({})
   const [showFilters, setShowFilters] = useState(false)
   const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
+  const [interests] = useKV<Interest[]>('interests', [])
+  const [declinedProfiles] = useKV<DeclinedProfile[]>('declinedProfiles', [])
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 60])
   const [usePartnerPreferences, setUsePartnerPreferences] = useState(true) // Smart matching toggle
 
@@ -56,6 +58,46 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
   const isFreePlan = membershipPlan === 'free' || !membershipPlan
   const isPendingApproval = profileStatus === 'pending'
   const shouldBlurProfiles = isFreePlan || isPendingApproval
+
+  // Helper to get declined/blocked status for a profile
+  const getProfileInteractionStatus = (profileId: string): { 
+    isDeclinedByMe: boolean
+    isDeclinedByThem: boolean
+    isBlocked: boolean
+    isBlockedByThem: boolean
+  } => {
+    if (!currentUserProfile) return { isDeclinedByMe: false, isDeclinedByThem: false, isBlocked: false, isBlockedByThem: false }
+    
+    // Check if I declined them
+    const declinedByMe = declinedProfiles?.some(
+      d => d.declinerProfileId === currentUserProfile.profileId && 
+           d.declinedProfileId === profileId &&
+           !d.isReconsidered
+    ) || false
+
+    // Check if they declined me (from interest data)
+    const declinedByThem = interests?.some(
+      i => i.fromProfileId === currentUserProfile.profileId && 
+           i.toProfileId === profileId && 
+           i.status === 'declined'
+    ) || false
+
+    // Check if I blocked them
+    const isBlocked = blockedProfiles?.some(
+      b => b.blockerProfileId === currentUserProfile.profileId && 
+           b.blockedProfileId === profileId &&
+           !b.isUnblocked
+    ) || false
+
+    // Check if they blocked me
+    const isBlockedByThem = blockedProfiles?.some(
+      b => b.blockedProfileId === currentUserProfile.profileId && 
+           b.blockerProfileId === profileId &&
+           !b.isUnblocked
+    ) || false
+
+    return { isDeclinedByMe, isDeclinedByThem, isBlocked, isBlockedByThem }
+  }
 
   // Count active filters (don't count 'any' selections as active filters)
   const activeFilterCount = useMemo(() => {
@@ -926,17 +968,27 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProfiles.map((profile) => (
-              <ProfileCard
-                key={profile.id}
-                profile={profile}
-                onViewProfile={onViewProfile}
-                language={language}
-                isLoggedIn={true}
-                shouldBlur={shouldBlurProfiles}
-                membershipPlan={membershipPlan}
-              />
-            ))}
+            {filteredProfiles.map((profile) => {
+              const status = getProfileInteractionStatus(profile.profileId)
+              return (
+                <ProfileCard
+                  key={profile.id}
+                  profile={profile}
+                  onViewProfile={onViewProfile}
+                  language={language}
+                  isLoggedIn={true}
+                  shouldBlur={shouldBlurProfiles}
+                  membershipPlan={membershipPlan}
+                  isDeclinedByMe={status.isDeclinedByMe}
+                  isDeclinedByThem={status.isDeclinedByThem}
+                  onReconsider={(profileId) => {
+                    // Navigate to activity page or handle reconsider inline
+                    // For now, just show a toast indicating they can send new interest
+                    console.log('Reconsider profile:', profileId)
+                  }}
+                />
+              )
+            })}
           </div>
         )}
       </div>

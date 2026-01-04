@@ -14,7 +14,6 @@ import { RegistrationDialog } from '@/components/RegistrationDialog'
 import { LoginDialog } from '@/components/LoginDialog'
 import { MyMatches } from '@/components/MyMatches'
 import { MyActivity } from '@/components/MyActivity'
-import { Inbox } from '@/components/Inbox'
 import { Chat } from '@/components/Chat'
 import { MyProfile } from '@/components/MyProfile'
 import { Settings } from '@/components/Settings'
@@ -31,7 +30,7 @@ import { type Language } from '@/lib/translations'
 import { toast } from 'sonner'
 import { sampleWeddingServices } from '@/lib/sampleData'
 
-type View = 'home' | 'search-results' | 'admin' | 'my-matches' | 'my-activity' | 'inbox' | 'chat' | 'my-profile' | 'wedding-services' | 'readiness'
+type View = 'home' | 'search-results' | 'admin' | 'my-matches' | 'my-activity' | 'chat' | 'my-profile' | 'wedding-services' | 'readiness'
 
 // Membership settings interface for dynamic pricing and plan limits
 interface MembershipSettings {
@@ -601,7 +600,6 @@ function App() {
     adminButton: language === 'hi' ? 'एडमिन' : 'Admin',
     myMatches: language === 'hi' ? 'मैच' : 'Matches',
     myActivity: language === 'hi' ? 'गतिविधि' : 'Activity',
-    inbox: language === 'hi' ? 'इनबॉक्स' : 'Inbox',
     chat: language === 'hi' ? 'चैट' : 'Chat',
     myProfile: language === 'hi' ? 'प्रोफाइल' : 'Profile',
     settings: language === 'hi' ? 'सेटिंग्स' : 'Settings',
@@ -670,15 +668,6 @@ function App() {
                 >
                   <ClockCounterClockwise size={18} />
                   <span className="hidden xl:inline">{t.myActivity}</span>
-                </Button>
-                <Button
-                  variant={currentView === 'inbox' ? 'default' : 'ghost'}
-                  onClick={() => setCurrentView('inbox')}
-                  className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
-                  size="sm"
-                >
-                  <Envelope size={18} />
-                  <span className="hidden xl:inline">{t.inbox}</span>
                 </Button>
                 <Button
                   variant={currentView === 'chat' ? 'default' : 'ghost'}
@@ -852,17 +841,6 @@ function App() {
                     >
                       <ClockCounterClockwise size={20} />
                       {t.myActivity}
-                    </Button>
-                    <Button
-                      variant={currentView === 'inbox' ? 'default' : 'ghost'}
-                      onClick={() => {
-                        setCurrentView('inbox')
-                        setMobileMenuOpen(false)
-                      }}
-                      className="justify-start gap-2"
-                    >
-                      <Envelope size={20} />
-                      {t.inbox}
                     </Button>
                     <Button
                       variant={currentView === 'chat' ? 'default' : 'ghost'}
@@ -1262,21 +1240,10 @@ function App() {
             membershipPlan={currentUserProfile?.membershipPlan}
             membershipSettings={membershipSettings || defaultMembershipSettings}
             setProfiles={setProfiles}
-          />
-        )}
-
-        {currentView === 'inbox' && (
-          <Inbox 
-            loggedInUserId={currentUserProfile?.id || null}
-            profiles={profiles || []}
-            language={language}
             onNavigateToChat={(profileId) => {
               setChatTargetProfileId(profileId || null)
               setCurrentView('chat')
             }}
-            membershipPlan={currentUserProfile?.membershipPlan}
-            membershipSettings={membershipSettings || defaultMembershipSettings}
-            setProfiles={setProfiles}
           />
         )}
 
@@ -1358,15 +1325,6 @@ function App() {
             >
               <ClockCounterClockwise size={20} weight={currentView === 'my-activity' ? 'fill' : 'regular'} />
               <span className="text-xs mt-1">{language === 'hi' ? 'गतिविधि' : 'Activity'}</span>
-            </Button>
-            <Button
-              variant={currentView === 'inbox' ? 'default' : 'ghost'}
-              onClick={() => setCurrentView('inbox')}
-              className="flex-col h-auto py-2 px-1"
-              size="sm"
-            >
-              <Envelope size={20} weight={currentView === 'inbox' ? 'fill' : 'regular'} />
-              <span className="text-xs mt-1">{language === 'hi' ? 'इनबॉक्स' : 'Inbox'}</span>
             </Button>
             <Button
               variant={currentView === 'chat' ? 'default' : 'ghost'}

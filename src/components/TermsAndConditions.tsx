@@ -13,6 +13,13 @@ interface MembershipSettings {
   discountPercentage: number
   discountEnabled: boolean
   discountEndDate: string | null
+  // Plan-specific limits
+  freePlanChatLimit?: number
+  freePlanContactLimit?: number
+  sixMonthChatLimit?: number
+  sixMonthContactLimit?: number
+  oneYearChatLimit?: number
+  oneYearContactLimit?: number
 }
 
 interface TermsAndConditionsProps {
@@ -28,6 +35,14 @@ export function TermsAndConditions({ open, onClose, language, membershipSettings
   // Dynamic pricing from membership settings
   const sixMonthPrice = membershipSettings?.sixMonthPrice || 500
   const oneYearPrice = membershipSettings?.oneYearPrice || 900
+  
+  // Dynamic plan limits from admin settings
+  const freePlanChatLimit = membershipSettings?.freePlanChatLimit ?? 5
+  const freePlanContactLimit = membershipSettings?.freePlanContactLimit ?? 0
+  const sixMonthChatLimit = membershipSettings?.sixMonthChatLimit ?? 50
+  const sixMonthContactLimit = membershipSettings?.sixMonthContactLimit ?? 20
+  const oneYearChatLimit = membershipSettings?.oneYearChatLimit ?? 120
+  const oneYearContactLimit = membershipSettings?.oneYearContactLimit ?? 50
 
   const sections = [
     {
@@ -236,6 +251,12 @@ Refund Policy:
 • संपर्क अनुरोध भेजने पर स्वचालित रूप से रुचि अनुरोध भी भेजा जाता है
 • संपर्क स्वीकार करने से पहले रुचि स्वीकृत होनी चाहिए
 
+संपर्क दृश्यता (एक-तरफ़ा):
+• यदि A ने B को संपर्क अनुरोध भेजा और B ने स्वीकार किया:
+  - A को B का संपर्क दिखाई देगा
+  - B को A का संपर्क नहीं दिखेगा (जब तक B भी अनुरोध न भेजे)
+• संपर्क दृश्यता अनुरोध के आधार पर एक-तरफ़ा है
+
 स्लॉट उपयोग:
 • संपर्क स्वीकृति पर: दोनों पक्षों का 1-1 संपर्क स्लॉट उपयोग होता है
 • (भेजने वाले का भी और प्राप्तकर्ता का भी)
@@ -244,15 +265,34 @@ Refund Policy:
 • लंबित संपर्क: भेजने वाला रद्द कर सकता है (कोई स्लॉट प्रभाव नहीं)
 • स्वीकृत संपर्क: दोनों पक्ष वापस ले सकते हैं (दोनों के स्लॉट वापस)
 
+स्वचालित अस्वीकृति नियम:
+• यदि B ने A की रुचि अस्वीकार की: A का लंबित संपर्क अनुरोध भी स्वचालित रूप से अस्वीकृत हो जाएगा
+• यह सुनिश्चित करता है कि रुचि अस्वीकृति पूर्ण अस्वीकृति है
+
+ब्लॉक नियम:
+• ब्लॉक करने पर: प्रोफाइल आपके मैच में दिखाई नहीं देगी
+• ब्लॉक करने पर सभी लंबित अनुरोध भी अस्वीकृत हो जाएंगे
+• एडमिन को ब्लॉक की गिनती दिखाई देती है
+
+पुनर्विचार (Undo/Reconsider):
+• अस्वीकृत/ब्लॉक की गई प्रोफाइल को पुनर्विचार किया जा सकता है
+• "पुनर्विचार" बटन से आप प्रोफाइल को फिर से देख सकते हैं
+• अनब्लॉक करने पर प्रोफाइल फिर से मैच में दिखेगी
+
+अस्वीकृति संकेतक:
+• "आपने अस्वीकार किया" - आपने इस प्रोफाइल को अस्वीकार किया
+• "उन्होंने अस्वीकार किया" - उन्होंने आपको अस्वीकार किया
+• ब्लॉक प्रोफाइल बिल्कुल नहीं दिखेंगी
+
 चैट सीमा योजना के अनुसार:
-• मुफ्त योजना: 5 चैट प्रोफाइल
-• 6 महीने: 50 चैट प्रोफाइल
-• 1 साल: 120 चैट प्रोफाइल
+• मुफ्त योजना: ${freePlanChatLimit} चैट प्रोफाइल
+• 6 महीने: ${sixMonthChatLimit} चैट प्रोफाइल
+• 1 साल: ${oneYearChatLimit} चैट प्रोफाइल
 
 संपर्क सीमा योजना के अनुसार:
-• मुफ्त योजना: 0 संपर्क (उपलब्ध नहीं)
-• 6 महीने: 20 संपर्क
-• 1 साल: 50 संपर्क`
+• मुफ्त योजना: ${freePlanContactLimit} संपर्क ${freePlanContactLimit === 0 ? '(उपलब्ध नहीं)' : ''}
+• 6 महीने: ${sixMonthContactLimit} संपर्क
+• 1 साल: ${oneYearContactLimit} संपर्क`
         : `Interest Request:
 
 How it works:
@@ -270,6 +310,12 @@ Pre-condition:
 • Sending contact request automatically sends interest request too
 • Interest must be accepted before contact can be approved
 
+Contact Visibility (One-Way):
+• If A sends contact request to B and B accepts:
+  - A can view B's contact details
+  - B cannot view A's contact (unless B also sends a request)
+• Contact visibility is one-way based on who requested
+
 Slot Usage:
 • On contact approval: BOTH parties use 1 contact slot each
 • (Both sender's and receiver's slots are consumed)
@@ -278,15 +324,34 @@ Cancellation and Revocation:
 • Pending contact: Sender can cancel (no slot impact)
 • Approved contact: Either party can revoke (both slots refunded)
 
+Auto-Decline Rules:
+• If B declines A's interest: A's pending contact request is also auto-declined
+• This ensures interest decline means complete rejection
+
+Block Rules:
+• When you block someone: Their profile won't appear in your matches
+• Blocking also declines all pending requests from that profile
+• Admin can see block counts for each profile
+
+Reconsider (Undo):
+• Declined/blocked profiles can be reconsidered later
+• Use "Reconsider" button to restore profile visibility
+• Unblocking will make the profile visible in matches again
+
+Declined Status Indicators:
+• "Declined by me" - You declined this profile
+• "Declined by them" - They declined your request
+• Blocked profiles are completely hidden from matches
+
 Chat Limits by Plan:
-• Free plan: 5 chat profiles
-• 6 months: 50 chat profiles
-• 1 year: 120 chat profiles
+• Free plan: ${freePlanChatLimit} chat profiles
+• 6 months: ${sixMonthChatLimit} chat profiles
+• 1 year: ${oneYearChatLimit} chat profiles
 
 Contact Limits by Plan:
-• Free plan: 0 contacts (not available)
-• 6 months: 20 contacts
-• 1 year: 50 contacts`
+• Free plan: ${freePlanContactLimit} contacts ${freePlanContactLimit === 0 ? '(not available)' : ''}
+• 6 months: ${sixMonthContactLimit} contacts
+• 1 year: ${oneYearContactLimit} contacts`
     },
     {
       icon: <Calendar size={24} weight="bold" className="text-primary" />,

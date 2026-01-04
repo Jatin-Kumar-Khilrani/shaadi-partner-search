@@ -1,16 +1,22 @@
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useKV } from '@/hooks/useKV'
-import { Eye, Heart, ChatCircle, Check, X, MagnifyingGlassPlus } from '@phosphor-icons/react'
-import type { Interest, ContactRequest, Profile, MembershipPlan } from '@/types/profile'
+import { Eye, Heart, ChatCircle, Check, X, MagnifyingGlassPlus, ProhibitInset, Phone, Envelope as EnvelopeIcon, User, Clock, ArrowCounterClockwise, Warning } from '@phosphor-icons/react'
+import type { Interest, ContactRequest, Profile, BlockedProfile, MembershipPlan, DeclinedProfile } from '@/types/profile'
 import type { ChatMessage } from '@/types/chat'
 import type { Language } from '@/lib/translations'
 import { toast } from 'sonner'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
-import { notifyInterestAccepted, notifyInterestDeclined, notifyContactAccepted } from '@/lib/notificationService'
+import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
+import { notifyInterestAccepted, notifyInterestDeclined, notifyContactAccepted, notifyContactDeclined } from '@/lib/notificationService'
+import { formatDateDDMMYYYY } from '@/lib/utils'
 
 // Membership settings interface for plan limits
 interface MembershipSettings {
@@ -37,15 +43,25 @@ interface MyActivityProps {
   profiles: Profile[]
   language: Language
   onViewProfile?: (profile: Profile) => void
+  onNavigateToChat?: (profileId?: string) => void
   membershipPlan?: MembershipPlan
   membershipSettings?: MembershipSettings
   setProfiles?: (newValue: Profile[] | ((oldValue?: Profile[] | undefined) => Profile[])) => void
 }
 
-export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, membershipPlan, membershipSettings, setProfiles }: MyActivityProps) {
+export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, onNavigateToChat, membershipPlan, membershipSettings, setProfiles }: MyActivityProps) {
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests, setContactRequests] = useKV<ContactRequest[]>('contactRequests', [])
-  const [messages] = useKV<ChatMessage[]>('chatMessages', [])
+  const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
+  const [_blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
+  const [declinedProfiles, setDeclinedProfiles] = useKV<DeclinedProfile[]>('declinedProfiles', [])
+  
+  // State for dialogs
+  const [interestToDecline, setInterestToDecline] = useState<string | null>(null)
+  const [interestToBlock, setInterestToBlock] = useState<{ interestId: string, profileId: string } | null>(null)
+  const [viewContactProfile, setViewContactProfile] = useState<Profile | null>(null)
+  const [selectedProfileForDetails, setSelectedProfileForDetails] = useState<Profile | null>(null)
+  const [profileToReconsider, setProfileToReconsider] = useState<{ profileId: string, type: 'interest' | 'contact' | 'block' } | null>(null)
   
   // Lightbox for photo zoom
   const { lightboxState, openLightbox, closeLightbox } = useLightbox()
@@ -88,6 +104,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     title: language === 'hi' ? 'मेरी गतिविधि' : 'My Activity',
     sentInterests: language === 'hi' ? 'भेजी गई रुचि' : 'Sent Interests',
     receivedInterests: language === 'hi' ? 'प्राप्त रुचि' : 'Received Interests',
+    acceptedInterests: language === 'hi' ? 'स्वीकृत रुचि' : 'Accepted Interests',
     myContactRequests: language === 'hi' ? 'संपर्क अनुरोध' : 'Contact Requests',
     recentChats: language === 'hi' ? 'नवीनतम चैट' : 'Recent Chats',
     profileViews: language === 'hi' ? 'प्रोफाइल देखे गए' : 'Profile Views',
@@ -97,12 +114,14 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     approved: language === 'hi' ? 'स्वीकृत' : 'Approved',
     cancelled: language === 'hi' ? 'रद्द' : 'Cancelled',
     revoked: language === 'hi' ? 'वापस लिया' : 'Revoked',
+    blocked: language === 'hi' ? 'ब्लॉक' : 'Blocked',
     to: language === 'hi' ? 'को' : 'To',
     from: language === 'hi' ? 'से' : 'From',
     noActivity: language === 'hi' ? 'कोई गतिविधि नहीं' : 'No activity',
     viewProfile: language === 'hi' ? 'प्रोफाइल देखें' : 'View Profile',
     accept: language === 'hi' ? 'स्वीकार करें' : 'Accept',
     decline: language === 'hi' ? 'अस्वीकार करें' : 'Decline',
+    block: language === 'hi' ? 'ब्लॉक करें' : 'Block',
     cancel: language === 'hi' ? 'रद्द करें' : 'Cancel',
     revoke: language === 'hi' ? 'वापस लें' : 'Revoke',
     sentRequests: language === 'hi' ? 'भेजे गए अनुरोध' : 'Sent Requests',
@@ -112,6 +131,21 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     usageInfo: language === 'hi' ? 'उपयोग जानकारी' : 'Usage Info',
     acceptInterestFirst: language === 'hi' ? 'पहले रुचि स्वीकार करें' : 'Accept interest first',
     interestNotAccepted: language === 'hi' ? 'संपर्क अनुरोध स्वीकार करने से पहले रुचि स्वीकार होनी चाहिए' : 'Interest must be accepted before accepting contact request',
+    startChat: language === 'hi' ? 'चैट शुरू करें' : 'Start Chat',
+    viewContact: language === 'hi' ? 'संपर्क देखें' : 'View Contact',
+    contactInformation: language === 'hi' ? 'संपर्क जानकारी' : 'Contact Information',
+    mobile: language === 'hi' ? 'मोबाइल' : 'Mobile',
+    email: language === 'hi' ? 'ईमेल' : 'Email',
+    notProvided: language === 'hi' ? 'उपलब्ध नहीं' : 'Not Provided',
+    close: language === 'hi' ? 'बंद करें' : 'Close',
+    confirmDecline: language === 'hi' ? 'क्या आप वाकई इस रुचि को अस्वीकार करना चाहते हैं?' : 'Are you sure you want to decline this interest?',
+    confirmBlock: language === 'hi' ? 'क्या आप वाकई इस प्रोफाइल को ब्लॉक करना चाहते हैं?' : 'Are you sure you want to block this profile?',
+    blockWarning: language === 'hi' ? 'ब्लॉक करने के बाद, यह प्रोफाइल आपको फिर से नहीं दिखेगी और वे आपकी प्रोफाइल भी नहीं देख पाएंगे।' : 'After blocking, this profile will not be shown to you again and they will not be able to see your profile either.',
+    confirm: language === 'hi' ? 'पुष्टि करें' : 'Confirm',
+    profileBlocked: language === 'hi' ? 'प्रोफाइल ब्लॉक की गई' : 'Profile blocked',
+    sentOn: language === 'hi' ? 'भेजा गया' : 'Sent on',
+    clickToViewProfile: language === 'hi' ? 'प्रोफाइल देखने के लिए क्लिक करें' : 'Click to view profile',
+    years: language === 'hi' ? 'वर्ष' : 'years',
     // Business flow info messages
     interestFlowInfo: language === 'hi' 
       ? '💡 रुचि स्वीकार करने पर प्रेषक का 1 चैट स्लॉट उपयोग होगा' 
@@ -124,12 +158,54 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
       : '↩️ Can revoke anytime - slots will be refunded',
     slotRefunded: language === 'hi' ? 'स्लॉट वापस कर दिया गया' : 'Slot refunded',
     noSlotImpact: language === 'hi' ? 'कोई स्लॉट प्रभाव नहीं' : 'No slot impact',
+    chatLimitInfo: language === 'hi' 
+      ? 'रुचि स्वीकार करने पर चैट सीमा से एक घटेगी' 
+      : 'Accepting an interest uses 1 chat slot',
+    chatLimitReached: language === 'hi' ? 'चैट सीमा समाप्त - अपग्रेड करें' : 'Chat limit reached - Upgrade',
+    // New translations for enhanced features
+    autoDeclinedContact: language === 'hi' 
+      ? '⚠️ संपर्क अनुरोध भी स्वतः अस्वीकृत' 
+      : '⚠️ Contact request also auto-declined',
+    contactAutoDeclineInfo: language === 'hi'
+      ? 'रुचि अस्वीकार करने पर संपर्क अनुरोध भी स्वतः अस्वीकृत हो जाएगा'
+      : 'Declining interest will also auto-decline any pending contact request',
+    declinedByMe: language === 'hi' ? 'मेरे द्वारा अस्वीकृत' : 'Declined by me',
+    declinedByThem: language === 'hi' ? 'उनके द्वारा अस्वीकृत' : 'Declined by them',
+    reconsider: language === 'hi' ? 'पुनर्विचार करें' : 'Reconsider',
+    undo: language === 'hi' ? 'पूर्ववत करें' : 'Undo',
+    unblock: language === 'hi' ? 'अनब्लॉक करें' : 'Unblock',
+    confirmReconsider: language === 'hi' 
+      ? 'क्या आप इस प्रोफाइल पर पुनर्विचार करना चाहते हैं?' 
+      : 'Do you want to reconsider this profile?',
+    reconsiderInfo: language === 'hi'
+      ? 'पुनर्विचार करने पर आप फिर से रुचि/संपर्क अनुरोध भेज सकते हैं'
+      : 'After reconsideration, you can send interest/contact request again',
+    profileReconsidered: language === 'hi' ? 'प्रोफाइल पुनर्विचार की गई' : 'Profile reconsidered',
+    profileUnblocked: language === 'hi' ? 'प्रोफाइल अनब्लॉक की गई' : 'Profile unblocked',
+    contactVisibilityInfo: language === 'hi'
+      ? '📱 आपने अनुरोध भेजा और स्वीकृत हुआ = आप उनका संपर्क देख सकते हैं'
+      : '📱 You sent request & it was accepted = You can view their contact',
+    contactVisibilityWarning: language === 'hi'
+      ? '⚠️ वे आपका संपर्क नहीं देख सकते (जब तक वे भी अनुरोध न भेजें)'
+      : '⚠️ They cannot view your contact (unless they also request)',
+    autoDeclined: language === 'hi' ? 'स्वतः अस्वीकृत' : 'Auto-declined',
   }
 
+  const remainingChats = Math.max(0, chatLimit - chatRequestsUsed.length)
+  
   const sentInterests = interests?.filter(i => i.fromProfileId === currentUserProfile?.profileId) || []
   const receivedInterests = interests?.filter(i => i.toProfileId === currentUserProfile?.profileId) || []
+  // Filter for pending received interests (for badge count)
+  const pendingReceivedInterests = receivedInterests.filter(i => i.status === 'pending')
+  // Accepted interests (both sent and received that are accepted)
+  const acceptedInterests = interests?.filter(
+    i => (i.toProfileId === currentUserProfile?.profileId || i.fromProfileId === currentUserProfile?.profileId) && 
+       i.status === 'accepted'
+  ) || []
   const sentContactRequests = contactRequests?.filter(r => r.fromUserId === loggedInUserId) || []
   const receivedContactRequests = contactRequests?.filter(r => r.toUserId === loggedInUserId) || []
+  // Filter for pending contact requests (for badge count)
+  const pendingContactRequests = receivedContactRequests.filter(r => r.status === 'pending')
   const myChats = messages?.filter(
     m => m.fromUserId === loggedInUserId || m.fromProfileId === currentUserProfile?.profileId || m.toProfileId === currentUserProfile?.profileId
   ).slice(-10) || []
@@ -139,18 +215,20 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
   }
 
   const formatDate = (date: string) => {
-    const d = new Date(date)
-    const day = d.getDate().toString().padStart(2, '0')
-    const month = (d.getMonth() + 1).toString().padStart(2, '0')
-    const year = d.getFullYear()
-    return `${day}/${month}/${year}`
+    return formatDateDDMMYYYY(date)
   }
 
-  const getStatusBadge = (status: string) => {
-    if (status === 'pending') return <Badge variant="secondary">{t.pending}</Badge>
-    if (status === 'accepted' || status === 'approved') return <Badge variant="default" className="bg-teal">{t.accepted}</Badge>
-    if (status === 'declined') return <Badge variant="destructive">{t.declined}</Badge>
-    if (status === 'blocked') return <Badge variant="destructive">{language === 'hi' ? 'ब्लॉक' : 'Blocked'}</Badge>
+  const getStatusBadge = (status: string, declinedBy?: 'sender' | 'receiver', autoDeclined?: boolean) => {
+    if (status === 'pending') return <Badge variant="secondary"><Clock size={12} className="mr-1" />{t.pending}</Badge>
+    if (status === 'accepted' || status === 'approved') return <Badge variant="default" className="bg-teal"><Check size={12} className="mr-1" />{t.accepted}</Badge>
+    if (status === 'declined') {
+      if (autoDeclined) {
+        return <Badge variant="outline" className="border-amber-500 text-amber-600"><Warning size={12} className="mr-1" />{t.autoDeclined}</Badge>
+      }
+      return <Badge variant="destructive"><X size={12} className="mr-1" />{t.declined}</Badge>
+    }
+    if (status === 'revoked') return <Badge variant="outline" className="border-amber-500 text-amber-600"><ArrowCounterClockwise size={12} className="mr-1" />{t.revoked}</Badge>
+    if (status === 'blocked') return <Badge variant="destructive"><ProhibitInset size={12} className="mr-1" />{t.blocked}</Badge>
     return <Badge>{status}</Badge>
   }
 
@@ -214,6 +292,37 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
       )
     )
 
+    // Send welcome messages to both users
+    const welcomeMessage: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      fromUserId: 'system',
+      fromProfileId: currentUserProfile.profileId,
+      toProfileId: interest.fromProfileId,
+      message: language === 'hi' 
+        ? `${currentUserProfile.fullName} ने आपकी रुचि स्वीकार कर ली है! अब आप उनसे बात कर सकते हैं।`
+        : `${currentUserProfile.fullName} has accepted your interest! You can now chat with them.`,
+      timestamp: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      read: false,
+      type: 'user-to-user',
+    }
+
+    const responseMessage: ChatMessage = {
+      id: `msg-${Date.now() + 1}`,
+      fromUserId: 'system',
+      fromProfileId: interest.fromProfileId,
+      toProfileId: currentUserProfile.profileId,
+      message: language === 'hi' 
+        ? `आपने ${senderProfile.fullName} की रुचि स्वीकार कर ली है। अब आप उनसे बात कर सकते हैं।`
+        : `You have accepted ${senderProfile.fullName}'s interest. You can now chat with them.`,
+      timestamp: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      read: false,
+      type: 'user-to-user',
+    }
+
+    setMessages(current => [...(current || []), welcomeMessage, responseMessage])
+
     // Send notification to the sender (A) that their interest was accepted by recipient (B)
     notifyInterestAccepted(
       { 
@@ -244,17 +353,79 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     if (!interest || !currentUserProfile) return
 
     const senderProfile = profiles.find(p => p.profileId === interest.fromProfileId)
+    const senderProfileId = interest.fromProfileId
+    
+    // Determine who is declining (sender or receiver of the interest)
+    const isReceiver = interest.toProfileId === currentUserProfile.profileId
+    const declinedBy = isReceiver ? 'receiver' : 'sender'
 
+    // Update the interest status with tracking info
     setInterests((current) => 
       (current || []).map(i => 
         i.id === interestId 
-          ? { ...i, status: 'declined' as const }
+          ? { 
+              ...i, 
+              status: 'declined' as const, 
+              declinedAt: new Date().toISOString(),
+              declinedBy: declinedBy
+            }
           : i
       )
     )
 
-    // Optionally notify the sender that their interest was declined
-    // (Some platforms don't notify on decline to avoid negative emotions)
+    // BUSINESS RULE: When interest is declined, auto-decline any pending contact request from sender
+    // This makes the logic transparent: if B declines A's interest, B also declines A's contact request
+    if (isReceiver) {
+      const pendingContactFromSender = contactRequests?.find(
+        r => r.fromProfileId === senderProfileId && 
+             r.toUserId === loggedInUserId && 
+             r.status === 'pending'
+      )
+      
+      if (pendingContactFromSender) {
+        setContactRequests((current) =>
+          (current || []).map(r =>
+            r.id === pendingContactFromSender.id
+              ? { 
+                  ...r, 
+                  status: 'declined' as const, 
+                  declinedAt: new Date().toISOString(),
+                  declinedBy: 'receiver' as const,
+                  autoDeclinedDueToInterest: true 
+                }
+              : r
+          )
+        )
+        
+        // Update interest to mark that contact was also declined
+        setInterests((current) =>
+          (current || []).map(i =>
+            i.id === interestId
+              ? { ...i, contactAutoDeclined: true }
+              : i
+          )
+        )
+        
+        toast.info(
+          language === 'hi' 
+            ? 'संपर्क अनुरोध भी स्वतः अस्वीकृत' 
+            : 'Contact request also auto-declined',
+          { duration: 4000 }
+        )
+      }
+    }
+
+    // Track in declined profiles for reconsider feature
+    const newDeclined: DeclinedProfile = {
+      id: `declined-${Date.now()}`,
+      declinerProfileId: currentUserProfile.profileId,
+      declinedProfileId: senderProfileId,
+      type: 'interest',
+      declinedAt: new Date().toISOString(),
+    }
+    setDeclinedProfiles(current => [...(current || []), newDeclined])
+
+    // Notify the sender that their interest was declined
     if (senderProfile) {
       notifyInterestDeclined(
         { 
@@ -272,6 +443,88 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     }
 
     toast.success(language === 'hi' ? 'रुचि अस्वीकार की गई' : 'Interest declined')
+    setInterestToDecline(null)
+  }
+
+  const handleBlockProfile = (interestId: string, profileIdToBlock: string) => {
+    if (!currentUserProfile) return
+
+    // Block affects both interests and contact requests
+    setInterests((current) => 
+      (current || []).map(i => 
+        i.id === interestId ? { ...i, status: 'blocked' as const, blockedAt: new Date().toISOString() } : i
+      )
+    )
+    
+    // Also auto-decline any pending contact requests from blocked profile
+    setContactRequests((current) =>
+      (current || []).map(r =>
+        (r.fromProfileId === profileIdToBlock && r.status === 'pending')
+          ? { 
+              ...r, 
+              status: 'declined' as const, 
+              declinedAt: new Date().toISOString(),
+              autoDeclinedDueToInterest: true 
+            }
+          : r
+      )
+    )
+
+    const newBlock: BlockedProfile = {
+      id: `block-${Date.now()}`,
+      blockerProfileId: currentUserProfile.profileId,
+      blockedProfileId: profileIdToBlock,
+      createdAt: new Date().toISOString(),
+    }
+
+    setBlockedProfiles(current => [...(current || []), newBlock])
+    setInterestToBlock(null)
+    toast.success(t.profileBlocked)
+  }
+
+  // Handler to reconsider a declined profile - allows user to send new interest/contact
+  const handleReconsiderProfile = (profileId: string, type: 'interest' | 'contact' | 'block') => {
+    if (!currentUserProfile) return
+
+    if (type === 'block') {
+      // Unblock the profile
+      setBlockedProfiles((current) =>
+        (current || []).map(b =>
+          b.blockerProfileId === currentUserProfile.profileId && b.blockedProfileId === profileId
+            ? { ...b, isUnblocked: true, unblockedAt: new Date().toISOString() }
+            : b
+        )
+      )
+      toast.success(t.profileUnblocked)
+    } else {
+      // Mark as reconsidered in declined profiles
+      setDeclinedProfiles((current) =>
+        (current || []).map(d =>
+          d.declinerProfileId === currentUserProfile.profileId && d.declinedProfileId === profileId && d.type === type
+            ? { ...d, isReconsidered: true, reconsideredAt: new Date().toISOString() }
+            : d
+        )
+      )
+      
+      // Remove the declined status from interest/contact so user can re-engage
+      if (type === 'interest') {
+        setInterests((current) =>
+          (current || []).filter(i => 
+            !(i.toProfileId === currentUserProfile.profileId && i.fromProfileId === profileId && i.status === 'declined')
+          )
+        )
+      } else if (type === 'contact') {
+        setContactRequests((current) =>
+          (current || []).filter(r =>
+            !(r.toUserId === loggedInUserId && r.fromProfileId === profileId && r.status === 'declined')
+          )
+        )
+      }
+      
+      toast.success(t.profileReconsidered)
+    }
+    
+    setProfileToReconsider(null)
   }
 
   const handleAcceptContactRequest = (requestId: string) => {
@@ -596,14 +849,280 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
           <h2 className="text-3xl font-bold mb-2">{t.title}</h2>
         </div>
 
-        <Tabs defaultValue="sent-interests">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto gap-1 p-1">
+        <Tabs defaultValue="received-interests">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto gap-1 p-1">
+            <TabsTrigger value="received-interests" className="relative">
+              {t.receivedInterests}
+              {pendingReceivedInterests.length > 0 && (
+                <Badge className="ml-1 h-5 px-1.5" variant="destructive">{pendingReceivedInterests.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="accepted-interests">{t.acceptedInterests}</TabsTrigger>
             <TabsTrigger value="sent-interests">{t.sentInterests}</TabsTrigger>
-            <TabsTrigger value="received-interests">{t.receivedInterests}</TabsTrigger>
-            <TabsTrigger value="contact-requests">{t.myContactRequests}</TabsTrigger>
+            <TabsTrigger value="contact-requests" className="relative">
+              {t.myContactRequests}
+              {pendingContactRequests.length > 0 && (
+                <Badge className="ml-1 h-5 px-1.5" variant="destructive">{pendingContactRequests.length}</Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="chats">{t.recentChats}</TabsTrigger>
           </TabsList>
 
+          {/* RECEIVED INTERESTS TAB - Most actionable, now first */}
+          <TabsContent value="received-interests">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>{t.receivedInterests}</CardTitle>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <ChatCircle size={16} />
+                    <span>{t.chatLimitInfo}</span>
+                    <Badge variant={remainingChats > 0 ? "outline" : "destructive"}>
+                      {t.chatsRemaining}: {remainingChats}/{chatLimit}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[500px]">
+                  {receivedInterests.length === 0 ? (
+                    <Alert>
+                      <AlertDescription>{t.noActivity}</AlertDescription>
+                    </Alert>
+                  ) : (
+                    <div className="space-y-4">
+                      {receivedInterests.map((interest) => {
+                        const profile = getProfileByProfileId(interest.fromProfileId)
+                        const alreadyChatted = chatRequestsUsed.includes(interest.fromProfileId)
+                        const canAccept = alreadyChatted || remainingChats > 0
+                        
+                        return (
+                          <Card key={interest.id}>
+                            <CardContent className="pt-6">
+                              <div className="flex flex-col gap-4">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-4">
+                                    {/* Profile Photo */}
+                                    {profile?.photos?.[0] ? (
+                                      <div 
+                                        className="relative cursor-pointer group"
+                                        onClick={() => openLightbox(profile.photos || [], 0)}
+                                        title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                      >
+                                        <img 
+                                          src={profile.photos[0]} 
+                                          alt={profile.fullName || ''}
+                                          className="w-14 h-14 rounded-full object-cover border-2 border-primary/20 group-hover:ring-2 group-hover:ring-primary/50 transition-all"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                          <MagnifyingGlassPlus size={16} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center">
+                                        <Heart size={24} weight="fill" className="text-accent" />
+                                      </div>
+                                    )}
+                                    <div>
+                                      <p 
+                                        className="font-semibold text-primary hover:underline cursor-pointer inline-flex items-center gap-1"
+                                        onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                        title={t.clickToViewProfile}
+                                      >
+                                        {profile?.fullName || 'Unknown'}
+                                        <User size={12} weight="bold" className="opacity-60" />
+                                      </p>
+                                      <p className="text-sm text-muted-foreground">{profile?.profileId || interest.fromProfileId}</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {profile?.age} {t.years} • {profile?.location}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">{t.sentOn}: {formatDate(interest.createdAt)}</p>
+                                    </div>
+                                  </div>
+                                  {getStatusBadge(interest.status)}
+                                </div>
+                                {interest.status === 'pending' && (
+                                  <>
+                                    <div className="flex gap-2">
+                                      <Button 
+                                        variant="default" 
+                                        size="sm"
+                                        onClick={() => handleAcceptInterest(interest.id)}
+                                        className="flex-1 bg-teal hover:bg-teal/90"
+                                        disabled={!canAccept}
+                                        title={!canAccept ? t.chatLimitReached : ''}
+                                      >
+                                        <Check size={16} className="mr-2" />
+                                        {t.accept}
+                                      </Button>
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => setInterestToDecline(interest.id)}
+                                        className="flex-1"
+                                      >
+                                        <X size={16} className="mr-2" />
+                                        {t.decline}
+                                      </Button>
+                                      <Button 
+                                        variant="destructive" 
+                                        size="sm"
+                                        onClick={() => setInterestToBlock({ interestId: interest.id, profileId: interest.fromProfileId })}
+                                      >
+                                        <ProhibitInset size={16} />
+                                      </Button>
+                                    </div>
+                                    {!canAccept && (
+                                      <p className="text-xs text-destructive text-center">
+                                        {t.chatLimitReached}
+                                      </p>
+                                    )}
+                                    <div className="text-xs text-muted-foreground space-y-1 bg-muted/50 p-2 rounded">
+                                      <p>{t.interestFlowInfo}</p>
+                                      <p className="text-green-600">{t.revokeInfo}</p>
+                                    </div>
+                                  </>
+                                )}
+                                {interest.status === 'accepted' && (
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      onClick={() => onNavigateToChat && onNavigateToChat(interest.fromProfileId)}
+                                      className="flex-1 gap-2"
+                                    >
+                                      <ChatCircle size={18} weight="fill" />
+                                      {t.startChat}
+                                    </Button>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleRevokeInterest(interest.id)}
+                                      className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
+                                    >
+                                      <X size={14} className="mr-1" />
+                                      {t.revoke}
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )
+                      })}
+                    </div>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ACCEPTED INTERESTS TAB - Ready to chat */}
+          <TabsContent value="accepted-interests">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t.acceptedInterests}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[500px]">
+                  {acceptedInterests.length === 0 ? (
+                    <Alert>
+                      <AlertDescription>{t.noActivity}</AlertDescription>
+                    </Alert>
+                  ) : (
+                    <div className="space-y-4">
+                      {acceptedInterests.map((interest) => {
+                        const otherProfileId = interest.fromProfileId === currentUserProfile?.profileId 
+                          ? interest.toProfileId 
+                          : interest.fromProfileId
+                        const profile = getProfileByProfileId(otherProfileId)
+                        const isSentByMe = interest.fromProfileId === currentUserProfile?.profileId
+                        
+                        return (
+                          <Card key={interest.id}>
+                            <CardContent className="pt-6">
+                              <div className="flex flex-col gap-4">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-4">
+                                    {profile?.photos?.[0] ? (
+                                      <div 
+                                        className="relative cursor-pointer group"
+                                        onClick={() => openLightbox(profile.photos || [], 0)}
+                                        title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                      >
+                                        <img 
+                                          src={profile.photos[0]} 
+                                          alt={profile.fullName || ''}
+                                          className="w-14 h-14 rounded-full object-cover border-2 border-primary/20 group-hover:ring-4 group-hover:ring-primary/50 transition-all"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                          <MagnifyingGlassPlus size={20} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center text-xl font-bold">
+                                        {profile?.firstName?.[0]}{profile?.lastName?.[0]}
+                                      </div>
+                                    )}
+                                    <div>
+                                      <p 
+                                        className="font-semibold text-primary hover:underline cursor-pointer inline-flex items-center gap-1"
+                                        onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                        title={t.clickToViewProfile}
+                                      >
+                                        {profile?.fullName || 'Unknown'}
+                                        <User size={12} weight="bold" className="opacity-60" />
+                                      </p>
+                                      <p className="text-sm text-muted-foreground">{profile?.profileId}</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {profile?.age} {t.years} • {profile?.location}
+                                      </p>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <Badge variant="secondary" className="text-xs">
+                                          <Heart size={12} className="mr-1" weight="fill" />
+                                          {isSentByMe ? (language === 'hi' ? 'आपने भेजी' : 'You sent') : (language === 'hi' ? 'आपको मिली' : 'You received')}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {getStatusBadge(interest.status)}
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button 
+                                    onClick={() => onNavigateToChat && onNavigateToChat(otherProfileId)}
+                                    className="gap-2 flex-1"
+                                  >
+                                    <ChatCircle size={18} weight="fill" />
+                                    {t.startChat}
+                                  </Button>
+                                  <Button 
+                                    variant="outline"
+                                    onClick={() => setInterestToDecline(interest.id)}
+                                    className="gap-2"
+                                  >
+                                    <X size={18} />
+                                    {t.decline}
+                                  </Button>
+                                  <Button 
+                                    variant="destructive"
+                                    onClick={() => setInterestToBlock({ interestId: interest.id, profileId: otherProfileId })}
+                                    className="gap-2"
+                                  >
+                                    <ProhibitInset size={18} weight="fill" />
+                                    {t.block}
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )
+                      })}
+                    </div>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* SENT INTERESTS TAB */}
           <TabsContent value="sent-interests">
             <Card>
               <CardHeader>
@@ -617,7 +1136,9 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
               <CardContent>
                 <ScrollArea className="h-[500px]">
                   {sentInterests.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">{t.noActivity}</p>
+                    <Alert>
+                      <AlertDescription>{t.noActivity}</AlertDescription>
+                    </Alert>
                   ) : (
                     <div className="space-y-4">
                       {sentInterests.map((interest) => {
@@ -686,120 +1207,6 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                     </Button>
                                   )}
                                 </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )
-                      })}
-                    </div>
-                  )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="received-interests">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t.receivedInterests}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[500px]">
-                  {receivedInterests.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">{t.noActivity}</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {receivedInterests.map((interest) => {
-                        const profile = getProfileByProfileId(interest.fromProfileId)
-                        return (
-                          <Card key={interest.id}>
-                            <CardContent className="pt-6">
-                              <div className="flex flex-col gap-4">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-4">
-                                    {/* Profile Photo */}
-                                    {profile?.photos?.[0] ? (
-                                      <div 
-                                        className="relative cursor-pointer group"
-                                        onClick={() => openLightbox(profile.photos || [], 0)}
-                                        title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
-                                      >
-                                        <img 
-                                          src={profile.photos[0]} 
-                                          alt={profile.fullName || ''}
-                                          className="w-12 h-12 rounded-full object-cover border-2 border-primary/20 group-hover:ring-2 group-hover:ring-primary/50 transition-all"
-                                        />
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                          <MagnifyingGlassPlus size={16} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-                                        <Heart size={24} weight="fill" className="text-accent" />
-                                      </div>
-                                    )}
-                                    <div>
-                                      <p 
-                                        className={`font-semibold ${profile && onViewProfile ? 'cursor-pointer hover:text-primary hover:underline transition-colors' : ''}`}
-                                        onClick={() => profile && onViewProfile?.(profile)}
-                                      >
-                                        {profile?.fullName || 'Unknown'}
-                                      </p>
-                                      <p className="text-sm text-muted-foreground">{profile?.profileId || interest.fromProfileId}</p>
-                                      <p className="text-xs text-muted-foreground">{formatDate(interest.createdAt)}</p>
-                                    </div>
-                                  </div>
-                                  {getStatusBadge(interest.status)}
-                                </div>
-                                <div className="flex gap-2">
-                                  {interest.status === 'pending' && (
-                                    <>
-                                      <Button 
-                                        variant="default" 
-                                        size="sm"
-                                        onClick={() => handleAcceptInterest(interest.id)}
-                                        className="flex-1 bg-teal hover:bg-teal/90"
-                                      >
-                                        <Check size={16} className="mr-2" />
-                                        {t.accept}
-                                      </Button>
-                                      <Button 
-                                        variant="destructive" 
-                                        size="sm"
-                                        onClick={() => handleDeclineInterest(interest.id)}
-                                        className="flex-1"
-                                      >
-                                        <X size={16} className="mr-2" />
-                                        {t.decline}
-                                      </Button>
-                                    </>
-                                  )}
-                                  {/* Revoke button for accepted interests */}
-                                  {interest.status === 'accepted' && (
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => handleRevokeInterest(interest.id)}
-                                      className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
-                                    >
-                                      <X size={14} className="mr-1" />
-                                      {t.revoke}
-                                    </Button>
-                                  )}
-                                </div>
-                                {/* Info text for pending */}
-                                {interest.status === 'pending' && (
-                                  <div className="text-xs text-muted-foreground space-y-1 bg-muted/50 p-2 rounded">
-                                    <p>{t.interestFlowInfo}</p>
-                                    <p className="text-green-600">{t.revokeInfo}</p>
-                                  </div>
-                                )}
-                                {/* Info text for accepted */}
-                                {interest.status === 'accepted' && (
-                                  <p className="text-xs text-green-600">
-                                    {t.revokeInfo}
-                                  </p>
-                                )}
                               </div>
                             </CardContent>
                           </Card>
@@ -888,17 +1295,28 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                           {t.cancel}
                                         </Button>
                                       )}
-                                      {/* Revoke button for approved contact requests */}
-                                      {request.status === 'approved' && (
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm"
-                                          onClick={() => handleRevokeContactRequest(request.id)}
-                                          className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
-                                        >
-                                          <X size={14} className="mr-1" />
-                                          {t.revoke}
-                                        </Button>
+                                      {/* View Contact + Revoke button for approved contact requests */}
+                                      {request.status === 'approved' && profile && (
+                                        <>
+                                          <Button 
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setViewContactProfile(profile)}
+                                            className="gap-1"
+                                          >
+                                            <Eye size={14} />
+                                            {t.viewContact}
+                                          </Button>
+                                          <Button 
+                                            variant="outline" 
+                                            size="sm"
+                                            onClick={() => handleRevokeContactRequest(request.id)}
+                                            className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
+                                          >
+                                            <X size={14} className="mr-1" />
+                                            {t.revoke}
+                                          </Button>
+                                        </>
                                       )}
                                     </div>
                                   </div>
@@ -1007,8 +1425,17 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       )
                                     })()}
                                     {/* Revoke button for approved contact requests */}
-                                    {request.status === 'approved' && (
-                                      <div className="space-y-2">
+                                    {request.status === 'approved' && profile && (
+                                      <div className="flex gap-2">
+                                        <Button 
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => setViewContactProfile(profile)}
+                                          className="gap-2"
+                                        >
+                                          <Eye size={16} />
+                                          {t.viewContact}
+                                        </Button>
                                         <Button 
                                           variant="outline" 
                                           size="sm"
@@ -1018,9 +1445,6 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                           <X size={14} className="mr-1" />
                                           {t.revoke}
                                         </Button>
-                                        <p className="text-xs text-green-600">
-                                          {t.revokeInfo}
-                                        </p>
                                       </div>
                                     )}
                                   </div>
@@ -1116,12 +1540,119 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
         </Tabs>
       </div>
 
+      {/* Decline Confirmation Dialog */}
+      <AlertDialog open={!!interestToDecline} onOpenChange={(open) => !open && setInterestToDecline(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.decline}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.confirmDecline}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => interestToDecline && handleDeclineInterest(interestToDecline)}>
+              {t.confirm}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Block Confirmation Dialog */}
+      <AlertDialog open={!!interestToBlock} onOpenChange={(open) => !open && setInterestToBlock(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.block}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.confirmBlock}
+              <br /><br />
+              {t.blockWarning}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => interestToBlock && handleBlockProfile(interestToBlock.interestId, interestToBlock.profileId)}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {t.confirm}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* View Contact Dialog */}
+      <Dialog open={!!viewContactProfile} onOpenChange={(open) => !open && setViewContactProfile(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t.contactInformation}</DialogTitle>
+          </DialogHeader>
+          {viewContactProfile && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center text-3xl font-bold">
+                  {viewContactProfile.firstName[0]}{viewContactProfile.lastName[0]}
+                </div>
+                <div>
+                  <h3 className="font-bold text-xl">{viewContactProfile.fullName}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {viewContactProfile.age} {t.years} • {viewContactProfile.location}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-4 border rounded-lg">
+                  <Phone size={24} weight="bold" className="text-primary mt-1" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-muted-foreground mb-1">{t.mobile}</p>
+                    <p className="text-lg font-semibold">
+                      {viewContactProfile.hideMobile ? t.notProvided : (viewContactProfile.mobile?.replace(/^undefined\s*/i, '') || t.notProvided)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-4 border rounded-lg">
+                  <EnvelopeIcon size={24} weight="bold" className="text-primary mt-1" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-muted-foreground mb-1">{t.email}</p>
+                    <p className="text-lg font-semibold break-all">
+                      {viewContactProfile.hideEmail ? t.notProvided : viewContactProfile.email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Button 
+                onClick={() => setViewContactProfile(null)} 
+                className="w-full"
+              >
+                {t.close}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Photo Lightbox for viewing photos in full size */}
       <PhotoLightbox
         photos={lightboxState.photos}
         initialIndex={lightboxState.initialIndex}
         open={lightboxState.open}
         onClose={closeLightbox}
+      />
+
+      {/* Profile Detail Dialog for viewing full profile */}
+      <ProfileDetailDialog
+        profile={selectedProfileForDetails}
+        open={!!selectedProfileForDetails}
+        onClose={() => setSelectedProfileForDetails(null)}
+        language={language}
+        currentUserProfile={currentUserProfile}
+        isLoggedIn={!!loggedInUserId}
+        membershipPlan={membershipPlan}
+        membershipSettings={membershipSettings}
+        setProfiles={setProfiles}
       />
     </section>
   )

@@ -631,6 +631,26 @@ export function notifyContactAccepted(
   })
 }
 
+/**
+ * Helper function to send contact declined notification
+ */
+export function notifyContactDeclined(
+  recipientProfile: { profileId: string; fullName?: string; mobile?: string; email?: string },
+  senderProfile: { profileId: string; fullName?: string },
+  language: 'en' | 'hi' = 'en'
+): void {
+  sendNotification({
+    type: 'contact_declined',
+    recipientProfileId: recipientProfile.profileId,
+    recipientName: recipientProfile.fullName,
+    recipientMobile: recipientProfile.mobile,
+    recipientEmail: recipientProfile.email,
+    senderProfileId: senderProfile.profileId,
+    senderName: senderProfile.fullName,
+    language
+  })
+}
+
 export default {
   sendNotification,
   notifyInterestReceived,
@@ -638,6 +658,7 @@ export default {
   notifyInterestDeclined,
   notifyContactRequestReceived,
   notifyContactAccepted,
+  notifyContactDeclined,
   sendOtp,
   generateOtp
 }
