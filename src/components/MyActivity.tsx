@@ -109,6 +109,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     sentInterests: language === 'hi' ? 'भेजी गई रुचि' : 'Sent Interests',
     receivedInterests: language === 'hi' ? 'प्राप्त रुचि' : 'Received Interests',
     acceptedInterests: language === 'hi' ? 'स्वीकृत रुचि' : 'Accepted Interests',
+    declinedInterests: language === 'hi' ? 'अस्वीकृत रुचि' : 'Declined Interests',
     myContactRequests: language === 'hi' ? 'संपर्क अनुरोध' : 'Contact Requests',
     recentChats: language === 'hi' ? 'नवीनतम चैट' : 'Recent Chats',
     profileViews: language === 'hi' ? 'प्रोफाइल देखे गए' : 'Profile Views',
@@ -211,6 +212,11 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
   const acceptedInterests = interests?.filter(
     i => (i.toProfileId === currentUserProfile?.profileId || i.fromProfileId === currentUserProfile?.profileId) && 
        i.status === 'accepted'
+  ) || []
+  // Declined interests (both where I declined or they declined)
+  const declinedInterests = interests?.filter(
+    i => (i.toProfileId === currentUserProfile?.profileId || i.fromProfileId === currentUserProfile?.profileId) && 
+       i.status === 'declined'
   ) || []
   const sentContactRequests = contactRequests?.filter(r => r.fromUserId === loggedInUserId) || []
   const receivedContactRequests = contactRequests?.filter(r => r.toUserId === loggedInUserId) || []
@@ -914,7 +920,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto gap-1 p-1">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 h-auto gap-1 p-1">
             <TabsTrigger value="received-interests" className="relative">
               {t.receivedInterests}
               {pendingReceivedInterests.length > 0 && (
@@ -922,6 +928,12 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
               )}
             </TabsTrigger>
             <TabsTrigger value="accepted-interests">{t.acceptedInterests}</TabsTrigger>
+            <TabsTrigger value="declined-interests" className="relative">
+              {t.declinedInterests}
+              {declinedInterests.length > 0 && (
+                <Badge className="ml-1 h-5 px-1.5" variant="outline">{declinedInterests.length}</Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="sent-interests">{t.sentInterests}</TabsTrigger>
             <TabsTrigger value="contact-requests" className="relative">
               {t.myContactRequests}
@@ -1208,6 +1220,120 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )
+                      })}
+                    </div>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* DECLINED INTERESTS TAB */}
+          <TabsContent value="declined-interests">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t.declinedInterests}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[500px]">
+                  {declinedInterests.length === 0 ? (
+                    <Alert>
+                      <AlertDescription>{t.noActivity}</AlertDescription>
+                    </Alert>
+                  ) : (
+                    <div className="space-y-4">
+                      {declinedInterests.map((interest) => {
+                        const otherProfileId = interest.fromProfileId === currentUserProfile?.profileId 
+                          ? interest.toProfileId 
+                          : interest.fromProfileId
+                        const profile = getProfileByProfileId(otherProfileId)
+                        const wasDeclinedByMe = interest.declinedBy === 'receiver' && interest.toProfileId === currentUserProfile?.profileId
+                          || interest.declinedBy === 'sender' && interest.fromProfileId === currentUserProfile?.profileId
+                        const isSentByMe = interest.fromProfileId === currentUserProfile?.profileId
+                        
+                        return (
+                          <Card key={interest.id} className="hover:shadow-md transition-shadow border-l-4 border-l-destructive/50">
+                            <CardContent className="pt-6">
+                              <div className="flex flex-col gap-4">
+                                <div 
+                                  className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                                  onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                  title={t.clickToViewProfile}
+                                >
+                                  <div className="flex items-center gap-4">
+                                    {profile?.photos?.[0] ? (
+                                      <div 
+                                        className="relative cursor-pointer group"
+                                        onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
+                                        title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                      >
+                                        <img 
+                                          src={profile.photos[0]} 
+                                          alt={profile.fullName || ''}
+                                          className="w-14 h-14 rounded-full object-cover border-2 border-destructive/30 grayscale-[30%] group-hover:ring-4 group-hover:ring-primary/50 transition-all"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                          <MagnifyingGlassPlus size={20} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center text-xl font-bold opacity-60">
+                                        {profile?.firstName?.[0]}{profile?.lastName?.[0]}
+                                      </div>
+                                    )}
+                                    <div>
+                                      <p className="font-semibold text-muted-foreground hover:underline inline-flex items-center gap-1">
+                                        {profile?.fullName || 'Unknown'}
+                                        <User size={12} weight="bold" className="opacity-60" />
+                                      </p>
+                                      <p className="text-sm text-muted-foreground">{profile?.profileId}</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {profile?.age} {t.years} • {profile?.location}
+                                      </p>
+                                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                        <Badge variant="secondary" className="text-xs">
+                                          <Heart size={12} className="mr-1" />
+                                          {isSentByMe ? (language === 'hi' ? 'आपने भेजी' : 'You sent') : (language === 'hi' ? 'आपको मिली' : 'You received')}
+                                        </Badge>
+                                        <Badge variant={wasDeclinedByMe ? "outline" : "destructive"} className="text-xs">
+                                          <X size={12} className="mr-1" />
+                                          {wasDeclinedByMe ? t.declinedByMe : t.declinedByThem}
+                                        </Badge>
+                                        {interest.contactAutoDeclined && (
+                                          <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                                            <Warning size={12} className="mr-1" />
+                                            {t.autoDeclinedContact}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {getStatusBadge(interest.status, interest.declinedBy, interest.contactAutoDeclined)}
+                                </div>
+                                <div className="flex gap-2">
+                                  {wasDeclinedByMe && (
+                                    <Button 
+                                      variant="outline"
+                                      onClick={() => handleUndoDeclineInterest(interest.id)}
+                                      className="gap-2 flex-1"
+                                    >
+                                      <ArrowCounterClockwise size={18} />
+                                      {t.undo} / {t.reconsider}
+                                    </Button>
+                                  )}
+                                  <Button 
+                                    variant="outline"
+                                    onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                    className="gap-2"
+                                  >
+                                    <Eye size={18} />
+                                    {t.viewProfile}
+                                  </Button>
                                 </div>
                               </div>
                             </CardContent>
