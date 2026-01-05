@@ -106,10 +106,10 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      whileHover={{ y: -6, transition: { duration: 0.2 } }}
     >
       <Card 
-        className={`overflow-hidden hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/40 cursor-pointer group/card bg-background hover:bg-primary/[0.02] active:scale-[0.99] ${declinedCardClass} ${declinedByMeClass} ${declinedByThemClass}`}
+        className={`overflow-hidden hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border border-rose-100 dark:border-rose-900/30 hover:border-primary/50 cursor-pointer group/card bg-gradient-to-b from-white to-rose-50/30 dark:from-gray-900 dark:to-rose-950/20 active:scale-[0.98] ${declinedCardClass} ${declinedByMeClass} ${declinedByThemClass}`}
         onClick={() => onViewProfile(profile)}
         role="button"
         tabIndex={0}
@@ -123,9 +123,9 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
       >
         {/* Declined status banner */}
         {hasDeclinedStatus && (
-          <div className={`px-4 py-2 flex items-center justify-between text-xs font-medium ${isDeclinedByMe ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'}`}>
-            <div className="flex items-center gap-2">
-              <XCircle size={14} weight="fill" />
+          <div className={`px-3 py-1.5 flex items-center justify-between text-[10px] font-medium ${isDeclinedByMe ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'}`}>
+            <div className="flex items-center gap-1.5">
+              <XCircle size={12} weight="fill" />
               <span>{isDeclinedByMe ? t.declinedByMe : t.declinedByThem}</span>
             </div>
             {isDeclinedByMe && onReconsider && (
@@ -134,19 +134,19 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
                   e.stopPropagation()
                   onReconsider(profile.profileId)
                 }}
-                className="flex items-center gap-1 px-2 py-1 rounded bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300"
+                className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300"
               >
-                <ArrowCounterClockwise size={12} weight="bold" />
+                <ArrowCounterClockwise size={10} weight="bold" />
                 {t.reconsider}
               </button>
             )}
           </div>
         )}
         
-        <CardHeader className="pb-4">
-          <div className="flex items-start gap-4">
+        <CardHeader className="pb-2 pt-3 px-3 bg-gradient-to-r from-rose-50/50 via-transparent to-amber-50/50 dark:from-rose-950/30 dark:to-amber-950/30">
+          <div className="flex items-start gap-3">
             <div 
-              className={`relative ${isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0 ? 'cursor-pointer group' : ''}`}
+              className={`relative shrink-0 ${isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0 ? 'cursor-pointer group' : ''}`}
               onClick={(e) => {
                 if (isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0) {
                   e.stopPropagation()
@@ -155,50 +155,51 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
               }}
               title={isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0 ? (language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge') : ''}
             >
-              <Avatar className={`w-20 h-20 border-4 border-background shadow-lg ${(!isLoggedIn || shouldBlur) ? 'blur-md' : ''} ${isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0 ? 'group-hover:ring-4 group-hover:ring-primary/50 transition-all' : ''}`}>
+              <div className="absolute -inset-1 bg-gradient-to-tr from-rose-400 via-pink-300 to-amber-300 rounded-full opacity-60 group-hover/card:opacity-100 transition-opacity blur-sm"></div>
+              <Avatar className={`relative w-14 h-14 border-2 border-white dark:border-gray-800 shadow-lg ${(!isLoggedIn || shouldBlur) ? 'blur-md' : ''} ${isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0 ? 'group-hover:scale-105 transition-transform' : ''}`}>
                 {isLoggedIn && !shouldBlur ? (
                   <AvatarImage src={profile.photos?.[0]} alt={displayName} />
                 ) : null}
-                <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
+                <AvatarFallback className="bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50 text-rose-700 dark:text-rose-300 text-base font-bold">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               {/* Zoom indicator for logged-in users who can see photos */}
               {isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0 && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                  <Eye size={20} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Eye size={16} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               )}
               {/* Lock overlay for free/pending users */}
               {shouldBlur && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-full">
-                  <Lock size={24} weight="fill" className="text-white" />
+                  <Lock size={18} weight="fill" className="text-white" />
                 </div>
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start justify-between gap-1">
                 <h3 
-                  className="font-bold text-xl leading-tight group-hover/card:text-primary transition-colors"
+                  className="font-semibold text-base leading-tight text-gray-800 dark:text-gray-100 group-hover/card:text-rose-600 dark:group-hover/card:text-rose-400 transition-colors truncate"
                 >
                   {displayName}
-                  {shouldHideSurname && <span className="text-muted-foreground"> ...</span>}
+                  {shouldHideSurname && <span className="text-muted-foreground">...</span>}
                 </h3>
-                <div className="flex flex-col gap-1 items-end">
+                <div className="flex gap-1 items-center shrink-0">
                   {profile.status === 'verified' && badge && (
-                    <Badge className={`${badge.color} gap-1 whitespace-nowrap shrink-0`}>
-                      <span className="text-xs">{badge.icon}</span>
+                    <Badge className={`${badge.color} gap-0.5 whitespace-nowrap shrink-0 text-[10px] px-1.5 py-0`}>
+                      <span className="text-[10px]">{badge.icon}</span>
                     </Badge>
                   )}
                   {profile.digilockerVerified && (
-                    <Badge className="bg-green-600 gap-1 whitespace-nowrap shrink-0 text-xs">
-                      ✓ ID
+                    <Badge className="bg-emerald-500 hover:bg-emerald-600 gap-0.5 whitespace-nowrap shrink-0 text-[10px] px-1.5 py-0">
+                      ✓
                     </Badge>
                   )}
                 </div>
               </div>
-              <p className="text-muted-foreground text-sm mt-1">
-                {profile.age} {t.years} | {profile.gender === 'male' ? t.male : t.female}
+              <p className="text-muted-foreground text-xs mt-0.5">
+                {profile.age} {t.years} • {profile.gender === 'male' ? t.male : t.female}
               </p>
             </div>
           </div>
@@ -206,67 +207,62 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
 
         {/* Upgrade prompt for free/pending users */}
         {shouldBlur && (
-          <div className="mx-4 mb-2 p-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-lg">
-            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-xs">
-              <Crown size={14} weight="fill" />
-              <span>
+          <div className="mx-3 mb-1 px-2 py-1.5 bg-gradient-to-r from-rose-100 to-amber-100 dark:from-rose-900/40 dark:to-amber-900/40 border border-rose-200 dark:border-rose-800/50 rounded-md">
+            <div className="flex items-center gap-1.5 text-rose-700 dark:text-rose-300 text-[10px] font-medium">
+              <Crown size={12} weight="fill" className="shrink-0 text-amber-500" />
+              <span className="line-clamp-1">
                 {language === 'hi' 
-                  ? 'फोटो और पूरा नाम देखने के लिए प्लान अपग्रेड करें' 
-                  : 'Upgrade plan to view photo & full name'}
+                  ? 'अपग्रेड करें' 
+                  : 'Upgrade to view details'}
               </span>
             </div>
           </div>
         )}
 
-        <CardContent className="space-y-3 pb-4">
-          <div className="flex items-center gap-2 text-sm">
-            <MapPin size={16} className="text-muted-foreground shrink-0" />
+        <CardContent className="space-y-1.5 pb-3 pt-2 px-3">
+          <div className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300">
+            <MapPin size={12} className="text-rose-400 shrink-0" weight="fill" />
             <span className="truncate">{profile.location}, {profile.country}</span>
           </div>
           
-          <div className="flex items-center gap-2 text-sm">
-            <GraduationCap size={16} className="text-muted-foreground shrink-0" />
+          <div className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300">
+            <GraduationCap size={12} className="text-amber-500 shrink-0" weight="fill" />
             <span className="truncate">{profile.education}</span>
           </div>
           
-          <div className="flex items-center gap-2 text-sm">
-            <Briefcase size={16} className="text-muted-foreground shrink-0" />
+          <div className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300">
+            <Briefcase size={12} className="text-teal-500 shrink-0" weight="fill" />
             <span className="truncate">{profile.occupation}</span>
           </div>
 
-          {profile.religion && (
-            <div className="flex items-center gap-2 text-sm">
-              <UserCircle size={16} className="text-muted-foreground shrink-0" />
-              <span className="truncate">{t.religion}: {profile.religion}</span>
-            </div>
-          )}
-
-          {profile.caste && (
-            <div className="flex items-center gap-2 text-sm">
-              <UserCircle size={16} className="text-muted-foreground shrink-0" />
-              <span className="truncate">{t.caste}: {profile.caste}</span>
+          {(profile.religion || profile.caste) && (
+            <div className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300">
+              <UserCircle size={12} className="text-purple-400 shrink-0" weight="fill" />
+              <span className="truncate">
+                {profile.religion}{profile.caste ? ` • ${profile.caste}` : ''}
+              </span>
             </div>
           )}
 
           {profile.disability && profile.disability !== 'no' && (
-            <div className="flex items-center gap-2 text-sm">
-              <UserCircle size={16} className="text-muted-foreground shrink-0" />
+            <div className="flex items-center gap-1.5 text-xs text-amber-600">
+              <UserCircle size={12} className="shrink-0" />
               <span className="truncate">
-                {language === 'hi' ? 'दिव्यांग' : 'Differently Abled'}: {language === 'hi' ? 'हाँ' : 'Yes'}
+                {language === 'hi' ? 'दिव्यांग' : 'Differently Abled'}
               </span>
             </div>
           )}
 
           {isLoggedIn && profile.lastLoginAt && (
-            <div className="flex items-center gap-2 text-sm text-green-600">
-              <Clock size={16} className="shrink-0" />
-              <span className="truncate">{t.lastSeen}: {formatLastLogin(profile.lastLoginAt)}</span>
+            <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="truncate">{formatLastLogin(profile.lastLoginAt)}</span>
             </div>
           )}
 
           {profile.bio && (
-            <p className={`text-sm text-muted-foreground line-clamp-2 mt-3 pt-3 border-t ${shouldBlur ? 'blur-sm select-none' : ''}`}>
-              {profile.bio}
+            <p className={`text-[11px] text-gray-600 dark:text-gray-400 line-clamp-2 mt-2 pt-2 border-t border-rose-100 dark:border-rose-900/30 italic ${shouldBlur ? 'blur-sm select-none' : ''}`}>
+              "{profile.bio}"
             </p>
           )}
         </CardContent>

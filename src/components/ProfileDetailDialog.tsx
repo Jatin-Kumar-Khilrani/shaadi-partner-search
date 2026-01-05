@@ -518,9 +518,9 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-start gap-4 mb-4">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-gradient-to-b from-white via-rose-50/30 to-amber-50/20 dark:from-gray-900 dark:via-rose-950/20 dark:to-amber-950/10 border-rose-200 dark:border-rose-800/50">
+        <DialogHeader className="relative">
+          <div className="flex items-start gap-5 mb-4 pb-4 border-b border-rose-100 dark:border-rose-900/30">
             <div 
               className={`relative ${canSeeFullDetails && !blurContent && profile.photos && profile.photos.length > 0 ? 'cursor-pointer group' : ''}`}
               onClick={() => {
@@ -530,11 +530,12 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
               }}
               title={canSeeFullDetails && !blurContent && profile.photos && profile.photos.length > 0 ? (language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge') : ''}
             >
-              <Avatar className={`w-24 h-24 border-4 border-background shadow-xl ${(!canSeeFullDetails || blurContent) ? 'blur-sm' : ''} ${canSeeFullDetails && !blurContent && profile.photos && profile.photos.length > 0 ? 'group-hover:ring-4 group-hover:ring-primary/50 transition-all' : ''}`}>
+              <div className="absolute -inset-1.5 bg-gradient-to-tr from-rose-400 via-pink-300 to-amber-300 rounded-full opacity-70 group-hover:opacity-100 transition-opacity blur-sm"></div>
+              <Avatar className={`relative w-24 h-24 border-3 border-white dark:border-gray-800 shadow-xl ${(!canSeeFullDetails || blurContent) ? 'blur-sm' : ''} ${canSeeFullDetails && !blurContent && profile.photos && profile.photos.length > 0 ? 'group-hover:scale-105 transition-transform' : ''}`}>
                 {canSeeFullDetails && !blurContent ? (
                   <AvatarImage src={profile.photos?.[0]} alt={displayName} />
                 ) : null}
-                <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                <AvatarFallback className="bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50 text-rose-700 dark:text-rose-300 text-2xl font-bold">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -545,15 +546,21 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
               )}
             </div>
             <div className="flex-1">
-              <DialogTitle className="text-3xl mb-2">
+              <DialogTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-1">
                 {displayName}
-                {!canSeeFullDetails && <span className="text-muted-foreground"> ...</span>}
+                {!canSeeFullDetails && <span className="text-rose-300">...</span>}
               </DialogTitle>
-              <DialogDescription className="text-base">
-                {profile.age} {t.years} | {profile.gender === 'male' ? t.male : t.female} | {getMaritalStatus()}
+              <DialogDescription className="text-base text-gray-600 dark:text-gray-400">
+                <span className="inline-flex items-center gap-2">
+                  <span className="font-medium text-rose-600 dark:text-rose-400">{profile.age} {t.years}</span>
+                  <span className="text-rose-300">•</span>
+                  <span>{profile.gender === 'male' ? t.male : t.female}</span>
+                  <span className="text-rose-300">•</span>
+                  <span>{getMaritalStatus()}</span>
+                </span>
               </DialogDescription>
               {badge && (
-                <Badge className={`${badge.color} gap-1.5 mt-2`}>
+                <Badge className={`${badge.color} gap-1.5 mt-2 shadow-sm`}>
                   {badge.icon}
                   <span>{badge.text}</span>
                 </Badge>
@@ -563,9 +570,11 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
         </DialogHeader>
 
         <div className="space-y-6">
-          <section>
-            <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
-              <UserCircle size={22} weight="fill" />
+          <section className="bg-white/60 dark:bg-gray-800/40 rounded-xl p-4 shadow-sm border border-rose-100 dark:border-rose-900/30">
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-rose-700 dark:text-rose-400">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50">
+                <UserCircle size={20} weight="fill" className="text-rose-600 dark:text-rose-400" />
+              </div>
               {t.personalInfo}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden">
@@ -780,26 +789,33 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
           {/* Paid verified users, Admin, and Self: Show all photos */}
           {canSeeAllDetails && profile.photos && profile.photos.length > 0 && (
             <>
-              <Separator />
-              <section>
-                <h3 className="font-bold text-lg mb-3">{t.allPhotos}</h3>
-                <p className="text-xs text-muted-foreground mb-2">
+              <Separator className="bg-rose-100 dark:bg-rose-900/30" />
+              <section className="bg-white/60 dark:bg-gray-800/40 rounded-xl p-4 shadow-sm border border-rose-100 dark:border-rose-900/30">
+                <h3 className="font-bold text-lg mb-3 flex items-center gap-2 text-rose-700 dark:text-rose-400">
+                  <div className="p-1.5 rounded-lg bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50">
+                    <Eye size={18} weight="fill" className="text-rose-600 dark:text-rose-400" />
+                  </div>
+                  {t.allPhotos}
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                   {language === 'hi' ? 'बड़ा देखने के लिए फोटो पर क्लिक करें' : 'Click on a photo to view larger'}
                 </p>
                 <div className="flex flex-wrap gap-3">
                   {profile.photos && profile.photos.length > 0 ? (
                     profile.photos.map((photo, idx) => (
-                      <img 
-                        key={idx} 
-                        src={photo} 
-                        alt={`Photo ${idx + 1}`} 
-                        className="w-24 h-24 object-cover rounded-lg border-2 border-border shadow cursor-pointer hover:opacity-80 transition-opacity hover:ring-2 hover:ring-primary"
-                        onClick={() => openLightbox(profile.photos || [], idx)}
-                        title={language === 'hi' ? 'बड़ा देखें' : 'View larger'}
-                      />
+                      <div key={idx} className="relative group">
+                        <div className="absolute -inset-1 bg-gradient-to-tr from-rose-300 via-pink-200 to-amber-200 rounded-xl opacity-0 group-hover:opacity-70 transition-opacity blur-sm"></div>
+                        <img 
+                          src={photo} 
+                          alt={`Photo ${idx + 1}`} 
+                          className="relative w-24 h-24 object-cover rounded-lg border-2 border-white dark:border-gray-700 shadow-md cursor-pointer group-hover:scale-105 transition-transform"
+                          onClick={() => openLightbox(profile.photos || [], idx)}
+                          title={language === 'hi' ? 'बड़ा देखें' : 'View larger'}
+                        />
+                      </div>
                     ))
                   ) : (
-                    <span className="text-muted-foreground">{t.notProvided}</span>
+                    <span className="text-gray-500">{t.notProvided}</span>
                   )}
                 </div>
               </section>
@@ -808,8 +824,13 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
 
           {/* Admin only: Show selfie photo (for verification purposes) */}
           {isAdmin && (
-            <section>
-              <h3 className="font-bold text-lg mb-3">{t.selfiePhoto}</h3>
+            <section className="bg-blue-50/70 dark:bg-blue-950/30 rounded-xl p-4 border border-blue-200 dark:border-blue-900/30">
+              <h3 className="font-bold text-lg mb-3 flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/50">
+                  <UserCircle size={18} weight="fill" className="text-blue-600" />
+                </div>
+                {t.selfiePhoto}
+              </h3>
               <div className="flex gap-3">
                 {profile.selfieUrl ? (
                   <img 
@@ -829,10 +850,12 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
           {/* Admin: Show contact information */}
           {isAdmin && (
             <>
-              <Separator />
-              <section className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg">
-                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
-                  <Phone size={22} weight="fill" />
+              <Separator className="bg-rose-100 dark:bg-rose-900/30" />
+              <section className="bg-gradient-to-br from-blue-50/80 to-cyan-50/80 dark:from-blue-950/30 dark:to-cyan-950/30 rounded-xl p-4 border border-blue-200 dark:border-blue-900/30">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                  <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/50">
+                    <Phone size={20} weight="fill" className="text-blue-600 dark:text-blue-400" />
+                  </div>
                   {t.contactInfo} ({language === 'hi' ? 'व्यवस्थापक दृश्य' : 'Admin View'})
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden">
@@ -859,10 +882,12 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
           {/* Paid verified users, Admin, and Self: Show Partner Preferences */}
           {canSeeAllDetails && profile.partnerPreferences && (
             <>
-              <Separator />
-              <section className="bg-purple-50 dark:bg-purple-950/30 p-4 rounded-lg">
-                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
-                  <HandHeart size={22} weight="fill" className="text-purple-600" />
+              <Separator className="bg-rose-100 dark:bg-rose-900/30" />
+              <section className="bg-gradient-to-br from-purple-50/80 to-pink-50/80 dark:from-purple-950/30 dark:to-pink-950/30 rounded-xl p-4 border border-purple-200 dark:border-purple-900/30">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-purple-700 dark:text-purple-400">
+                  <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/50 dark:to-pink-900/50">
+                    <HandHeart size={20} weight="fill" className="text-purple-600 dark:text-purple-400" />
+                  </div>
                   {t.partnerPreferences}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden">
@@ -1042,22 +1067,24 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
           {/* Admin: Show ID Proof Image */}
           {isAdmin && profile.idProofUrl && (
             <>
-              <Separator />
-              <section>
-                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
-                  <IdentificationCard size={22} weight="fill" />
+              <Separator className="bg-rose-100 dark:bg-rose-900/30" />
+              <section className="bg-amber-50/70 dark:bg-amber-950/30 rounded-xl p-4 border border-amber-200 dark:border-amber-900/30">
+                <h3 className="font-bold text-lg mb-3 flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                  <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/50">
+                    <IdentificationCard size={20} weight="fill" className="text-amber-600 dark:text-amber-400" />
+                  </div>
                   {t.idProof}
                 </h3>
                 <div className="flex gap-3">
                   <img 
                     src={profile.idProofUrl} 
                     alt="ID Proof" 
-                    className="max-w-xs max-h-48 object-contain rounded-lg border-2 border-amber-500 shadow cursor-pointer hover:opacity-80 transition-opacity"
+                    className="max-w-xs max-h-48 object-contain rounded-lg border-2 border-amber-400 shadow-md cursor-pointer hover:scale-105 transition-transform"
                     onClick={() => openLightbox([profile.idProofUrl!], 0)}
                     title={language === 'hi' ? 'बड़ा देखें' : 'View larger'}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
                   {profile.idProofType && `${t.idProofType}: ${profile.idProofType.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`}
                   {profile.idProofVerified && ` • ${language === 'hi' ? 'सत्यापित' : 'Verified'}`}
                 </p>
@@ -1067,14 +1094,19 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
 
           {profile.bio && (
             <>
-              <Separator />
-              <section>
-                <h3 className="font-bold text-lg mb-3">{t.bio}</h3>
-                <p className={`text-muted-foreground leading-relaxed ${blurContent ? 'blur-sm select-none' : ''}`}>
-                  {profile.bio}
+              <Separator className="bg-rose-100 dark:bg-rose-900/30" />
+              <section className="bg-white/60 dark:bg-gray-800/40 rounded-xl p-4 shadow-sm border border-rose-100 dark:border-rose-900/30">
+                <h3 className="font-bold text-lg mb-3 flex items-center gap-2 text-rose-700 dark:text-rose-400">
+                  <div className="p-1.5 rounded-lg bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50">
+                    <Heart size={20} weight="fill" className="text-rose-600 dark:text-rose-400" />
+                  </div>
+                  {t.bio}
+                </h3>
+                <p className={`text-gray-700 dark:text-gray-300 leading-relaxed italic border-l-4 border-rose-300 dark:border-rose-700 pl-4 ${blurContent ? 'blur-sm select-none' : ''}`}>
+                  "{profile.bio}"
                 </p>
                 {blurContent && (
-                  <p className="text-xs text-amber-600 mt-2">
+                  <p className="text-xs text-amber-600 mt-3 font-medium">
                     {language === 'hi' 
                       ? 'पूर्ण विवरण देखने के लिए प्रीमियम योजना में अपग्रेड करें' 
                       : 'Upgrade to Premium plan to view full details'}
@@ -1086,21 +1118,28 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
 
           {profile.familyDetails && (
             <>
-              <Separator />
-              <section>
-                <h3 className="font-bold text-lg mb-3">{t.familyDetails}</h3>
-                <p className="text-muted-foreground leading-relaxed">{profile.familyDetails}</p>
+              <Separator className="bg-rose-100 dark:bg-rose-900/30" />
+              <section className="bg-white/60 dark:bg-gray-800/40 rounded-xl p-4 shadow-sm border border-rose-100 dark:border-rose-900/30">
+                <h3 className="font-bold text-lg mb-3 flex items-center gap-2 text-rose-700 dark:text-rose-400">
+                  <div className="p-1.5 rounded-lg bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50">
+                    <UsersThree size={20} weight="fill" className="text-rose-600 dark:text-rose-400" />
+                  </div>
+                  {t.familyDetails}
+                </h3>
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{profile.familyDetails}</p>
               </section>
             </>
           )}
 
-          <Separator />
+          <Separator className="bg-rose-100 dark:bg-rose-900/30" />
 
           {currentUserProfile && currentUserProfile.id !== profile.id && (
-            <section className="bg-muted/30 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold text-lg flex items-center gap-2">
-                  <Phone size={22} weight="fill" />
+            <section className="bg-gradient-to-br from-rose-50/80 to-amber-50/80 dark:from-rose-950/30 dark:to-amber-950/30 rounded-xl p-4 border border-rose-200 dark:border-rose-900/30">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg flex items-center gap-2 text-rose-700 dark:text-rose-400">
+                  <div className="p-1.5 rounded-lg bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50">
+                    <Phone size={20} weight="fill" className="text-rose-600 dark:text-rose-400" />
+                  </div>
                   {t.contactInfo}
                 </h3>
                 {isLoggedIn && !isAdmin && (
@@ -1275,8 +1314,8 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
             </section>
           )}
 
-          <div className="text-xs text-muted-foreground text-center pt-2">
-            {t.profileId}: {profile.id} | {t.createdOn}: {formatDateDDMMYYYY(profile.createdAt)}
+          <div className="text-xs text-gray-500 dark:text-gray-400 text-center pt-4 pb-2 border-t border-rose-100 dark:border-rose-900/30">
+            <span className="text-rose-400">❤</span> {t.profileId}: <span className="font-medium">{profile.id}</span> | {t.createdOn}: <span className="font-medium">{formatDateDDMMYYYY(profile.createdAt)}</span> <span className="text-rose-400">❤</span>
           </div>
         </div>
 
@@ -1294,11 +1333,11 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
 
 function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-start gap-2 min-w-0 overflow-hidden">
-      <div className="text-muted-foreground mt-0.5 flex-shrink-0">{icon}</div>
+    <div className="flex items-start gap-2.5 min-w-0 overflow-hidden p-2 rounded-lg hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-colors">
+      <div className="text-rose-500 dark:text-rose-400 mt-0.5 flex-shrink-0">{icon}</div>
       <div className="min-w-0 flex-1 overflow-hidden">
-        <div className="text-xs text-muted-foreground truncate">{label}</div>
-        <div className="font-medium break-words" title={value}>{value}</div>
+        <div className="text-xs text-gray-500 dark:text-gray-400 truncate mb-0.5">{label}</div>
+        <div className="font-medium text-gray-800 dark:text-gray-200 break-words" title={value}>{value}</div>
       </div>
     </div>
   )
