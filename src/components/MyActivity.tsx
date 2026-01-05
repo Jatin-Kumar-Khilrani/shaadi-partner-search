@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
@@ -26,6 +26,7 @@ interface MembershipSettings {
   sixMonthContactLimit: number
   oneYearChatLimit: number
   oneYearContactLimit: number
+  requestExpiryDays?: number  // Days before pending requests auto-expire (default: 15)
 }
 
 // Default limits if settings not provided
@@ -35,7 +36,8 @@ const DEFAULT_SETTINGS: MembershipSettings = {
   sixMonthChatLimit: 50,
   sixMonthContactLimit: 20,
   oneYearChatLimit: 120,
-  oneYearContactLimit: 50
+  oneYearContactLimit: 50,
+  requestExpiryDays: 15
 }
 
 interface MyActivityProps {
@@ -200,7 +202,138 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
       ? '⚠️ वे आपका संपर्क नहीं देख सकते (जब तक वे भी अनुरोध न भेजें)'
       : '⚠️ They cannot view your contact (unless they also request)',
     autoDeclined: language === 'hi' ? 'स्वतः अस्वीकृत' : 'Auto-declined',
+    // Request expiry translations
+    expiresIn: language === 'hi' ? 'में समाप्त' : 'Expires in',
+    daysLeft: language === 'hi' ? 'दिन शेष' : 'days left',
+    dayLeft: language === 'hi' ? 'दिन शेष' : 'day left',
+    hoursLeft: language === 'hi' ? 'घंटे शेष' : 'hours left',
+    expired: language === 'hi' ? 'समाप्त' : 'Expired',
+    autoExpired: language === 'hi' ? 'समय समाप्त - स्वतः रद्द' : 'Time expired - Auto-cancelled',
+    expiryNotice: language === 'hi' 
+      ? '⏳ समय पर जवाब न देने पर अनुरोध स्वतः रद्द हो जाएगा' 
+      : '⏳ Request will auto-cancel if not responded in time',
   }
+
+  // Get request expiry days from settings
+  const requestExpiryDays = membershipSettings?.requestExpiryDays || DEFAULT_SETTINGS.requestExpiryDays || 15
+
+  // Helper function to calculate days remaining until expiry
+  const getDaysRemaining = (createdAt: string): number => {
+    const created = new Date(createdAt)
+    const expiryDate = new Date(created.getTime() + requestExpiryDays * 24 * 60 * 60 * 1000)
+    const now = new Date()
+    const diffMs = expiryDate.getTime() - now.getTime()
+    return Math.ceil(diffMs / (24 * 60 * 60 * 1000))
+  }
+
+  // Helper function to format expiry countdown
+  const formatExpiryCountdown = (createdAt: string): { text: string, isUrgent: boolean, isExpired: boolean } => {
+    const daysRemaining = getDaysRemaining(createdAt)
+    
+    if (daysRemaining <= 0) {
+      return { text: t.expired, isUrgent: true, isExpired: true }
+    } else if (daysRemaining === 1) {
+      return { text: `1 ${t.dayLeft}`, isUrgent: true, isExpired: false }
+    } else if (daysRemaining <= 3) {
+      return { text: `${daysRemaining} ${t.daysLeft}`, isUrgent: true, isExpired: false }
+    } else {
+      return { text: `${daysRemaining} ${t.daysLeft}`, isUrgent: false, isExpired: false }
+    }
+  }
+
+  // Auto-expire pending requests that have passed the expiry deadline
+  useEffect(() => {
+    if (!interests || !contactRequests || !currentUserProfile) return
+
+    let hasChanges = false
+    const now = new Date()
+
+    // Check and expire pending interests
+    const updatedInterests = interests.map(interest => {
+      if (interest.status === 'pending') {
+        const daysRemaining = getDaysRemaining(interest.createdAt)
+        if (daysRemaining <= 0) {
+          hasChanges = true
+          
+          // Send notification to the sender about expiry
+          const senderProfile = getProfileByProfileId(interest.fromProfileId)
+          const receiverProfile = getProfileByProfileId(interest.toProfileId)
+          
+          if (senderProfile) {
+            setUserNotifications(prev => [...(prev || []), {
+              id: `interest-expired-${interest.id}-${now.getTime()}`,
+              recipientProfileId: senderProfile.profileId,
+              type: 'interest_expired' as const,
+              title: 'Interest Expired',
+              titleHi: 'रुचि समाप्त',
+              description: `Your interest to ${receiverProfile?.fullName || 'profile'} has expired due to no response in ${requestExpiryDays} days.`,
+              descriptionHi: `${receiverProfile?.fullName || 'प्रोफाइल'} को भेजी गई आपकी रुचि ${requestExpiryDays} दिनों में जवाब न मिलने के कारण समाप्त हो गई।`,
+              senderProfileId: interest.toProfileId,
+              senderName: receiverProfile?.fullName,
+              isRead: false,
+              createdAt: now.toISOString()
+            }])
+          }
+          
+          return {
+            ...interest,
+            status: 'expired' as const,
+            expiredAt: now.toISOString(),
+            expiryReason: 'timeout'
+          }
+        }
+      }
+      return interest
+    })
+
+    // Check and expire pending contact requests
+    const updatedContactRequests = contactRequests.map(request => {
+      if (request.status === 'pending') {
+        const created = new Date(request.createdAt)
+        const expiryDate = new Date(created.getTime() + requestExpiryDays * 24 * 60 * 60 * 1000)
+        if (now > expiryDate) {
+          hasChanges = true
+          
+          // Send notification to the sender about expiry
+          const senderProfile = profiles.find(p => p.id === request.fromUserId)
+          const receiverProfile = profiles.find(p => p.id === request.toUserId)
+          
+          if (senderProfile) {
+            setUserNotifications(prev => [...(prev || []), {
+              id: `contact-expired-${request.id}-${now.getTime()}`,
+              recipientProfileId: senderProfile.profileId,
+              type: 'contact_expired' as const,
+              title: 'Contact Request Expired',
+              titleHi: 'संपर्क अनुरोध समाप्त',
+              description: `Your contact request to ${receiverProfile?.fullName || 'profile'} has expired due to no response in ${requestExpiryDays} days.`,
+              descriptionHi: `${receiverProfile?.fullName || 'प्रोफाइल'} को भेजा गया आपका संपर्क अनुरोध ${requestExpiryDays} दिनों में जवाब न मिलने के कारण समाप्त हो गया।`,
+              senderProfileId: receiverProfile?.profileId,
+              senderName: receiverProfile?.fullName,
+              isRead: false,
+              createdAt: now.toISOString()
+            }])
+          }
+          
+          return {
+            ...request,
+            status: 'expired' as const,
+            expiredAt: now.toISOString(),
+            expiryReason: 'timeout'
+          }
+        }
+      }
+      return request
+    })
+
+    // Update if any changes
+    if (hasChanges) {
+      // @ts-expect-error - status type needs to include 'expired'
+      setInterests(updatedInterests)
+      // @ts-expect-error - status type needs to include 'expired'
+      setContactRequests(updatedContactRequests)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interests, contactRequests, currentUserProfile?.profileId, requestExpiryDays])
 
   const remainingChats = Math.max(0, chatLimit - chatRequestsUsed.length)
   
@@ -1014,7 +1147,21 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">{t.sentOn}: {formatDate(interest.createdAt)}</p>
                                     </div>
                                   </div>
-                                  {getStatusBadge(interest.status)}
+                                  <div className="flex items-center gap-1.5">
+                                    {interest.status === 'pending' && (() => {
+                                      const expiry = formatExpiryCountdown(interest.createdAt)
+                                      return (
+                                        <Badge 
+                                          variant={expiry.isExpired ? "destructive" : expiry.isUrgent ? "warning" : "outline"} 
+                                          className={`text-[10px] px-1.5 py-0 ${expiry.isUrgent ? 'animate-pulse' : ''}`}
+                                        >
+                                          <Clock size={10} className="mr-0.5" />
+                                          {expiry.text}
+                                        </Badge>
+                                      )
+                                    })()}
+                                    {getStatusBadge(interest.status)}
+                                  </div>
                                 </div>
                                 {interest.status === 'pending' && (
                                   <>
@@ -1412,6 +1559,20 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                  {/* Expiry countdown for pending interests */}
+                                  {interest.status === 'pending' && (() => {
+                                    const expiry = formatExpiryCountdown(interest.createdAt)
+                                    return (
+                                      <Badge 
+                                        variant={expiry.isExpired ? "destructive" : expiry.isUrgent ? "warning" : "outline"} 
+                                        className={`text-[10px] px-1.5 py-0 ${expiry.isUrgent ? 'animate-pulse' : ''}`}
+                                        title={language === 'hi' ? 'प्रतिक्रिया के लिए शेष समय' : 'Time left for response'}
+                                      >
+                                        <Clock size={10} className="mr-0.5" />
+                                        {expiry.text}
+                                      </Badge>
+                                    )
+                                  })()}
                                   {getStatusBadge(interest.status)}
                                   {/* Cancel button for pending interests */}
                                   {interest.status === 'pending' && (
@@ -1518,6 +1679,20 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                      {/* Expiry countdown for pending contact requests */}
+                                      {request.status === 'pending' && (() => {
+                                        const expiry = formatExpiryCountdown(request.createdAt)
+                                        return (
+                                          <Badge 
+                                            variant={expiry.isExpired ? "destructive" : expiry.isUrgent ? "warning" : "outline"} 
+                                            className={`text-[10px] px-1.5 py-0 ${expiry.isUrgent ? 'animate-pulse' : ''}`}
+                                            title={language === 'hi' ? 'प्रतिक्रिया के लिए शेष समय' : 'Time left for response'}
+                                          >
+                                            <Clock size={10} className="mr-0.5" />
+                                            {expiry.text}
+                                          </Badge>
+                                        )
+                                      })()}
                                       {getStatusBadge(request.status)}
                                       {/* Cancel button for pending contact requests */}
                                       {request.status === 'pending' && (
@@ -1616,7 +1791,23 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                           <p className="text-[10px] text-muted-foreground">{formatDate(request.createdAt)}</p>
                                         </div>
                                       </div>
-                                      {getStatusBadge(request.status)}
+                                      {/* Expiry countdown for pending contact requests */}
+                                      <div className="flex items-center gap-2">
+                                        {request.status === 'pending' && (() => {
+                                          const expiry = formatExpiryCountdown(request.createdAt)
+                                          return (
+                                            <Badge 
+                                              variant={expiry.isExpired ? "destructive" : expiry.isUrgent ? "warning" : "outline"} 
+                                              className={`text-[10px] px-1.5 py-0 ${expiry.isUrgent ? 'animate-pulse' : ''}`}
+                                              title={language === 'hi' ? 'प्रतिक्रिया के लिए शेष समय' : 'Time left for response'}
+                                            >
+                                              <Clock size={10} className="mr-0.5" />
+                                              {expiry.text}
+                                            </Badge>
+                                          )
+                                        })()}
+                                        {getStatusBadge(request.status)}
+                                      </div>
                                     </div>
                                     {/* Accept/Decline buttons for pending requests */}
                                     {request.status === 'pending' && (() => {

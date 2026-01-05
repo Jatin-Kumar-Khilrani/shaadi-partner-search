@@ -123,6 +123,8 @@ interface MembershipSettings {
   // Inactivity deactivation settings
   inactivityDays: number          // Days of inactivity before deactivation (default: 30)
   freePlanChatDurationMonths: number  // Months free plan users can chat with admin after deactivation (default: 6)
+  // Request expiry settings
+  requestExpiryDays: number       // Days before pending interests/contact requests auto-expire (default: 15)
   // Payment details
   upiId: string                   // UPI ID for payments
   bankName: string                // Bank name
@@ -155,6 +157,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     // Default inactivity settings
     inactivityDays: 30,
     freePlanChatDurationMonths: 6,
+    // Default request expiry
+    requestExpiryDays: 15,
     // Default payment details
     upiId: '',
     bankName: '',
@@ -181,6 +185,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     oneYearContactLimit: 50,
     inactivityDays: 30,
     freePlanChatDurationMonths: 6,
+    requestExpiryDays: 15,
     upiId: '',
     bankName: '',
     accountNumber: '',
@@ -4041,6 +4046,31 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           />
                           <p className="text-xs text-muted-foreground">
                             {language === 'hi' ? 'फ्री प्लान यूजर डिएक्टिवेट होने के बाद भी इतने महीने तक एडमिन से चैट कर सकते हैं।' : 'Free plan users can chat with admin for this many months after deactivation.'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Request Expiry Days */}
+                      <div className="space-y-3 p-3 border rounded-lg bg-orange-50 dark:bg-orange-900/20">
+                        <h5 className="font-medium text-sm text-orange-600 dark:text-orange-300">
+                          {language === 'hi' ? '⏳ अनुरोध समाप्ति' : '⏳ Request Expiry'}
+                        </h5>
+                        <div className="space-y-2">
+                          <Label className="text-xs">{language === 'hi' ? 'अनुरोध समाप्ति दिन' : 'Request Expiry Days'}</Label>
+                          <Input 
+                            type="number" 
+                            min="3"
+                            max="90"
+                            value={localMembershipSettings.requestExpiryDays || 15}
+                            onChange={(e) => setLocalMembershipSettings(prev => ({
+                              ...prev,
+                              requestExpiryDays: parseInt(e.target.value) || 15
+                            }))}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {language === 'hi' 
+                              ? 'पेंडिंग रुचि और संपर्क अनुरोध इतने दिनों बाद स्वतः रद्द हो जाएंगे। अनुरोधकर्ता को सूचना भेजी जाएगी।' 
+                              : 'Pending interests and contact requests will auto-cancel after these many days. Requestor will be notified.'}
                           </p>
                         </div>
                       </div>
