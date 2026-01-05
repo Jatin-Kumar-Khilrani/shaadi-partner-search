@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useKV } from '@/hooks/useKV'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -8,14 +9,18 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatEducation, formatOccupation } from '@/lib/utils'
 import { 
   User, MapPin, Briefcase, GraduationCap, Heart, House, PencilSimple,
   ChatCircle, Envelope, Phone, Calendar, Warning, FilePdf, Trash,
-  CurrencyInr, ArrowClockwise, Camera, CheckCircle, ProhibitInset, ArrowUp
+  CurrencyInr, ArrowClockwise, Camera, CheckCircle, ProhibitInset, ArrowUp,
+  Confetti, Gift, UserCirclePlus, HeartBreak
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
-import type { Profile } from '@/types/profile'
+import type { Profile, Interest, ProfileDeletionReason, ProfileDeletionData, SuccessStory } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 import { BiodataGenerator } from './BiodataGenerator'
 import { PhotoLightbox } from './PhotoLightbox'
@@ -34,9 +39,10 @@ const DEFAULT_PRICING: MembershipSettings = {
 
 interface MyProfileProps {
   profile: Profile | null
+  profiles?: Profile[]  // All profiles for partner selection
   language: Language
   onEdit?: () => void
-  onDeleteProfile?: (profileId: string) => void
+  onDeleteProfile?: (profileId: string, deletionData?: ProfileDeletionData) => void
   onUpdateProfile?: (updatedProfile: Partial<Profile>) => void
   membershipSettings?: MembershipSettings
   onNavigateHome?: () => void
@@ -45,7 +51,10 @@ interface MyProfileProps {
   onNavigateChat?: () => void
 }
 
-export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdateProfile, membershipSettings, onNavigateHome, onNavigateActivity, onNavigateInbox, onNavigateChat }: MyProfileProps) {
+export function MyProfile({ profile, profiles = [], language, onEdit, onDeleteProfile, onUpdateProfile, membershipSettings, onNavigateHome, onNavigateActivity, onNavigateInbox, onNavigateChat }: MyProfileProps) {
+  // Get interests from KV store for accepted interests selection
+  const [interests] = useKV<Interest[]>('interests', [])
+  
   // Get pricing from settings or defaults
   const pricing = {
     sixMonth: membershipSettings?.sixMonthPrice || DEFAULT_PRICING.sixMonthPrice,
@@ -56,9 +65,34 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
   const [showBiodataGenerator, setShowBiodataGenerator] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showEditConfirmDialog, setShowEditConfirmDialog] = useState(false)
-  const [deleteStep, setDeleteStep] = useState<'confirm' | 'otp'>('confirm')
+  const [deleteStep, setDeleteStep] = useState<'reason' | 'partner-select' | 'consent' | 'otp'>('reason')
   const [generatedOtp, setGeneratedOtp] = useState('')
   const [enteredOtp, setEnteredOtp] = useState('')
+  
+  // Profile deletion state
+  const [deletionReason, setDeletionReason] = useState<ProfileDeletionReason | ''>('')
+  const [deletionReasonDetails, setDeletionReasonDetails] = useState('')
+  const [selectedPartnerId, setSelectedPartnerId] = useState('')
+  const [consentToPublish, setConsentToPublish] = useState(false)
+  const [consentForPhotos, setConsentForPhotos] = useState(false)
+  const [consentForName, setConsentForName] = useState(false)
+  const [feedbackMessage, setFeedbackMessage] = useState('')
+  const [testimonial, setTestimonial] = useState('')
+  const [consentToDeletePartner, setConsentToDeletePartner] = useState(false)
+  
+  // Get accepted interests for partner selection dropdown
+  const acceptedInterests = interests?.filter(
+    i => (i.toProfileId === profile?.profileId || i.fromProfileId === profile?.profileId) && 
+       i.status === 'accepted'
+  ) || []
+  
+  // Get unique partner profiles from accepted interests
+  const acceptedPartnerProfiles = acceptedInterests.map(interest => {
+    const partnerId = interest.fromProfileId === profile?.profileId 
+      ? interest.toProfileId 
+      : interest.fromProfileId
+    return profiles.find(p => p.profileId === partnerId)
+  }).filter((p): p is Profile => p !== undefined)
   
   // Renewal payment state
   const [showRenewalDialog, setShowRenewalDialog] = useState(false)
@@ -119,8 +153,8 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
     adminReason: language === 'hi' ? 'एडमिन संदेश' : 'Admin Message',
     generateBiodata: language === 'hi' ? 'बायोडाटा बनाएं' : 'Generate Biodata',
     deleteProfile: language === 'hi' ? 'प्रोफाइल हटाएं' : 'Delete Profile',
-    deleteConfirmTitle: language === 'hi' ? 'क्या आप वाकई प्रोफाइल हटाना चाहते हैं?' : 'Are you sure you want to delete your profile?',
-    deleteConfirmDesc: language === 'hi' ? 'यह क्रिया आपकी प्रोफाइल को सभी उपयोगकर्ताओं से छुपा देगी। आप बाद में एडमिन से संपर्क करके इसे पुनः सक्रिय कर सकते हैं।' : 'This action will hide your profile from all users. You can contact admin later to reactivate it.',
+    deleteConfirmTitle: language === 'hi' ? 'प्रोफाइल हटाने का कारण बताएं' : 'Tell us why you are leaving',
+    deleteConfirmDesc: language === 'hi' ? 'हम आपकी राय का सम्मान करते हैं। कृपया प्रोफाइल हटाने का कारण बताएं।' : 'We respect your decision. Please tell us why you are deleting your profile.',
     sendOtp: language === 'hi' ? 'OTP भेजें' : 'Send OTP',
     enterOtp: language === 'hi' ? 'OTP दर्ज करें' : 'Enter OTP',
     otpSent: language === 'hi' ? 'OTP आपके मोबाइल पर भेजा गया' : 'OTP sent to your mobile',
@@ -133,7 +167,59 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
     confirmEdit: language === 'hi' ? 'संपादित करें' : 'Proceed to Edit',
     pendingApproval: language === 'hi' ? 'स्वीकृति लंबित' : 'Pending Approval',
     pendingApprovalDesc: language === 'hi' ? 'आपकी प्रोफ़ाइल एडमिन द्वारा समीक्षा के लिए लंबित है। स्वीकृति तक अन्य उपयोगकर्ताओं को दिखाई नहीं देगी।' : 'Your profile is pending review by admin. It will not be visible to other users until approved.',
+    // Profile deletion flow translations
+    selectReason: language === 'hi' ? 'कारण चुनें' : 'Select Reason',
+    reasonRequired: language === 'hi' ? 'कृपया कारण चुनें' : 'Please select a reason',
+    next: language === 'hi' ? 'आगे' : 'Next',
+    back: language === 'hi' ? 'पीछे' : 'Back',
+    congratulations: language === 'hi' ? 'बधाई हो!' : 'Congratulations!',
+    foundMatchHere: language === 'hi' ? 'शादी पार्टनर सर्च पर मिला मैच' : 'Found match on Shaadi Partner Search',
+    foundMatchElsewhere: language === 'hi' ? 'अन्य प्लेटफॉर्म पर मिला मैच' : 'Found match elsewhere',
+    foundMatchTraditional: language === 'hi' ? 'पारंपरिक/पारिवारिक व्यवस्था से' : 'Traditional/Family arrangement',
+    notInterestedMatrimony: language === 'hi' ? 'विवाह में अभी रुचि नहीं' : 'Not interested in marriage right now',
+    takingBreak: language === 'hi' ? 'कुछ समय के लिए विराम' : 'Taking a break',
+    privacyConcerns: language === 'hi' ? 'गोपनीयता/सुरक्षा चिंता' : 'Privacy/Security concerns',
+    familyDecision: language === 'hi' ? 'पारिवारिक निर्णय' : 'Family decision',
+    technicalIssues: language === 'hi' ? 'तकनीकी समस्याएं' : 'Technical issues',
+    poorExperience: language === 'hi' ? 'सेवा से संतुष्ट नहीं' : 'Not satisfied with service',
+    otherReason: language === 'hi' ? 'अन्य कारण' : 'Other reason',
+    specifyReason: language === 'hi' ? 'कृपया कारण बताएं' : 'Please specify the reason',
+    selectPartner: language === 'hi' ? 'अपना पार्टनर चुनें' : 'Select Your Partner',
+    selectPartnerDesc: language === 'hi' ? 'जिस व्यक्ति से आपकी शादी तय हुई है, उन्हें चुनें' : 'Select the person you are getting married to',
+    selectFromAccepted: language === 'hi' ? 'स्वीकृत रुचियों में से चुनें' : 'Select from accepted interests',
+    noAcceptedInterests: language === 'hi' ? 'कोई स्वीकृत रुचि नहीं मिली' : 'No accepted interests found',
+    successStoryConsent: language === 'hi' ? 'सफलता की कहानी' : 'Success Story',
+    successStoryConsentDesc: language === 'hi' ? 'क्या आप अपनी सफलता की कहानी हमारी वेबसाइट पर साझा करना चाहेंगे? इससे अन्य लोगों को प्रेरणा मिलेगी।' : 'Would you like to share your success story on our website? This will inspire others.',
+    consentPublish: language === 'hi' ? 'हां, मैं सफलता की कहानी प्रकाशित करने की अनुमति देता/देती हूं' : 'Yes, I consent to publish our success story',
+    consentPhotos: language === 'hi' ? 'मेरी तस्वीरों का उपयोग करने की अनुमति है' : 'I allow using my photos',
+    consentName: language === 'hi' ? 'मेरे असली नाम का उपयोग करने की अनुमति है' : 'I allow using my real name',
+    partnerConsentRequired: language === 'hi' ? 'नोट: आपके पार्टनर की सहमति भी आवश्यक है। उन्हें सूचित किया जाएगा।' : 'Note: Your partner\'s consent is also required. They will be notified.',
+    successStoryReward: language === 'hi' ? '🎁 दोनों की सहमति पर, आपको विवाह उपहार मिलेगा!' : '🎁 Upon both consents, you will receive wedding goodies!',
+    feedbackOptional: language === 'hi' ? 'प्रतिक्रिया (वैकल्पिक)' : 'Feedback (Optional)',
+    feedbackPlaceholder: language === 'hi' ? 'अपना अनुभव साझा करें...' : 'Share your experience...',
+    partnerNotified: language === 'hi' ? 'आपके पार्टनर को सूचित किया जाएगा' : 'Your partner will be notified',
+    thankYouSuccess: language === 'hi' ? 'धन्यवाद! आपकी सफलता की कहानी हमें प्रेरित करती है।' : 'Thank you! Your success story inspires us.',
+    proceedToVerify: language === 'hi' ? 'सत्यापित करें और हटाएं' : 'Verify & Delete',
+    testimonialLabel: language === 'hi' ? 'अपनी कहानी साझा करें (वैकल्पिक)' : 'Share Your Story (Optional)',
+    testimonialPlaceholder: language === 'hi' ? 'आपकी प्रेम कहानी कैसे शुरू हुई? अन्य लोगों को प्रेरित करें...' : 'How did your love story begin? Inspire others...',
+    testimonialHint: language === 'hi' ? 'आपकी कहानी एडमिन द्वारा समीक्षा के बाद प्रकाशित की जाएगी' : 'Your story will be published after admin review',
+    consentPartnerDelete: language === 'hi' ? 'मेरे पार्टनर की प्रोफाइल भी हटाने की सहमति है' : 'I consent to delete my partner\'s profile too',
+    consentPartnerDeleteHint: language === 'hi' ? 'दोनों की सहमति पर ही पार्टनर की प्रोफाइल हटाई जाएगी' : 'Partner\'s profile will only be deleted upon mutual consent',
   }
+
+  // Deletion reason options
+  const deletionReasonOptions: { value: ProfileDeletionReason; label: string; icon: React.ReactNode }[] = [
+    { value: 'found-match-shaadi-partner-search', label: t.foundMatchHere, icon: <Heart size={20} weight="fill" className="text-rose-500" /> },
+    { value: 'found-match-elsewhere', label: t.foundMatchElsewhere, icon: <Heart size={20} className="text-rose-400" /> },
+    { value: 'found-match-traditional', label: t.foundMatchTraditional, icon: <UserCirclePlus size={20} className="text-amber-500" /> },
+    { value: 'not-interested-matrimony', label: t.notInterestedMatrimony, icon: <HeartBreak size={20} className="text-gray-500" /> },
+    { value: 'taking-break', label: t.takingBreak, icon: <Calendar size={20} className="text-blue-500" /> },
+    { value: 'privacy-concerns', label: t.privacyConcerns, icon: <Warning size={20} className="text-orange-500" /> },
+    { value: 'family-decision', label: t.familyDecision, icon: <House size={20} className="text-purple-500" /> },
+    { value: 'technical-issues', label: t.technicalIssues, icon: <Warning size={20} className="text-red-500" /> },
+    { value: 'poor-experience', label: t.poorExperience, icon: <Warning size={20} className="text-yellow-500" /> },
+    { value: 'other', label: t.otherReason, icon: <ChatCircle size={20} className="text-gray-500" /> },
+  ]
 
   // Helper functions for displaying lifestyle values
   const getDietLabel = (diet: string | undefined) => {
@@ -258,14 +344,58 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
 
   const handleDeleteRequest = () => {
     setShowDeleteDialog(true)
-    setDeleteStep('confirm')
+    setDeleteStep('reason')
+    // Reset all deletion state
+    setDeletionReason('')
+    setDeletionReasonDetails('')
+    setSelectedPartnerId('')
+    setConsentToPublish(false)
+    setConsentForPhotos(false)
+    setConsentForName(false)
+    setFeedbackMessage('')
     setEnteredOtp('')
+    setGeneratedOtp('')
+  }
+
+  const handleReasonNext = () => {
+    if (!deletionReason) {
+      toast.error(t.reasonRequired)
+      return
+    }
+    
+    if (deletionReason === 'other' && !deletionReasonDetails.trim()) {
+      toast.error(t.specifyReason)
+      return
+    }
+    
+    // If found match from this platform, ask for partner selection
+    if (deletionReason === 'found-match-shaadi-partner-search') {
+      setDeleteStep('partner-select')
+    } else {
+      // For other reasons, skip to OTP
+      setDeleteStep('otp')
+      handleSendOtp()
+    }
+  }
+
+  const handlePartnerSelectNext = () => {
+    if (!selectedPartnerId) {
+      toast.error(language === 'hi' ? 'कृपया अपना पार्टनर चुनें' : 'Please select your partner')
+      return
+    }
+    // Go to consent step
+    setDeleteStep('consent')
+  }
+
+  const handleConsentNext = () => {
+    // Proceed to OTP verification
+    setDeleteStep('otp')
+    handleSendOtp()
   }
 
   const handleSendOtp = () => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
     setGeneratedOtp(otp)
-    setDeleteStep('otp')
     toast.info(t.otpSent, {
       description: `OTP: ${otp}`,
       duration: 10000
@@ -279,20 +409,64 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
     }
     
     if (onDeleteProfile && profile) {
-      onDeleteProfile(profile.profileId)
-      toast.success(t.profileDeleted)
-      setShowDeleteDialog(false)
-      setDeleteStep('confirm')
-      setEnteredOtp('')
-      setGeneratedOtp('')
+      // Prepare deletion data
+      const selectedPartner = acceptedPartnerProfiles.find(p => p.profileId === selectedPartnerId)
+      const deletionData: ProfileDeletionData = {
+        reason: deletionReason as ProfileDeletionReason,
+        reasonDetails: deletionReasonDetails || undefined,
+        partnerId: selectedPartnerId || undefined,
+        partnerName: selectedPartner?.fullName || selectedPartner?.firstName || undefined,
+        consentToPublish,
+        consentForPhotos,
+        consentForName,
+        feedbackMessage: feedbackMessage || undefined,
+        testimonial: testimonial || undefined,
+        consentToDeletePartner,
+      }
+      
+      onDeleteProfile(profile.profileId, deletionData)
+      
+      if (deletionReason === 'found-match-shaadi-partner-search' && consentToPublish) {
+        toast.success(t.thankYouSuccess, {
+          description: t.partnerNotified,
+          duration: 5000
+        })
+      } else {
+        toast.success(t.profileDeleted)
+      }
+      
+      handleCloseDeleteDialog()
     }
   }
 
   const handleCloseDeleteDialog = () => {
     setShowDeleteDialog(false)
-    setDeleteStep('confirm')
+    setDeleteStep('reason')
+    setDeletionReason('')
+    setDeletionReasonDetails('')
+    setSelectedPartnerId('')
+    setConsentToPublish(false)
+    setConsentForPhotos(false)
+    setConsentForName(false)
+    setFeedbackMessage('')
+    setTestimonial('')
+    setConsentToDeletePartner(false)
     setEnteredOtp('')
     setGeneratedOtp('')
+  }
+
+  const handleDeleteStepBack = () => {
+    if (deleteStep === 'partner-select') {
+      setDeleteStep('reason')
+    } else if (deleteStep === 'consent') {
+      setDeleteStep('partner-select')
+    } else if (deleteStep === 'otp') {
+      if (deletionReason === 'found-match-shaadi-partner-search') {
+        setDeleteStep('consent')
+      } else {
+        setDeleteStep('reason')
+      }
+    }
   }
 
   if (!profile) {
@@ -351,29 +525,268 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
           </div>
         </div>
 
-        {/* Delete Profile Dialog */}
+        {/* Delete Profile Dialog - Multi-step flow */}
         <Dialog open={showDeleteDialog} onOpenChange={handleCloseDeleteDialog}>
-          <DialogContent>
+          <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-destructive">
-                <Trash size={24} />
-                {t.deleteConfirmTitle}
+              <DialogTitle className="flex items-center gap-2">
+                {deleteStep === 'consent' ? (
+                  <>
+                    <Confetti size={24} className="text-amber-500" />
+                    {t.congratulations}
+                  </>
+                ) : (
+                  <>
+                    <Trash size={24} className="text-destructive" />
+                    {t.deleteConfirmTitle}
+                  </>
+                )}
               </DialogTitle>
               <DialogDescription>
-                {t.deleteConfirmDesc}
+                {deleteStep === 'consent' 
+                  ? t.successStoryConsentDesc 
+                  : t.deleteConfirmDesc}
               </DialogDescription>
             </DialogHeader>
             
-            {deleteStep === 'confirm' ? (
-              <div className="flex gap-3 mt-4">
-                <Button variant="outline" onClick={handleCloseDeleteDialog} className="flex-1">
-                  {t.cancel}
-                </Button>
-                <Button variant="destructive" onClick={handleSendOtp} className="flex-1">
-                  {t.sendOtp}
-                </Button>
+            {/* Step 1: Reason Selection */}
+            {deleteStep === 'reason' && (
+              <div className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label>{t.selectReason}</Label>
+                  <div className="grid gap-2 max-h-[300px] overflow-y-auto">
+                    {deletionReasonOptions.map((option) => (
+                      <div
+                        key={option.value}
+                        onClick={() => setDeletionReason(option.value)}
+                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                          deletionReason === option.value 
+                            ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {option.icon}
+                        <span className="text-sm font-medium">{option.label}</span>
+                        {deletionReason === option.value && (
+                          <CheckCircle size={20} weight="fill" className="ml-auto text-primary" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Show text area for 'other' reason */}
+                {deletionReason === 'other' && (
+                  <div className="space-y-2">
+                    <Label>{t.specifyReason}</Label>
+                    <Textarea
+                      value={deletionReasonDetails}
+                      onChange={(e) => setDeletionReasonDetails(e.target.value)}
+                      placeholder={t.specifyReason}
+                      rows={3}
+                    />
+                  </div>
+                )}
+                
+                {/* Optional feedback for all reasons */}
+                <div className="space-y-2">
+                  <Label>{t.feedbackOptional}</Label>
+                  <Textarea
+                    value={feedbackMessage}
+                    onChange={(e) => setFeedbackMessage(e.target.value)}
+                    placeholder={t.feedbackPlaceholder}
+                    rows={2}
+                  />
+                </div>
+                
+                <div className="flex gap-3 mt-4">
+                  <Button variant="outline" onClick={handleCloseDeleteDialog} className="flex-1">
+                    {t.cancel}
+                  </Button>
+                  <Button 
+                    onClick={handleReasonNext} 
+                    className="flex-1"
+                    disabled={!deletionReason}
+                  >
+                    {t.next}
+                  </Button>
+                </div>
               </div>
-            ) : (
+            )}
+            
+            {/* Step 2: Partner Selection (only for found-match-shaadi-partner-search) */}
+            {deleteStep === 'partner-select' && (
+              <div className="space-y-4 mt-4">
+                <Alert className="bg-rose-50 border-rose-200">
+                  <Heart size={20} weight="fill" className="text-rose-500" />
+                  <AlertTitle className="text-rose-700">{t.congratulations}</AlertTitle>
+                  <AlertDescription className="text-rose-600">
+                    {t.selectPartnerDesc}
+                  </AlertDescription>
+                </Alert>
+                
+                <div className="space-y-2">
+                  <Label>{t.selectFromAccepted}</Label>
+                  {acceptedPartnerProfiles.length > 0 ? (
+                    <Select value={selectedPartnerId} onValueChange={setSelectedPartnerId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t.selectPartner} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {acceptedPartnerProfiles.map((partner) => (
+                          <SelectItem key={partner.profileId} value={partner.profileId}>
+                            <div className="flex items-center gap-2">
+                              {partner.photos?.[0] ? (
+                                <img 
+                                  src={partner.photos[0]} 
+                                  alt={partner.fullName || partner.firstName}
+                                  className="w-8 h-8 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                  <User size={16} className="text-gray-500" />
+                                </div>
+                              )}
+                              <div>
+                                <span className="font-medium">{partner.fullName || partner.firstName}</span>
+                                <span className="text-muted-foreground ml-2 text-xs">
+                                  ({partner.profileId})
+                                </span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Alert>
+                      <Warning size={18} />
+                      <AlertDescription>{t.noAcceptedInterests}</AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+                
+                <div className="flex gap-3 mt-4">
+                  <Button variant="outline" onClick={handleDeleteStepBack} className="flex-1">
+                    {t.back}
+                  </Button>
+                  <Button 
+                    onClick={handlePartnerSelectNext} 
+                    className="flex-1"
+                    disabled={!selectedPartnerId}
+                  >
+                    {t.next}
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {/* Step 3: Success Story Consent (only for found-match-shaadi-partner-search) */}
+            {deleteStep === 'consent' && (
+              <div className="space-y-4 mt-4">
+                <div className="p-4 rounded-lg bg-gradient-to-r from-amber-50 to-rose-50 border border-amber-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Gift size={24} className="text-amber-600" />
+                    <span className="font-semibold text-amber-800">{t.successStoryReward}</span>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="consent-publish"
+                        checked={consentToPublish}
+                        onCheckedChange={(checked) => setConsentToPublish(checked as boolean)}
+                      />
+                      <Label htmlFor="consent-publish" className="text-sm leading-relaxed cursor-pointer">
+                        {t.consentPublish}
+                      </Label>
+                    </div>
+                    
+                    {consentToPublish && (
+                      <>
+                        <div className="flex items-start gap-3 ml-6">
+                          <Checkbox
+                            id="consent-photos"
+                            checked={consentForPhotos}
+                            onCheckedChange={(checked) => setConsentForPhotos(checked as boolean)}
+                          />
+                          <Label htmlFor="consent-photos" className="text-sm cursor-pointer">
+                            {t.consentPhotos}
+                          </Label>
+                        </div>
+                        
+                        <div className="flex items-start gap-3 ml-6">
+                          <Checkbox
+                            id="consent-name"
+                            checked={consentForName}
+                            onCheckedChange={(checked) => setConsentForName(checked as boolean)}
+                          />
+                          <Label htmlFor="consent-name" className="text-sm cursor-pointer">
+                            {t.consentName}
+                          </Label>
+                        </div>
+                        
+                        {/* Testimonial Input */}
+                        <div className="ml-6 mt-3">
+                          <Label htmlFor="testimonial" className="text-sm font-medium text-gray-700">
+                            {t.testimonialLabel}
+                          </Label>
+                          <Textarea
+                            id="testimonial"
+                            value={testimonial}
+                            onChange={(e) => setTestimonial(e.target.value)}
+                            placeholder={t.testimonialPlaceholder}
+                            className="mt-1"
+                            rows={3}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {t.testimonialHint}
+                          </p>
+                        </div>
+                        
+                        {/* Partner Profile Delete Consent */}
+                        <div className="flex items-start gap-3 ml-6 mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                          <Checkbox
+                            id="consent-partner-delete"
+                            checked={consentToDeletePartner}
+                            onCheckedChange={(checked) => setConsentToDeletePartner(checked as boolean)}
+                          />
+                          <div>
+                            <Label htmlFor="consent-partner-delete" className="text-sm cursor-pointer font-medium text-blue-800">
+                              {t.consentPartnerDelete}
+                            </Label>
+                            <p className="text-xs text-blue-600 mt-1">
+                              {t.consentPartnerDeleteHint}
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                
+                {consentToPublish && (
+                  <Alert className="bg-blue-50 border-blue-200">
+                    <Heart size={18} className="text-blue-500" />
+                    <AlertDescription className="text-blue-700 text-sm">
+                      {t.partnerConsentRequired}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                <div className="flex gap-3 mt-4">
+                  <Button variant="outline" onClick={handleDeleteStepBack} className="flex-1">
+                    {t.back}
+                  </Button>
+                  <Button onClick={handleConsentNext} className="flex-1">
+                    {t.proceedToVerify}
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {/* Step 4: OTP Verification */}
+            {deleteStep === 'otp' && (
               <div className="space-y-4 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="delete-otp">{t.enterOtp}</Label>
@@ -387,9 +800,30 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
                     autoComplete="one-time-code"
                   />
                 </div>
+                
+                {/* Summary of what will happen */}
+                <div className="p-3 rounded-lg bg-gray-50 border text-sm space-y-1">
+                  <p className="font-medium text-gray-700">
+                    {language === 'hi' ? 'सारांश:' : 'Summary:'}
+                  </p>
+                  <p className="text-gray-600">
+                    • {deletionReasonOptions.find(o => o.value === deletionReason)?.label}
+                  </p>
+                  {selectedPartnerId && (
+                    <p className="text-gray-600">
+                      • {language === 'hi' ? 'पार्टनर:' : 'Partner:'} {acceptedPartnerProfiles.find(p => p.profileId === selectedPartnerId)?.fullName}
+                    </p>
+                  )}
+                  {consentToPublish && (
+                    <p className="text-green-600">
+                      • {language === 'hi' ? 'सफलता की कहानी के लिए सहमति दी' : 'Consented for success story'}
+                    </p>
+                  )}
+                </div>
+                
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={handleCloseDeleteDialog} className="flex-1">
-                    {t.cancel}
+                  <Button variant="outline" onClick={handleDeleteStepBack} className="flex-1">
+                    {t.back}
                   </Button>
                   <Button variant="destructive" onClick={handleConfirmDelete} className="flex-1">
                     {t.confirmDelete}

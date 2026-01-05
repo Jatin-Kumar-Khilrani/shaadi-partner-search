@@ -495,9 +495,28 @@ Disclaimer:
 • डेटा 90 दिनों तक सुरक्षित रहेगा
 
 प्रोफाइल विलोपन:
-• OTP सत्यापन के बाद प्रोफाइल हटाई जा सकती है
-• विलोपन के बाद डेटा पुनर्प्राप्त नहीं किया जा सकता
-• विवाह की स्थिति में कृपया हमें सूचित करें
+• OTP सत्यापन के बाद प्रोफाइल हटाई जा सकती है (सॉफ्ट डिलीट)
+• विलोपन के समय कारण बताना अनिवार्य है
+• विलोपन के बाद आपकी प्रोफाइल अन्य उपयोगकर्ताओं को दिखाई नहीं देगी
+• डेटा आंतरिक रिकॉर्ड के लिए सुरक्षित रहेगा
+
+विलोपन कारण:
+• शादी पार्टनर सर्च पर मैच मिला
+• अन्य प्लेटफॉर्म पर मैच मिला
+• पारंपरिक/पारिवारिक व्यवस्था से मैच
+• विवाह में अभी रुचि नहीं
+• कुछ समय के लिए विराम
+• गोपनीयता/सुरक्षा चिंता
+• पारिवारिक निर्णय
+• तकनीकी समस्याएं
+• सेवा से असंतुष्टि
+• अन्य कारण
+
+पार्टनर प्रोफाइल का संयुक्त विलोपन:
+• यदि आपने इस प्लेटफॉर्म पर मैच पाया है, तो आप अपने पार्टनर की प्रोफाइल भी हटाने की सहमति दे सकते हैं
+• दोनों पक्षों की सहमति आवश्यक है
+• पहले विलोपन करने वाला सहमति देगा, फिर पार्टनर को सूचित किया जाएगा
+• पार्टनर की सहमति मिलने पर दोनों प्रोफाइल सॉफ्ट डिलीट हो जाएंगी
 
 व्यवस्थापक द्वारा निष्कासन:
 • नियमों के उल्लंघन पर प्रोफाइल निलंबित की जा सकती है
@@ -509,9 +528,28 @@ Disclaimer:
 • Data remains secure for 90 days
 
 Profile Deletion:
-• Profile can be deleted after OTP verification
-• Data cannot be recovered after deletion
-• Please inform us in case of marriage
+• Profile can be deleted after OTP verification (soft delete)
+• Providing a reason for deletion is mandatory
+• After deletion, your profile won't be visible to other users
+• Data is retained for internal records
+
+Deletion Reasons:
+• Found match on Shaadi Partner Search
+• Found match on other platform
+• Found match through traditional/family arrangement
+• Not interested in marriage right now
+• Taking a break
+• Privacy/security concerns
+• Family decision
+• Technical issues
+• Not satisfied with service
+• Other reason
+
+Joint Partner Profile Deletion:
+• If you found a match on this platform, you can consent to delete your partner's profile too
+• Mutual consent from both parties is required
+• The person deleting first gives consent, then partner is notified
+• Upon partner's consent, both profiles will be soft deleted
 
 Admin Removal:
 • Profile may be suspended for rule violations
@@ -519,8 +557,77 @@ Admin Removal:
 • No refund on suspended profiles`
     },
     {
+      icon: <Heart size={24} weight="bold" className="text-primary" />,
+      title: isHindi ? '10. सफलता की कहानियां और प्रशंसापत्र' : '10. Success Stories and Testimonials',
+      content: isHindi
+        ? `सफलता की कहानी कार्यक्रम:
+
+जब आप इस प्लेटफॉर्म के माध्यम से अपना जीवनसाथी पाते हैं, तो आप हमारी सफलता की कहानी कार्यक्रम में भाग ले सकते हैं।
+
+सहमति आवश्यकताएं:
+• सफलता की कहानी प्रकाशित करने के लिए दोनों पक्षों की सहमति अनिवार्य है
+• आप तस्वीरों के उपयोग की अनुमति दे सकते हैं (वैकल्पिक)
+• आप असली नाम के उपयोग की अनुमति दे सकते हैं (वैकल्पिक)
+• प्रत्येक पक्ष स्वतंत्र रूप से सहमति दे सकता है
+
+प्रशंसापत्र (Testimonials):
+• आप अपना अनुभव साझा कर सकते हैं (वैकल्पिक)
+• प्रशंसापत्र एडमिन द्वारा समीक्षा के बाद ही प्रकाशित होंगे
+• अनुचित या आपत्तिजनक सामग्री अस्वीकार की जाएगी
+• दोनों पक्ष अलग-अलग प्रशंसापत्र दे सकते हैं
+
+एकतरफा प्रकाशन (जब पार्टनर प्रतिक्रिया न दे):
+• यदि आपका पार्टनर 30 दिनों के भीतर प्रतिक्रिया नहीं देता
+• एडमिन आपकी सहमति और प्रशंसापत्र के आधार पर प्रकाशन का निर्णय ले सकता है
+• केवल आपका नाम और जानकारी प्रकाशित होगी (पार्टनर का नहीं)
+• यह सुनिश्चित करता है कि अच्छी कहानियां साझा हों भले ही एक पक्ष प्रतिक्रिया न दे
+
+विवाह उपहार (Wedding Goodies):
+• दोनों की सहमति पर, जोड़े को विवाह उपहार मिल सकता है
+• उपहार का निर्णय एडमिन द्वारा किया जाता है
+• उपहार वितरण की स्थिति ट्रैक की जाती है
+• उपहार का दावा करने के लिए पता प्रदान करना आवश्यक है
+
+गोपनीयता:
+• प्रकाशित कहानियां केवल सहमति के अनुसार जानकारी दिखाएंगी
+• आप कभी भी अपनी कहानी हटाने का अनुरोध कर सकते हैं
+• हटाने का अनुरोध 7 कार्य दिवसों में प्रोसेस होगा`
+        : `Success Story Program:
+
+When you find your life partner through this platform, you can participate in our Success Story program.
+
+Consent Requirements:
+• Consent from both parties is mandatory to publish a success story
+• You can consent to use of photos (optional)
+• You can consent to use of real names (optional)
+• Each party can provide consent independently
+
+Testimonials:
+• You can share your experience (optional)
+• Testimonials will only be published after admin review
+• Inappropriate or objectionable content will be rejected
+• Both parties can provide separate testimonials
+
+Single-Party Publishing (When Partner Doesn't Respond):
+• If your partner doesn't respond within 30 days
+• Admin may decide to publish based on your consent and testimonial
+• Only your name and information will be published (not partner's)
+• This ensures good stories are shared even if one party doesn't respond
+
+Wedding Goodies:
+• Upon mutual consent, couples may receive wedding goodies
+• Goodies are determined by admin
+• Dispatch and delivery status is tracked
+• Address must be provided to claim goodies
+
+Privacy:
+• Published stories will only show information as per consent
+• You can request removal of your story anytime
+• Removal requests processed within 7 business days`
+    },
+    {
       icon: <Warning size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '10. दायित्व की सीमा' : '10. Limitation of Liability',
+      title: isHindi ? '11. दायित्व की सीमा' : '11. Limitation of Liability',
       content: isHindi
         ? `ShaadiPartnerSearch निम्नलिखित के लिए उत्तरदायी नहीं है:
 
@@ -551,7 +658,7 @@ In no event shall ShaadiPartnerSearch's liability exceed the membership fee paid
     },
     {
       icon: <Shield size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '11. क्षतिपूर्ति (Indemnification)' : '11. Indemnification',
+      title: isHindi ? '12. क्षतिपूर्ति (Indemnification)' : '12. Indemnification',
       content: isHindi
         ? `क्षतिपूर्ति की शर्तें:
 
@@ -600,7 +707,7 @@ This indemnification obligation shall survive the termination of your membership
     },
     {
       icon: <Handshake size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '12. विवाद समाधान' : '12. Dispute Resolution',
+      title: isHindi ? '13. विवाद समाधान' : '13. Dispute Resolution',
       content: isHindi
         ? `विवाद समाधान प्रक्रिया:
 
@@ -645,7 +752,7 @@ These Terms and Conditions shall be governed by Indian law.`
     },
     {
       icon: <Eye size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '13. बौद्धिक संपदा' : '13. Intellectual Property',
+      title: isHindi ? '14. बौद्धिक संपदा' : '14. Intellectual Property',
       content: isHindi
         ? `ShaadiPartnerSearch की सभी सामग्री, जिसमें शामिल हैं:
 • लोगो, डिज़ाइन और ट्रेडमार्क
@@ -674,7 +781,7 @@ User Content:
     },
     {
       icon: <Envelope size={24} weight="bold" className="text-primary" />,
-      title: isHindi ? '14. संपर्क और शिकायत' : '14. Contact and Grievance',
+      title: isHindi ? '15. संपर्क और शिकायत' : '15. Contact and Grievance',
       content: isHindi
         ? `शिकायत निवारण अधिकारी:
 (सूचना प्रौद्योगिकी अधिनियम, 2000 और DPDP Act, 2023 के अनुसार)

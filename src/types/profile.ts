@@ -21,6 +21,100 @@ export type ResidentialStatus =
   | 'tourist-visa' 
   | 'other'
 
+// Profile Deletion Reasons
+export type ProfileDeletionReason = 
+  | 'found-match-shaadi-partner-search'  // Found match from this website
+  | 'found-match-elsewhere'              // Found match from another platform
+  | 'not-interested-matrimony'           // No longer interested in marriage
+  | 'taking-break'                       // Taking a break from search
+  | 'privacy-concerns'                   // Privacy/security concerns
+  | 'family-decision'                    // Family decided otherwise
+  | 'technical-issues'                   // Technical issues with platform
+  | 'poor-experience'                    // Not satisfied with service
+  | 'found-match-traditional'            // Found match through traditional/family arrangements
+  | 'other'                              // Other reason
+
+// Success Story - when couple finds match through this platform
+export interface SuccessStory {
+  id: string
+  // Profile information (preserved even after deletion)
+  profile1Id: string
+  profile1Name: string
+  profile1PhotoUrl?: string  // Photo consent required
+  profile1City?: string
+  profile1Gender: Gender
+  
+  profile2Id: string
+  profile2Name: string
+  profile2PhotoUrl?: string  // Photo consent required
+  profile2City?: string
+  profile2Gender: Gender
+  
+  // Consent management
+  profile1Consent: boolean
+  profile1ConsentAt?: string
+  profile1PhotoConsent: boolean  // Consent to use photos
+  profile1NameConsent: boolean   // Consent to use real name
+  profile2Consent: boolean
+  profile2ConsentAt?: string
+  profile2PhotoConsent: boolean  // Consent to use photos
+  profile2NameConsent: boolean   // Consent to use real name
+  bothConsented: boolean
+  
+  // Testimonials from both parties (optional)
+  profile1Testimonial?: string         // Optional testimonial/comment from profile1
+  profile1TestimonialHi?: string       // Hindi version of testimonial
+  profile1TestimonialStatus?: 'pending' | 'approved' | 'rejected'  // Admin review status
+  profile1TestimonialRejectedReason?: string
+  profile2Testimonial?: string         // Optional testimonial/comment from profile2
+  profile2TestimonialHi?: string       // Hindi version of testimonial
+  profile2TestimonialStatus?: 'pending' | 'approved' | 'rejected'  // Admin review status
+  profile2TestimonialRejectedReason?: string
+  
+  // Story details (optional - can be added later)
+  storyText?: string
+  storyTextHi?: string
+  weddingDate?: string
+  weddingPhotoUrls?: string[]
+  
+  // Status
+  status: 'pending-consent' | 'awaiting-partner' | 'approved' | 'published' | 'rejected'
+  submittedAt: string
+  publishedAt?: string
+  approvedBy?: string
+  rejectedReason?: string
+  
+  // Single-party publish (when partner doesn't respond)
+  singlePartyPublish?: boolean    // True if published with only one party's consent (admin decision)
+  singlePartyPublishReason?: string  // Admin notes for single-party publish
+  
+  // Rewards
+  rewardStatus?: 'pending' | 'dispatched' | 'delivered'
+  rewardDetails?: string
+  rewardDispatchedAt?: string
+  rewardDeliveredAt?: string
+  rewardNotes?: string
+  
+  // Notification tracking
+  partnerNotifiedAt?: string
+  partnerReminderCount?: number
+  partnerReminderLastSentAt?: string
+}
+
+// Profile deletion request data
+export interface ProfileDeletionData {
+  reason: ProfileDeletionReason
+  reasonDetails?: string  // Additional details for 'other' reason
+  partnerId?: string      // If found match from this platform
+  partnerName?: string    // Partner's name for display
+  consentToPublish: boolean  // Consent to publish as success story
+  consentForPhotos: boolean  // Consent to use photos
+  consentForName: boolean    // Consent to use real name
+  feedbackMessage?: string   // Optional feedback about the platform
+  testimonial?: string       // Optional testimonial/comment for success story
+  consentToDeletePartner: boolean  // Consent to soft delete partner's profile too
+}
+
 // Boost Pack purchase record
 export interface BoostPackPurchase {
   id: string
@@ -116,7 +210,18 @@ export interface Profile {
   // Soft delete feature - profile hidden from everyone but admin
   isDeleted?: boolean
   deletedAt?: string
-  deletedReason?: string
+  deletedReason?: ProfileDeletionReason
+  deletedReasonDetails?: string  // Additional details for 'other' reason
+  // Success story related fields (when deleted due to finding match from this platform)
+  deletionPartnerId?: string     // Partner profile ID if found match here
+  deletionPartnerName?: string   // Partner name for display
+  successStoryConsent?: boolean  // Consent to be featured in success stories
+  successStoryPhotoConsent?: boolean  // Consent to use photos
+  successStoryNameConsent?: boolean   // Consent to use real name
+  successStoryId?: string        // Reference to success story if created
+  deletionFeedback?: string      // Optional feedback about the platform
+  deletionTestimonial?: string   // Optional testimonial/comment for success story
+  deletionConsentToDeletePartner?: boolean  // Consent to soft delete partner's profile too
   // DigiLocker/Aadhaar verification for identity proof
   digilockerVerified?: boolean
   digilockerVerifiedAt?: string

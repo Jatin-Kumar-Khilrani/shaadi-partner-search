@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react'
 import { useKV } from '@/hooks/useKV'
 import { logger } from '@/lib/logger'
 import { Button } from '@/components/ui/button'
@@ -22,16 +22,27 @@ import { MyProfile } from '@/components/MyProfile'
 import { Settings } from '@/components/Settings'
 import { WeddingServices } from '@/components/WeddingServicesPage'
 import { ReadinessDashboard } from '@/components/readiness'
-import type { Profile, SearchFilters, WeddingService, BlockedProfile, UserNotification } from '@/types/profile'
+import type { Profile, SearchFilters, WeddingService, BlockedProfile, UserNotification, ProfileDeletionData, SuccessStory, ProfileDeletionReason } from '@/types/profile'
 import type { User } from '@/types/user'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
-import { AdminPanel } from '@/components/AdminPanel'
+// Lazy load AdminPanel - only needed for admins
+const AdminPanel = lazy(() => import('@/components/AdminPanel').then(m => ({ default: m.AdminPanel })))
 import { AdminLoginDialog } from '@/components/AdminLoginDialog'
 import { CookieConsent } from '@/components/CookieConsent'
 import { type Language } from '@/lib/translations'
 import { toast } from 'sonner'
 import { sampleWeddingServices } from '@/lib/sampleData'
+
+// Loading fallback for lazy-loaded components
+const AdminLoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+      <p className="text-muted-foreground">Loading Admin Panel...</p>
+    </div>
+  </div>
+)
 
 type View = 'home' | 'search-results' | 'admin' | 'my-matches' | 'my-activity' | 'chat' | 'my-profile' | 'wedding-services' | 'readiness' | 'inbox'
 
@@ -567,8 +578,14 @@ function App() {
     })
   }
 
-  // Handle soft delete profile (hide from everyone but admin)
-  const handleDeleteProfile = (profileId: string) => {
+  // Success stories KV store
+  const [successStories, setSuccessStories] = useKV<SuccessStory[]>('successStories', [])
+
+  // Handle soft delete profile (hide from everyone but admin) with deletion data
+  const handleDeleteProfile = (profileId: string, deletionData?: ProfileDeletionData) => {
+    const deletingProfile = profiles?.find(p => p.profileId === profileId)
+    
+    // Update the profile with deletion data
     setProfiles(current => {
       if (!current) return []
       return current.map(p => {
@@ -577,12 +594,127 @@ function App() {
             ...p, 
             isDeleted: true, 
             deletedAt: new Date().toISOString(),
-            deletedReason: 'User requested deletion'
+            deletedReason: deletionData?.reason || ('user-request' as ProfileDeletionReason),
+            deletedReasonDetails: deletionData?.reasonDetails,
+            deletionPartnerId: deletionData?.partnerId,
+            deletionPartnerName: deletionData?.partnerName,
+            successStoryConsent: deletionData?.consentToPublish,
+            successStoryPhotoConsent: deletionData?.consentForPhotos,
+            successStoryNameConsent: deletionData?.consentForName,
+            deletionFeedback: deletionData?.feedbackMessage,
+            deletionTestimonial: deletionData?.testimonial,
+            deletionConsentToDeletePartner: deletionData?.consentToDeletePartner,
           }
         }
         return p
       })
     })
+    
+    // If user found match from this platform and consented, create a success story
+    if (deletionData?.reason === 'found-match-shaadi-partner-search' && 
+        deletionData.partnerId && 
+        deletionData.consentToPublish &&
+        deletingProfile) {
+      
+      const partnerProfile = profiles?.find(p => p.profileId === deletionData.partnerId)
+      
+      if (partnerProfile) {
+        const newSuccessStory: SuccessStory = {
+          id: `ss-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          profile1Id: profileId,
+          profile1Name: deletionData.consentForName 
+            ? (deletingProfile.fullName || deletingProfile.firstName || 'Anonymous')
+            : (language === 'hi' ? 'गोपनीय' : 'Anonymous'),
+          profile1PhotoUrl: deletionData.consentForPhotos ? deletingProfile.photos?.[0] : undefined,
+          profile1City: deletingProfile.city || deletingProfile.location,
+          profile1Gender: deletingProfile.gender,
+          
+          profile2Id: deletionData.partnerId,
+          profile2Name: partnerProfile.fullName || partnerProfile.firstName || 'Anonymous',
+          profile2PhotoUrl: undefined, // Will be set when partner consents
+          profile2City: partnerProfile.city || partnerProfile.location,
+          profile2Gender: partnerProfile.gender,
+          
+          profile1Consent: true,
+          profile1ConsentAt: new Date().toISOString(),
+          profile1PhotoConsent: deletionData.consentForPhotos,
+          profile1NameConsent: deletionData.consentForName,
+          profile2Consent: false, // Awaiting partner consent
+          profile2ConsentAt: undefined,
+          profile2PhotoConsent: false,
+          profile2NameConsent: false,
+          bothConsented: false,
+          
+          // Add testimonial from profile1
+          profile1Testimonial: deletionData.testimonial,
+          profile1TestimonialStatus: deletionData.testimonial ? 'pending' : undefined,
+          
+          status: 'awaiting-partner',
+          submittedAt: new Date().toISOString(),
+          partnerNotifiedAt: new Date().toISOString(),
+          
+          rewardStatus: 'pending',
+        }
+        
+        // Add to success stories
+        setSuccessStories(current => [...(current || []), newSuccessStory])
+        
+        // Create notification for the partner about success story
+        const partnerNotification: UserNotification = {
+          id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          recipientProfileId: deletionData.partnerId,
+          type: 'interest_accepted', // Repurposing for now
+          title: 'Success Story Invitation',
+          titleHi: 'सफलता की कहानी निमंत्रण',
+          description: `${deletingProfile.fullName || deletingProfile.firstName} has invited you to be featured in our Success Stories! You may also receive wedding goodies.`,
+          descriptionHi: `${deletingProfile.fullName || deletingProfile.firstName} ने आपको सफलता की कहानियों में शामिल होने का निमंत्रण दिया है! आपको शादी के उपहार भी मिल सकते हैं।`,
+          senderProfileId: profileId,
+          senderName: deletingProfile.fullName || deletingProfile.firstName,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        }
+        
+        setUserNotifications(current => [...(current || []), partnerNotification])
+        
+        // If user consented to delete partner's profile too, send a notification about that
+        if (deletionData.consentToDeletePartner) {
+          const partnerDeleteNotification: UserNotification = {
+            id: `notif-delete-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            recipientProfileId: deletionData.partnerId,
+            type: 'interest_accepted', // Repurposing
+            title: 'Profile Deletion Request',
+            titleHi: 'प्रोफाइल हटाने का अनुरोध',
+            description: `${deletingProfile.fullName || deletingProfile.firstName} has requested to delete both profiles as you found each other on this platform. If you agree, please delete your profile to confirm.`,
+            descriptionHi: `${deletingProfile.fullName || deletingProfile.firstName} ने दोनों प्रोफाइल हटाने का अनुरोध किया है क्योंकि आपने एक-दूसरे को इस प्लेटफॉर्म पर पाया। यदि आप सहमत हैं, तो कृपया पुष्टि के लिए अपनी प्रोफाइल हटाएं।`,
+            senderProfileId: profileId,
+            senderName: deletingProfile.fullName || deletingProfile.firstName,
+            isRead: false,
+            createdAt: new Date().toISOString(),
+          }
+          
+          setUserNotifications(current => [...(current || []), partnerDeleteNotification])
+        }
+        
+        // Update the profile to link to success story
+        setProfiles(current => {
+          if (!current) return []
+          return current.map(p => {
+            if (p.profileId === profileId) {
+              return { ...p, successStoryId: newSuccessStory.id }
+            }
+            return p
+          })
+        })
+        
+        logger.info('Success story created, awaiting partner consent', { 
+          storyId: newSuccessStory.id,
+          profile1: profileId,
+          profile2: deletionData.partnerId,
+          hasTestimonial: !!deletionData.testimonial,
+          consentToDeletePartner: deletionData.consentToDeletePartner 
+        })
+      }
+    }
     // Clear login state from storage
     setLoggedInUser(null)
     try {
@@ -1508,7 +1640,11 @@ function App() {
           </section>
         )}
 
-        {currentView === 'admin' && <AdminPanel profiles={profiles} setProfiles={setProfiles} users={users} language={language} onLogout={() => { setIsAdminLoggedIn(false); setCurrentView('home'); try { localStorage.removeItem('adminLoggedIn'); } catch (e) { logger.error(e); } toast.info(language === 'hi' ? 'एडमिन से लॉगआउट हो गया' : 'Logged out from admin'); }} onLoginAsUser={(userId) => { setLoggedInUser(userId); setCurrentView('home'); toast.success(language === 'hi' ? `उपयोगकर्ता ${userId} के रूप में लॉगिन` : `Logged in as user ${userId}`); }} />}
+        {currentView === 'admin' && (
+          <Suspense fallback={<AdminLoadingFallback />}>
+            <AdminPanel profiles={profiles} setProfiles={setProfiles} users={users} language={language} onLogout={() => { setIsAdminLoggedIn(false); setCurrentView('home'); try { localStorage.removeItem('adminLoggedIn'); } catch (e) { logger.error(e); } toast.info(language === 'hi' ? 'एडमिन से लॉगआउट हो गया' : 'Logged out from admin'); }} onLoginAsUser={(userId) => { setLoggedInUser(userId); setCurrentView('home'); toast.success(language === 'hi' ? `उपयोगकर्ता ${userId} के रूप में लॉगिन` : `Logged in as user ${userId}`); }} />
+          </Suspense>
+        )}
 
         {currentView === 'my-matches' && (
           <MyMatches 
@@ -1553,6 +1689,7 @@ function App() {
         {currentView === 'my-profile' && (
           <MyProfile 
             profile={currentUserProfile}
+            profiles={profiles || []}
             language={language}
             onEdit={handleEditProfile}
             onDeleteProfile={handleDeleteProfile}

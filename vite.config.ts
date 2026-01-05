@@ -105,9 +105,19 @@ export default defineConfig({
             return 'readiness'
           }
           
-          // Admin components - only loaded for admins
+          // Admin components - only loaded for admins (lazy loaded)
           if (id.includes('AdminPanel') || id.includes('AdminLogin')) {
             return 'admin'
+          }
+          
+          // Terms and Conditions - large text content
+          if (id.includes('TermsAndConditions')) {
+            return 'terms'
+          }
+          
+          // Profile components - heavy components
+          if (id.includes('ProfileDetailDialog') || id.includes('RegistrationDialog')) {
+            return 'profile-dialogs'
           }
           
           // Chat components
