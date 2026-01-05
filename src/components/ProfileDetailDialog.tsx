@@ -570,7 +570,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
         </DialogHeader>
 
         <div className="space-y-6">
-          <section className="bg-white/60 dark:bg-gray-800/40 rounded-xl p-4 shadow-sm border border-rose-100 dark:border-rose-900/30">
+          <section className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm border border-rose-100 dark:border-rose-900/30">
             <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-rose-700 dark:text-rose-400">
               <div className="p-1.5 rounded-lg bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50">
                 <UserCircle size={20} weight="fill" className="text-rose-600 dark:text-rose-400" />
@@ -790,7 +790,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
           {canSeeAllDetails && profile.photos && profile.photos.length > 0 && (
             <>
               <Separator className="bg-rose-100 dark:bg-rose-900/30" />
-              <section className="bg-white/60 dark:bg-gray-800/40 rounded-xl p-4 shadow-sm border border-rose-100 dark:border-rose-900/30">
+              <section className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm border border-rose-100 dark:border-rose-900/30">
                 <h3 className="font-bold text-lg mb-3 flex items-center gap-2 text-rose-700 dark:text-rose-400">
                   <div className="p-1.5 rounded-lg bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50">
                     <Eye size={18} weight="fill" className="text-rose-600 dark:text-rose-400" />
@@ -1095,14 +1095,14 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
           {profile.bio && (
             <>
               <Separator className="bg-rose-100 dark:bg-rose-900/30" />
-              <section className="bg-white/60 dark:bg-gray-800/40 rounded-xl p-4 shadow-sm border border-rose-100 dark:border-rose-900/30">
+              <section className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm border border-rose-100 dark:border-rose-900/30">
                 <h3 className="font-bold text-lg mb-3 flex items-center gap-2 text-rose-700 dark:text-rose-400">
                   <div className="p-1.5 rounded-lg bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50">
                     <Heart size={20} weight="fill" className="text-rose-600 dark:text-rose-400" />
                   </div>
                   {t.bio}
                 </h3>
-                <p className={`text-gray-700 dark:text-gray-300 leading-relaxed italic border-l-4 border-rose-300 dark:border-rose-700 pl-4 ${blurContent ? 'blur-sm select-none' : ''}`}>
+                <p className={`text-gray-800 dark:text-gray-200 leading-relaxed italic border-l-4 border-rose-300 dark:border-rose-600 pl-4 bg-white/50 dark:bg-gray-900/50 py-2 rounded-r ${blurContent ? 'blur-sm select-none' : ''}`}>
                   "{profile.bio}"
                 </p>
                 {blurContent && (
@@ -1119,14 +1119,14 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
           {profile.familyDetails && (
             <>
               <Separator className="bg-rose-100 dark:bg-rose-900/30" />
-              <section className="bg-white/60 dark:bg-gray-800/40 rounded-xl p-4 shadow-sm border border-rose-100 dark:border-rose-900/30">
+              <section className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm border border-rose-100 dark:border-rose-900/30">
                 <h3 className="font-bold text-lg mb-3 flex items-center gap-2 text-rose-700 dark:text-rose-400">
                   <div className="p-1.5 rounded-lg bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50">
                     <UsersThree size={20} weight="fill" className="text-rose-600 dark:text-rose-400" />
                   </div>
                   {t.familyDetails}
                 </h3>
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{profile.familyDetails}</p>
+                <p className="text-gray-800 dark:text-gray-200 leading-relaxed">{profile.familyDetails}</p>
               </section>
             </>
           )}
@@ -1333,11 +1333,11 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
 
 function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-start gap-2.5 min-w-0 overflow-hidden p-2 rounded-lg hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-colors">
+    <div className="flex items-start gap-2.5 min-w-0 overflow-hidden p-2 rounded-lg bg-white/50 dark:bg-gray-900/50">
       <div className="text-rose-500 dark:text-rose-400 mt-0.5 flex-shrink-0">{icon}</div>
       <div className="min-w-0 flex-1 overflow-hidden">
-        <div className="text-xs text-gray-500 dark:text-gray-400 truncate mb-0.5">{label}</div>
-        <div className="font-medium text-gray-800 dark:text-gray-200 break-words" title={value}>{value}</div>
+        <div className="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5 font-medium">{label}</div>
+        <div className="font-semibold text-gray-900 dark:text-gray-100 break-words" title={value}>{value}</div>
       </div>
     </div>
   )

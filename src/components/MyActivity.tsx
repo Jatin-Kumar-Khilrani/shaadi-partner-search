@@ -971,15 +971,15 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                         const canAccept = alreadyChatted || remainingChats > 0
                         
                         return (
-                          <Card key={interest.id} className="hover:shadow-md transition-shadow">
-                            <CardContent className="pt-6">
-                              <div className="flex flex-col gap-4">
+                          <Card key={interest.id} className="hover:shadow-md transition-shadow border-rose-100 dark:border-rose-900/30">
+                            <CardContent className="py-3 px-4">
+                              <div className="flex flex-col gap-3">
                                 <div 
-                                  className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                                  className="flex items-center justify-between cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/20 -mx-2 px-2 py-1.5 rounded-lg transition-colors"
                                   onClick={() => profile && setSelectedProfileForDetails(profile)}
                                   title={t.clickToViewProfile}
                                 >
-                                  <div className="flex items-center gap-4">
+                                  <div className="flex items-center gap-3">
                                     {/* Profile Photo */}
                                     {profile?.photos?.[0] ? (
                                       <div 
@@ -987,30 +987,31 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                         onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
                                         title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
                                       >
+                                        <div className="absolute -inset-0.5 bg-gradient-to-tr from-rose-300 to-amber-200 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"></div>
                                         <img 
                                           src={profile.photos[0]} 
                                           alt={profile.fullName || ''}
-                                          className="w-14 h-14 rounded-full object-cover border-2 border-primary/20 group-hover:ring-2 group-hover:ring-primary/50 transition-all"
+                                          className="relative w-11 h-11 rounded-full object-cover border-2 border-white dark:border-gray-800 group-hover:scale-105 transition-transform"
                                         />
                                         <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                          <MagnifyingGlassPlus size={16} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                          <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </div>
                                       </div>
                                     ) : (
-                                      <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center">
-                                        <Heart size={24} weight="fill" className="text-accent" />
+                                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50 flex items-center justify-center">
+                                        <Heart size={20} weight="fill" className="text-rose-500" />
                                       </div>
                                     )}
                                     <div>
-                                      <p className="font-semibold text-primary hover:underline inline-flex items-center gap-1">
+                                      <p className="font-semibold text-gray-800 dark:text-gray-100 hover:text-rose-600 dark:hover:text-rose-400 inline-flex items-center gap-1 text-sm">
                                         {profile?.fullName || 'Unknown'}
-                                        <User size={12} weight="bold" className="opacity-60" />
+                                        <User size={10} weight="bold" className="opacity-60" />
                                       </p>
-                                      <p className="text-sm text-muted-foreground">{profile?.profileId || interest.fromProfileId}</p>
-                                      <p className="text-sm text-muted-foreground">
+                                      <p className="text-xs text-gray-500 dark:text-gray-400">{profile?.profileId || interest.fromProfileId}</p>
+                                      <p className="text-xs text-gray-600 dark:text-gray-300">
                                         {profile?.age} {t.years} • {profile?.location}
                                       </p>
-                                      <p className="text-xs text-muted-foreground">{t.sentOn}: {formatDate(interest.createdAt)}</p>
+                                      <p className="text-[10px] text-gray-400 dark:text-gray-500">{t.sentOn}: {formatDate(interest.createdAt)}</p>
                                     </div>
                                   </div>
                                   {getStatusBadge(interest.status)}
@@ -1022,20 +1023,20 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                         variant="default" 
                                         size="sm"
                                         onClick={() => handleAcceptInterest(interest.id)}
-                                        className="flex-1 bg-teal hover:bg-teal/90"
+                                        className="flex-1 bg-teal hover:bg-teal/90 h-8 text-xs"
                                         disabled={!canAccept}
                                         title={!canAccept ? t.chatLimitReached : ''}
                                       >
-                                        <Check size={16} className="mr-2" />
+                                        <Check size={14} className="mr-1" />
                                         {t.accept}
                                       </Button>
                                       <Button 
                                         variant="outline" 
                                         size="sm"
                                         onClick={() => setInterestToDecline(interest.id)}
-                                        className="flex-1"
+                                        className="flex-1 h-8 text-xs"
                                       >
-                                        <X size={16} className="mr-2" />
+                                        <X size={14} className="mr-1" />
                                         {t.decline}
                                       </Button>
                                       <TooltipProvider>
@@ -1045,9 +1046,9 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                               variant="destructive" 
                                               size="sm"
                                               onClick={() => setInterestToBlock({ interestId: interest.id, profileId: interest.fromProfileId })}
-                                              className="gap-1"
+                                              className="gap-1 h-8 text-xs px-2"
                                             >
-                                              <ProhibitInset size={16} />
+                                              <ProhibitInset size={14} />
                                               <span className="hidden sm:inline">{t.block}</span>
                                             </Button>
                                           </TooltipTrigger>
@@ -1058,13 +1059,13 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       </TooltipProvider>
                                     </div>
                                     {!canAccept && (
-                                      <p className="text-xs text-destructive text-center">
+                                      <p className="text-[10px] text-destructive text-center">
                                         {t.chatLimitReached}
                                       </p>
                                     )}
-                                    <div className="text-xs text-muted-foreground space-y-1 bg-muted/50 p-2 rounded">
+                                    <div className="text-[10px] text-gray-500 dark:text-gray-400 space-y-0.5 bg-rose-50/50 dark:bg-rose-950/20 p-2 rounded border border-rose-100 dark:border-rose-900/30">
                                       <p>{t.interestFlowInfo}</p>
-                                      <p className="text-green-600">{t.revokeInfo}</p>
+                                      <p className="text-emerald-600 dark:text-emerald-400">{t.revokeInfo}</p>
                                     </div>
                                   </>
                                 )}
@@ -1139,47 +1140,48 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                         const isSentByMe = interest.fromProfileId === currentUserProfile?.profileId
                         
                         return (
-                          <Card key={interest.id} className="hover:shadow-md transition-shadow">
-                            <CardContent className="pt-6">
-                              <div className="flex flex-col gap-4">
+                          <Card key={interest.id} className="hover:shadow-md transition-shadow border-rose-100 dark:border-rose-900/30">
+                            <CardContent className="py-3 px-4">
+                              <div className="flex flex-col gap-3">
                                 <div 
-                                  className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                                  className="flex items-center justify-between cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/20 -mx-2 px-2 py-1.5 rounded-lg transition-colors"
                                   onClick={() => profile && setSelectedProfileForDetails(profile)}
                                   title={t.clickToViewProfile}
                                 >
-                                  <div className="flex items-center gap-4">
+                                  <div className="flex items-center gap-3">
                                     {profile?.photos?.[0] ? (
                                       <div 
                                         className="relative cursor-pointer group"
                                         onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
                                         title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
                                       >
+                                        <div className="absolute -inset-0.5 bg-gradient-to-tr from-emerald-300 to-teal-200 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"></div>
                                         <img 
                                           src={profile.photos[0]} 
                                           alt={profile.fullName || ''}
-                                          className="w-14 h-14 rounded-full object-cover border-2 border-primary/20 group-hover:ring-4 group-hover:ring-primary/50 transition-all"
+                                          className="relative w-11 h-11 rounded-full object-cover border-2 border-white dark:border-gray-800 group-hover:scale-105 transition-transform"
                                         />
                                         <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                          <MagnifyingGlassPlus size={20} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                          <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </div>
                                       </div>
                                     ) : (
-                                      <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center text-xl font-bold">
+                                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/50 dark:to-teal-900/50 flex items-center justify-center text-sm font-bold text-emerald-700 dark:text-emerald-300">
                                         {profile?.firstName?.[0]}{profile?.lastName?.[0]}
                                       </div>
                                     )}
                                     <div>
-                                      <p className="font-semibold text-primary hover:underline inline-flex items-center gap-1">
+                                      <p className="font-semibold text-gray-800 dark:text-gray-100 hover:text-emerald-600 dark:hover:text-emerald-400 inline-flex items-center gap-1 text-sm">
                                         {profile?.fullName || 'Unknown'}
-                                        <User size={12} weight="bold" className="opacity-60" />
+                                        <User size={10} weight="bold" className="opacity-60" />
                                       </p>
-                                      <p className="text-sm text-muted-foreground">{profile?.profileId}</p>
-                                      <p className="text-sm text-muted-foreground">
+                                      <p className="text-xs text-gray-500 dark:text-gray-400">{profile?.profileId}</p>
+                                      <p className="text-xs text-gray-600 dark:text-gray-300">
                                         {profile?.age} {t.years} • {profile?.location}
                                       </p>
-                                      <div className="flex items-center gap-2 mt-1">
-                                        <Badge variant="secondary" className="text-xs">
-                                          <Heart size={12} className="mr-1" weight="fill" />
+                                      <div className="flex items-center gap-1 mt-0.5">
+                                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                                          <Heart size={10} className="mr-0.5" weight="fill" />
                                           {isSentByMe ? (language === 'hi' ? 'आपने भेजी' : 'You sent') : (language === 'hi' ? 'आपको मिली' : 'You received')}
                                         </Badge>
                                       </div>
@@ -1190,17 +1192,17 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                 <div className="flex gap-2">
                                   <Button 
                                     onClick={() => onNavigateToChat && onNavigateToChat(otherProfileId)}
-                                    className="gap-2 flex-1"
+                                    className="gap-1 flex-1 h-8 text-xs"
                                   >
-                                    <ChatCircle size={18} weight="fill" />
+                                    <ChatCircle size={14} weight="fill" />
                                     {t.startChat}
                                   </Button>
                                   <Button 
                                     variant="outline"
                                     onClick={() => setInterestToDecline(interest.id)}
-                                    className="gap-2"
+                                    className="gap-1 h-8 text-xs"
                                   >
-                                    <X size={18} />
+                                    <X size={14} />
                                     {t.decline}
                                   </Button>
                                   <TooltipProvider>
@@ -1209,9 +1211,9 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                         <Button 
                                           variant="destructive"
                                           onClick={() => setInterestToBlock({ interestId: interest.id, profileId: otherProfileId })}
-                                          className="gap-2"
+                                          className="gap-1 h-8 text-xs px-2"
                                         >
-                                          <ProhibitInset size={18} weight="fill" />
+                                          <ProhibitInset size={14} weight="fill" />
                                           <span className="hidden sm:inline">{t.block}</span>
                                         </Button>
                                       </TooltipTrigger>
@@ -1257,15 +1259,15 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                         const isSentByMe = interest.fromProfileId === currentUserProfile?.profileId
                         
                         return (
-                          <Card key={interest.id} className="hover:shadow-md transition-shadow border-l-4 border-l-destructive/50">
-                            <CardContent className="pt-6">
-                              <div className="flex flex-col gap-4">
+                          <Card key={interest.id} className="hover:shadow-md transition-shadow border-l-4 border-l-rose-400/50 border-gray-200 dark:border-gray-700">
+                            <CardContent className="py-3 px-4">
+                              <div className="flex flex-col gap-3">
                                 <div 
-                                  className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                                  className="flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 -mx-2 px-2 py-1.5 rounded-lg transition-colors"
                                   onClick={() => profile && setSelectedProfileForDetails(profile)}
                                   title={t.clickToViewProfile}
                                 >
-                                  <div className="flex items-center gap-4">
+                                  <div className="flex items-center gap-3">
                                     {profile?.photos?.[0] ? (
                                       <div 
                                         className="relative cursor-pointer group"
@@ -1275,38 +1277,38 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                         <img 
                                           src={profile.photos[0]} 
                                           alt={profile.fullName || ''}
-                                          className="w-14 h-14 rounded-full object-cover border-2 border-destructive/30 grayscale-[30%] group-hover:ring-4 group-hover:ring-primary/50 transition-all"
+                                          className="w-11 h-11 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600 grayscale-[30%] opacity-80 group-hover:opacity-100 group-hover:grayscale-0 transition-all"
                                         />
                                         <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                          <MagnifyingGlassPlus size={20} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                          <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </div>
                                       </div>
                                     ) : (
-                                      <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center text-xl font-bold opacity-60">
+                                      <div className="w-11 h-11 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm font-bold text-gray-500 dark:text-gray-400">
                                         {profile?.firstName?.[0]}{profile?.lastName?.[0]}
                                       </div>
                                     )}
                                     <div>
-                                      <p className="font-semibold text-muted-foreground hover:underline inline-flex items-center gap-1">
+                                      <p className="font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 inline-flex items-center gap-1 text-sm">
                                         {profile?.fullName || 'Unknown'}
-                                        <User size={12} weight="bold" className="opacity-60" />
+                                        <User size={10} weight="bold" className="opacity-60" />
                                       </p>
-                                      <p className="text-sm text-muted-foreground">{profile?.profileId}</p>
-                                      <p className="text-sm text-muted-foreground">
+                                      <p className="text-xs text-gray-400 dark:text-gray-500">{profile?.profileId}</p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400">
                                         {profile?.age} {t.years} • {profile?.location}
                                       </p>
-                                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                        <Badge variant="secondary" className="text-xs">
-                                          <Heart size={12} className="mr-1" />
+                                      <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                                          <Heart size={10} className="mr-0.5" />
                                           {isSentByMe ? (language === 'hi' ? 'आपने भेजी' : 'You sent') : (language === 'hi' ? 'आपको मिली' : 'You received')}
                                         </Badge>
-                                        <Badge variant={wasDeclinedByMe ? "outline" : "destructive"} className="text-xs">
-                                          <X size={12} className="mr-1" />
+                                        <Badge variant={wasDeclinedByMe ? "outline" : "destructive"} className="text-[10px] px-1.5 py-0 h-4">
+                                          <X size={10} className="mr-0.5" />
                                           {wasDeclinedByMe ? t.declinedByMe : t.declinedByThem}
                                         </Badge>
                                         {interest.contactAutoDeclined && (
-                                          <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
-                                            <Warning size={12} className="mr-1" />
+                                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-amber-500 text-amber-600">
+                                            <Warning size={10} className="mr-0.5" />
                                             {t.autoDeclinedContact}
                                           </Badge>
                                         )}
@@ -1320,18 +1322,18 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                     <Button 
                                       variant="outline"
                                       onClick={() => handleUndoDeclineInterest(interest.id)}
-                                      className="gap-2 flex-1"
+                                      className="gap-1 flex-1 h-8 text-xs"
                                     >
-                                      <ArrowCounterClockwise size={18} />
+                                      <ArrowCounterClockwise size={14} />
                                       {t.undo} / {t.reconsider}
                                     </Button>
                                   )}
                                   <Button 
                                     variant="outline"
                                     onClick={() => profile && setSelectedProfileForDetails(profile)}
-                                    className="gap-2"
+                                    className="gap-1 h-8 text-xs"
                                   >
-                                    <Eye size={18} />
+                                    <Eye size={14} />
                                     {t.viewProfile}
                                   </Button>
                                 </div>
