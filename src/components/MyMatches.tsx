@@ -16,7 +16,7 @@ import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { ProfileCard } from './ProfileCard'
 import { MagnifyingGlass, Funnel, X, GraduationCap, Globe, Calendar, Trophy, Sparkle, Heart, Users } from '@phosphor-icons/react'
-import type { Profile, SearchFilters, BlockedProfile, MembershipPlan, ProfileStatus, Interest, DeclinedProfile } from '@/types/profile'
+import type { Profile, SearchFilters, BlockedProfile, MembershipPlan, ProfileStatus, Interest, DeclinedProfile, DietPreference, DrinkingHabit, SmokingHabit } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 
 // Extended filters interface with additional fields
@@ -743,7 +743,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                     const { dietPreference: _dietPreference, ...rest } = filters
                     setFilters(rest)
                   } else {
-                    setFilters({ ...filters, dietPreference: val })
+                    setFilters({ ...filters, dietPreference: val as DietPreference })
                   }
                 }}
               >
@@ -770,7 +770,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                     const { drinkingHabit: _drinkingHabit, ...rest } = filters
                     setFilters(rest)
                   } else {
-                    setFilters({ ...filters, drinkingHabit: val })
+                    setFilters({ ...filters, drinkingHabit: val as DrinkingHabit })
                   }
                 }}
               >
@@ -797,7 +797,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                     const { smokingHabit: _smokingHabit, ...rest } = filters
                     setFilters(rest)
                   } else {
-                    setFilters({ ...filters, smokingHabit: val })
+                    setFilters({ ...filters, smokingHabit: val as SmokingHabit })
                   }
                 }}
               >

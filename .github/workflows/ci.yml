@@ -28,6 +28,9 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
+      - name: TypeScript Type Check
+        run: npm run typecheck
+
       - name: Run unit tests with coverage
         run: npm run test:coverage
 

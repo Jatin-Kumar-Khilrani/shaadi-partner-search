@@ -1043,20 +1043,55 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                   </CardHeader>
                   <CardContent className="flex-1 overflow-hidden p-0 flex flex-col">
                     <ScrollArea className="flex-1 p-4">
-                      {filteredMessages.length === 0 ? (
-                        <div className="text-center text-muted-foreground py-8">
-                          <ChatCircle size={48} className="mx-auto mb-2 opacity-50" />
-                          <p>{language === 'hi' ? 'पुनः सक्रियण के लिए एडमिन से बात करें' : 'Talk to admin for reactivation'}</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {filteredMessages.map((msg) => renderMessageBubble(msg))}
-                          <div ref={messagesEndRef} />
-                        </div>
-                      )}
+                      {(() => {
+                        const adminMessages = (messages || []).filter(m => 
+                          selectedConversation && 
+                          ((m.fromProfileId === currentUserProfile?.profileId && m.toProfileId === 'admin') ||
+                           (m.fromProfileId === 'admin' && m.toProfileId === currentUserProfile?.profileId) ||
+                           (m.type === 'admin-to-user' && m.toProfileId === currentUserProfile?.profileId))
+                        ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+                        
+                        if (adminMessages.length === 0) {
+                          return (
+                            <div className="text-center text-muted-foreground py-8">
+                              <ChatCircle size={48} className="mx-auto mb-2 opacity-50" />
+                              <p>{language === 'hi' ? 'पुनः सक्रियण के लिए एडमिन से बात करें' : 'Talk to admin for reactivation'}</p>
+                            </div>
+                          )
+                        }
+                        
+                        return (
+                          <div className="space-y-4">
+                            {adminMessages.map((msg) => (
+                              <div
+                                key={msg.id}
+                                className={`flex ${msg.fromProfileId === currentUserProfile?.profileId ? 'justify-end' : 'justify-start'}`}
+                              >
+                                <div
+                                  className={`max-w-[80%] px-4 py-2 rounded-2xl ${
+                                    msg.fromProfileId === currentUserProfile?.profileId
+                                      ? 'bg-primary text-primary-foreground rounded-br-sm'
+                                      : 'bg-muted rounded-bl-sm'
+                                  }`}
+                                >
+                                  <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
+                                  <p className={`text-[10px] mt-1 ${
+                                    msg.fromProfileId === currentUserProfile?.profileId 
+                                      ? 'text-primary-foreground/70' 
+                                      : 'text-muted-foreground'
+                                  }`}>
+                                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                            <div ref={messagesEndRef} />
+                          </div>
+                        )
+                      })()}
                     </ScrollArea>
                     <div className="p-4 border-t">
-                      <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex gap-2">
+                      <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
                         <Input
                           value={messageInput}
                           onChange={(e) => setMessageInput(e.target.value)}

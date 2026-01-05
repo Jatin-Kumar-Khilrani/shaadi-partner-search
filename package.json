@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b --noCheck && vite build",
+    "build": "npm run typecheck && vite build",
+    "build:fast": "tsc -b --noCheck && vite build",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
@@ -110,7 +112,8 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "eslint --fix"
+      "eslint --fix",
+      "bash -c 'npm run typecheck'"
     ]
   }
 }

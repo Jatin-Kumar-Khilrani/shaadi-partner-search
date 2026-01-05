@@ -1466,7 +1466,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               <span className="sm:hidden">{language === 'hi' ? 'सेवाएं' : 'Services'}</span>
             </TabsTrigger>
             <TabsTrigger value="reactivations" className="gap-1 text-xs sm:text-sm whitespace-nowrap text-purple-600">
-              <ArrowClockwise size={16} weight="fill" className="shrink-0" />
+              <ArrowCounterClockwise size={16} weight="fill" className="shrink-0" />
               <span className="hidden sm:inline">{language === 'hi' ? 'पुनः सक्रियण अनुरोध' : 'Reactivation Requests'}</span>
               <span className="sm:hidden">{language === 'hi' ? 'पुनः सक्रियण' : 'Reactivate'}</span>
               {(() => {
@@ -3619,7 +3619,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-purple-600">
-                  <ArrowClockwise size={24} weight="fill" />
+                  <ArrowCounterClockwise size={24} weight="fill" />
                   {language === 'hi' ? 'पुनः सक्रियण अनुरोध' : 'Reactivation Requests'}
                 </CardTitle>
                 <CardDescription>
@@ -3639,7 +3639,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   if (reactivationRequests.length === 0) {
                     return (
                       <div className="text-center py-8 text-muted-foreground">
-                        <ArrowClockwise size={48} className="mx-auto mb-4 opacity-50" />
+                        <ArrowCounterClockwise size={48} className="mx-auto mb-4 opacity-50" />
                         <p>{language === 'hi' ? 'कोई लंबित पुनः सक्रियण अनुरोध नहीं' : 'No pending reactivation requests'}</p>
                       </div>
                     )
@@ -3658,7 +3658,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 <img src={profile.photos[0]} alt={profile.fullName} className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-purple-100 dark:bg-purple-900">
-                                  <User size={24} className="text-purple-600" />
+                                  <UserIcon size={24} className="text-purple-600" />
                                 </div>
                               )}
                             </div>
@@ -3685,24 +3685,26 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               variant="default"
                               className="flex-1 sm:flex-initial gap-1 bg-green-600 hover:bg-green-700"
                               onClick={() => {
-                                if (onUpdateProfile) {
-                                  onUpdateProfile({
-                                    ...profile,
-                                    accountStatus: 'active',
-                                    deactivatedAt: undefined,
-                                    deactivationReason: undefined,
-                                    reactivationRequested: false,
-                                    reactivationRequestedAt: undefined,
-                                    reactivationApprovedAt: new Date().toISOString(),
-                                    reactivationApprovedBy: currentUserId,
-                                    lastActivityAt: new Date().toISOString()
-                                  })
-                                  toast.success(
-                                    language === 'hi' 
-                                      ? `${profile.fullName} की प्रोफाइल पुनः सक्रिय!`
-                                      : `${profile.fullName}'s profile reactivated!`
-                                  )
-                                }
+                                setProfiles(prev => (prev || []).map(p => 
+                                  p.id === profile.id 
+                                    ? {
+                                        ...p,
+                                        accountStatus: 'active' as const,
+                                        deactivatedAt: undefined,
+                                        deactivationReason: undefined,
+                                        reactivationRequested: false,
+                                        reactivationRequestedAt: undefined,
+                                        reactivationApprovedAt: new Date().toISOString(),
+                                        reactivationApprovedBy: 'admin',
+                                        lastActivityAt: new Date().toISOString()
+                                      }
+                                    : p
+                                ))
+                                toast.success(
+                                  language === 'hi' 
+                                    ? `${profile.fullName} की प्रोफाइल पुनः सक्रिय!`
+                                    : `${profile.fullName}'s profile reactivated!`
+                                )
                               }}
                             >
                               <Check size={16} />
@@ -3713,20 +3715,22 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               variant="outline"
                               className="flex-1 sm:flex-initial gap-1 text-red-600 border-red-300 hover:bg-red-50"
                               onClick={() => {
-                                if (onUpdateProfile) {
-                                  onUpdateProfile({
-                                    ...profile,
-                                    reactivationRequested: false,
-                                    reactivationRequestedAt: undefined,
-                                    reactivationRejectedAt: new Date().toISOString(),
-                                    reactivationRejectionReason: 'Admin rejected reactivation request'
-                                  })
-                                  toast.info(
-                                    language === 'hi' 
-                                      ? `${profile.fullName} का पुनः सक्रियण अनुरोध अस्वीकृत`
-                                      : `${profile.fullName}'s reactivation request rejected`
-                                  )
-                                }
+                                setProfiles(prev => (prev || []).map(p => 
+                                  p.id === profile.id 
+                                    ? {
+                                        ...p,
+                                        reactivationRequested: false,
+                                        reactivationRequestedAt: undefined,
+                                        reactivationRejectedAt: new Date().toISOString(),
+                                        reactivationRejectionReason: 'Admin rejected reactivation request'
+                                      }
+                                    : p
+                                ))
+                                toast.info(
+                                  language === 'hi' 
+                                    ? `${profile.fullName} का पुनः सक्रियण अनुरोध अस्वीकृत`
+                                    : `${profile.fullName}'s reactivation request rejected`
+                                )
                               }}
                             >
                               <X size={16} />
@@ -3986,7 +3990,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   <Separator className="my-6" />
                   <div className="space-y-4">
                     <h4 className="font-semibold flex items-center gap-2">
-                      <Clock size={20} className="text-amber-500" />
+                      <Calendar size={20} className="text-amber-500" />
                       {language === 'hi' ? 'निष्क्रियता सेटिंग्स' : 'Inactivity Settings'}
                     </h4>
                     <p className="text-sm text-muted-foreground">

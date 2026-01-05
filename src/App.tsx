@@ -33,7 +33,7 @@ import { type Language } from '@/lib/translations'
 import { toast } from 'sonner'
 import { sampleWeddingServices } from '@/lib/sampleData'
 
-type View = 'home' | 'search-results' | 'admin' | 'my-matches' | 'my-activity' | 'chat' | 'my-profile' | 'wedding-services' | 'readiness'
+type View = 'home' | 'search-results' | 'admin' | 'my-matches' | 'my-activity' | 'chat' | 'my-profile' | 'wedding-services' | 'readiness' | 'inbox'
 
 // Membership settings interface for dynamic pricing and plan limits
 interface MembershipSettings {
@@ -393,7 +393,7 @@ function App() {
       if (profile.isDeleted) return false
       
       // Exclude deactivated profiles from regular users (only admin can see them)
-      if (profile.accountStatus === 'deactivated' && !isAdmin) return false
+      if (profile.accountStatus === 'deactivated' && !isAdminLoggedIn) return false
       
       if (currentUserProfile && blockedProfiles) {
         const isBlocked = blockedProfiles.some(
@@ -414,7 +414,7 @@ function App() {
       
       return true
     })
-  }, [profiles, searchFilters, currentUserProfile, blockedProfiles, isAdmin])
+  }, [profiles, searchFilters, currentUserProfile, blockedProfiles, isAdminLoggedIn])
 
   const handleRegisterProfile = (profileData: Partial<Profile>) => {
     // Ensure data is loaded from Azure before registering
