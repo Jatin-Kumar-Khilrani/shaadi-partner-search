@@ -45,11 +45,11 @@ interface MembershipSettings {
   discountEnabled: boolean
   discountEndDate: string | null
   // Plan-specific limits
-  freePlanChatLimit: number       // Free plan: chat request limit
+  freePlanChatLimit: number       // Free plan: interest request limit
   freePlanContactLimit: number    // Free plan: contact view limit (0 = none)
-  sixMonthChatLimit: number       // 6-month plan: chat request limit
+  sixMonthChatLimit: number       // 6-month plan: interest request limit
   sixMonthContactLimit: number    // 6-month plan: contact view limit
-  oneYearChatLimit: number        // 1-year plan: chat request limit
+  oneYearChatLimit: number        // 1-year plan: interest request limit
   oneYearContactLimit: number     // 1-year plan: contact view limit
   // Inactivity deactivation settings
   inactivityDays: number          // Days of inactivity before deactivation (default: 30)

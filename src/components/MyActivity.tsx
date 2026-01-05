@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
 import { useKV } from '@/hooks/useKV'
-import { Eye, Heart, ChatCircle, Check, X, MagnifyingGlassPlus, ProhibitInset, Phone, Envelope as EnvelopeIcon, User, Clock, ArrowCounterClockwise, Warning } from '@phosphor-icons/react'
+import { Eye, Heart, ChatCircle, Check, X, MagnifyingGlassPlus, ProhibitInset, Phone, Envelope as EnvelopeIcon, User, Clock, ArrowCounterClockwise, Warning, Rocket, UploadSimple, CurrencyInr } from '@phosphor-icons/react'
 import type { Interest, ContactRequest, Profile, BlockedProfile, MembershipPlan, DeclinedProfile, UserNotification } from '@/types/profile'
 import type { ChatMessage } from '@/types/chat'
 import type { Language } from '@/lib/translations'
@@ -27,6 +29,14 @@ interface MembershipSettings {
   oneYearChatLimit: number
   oneYearContactLimit: number
   requestExpiryDays?: number  // Days before pending requests auto-expire (default: 15)
+  // Boost pack settings
+  boostPackEnabled?: boolean
+  boostPackInterestLimit?: number
+  boostPackContactLimit?: number
+  boostPackPrice?: number
+  // Payment details for boost pack
+  upiId?: string
+  qrCodeImage?: string
 }
 
 // Default limits if settings not provided
@@ -37,7 +47,11 @@ const DEFAULT_SETTINGS: MembershipSettings = {
   sixMonthContactLimit: 20,
   oneYearChatLimit: 120,
   oneYearContactLimit: 50,
-  requestExpiryDays: 15
+  requestExpiryDays: 15,
+  boostPackEnabled: true,
+  boostPackInterestLimit: 10,
+  boostPackContactLimit: 10,
+  boostPackPrice: 100
 }
 
 interface MyActivityProps {
@@ -68,6 +82,11 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
   const [viewContactProfile, setViewContactProfile] = useState<Profile | null>(null)
   const [selectedProfileForDetails, setSelectedProfileForDetails] = useState<Profile | null>(null)
   const [profileToReconsider, setProfileToReconsider] = useState<{ profileId: string, type: 'interest' | 'contact' | 'block' } | null>(null)
+  
+  // State for boost pack purchase
+  const [showBoostPackDialog, setShowBoostPackDialog] = useState(false)
+  const [boostPackScreenshot, setBoostPackScreenshot] = useState<string | null>(null)
+  const [isSubmittingBoostPack, setIsSubmittingBoostPack] = useState(false)
   
   // Lightbox for photo zoom
   const { lightboxState, openLightbox, closeLightbox } = useLightbox()
@@ -212,10 +231,81 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     expiryNotice: language === 'hi' 
       ? '⏳ समय पर जवाब न देने पर अनुरोध स्वतः रद्द हो जाएगा' 
       : '⏳ Request will auto-cancel if not responded in time',
+    // Boost pack translations
+    boostPack: language === 'hi' ? 'बूस्ट पैक' : 'Boost Pack',
+    buyBoostPack: language === 'hi' ? 'बूस्ट पैक खरीदें' : 'Buy Boost Pack',
+    boostPackDescription: language === 'hi' 
+      ? 'अतिरिक्त रुचि और संपर्क अनुरोध खरीदें' 
+      : 'Purchase additional interest and contact requests',
+    boostPackIncludes: language === 'hi' ? 'बूस्ट पैक में शामिल' : 'Boost Pack includes',
+    interests: language === 'hi' ? 'रुचि अनुरोध' : 'Interest requests',
+    contacts: language === 'hi' ? 'संपर्क अनुरोध' : 'Contact requests',
+    uploadPaymentScreenshot: language === 'hi' ? 'भुगतान स्क्रीनशॉट अपलोड करें' : 'Upload Payment Screenshot',
+    paymentInstructions: language === 'hi' 
+      ? 'नीचे दिए गए UPI/QR से भुगतान करें और स्क्रीनशॉट अपलोड करें' 
+      : 'Pay using UPI/QR below and upload screenshot',
+    submitForVerification: language === 'hi' ? 'सत्यापन के लिए जमा करें' : 'Submit for Verification',
+    boostPackPending: language === 'hi' ? 'बूस्ट पैक सत्यापन लंबित' : 'Boost Pack verification pending',
+    boostPackSuccess: language === 'hi' ? 'बूस्ट पैक अनुरोध जमा किया गया' : 'Boost Pack request submitted',
+    limitsExhausted: language === 'hi' ? 'सीमा समाप्त' : 'Limits exhausted',
+    getMoreRequests: language === 'hi' ? 'अधिक अनुरोध प्राप्त करें' : 'Get more requests',
   }
 
   // Get request expiry days from settings
   const requestExpiryDays = membershipSettings?.requestExpiryDays || DEFAULT_SETTINGS.requestExpiryDays || 15
+  
+  // Get boost pack settings
+  const boostPackEnabled = settings.boostPackEnabled ?? true
+  const boostPackInterestLimit = settings.boostPackInterestLimit ?? 10
+  const boostPackContactLimit = settings.boostPackContactLimit ?? 10
+  const boostPackPrice = settings.boostPackPrice ?? 100
+  const upiId = settings.upiId || ''
+  const qrCodeImage = settings.qrCodeImage || ''
+
+  // Handler for boost pack purchase submission
+  const handleBoostPackSubmit = async () => {
+    if (!boostPackScreenshot || !currentUserProfile || !setProfiles) return
+    
+    setIsSubmittingBoostPack(true)
+    try {
+      const now = new Date().toISOString()
+      const boostPackPurchase = {
+        id: `boost-${Date.now()}`,
+        purchasedAt: now,
+        interestCredits: boostPackInterestLimit,
+        contactCredits: boostPackContactLimit,
+        amountPaid: boostPackPrice,
+        paymentScreenshotUrl: boostPackScreenshot,
+        status: 'pending' as const,
+      }
+      
+      // Update the profile with the new boost pack purchase
+      setProfiles((prev) => {
+        if (!prev) return []
+        return prev.map(p => {
+          if (p.id === currentUserProfile.id) {
+            const existingPurchases = p.boostPacksPurchased || []
+            return {
+              ...p,
+              boostPacksPurchased: [...existingPurchases, boostPackPurchase]
+            } as Profile
+          }
+          return p
+        })
+      })
+      
+      toast.success(t.boostPackSuccess)
+      setShowBoostPackDialog(false)
+      setBoostPackScreenshot(null)
+    } catch {
+      toast.error(language === 'hi' ? 'बूस्ट पैक जमा करने में त्रुटि' : 'Error submitting boost pack')
+    } finally {
+      setIsSubmittingBoostPack(false)
+    }
+  }
+  
+  // Check if user has pending boost pack
+  const hasPendingBoostPack = currentUserProfile?.boostPacksPurchased?.some(bp => bp.status === 'pending')
 
   // Helper function to calculate days remaining until expiry
   const getDaysRemaining = (createdAt: string): number => {
@@ -1499,11 +1589,30 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
           <TabsContent value="sent-interests">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <CardTitle>{t.sentInterests}</CardTitle>
-                  <Badge variant="secondary" className="text-xs">
-                    {t.chatsRemaining}: {chatLimit - chatRequestsUsed.length}/{chatLimit}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {t.chatsRemaining}: {Math.max(0, chatLimit - chatRequestsUsed.length)}/{chatLimit}
+                    </Badge>
+                    {/* Show boost pack button when limits exhausted */}
+                    {boostPackEnabled && chatLimit - chatRequestsUsed.length <= 0 && !hasPendingBoostPack && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setShowBoostPackDialog(true)}
+                        className="h-6 text-xs gap-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200"
+                      >
+                        <Rocket size={12} weight="fill" />
+                        {t.getMoreRequests}
+                      </Button>
+                    )}
+                    {hasPendingBoostPack && (
+                      <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
+                        {t.boostPackPending}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -1614,11 +1723,30 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
           <TabsContent value="contact-requests">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <CardTitle>{t.myContactRequests}</CardTitle>
-                  <Badge variant="secondary" className="text-xs">
-                    {t.contactsRemaining}: {contactLimit - contactViewsUsed.length}/{contactLimit}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {t.contactsRemaining}: {Math.max(0, contactLimit - contactViewsUsed.length)}/{contactLimit}
+                    </Badge>
+                    {/* Show boost pack button when limits exhausted */}
+                    {boostPackEnabled && contactLimit - contactViewsUsed.length <= 0 && !hasPendingBoostPack && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setShowBoostPackDialog(true)}
+                        className="h-6 text-xs gap-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200"
+                      >
+                        <Rocket size={12} weight="fill" />
+                        {t.getMoreRequests}
+                      </Button>
+                    )}
+                    {hasPendingBoostPack && (
+                      <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
+                        {t.boostPackPending}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -2133,6 +2261,113 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
         membershipSettings={membershipSettings}
         setProfiles={setProfiles}
       />
+
+      {/* Boost Pack Purchase Dialog */}
+      <Dialog open={showBoostPackDialog} onOpenChange={setShowBoostPackDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Rocket size={24} className="text-purple-500" weight="fill" />
+              {t.boostPack}
+            </DialogTitle>
+            <DialogDescription>
+              {t.boostPackDescription}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Boost pack contents */}
+            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg space-y-2">
+              <h4 className="font-medium text-sm text-purple-700 dark:text-purple-300">{t.boostPackIncludes}:</h4>
+              <div className="flex items-center gap-2">
+                <Heart size={16} className="text-pink-500" weight="fill" />
+                <span className="text-sm">{boostPackInterestLimit} {t.interests}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone size={16} className="text-teal-500" weight="fill" />
+                <span className="text-sm">{boostPackContactLimit} {t.contacts}</span>
+              </div>
+              <Separator className="my-2" />
+              <div className="flex items-center gap-2 text-lg font-bold text-purple-700 dark:text-purple-300">
+                <CurrencyInr size={20} weight="bold" />
+                <span>₹{boostPackPrice}</span>
+              </div>
+            </div>
+
+            {/* Payment info */}
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">{t.paymentInstructions}</p>
+              {upiId && (
+                <div className="flex items-center gap-2 p-2 bg-muted rounded">
+                  <span className="text-xs font-medium">UPI:</span>
+                  <span className="text-xs font-mono">{upiId}</span>
+                </div>
+              )}
+              {qrCodeImage && (
+                <div className="flex justify-center">
+                  <img src={qrCodeImage} alt="Payment QR" className="w-32 h-32 object-contain" />
+                </div>
+              )}
+            </div>
+
+            {/* Screenshot upload */}
+            <div className="space-y-2">
+              <Label htmlFor="boost-screenshot" className="text-sm font-medium">
+                {t.uploadPaymentScreenshot}
+              </Label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  id="boost-screenshot"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      const reader = new FileReader()
+                      reader.onloadend = () => {
+                        setBoostPackScreenshot(reader.result as string)
+                      }
+                      reader.readAsDataURL(file)
+                    }
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('boost-screenshot')?.click()}
+                  className="flex-1"
+                >
+                  <UploadSimple size={16} className="mr-2" />
+                  {boostPackScreenshot ? (language === 'hi' ? 'स्क्रीनशॉट बदलें' : 'Change Screenshot') : t.uploadPaymentScreenshot}
+                </Button>
+              </div>
+              {boostPackScreenshot && (
+                <div className="mt-2">
+                  <img src={boostPackScreenshot} alt="Payment screenshot" className="w-full max-h-40 object-contain rounded border" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBoostPackDialog(false)}>
+              {t.cancel}
+            </Button>
+            <Button 
+              onClick={handleBoostPackSubmit}
+              disabled={!boostPackScreenshot || isSubmittingBoostPack}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {isSubmittingBoostPack ? (
+                language === 'hi' ? 'जमा हो रहा है...' : 'Submitting...'
+              ) : (
+                t.submitForVerification
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }

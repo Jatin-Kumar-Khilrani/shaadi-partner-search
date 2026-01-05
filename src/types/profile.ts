@@ -21,6 +21,20 @@ export type ResidentialStatus =
   | 'tourist-visa' 
   | 'other'
 
+// Boost Pack purchase record
+export interface BoostPackPurchase {
+  id: string
+  purchasedAt: string
+  interestCredits: number
+  contactCredits: number
+  amountPaid: number
+  paymentScreenshotUrl: string
+  status: 'pending' | 'verified' | 'rejected'
+  verifiedAt?: string
+  verifiedBy?: string
+  rejectionReason?: string
+}
+
 export interface Profile {
   id: string
   profileId: string
@@ -145,12 +159,16 @@ export interface Profile {
     country?: string
     capturedAt: string
   }
-  // Plan-based usage tracking (chat requests and contact views)
-  chatRequestsUsed?: string[]     // Profile IDs user has initiated chat with
+  // Plan-based usage tracking (interest requests and contact views)
+  chatRequestsUsed?: string[]     // Profile IDs user has sent interest to (legacy name for backward compatibility)
   contactViewsUsed?: string[]     // Profile IDs user has viewed contact info for
   // Legacy fields (kept for backward compatibility, will migrate to new fields)
   freeViewedProfiles?: string[]  // Profile IDs viewed by free user (deprecated)
   freeChatProfiles?: string[]    // Profile IDs chatted by free user (deprecated)
+  // Boost pack tracking
+  boostPacksPurchased?: BoostPackPurchase[]  // Boost pack purchase history
+  boostInterestsRemaining?: number  // Remaining interests from boost packs
+  boostContactsRemaining?: number   // Remaining contacts from boost packs
   // Payment verification for paid plans
   paymentScreenshotUrl?: string  // URL to payment screenshot
   paymentStatus?: 'not-required' | 'pending' | 'verified' | 'rejected'

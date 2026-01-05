@@ -20,6 +20,13 @@ interface MembershipSettings {
   sixMonthContactLimit?: number
   oneYearChatLimit?: number
   oneYearContactLimit?: number
+  // Request expiry settings
+  requestExpiryDays?: number
+  // Boost pack settings
+  boostPackEnabled?: boolean
+  boostPackInterestLimit?: number
+  boostPackContactLimit?: number
+  boostPackPrice?: number
 }
 
 interface TermsAndConditionsProps {
@@ -43,6 +50,15 @@ export function TermsAndConditions({ open, onClose, language, membershipSettings
   const sixMonthContactLimit = membershipSettings?.sixMonthContactLimit ?? 20
   const oneYearChatLimit = membershipSettings?.oneYearChatLimit ?? 120
   const oneYearContactLimit = membershipSettings?.oneYearContactLimit ?? 50
+  
+  // Request expiry settings
+  const requestExpiryDays = membershipSettings?.requestExpiryDays ?? 15
+  
+  // Boost pack settings
+  const boostPackEnabled = membershipSettings?.boostPackEnabled ?? true
+  const boostPackInterestLimit = membershipSettings?.boostPackInterestLimit ?? 10
+  const boostPackContactLimit = membershipSettings?.boostPackContactLimit ?? 10
+  const boostPackPrice = membershipSettings?.boostPackPrice ?? 100
 
   const sections = [
     {
@@ -292,7 +308,21 @@ Refund Policy:
 संपर्क सीमा योजना के अनुसार:
 • मुफ्त योजना: ${freePlanContactLimit} संपर्क ${freePlanContactLimit === 0 ? '(उपलब्ध नहीं)' : ''}
 • 6 महीने: ${sixMonthContactLimit} संपर्क
-• 1 साल: ${oneYearContactLimit} संपर्क`
+• 1 साल: ${oneYearContactLimit} संपर्क
+
+अनुरोध समाप्ति नीति:
+• सभी पेंडिंग रुचि और संपर्क अनुरोध ${requestExpiryDays} दिनों बाद स्वतः समाप्त हो जाते हैं
+• पारदर्शिता के लिए प्रत्येक पेंडिंग अनुरोध पर काउंटडाउन टाइमर दिखाया जाता है
+• अनुरोध समाप्त होने पर भेजने वाले को स्वचालित सूचना
+• समाप्त अनुरोध कोई स्लॉट नहीं लेते
+
+${boostPackEnabled ? `बूस्ट पैक (अतिरिक्त अनुरोध):
+• जब आपकी योजना की सीमा समाप्त हो जाए, आप बूस्ट पैक खरीद सकते हैं
+• प्रत्येक बूस्ट पैक में: ${boostPackInterestLimit} रुचि अनुरोध + ${boostPackContactLimit} संपर्क अनुरोध
+• कीमत: ₹${boostPackPrice} प्रति बूस्ट पैक
+• भुगतान: UPI/बैंक ट्रांसफर के बाद स्क्रीनशॉट अपलोड करें
+• एडमिन सत्यापन के बाद क्रेडिट जोड़े जाएंगे (आमतौर पर 24 घंटे के भीतर)
+• बूस्ट पैक खरीद गैर-वापसी योग्य है` : ''}`
         : `Interest Request:
 
 How it works:
@@ -351,7 +381,21 @@ Chat Limits by Plan:
 Contact Limits by Plan:
 • Free plan: ${freePlanContactLimit} contacts ${freePlanContactLimit === 0 ? '(not available)' : ''}
 • 6 months: ${sixMonthContactLimit} contacts
-• 1 year: ${oneYearContactLimit} contacts`
+• 1 year: ${oneYearContactLimit} contacts
+
+Request Expiry Policy:
+• All pending interest and contact requests auto-expire after ${requestExpiryDays} days
+• Countdown timer shown on each pending request for transparency
+• Sender notified automatically when request expires
+• Expired requests do not consume any slots
+
+${boostPackEnabled ? `Boost Pack (Additional Requests):
+• When you exhaust your plan limits, you can purchase a Boost Pack
+• Each Boost Pack includes: ${boostPackInterestLimit} interest requests + ${boostPackContactLimit} contact requests
+• Price: ₹${boostPackPrice} per Boost Pack
+• Payment: Upload screenshot after UPI/bank transfer
+• Credits added after admin verification (usually within 24 hours)
+• Boost Pack purchases are non-refundable` : ''}`
     },
     {
       icon: <Calendar size={24} weight="bold" className="text-primary" />,

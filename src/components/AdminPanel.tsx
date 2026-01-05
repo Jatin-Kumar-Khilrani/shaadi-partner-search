@@ -114,17 +114,22 @@ interface MembershipSettings {
   discountEnabled: boolean
   discountEndDate: string
   // Plan-specific limits
-  freePlanChatLimit: number       // Free plan: chat request limit
+  freePlanChatLimit: number       // Free plan: interest request limit
   freePlanContactLimit: number    // Free plan: contact view limit (0 = none)
-  sixMonthChatLimit: number       // 6-month plan: chat request limit
+  sixMonthChatLimit: number       // 6-month plan: interest request limit
   sixMonthContactLimit: number    // 6-month plan: contact view limit
-  oneYearChatLimit: number        // 1-year plan: chat request limit
+  oneYearChatLimit: number        // 1-year plan: interest request limit
   oneYearContactLimit: number     // 1-year plan: contact view limit
   // Inactivity deactivation settings
   inactivityDays: number          // Days of inactivity before deactivation (default: 30)
   freePlanChatDurationMonths: number  // Months free plan users can chat with admin after deactivation (default: 6)
   // Request expiry settings
   requestExpiryDays: number       // Days before pending interests/contact requests auto-expire (default: 15)
+  // Boost Pack settings (additional requests purchase)
+  boostPackEnabled: boolean       // Enable boost pack purchases
+  boostPackInterestLimit: number  // Number of additional interests per boost pack (default: 10)
+  boostPackContactLimit: number   // Number of additional contacts per boost pack (default: 10)
+  boostPackPrice: number          // Price per boost pack in rupees (default: 100)
   // Payment details
   upiId: string                   // UPI ID for payments
   bankName: string                // Bank name
@@ -159,6 +164,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     freePlanChatDurationMonths: 6,
     // Default request expiry
     requestExpiryDays: 15,
+    // Default boost pack settings
+    boostPackEnabled: true,
+    boostPackInterestLimit: 10,
+    boostPackContactLimit: 10,
+    boostPackPrice: 100,
     // Default payment details
     upiId: '',
     bankName: '',
@@ -186,6 +196,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     inactivityDays: 30,
     freePlanChatDurationMonths: 6,
     requestExpiryDays: 15,
+    boostPackEnabled: true,
+    boostPackInterestLimit: 10,
+    boostPackContactLimit: 10,
+    boostPackPrice: 100,
     upiId: '',
     bankName: '',
     accountNumber: '',
@@ -3896,7 +3910,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           {language === 'hi' ? '🆓 मुफ्त प्लान' : '🆓 Free Plan'}
                         </h5>
                         <div className="space-y-2">
-                          <Label className="text-xs">{language === 'hi' ? 'चैट अनुरोध सीमा' : 'Chat Request Limit'}</Label>
+                          <Label className="text-xs">{language === 'hi' ? 'रुचि अनुरोध सीमा' : 'Interest Request Limit'}</Label>
                           <Input 
                             type="number" 
                             min="0"
@@ -3928,7 +3942,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           {language === 'hi' ? '💎 6 महीने का प्लान' : '💎 6 Month Plan'}
                         </h5>
                         <div className="space-y-2">
-                          <Label className="text-xs">{language === 'hi' ? 'चैट अनुरोध सीमा' : 'Chat Request Limit'}</Label>
+                          <Label className="text-xs">{language === 'hi' ? 'रुचि अनुरोध सीमा' : 'Interest Request Limit'}</Label>
                           <Input 
                             type="number" 
                             min="0"
@@ -3959,7 +3973,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           {language === 'hi' ? '👑 1 साल का प्लान' : '👑 1 Year Plan'}
                         </h5>
                         <div className="space-y-2">
-                          <Label className="text-xs">{language === 'hi' ? 'चैट अनुरोध सीमा' : 'Chat Request Limit'}</Label>
+                          <Label className="text-xs">{language === 'hi' ? 'रुचि अनुरोध सीमा' : 'Interest Request Limit'}</Label>
                           <Input 
                             type="number" 
                             min="0"
@@ -4073,6 +4087,77 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               : 'Pending interests and contact requests will auto-cancel after these many days. Requestor will be notified.'}
                           </p>
                         </div>
+                      </div>
+                      
+                      {/* Boost Pack Settings */}
+                      <div className="space-y-3 p-3 border rounded-lg bg-purple-50 dark:bg-purple-900/20">
+                        <h5 className="font-medium text-sm text-purple-600 dark:text-purple-300">
+                          {language === 'hi' ? '🚀 बूस्ट पैक (अतिरिक्त अनुरोध खरीद)' : '🚀 Boost Pack (Additional Requests Purchase)'}
+                        </h5>
+                        <div className="flex items-center gap-2 mb-3">
+                          <input
+                            type="checkbox"
+                            id="boostPackEnabled"
+                            checked={localMembershipSettings.boostPackEnabled ?? true}
+                            onChange={(e) => setLocalMembershipSettings(prev => ({
+                              ...prev,
+                              boostPackEnabled: e.target.checked
+                            }))}
+                            className="h-4 w-4 rounded border-gray-300"
+                          />
+                          <Label htmlFor="boostPackEnabled" className="text-xs font-medium">
+                            {language === 'hi' ? 'बूस्ट पैक खरीद सक्षम करें' : 'Enable Boost Pack Purchase'}
+                          </Label>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs">{language === 'hi' ? 'रुचि अनुरोध' : 'Interest Requests'}</Label>
+                            <Input 
+                              type="number" 
+                              min="5"
+                              max="100"
+                              value={localMembershipSettings.boostPackInterestLimit || 10}
+                              onChange={(e) => setLocalMembershipSettings(prev => ({
+                                ...prev,
+                                boostPackInterestLimit: parseInt(e.target.value) || 10
+                              }))}
+                              disabled={!localMembershipSettings.boostPackEnabled}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">{language === 'hi' ? 'संपर्क अनुरोध' : 'Contact Requests'}</Label>
+                            <Input 
+                              type="number" 
+                              min="5"
+                              max="100"
+                              value={localMembershipSettings.boostPackContactLimit || 10}
+                              onChange={(e) => setLocalMembershipSettings(prev => ({
+                                ...prev,
+                                boostPackContactLimit: parseInt(e.target.value) || 10
+                              }))}
+                              disabled={!localMembershipSettings.boostPackEnabled}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">{language === 'hi' ? 'कीमत (₹)' : 'Price (₹)'}</Label>
+                            <Input 
+                              type="number" 
+                              min="50"
+                              max="1000"
+                              value={localMembershipSettings.boostPackPrice || 100}
+                              onChange={(e) => setLocalMembershipSettings(prev => ({
+                                ...prev,
+                                boostPackPrice: parseInt(e.target.value) || 100
+                              }))}
+                              disabled={!localMembershipSettings.boostPackEnabled}
+                            />
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {language === 'hi' 
+                            ? `जब यूजर की सीमा खत्म हो जाए, वे ₹${localMembershipSettings.boostPackPrice || 100} में ${localMembershipSettings.boostPackInterestLimit || 10} रुचि + ${localMembershipSettings.boostPackContactLimit || 10} संपर्क अनुरोध खरीद सकते हैं। भुगतान स्क्रीनशॉट अपलोड करना होगा।`
+                            : `When users exhaust their limits, they can buy ${localMembershipSettings.boostPackInterestLimit || 10} interests + ${localMembershipSettings.boostPackContactLimit || 10} contacts for ₹${localMembershipSettings.boostPackPrice || 100}. Payment screenshot upload required.`}
+                        </p>
                       </div>
                     </div>
                     <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-900/20">
