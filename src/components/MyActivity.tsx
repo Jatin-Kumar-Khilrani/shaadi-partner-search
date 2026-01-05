@@ -1367,18 +1367,18 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                       <AlertDescription>{t.noActivity}</AlertDescription>
                     </Alert>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       {sentInterests.map((interest) => {
                         const profile = getProfileByProfileId(interest.toProfileId)
                         return (
-                          <Card key={interest.id} className="hover:shadow-md transition-shadow">
-                            <CardContent className="pt-6">
+                          <Card key={interest.id} className="hover:shadow-sm transition-shadow border-amber-100">
+                            <CardContent className="py-3 px-4">
                               <div 
-                                className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                                className="flex items-center justify-between cursor-pointer hover:bg-amber-50/50 -mx-2 px-2 py-1 rounded-lg transition-colors"
                                 onClick={() => profile && setSelectedProfileForDetails(profile)}
                                 title={t.clickToViewProfile}
                               >
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-3">
                                   {/* Profile Photo */}
                                   {profile?.photos?.[0] ? (
                                     <div 
@@ -1386,26 +1386,30 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
                                       title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
                                     >
-                                      <img 
-                                        src={profile.photos[0]} 
-                                        alt={profile.fullName || ''}
-                                        className="w-12 h-12 rounded-full object-cover border-2 border-primary/20 group-hover:ring-2 group-hover:ring-primary/50 transition-all"
-                                      />
+                                      <div className="p-[2px] rounded-full bg-gradient-to-r from-amber-400 via-rose-400 to-amber-500">
+                                        <img 
+                                          src={profile.photos[0]} 
+                                          alt={profile.fullName || ''}
+                                          className="w-11 h-11 rounded-full object-cover border-2 border-white group-hover:scale-105 transition-transform"
+                                        />
+                                      </div>
                                       <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                        <MagnifyingGlassPlus size={16} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                       </div>
                                     </div>
                                   ) : (
-                                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                                      <Heart size={24} weight="fill" className="text-primary" />
+                                    <div className="p-[2px] rounded-full bg-gradient-to-r from-amber-400 via-rose-400 to-amber-500">
+                                      <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
+                                        <Heart size={20} weight="fill" className="text-amber-500" />
+                                      </div>
                                     </div>
                                   )}
                                   <div>
-                                    <p className="font-semibold text-primary hover:underline">
+                                    <p className="font-semibold text-sm text-amber-700 hover:underline">
                                       {profile?.fullName || 'Unknown'}
                                     </p>
-                                    <p className="text-sm text-muted-foreground">{profile?.profileId || interest.toProfileId}</p>
-                                    <p className="text-xs text-muted-foreground">{formatDate(interest.createdAt)}</p>
+                                    <p className="text-xs text-muted-foreground">{profile?.profileId || interest.toProfileId}</p>
+                                    <p className="text-[10px] text-muted-foreground">{formatDate(interest.createdAt)}</p>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -1416,9 +1420,9 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       variant="outline" 
                                       size="sm"
                                       onClick={() => handleCancelInterest(interest.id)}
-                                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                      className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                                     >
-                                      <X size={14} className="mr-1" />
+                                      <X size={12} className="mr-1" />
                                       {t.cancel}
                                     </Button>
                                   )}
@@ -1428,9 +1432,9 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       variant="outline" 
                                       size="sm"
                                       onClick={() => handleRevokeInterest(interest.id)}
-                                      className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
+                                      className="h-8 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
                                     >
-                                      <X size={14} className="mr-1" />
+                                      <X size={12} className="mr-1" />
                                       {t.revoke}
                                     </Button>
                                   )}
@@ -1469,18 +1473,18 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                       {sentContactRequests.length === 0 ? (
                         <p className="text-muted-foreground text-center py-8">{t.noActivity}</p>
                       ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-2">
                           {sentContactRequests.map((request) => {
                             const profile = profiles.find(p => p.id === request.toUserId)
                             return (
-                              <Card key={request.id} className="hover:shadow-md transition-shadow">
-                                <CardContent className="pt-6">
+                              <Card key={request.id} className="hover:shadow-sm transition-shadow border-purple-100">
+                                <CardContent className="py-3 px-4">
                                   <div 
-                                    className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                                    className="flex items-center justify-between cursor-pointer hover:bg-purple-50/50 -mx-2 px-2 py-1 rounded-lg transition-colors"
                                     onClick={() => profile && setSelectedProfileForDetails(profile)}
                                     title={t.clickToViewProfile}
                                   >
-                                    <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-3">
                                       {/* Profile Photo */}
                                       {profile?.photos?.[0] ? (
                                         <div 
@@ -1488,26 +1492,30 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                           onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
                                           title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
                                         >
-                                          <img 
-                                            src={profile.photos[0]} 
-                                            alt={profile.fullName || ''}
-                                            className="w-12 h-12 rounded-full object-cover border-2 border-primary/20 group-hover:ring-2 group-hover:ring-primary/50 transition-all"
-                                          />
+                                          <div className="p-[2px] rounded-full bg-gradient-to-r from-purple-400 via-rose-400 to-purple-500">
+                                            <img 
+                                              src={profile.photos[0]} 
+                                              alt={profile.fullName || ''}
+                                              className="w-11 h-11 rounded-full object-cover border-2 border-white group-hover:scale-105 transition-transform"
+                                            />
+                                          </div>
                                           <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                            <MagnifyingGlassPlus size={16} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                           </div>
                                         </div>
                                       ) : (
-                                        <div className="w-12 h-12 rounded-full bg-teal/10 flex items-center justify-center">
-                                          <Eye size={24} weight="fill" className="text-teal" />
+                                        <div className="p-[2px] rounded-full bg-gradient-to-r from-purple-400 via-rose-400 to-purple-500">
+                                          <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
+                                            <Eye size={20} weight="fill" className="text-purple-500" />
+                                          </div>
                                         </div>
                                       )}
                                       <div>
-                                        <p className="font-semibold text-primary hover:underline">
+                                        <p className="font-semibold text-sm text-purple-700 hover:underline">
                                           {profile?.fullName || 'Unknown'}
                                         </p>
-                                        <p className="text-sm text-muted-foreground">{profile?.profileId || 'Unknown'}</p>
-                                        <p className="text-xs text-muted-foreground">{formatDate(request.createdAt)}</p>
+                                        <p className="text-xs text-muted-foreground">{profile?.profileId || 'Unknown'}</p>
+                                        <p className="text-[10px] text-muted-foreground">{formatDate(request.createdAt)}</p>
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -1518,9 +1526,9 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                           variant="outline" 
                                           size="sm"
                                           onClick={() => handleCancelContactRequest(request.id)}
-                                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                          className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                                         >
-                                          <X size={14} className="mr-1" />
+                                          <X size={12} className="mr-1" />
                                           {t.cancel}
                                         </Button>
                                       )}
@@ -1531,18 +1539,18 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                             size="sm"
                                             variant="outline"
                                             onClick={() => setViewContactProfile(profile)}
-                                            className="gap-1"
+                                            className="h-8 text-xs gap-1"
                                           >
-                                            <Eye size={14} />
+                                            <Eye size={12} />
                                             {t.viewContact}
                                           </Button>
                                           <Button 
                                             variant="outline" 
                                             size="sm"
                                             onClick={() => handleRevokeContactRequest(request.id)}
-                                            className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
+                                            className="h-8 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
                                           >
-                                            <X size={14} className="mr-1" />
+                                            <X size={12} className="mr-1" />
                                             {t.revoke}
                                           </Button>
                                         </>
@@ -1563,19 +1571,19 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                       {receivedContactRequests.length === 0 ? (
                         <p className="text-muted-foreground text-center py-8">{t.noActivity}</p>
                       ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-2">
                           {receivedContactRequests.map((request) => {
                             const profile = profiles.find(p => p.id === request.fromUserId)
                             return (
-                              <Card key={request.id} className="hover:shadow-md transition-shadow">
-                                <CardContent className="pt-6">
-                                  <div className="flex flex-col gap-4">
+                              <Card key={request.id} className="hover:shadow-sm transition-shadow border-teal-100">
+                                <CardContent className="py-3 px-4">
+                                  <div className="flex flex-col gap-2">
                                     <div 
-                                      className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                                      className="flex items-center justify-between cursor-pointer hover:bg-teal-50/50 -mx-2 px-2 py-1 rounded-lg transition-colors"
                                       onClick={() => profile && setSelectedProfileForDetails(profile)}
                                       title={t.clickToViewProfile}
                                     >
-                                      <div className="flex items-center gap-4">
+                                      <div className="flex items-center gap-3">
                                         {/* Profile Photo */}
                                         {profile?.photos?.[0] ? (
                                           <div 
@@ -1583,26 +1591,30 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                             onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
                                             title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
                                           >
-                                            <img 
-                                              src={profile.photos[0]} 
-                                              alt={profile.fullName || ''}
-                                              className="w-12 h-12 rounded-full object-cover border-2 border-primary/20 group-hover:ring-2 group-hover:ring-primary/50 transition-all"
-                                            />
+                                            <div className="p-[2px] rounded-full bg-gradient-to-r from-teal-400 via-cyan-400 to-teal-500">
+                                              <img 
+                                                src={profile.photos[0]} 
+                                                alt={profile.fullName || ''}
+                                                className="w-11 h-11 rounded-full object-cover border-2 border-white group-hover:scale-105 transition-transform"
+                                              />
+                                            </div>
                                             <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                              <MagnifyingGlassPlus size={16} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                              <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                             </div>
                                           </div>
                                         ) : (
-                                          <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-                                            <Eye size={24} weight="fill" className="text-accent" />
+                                          <div className="p-[2px] rounded-full bg-gradient-to-r from-teal-400 via-cyan-400 to-teal-500">
+                                            <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
+                                              <Eye size={20} weight="fill" className="text-teal-500" />
+                                            </div>
                                           </div>
                                         )}
                                         <div>
-                                          <p className="font-semibold text-primary hover:underline">
+                                          <p className="font-semibold text-sm text-teal-700 hover:underline">
                                             {profile?.fullName || 'Unknown'}
                                           </p>
-                                          <p className="text-sm text-muted-foreground">{profile?.profileId || 'Unknown'}</p>
-                                          <p className="text-xs text-muted-foreground">{formatDate(request.createdAt)}</p>
+                                          <p className="text-xs text-muted-foreground">{profile?.profileId || 'Unknown'}</p>
+                                          <p className="text-[10px] text-muted-foreground">{formatDate(request.createdAt)}</p>
                                         </div>
                                       </div>
                                       {getStatusBadge(request.status)}
@@ -1629,53 +1641,53 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       )
                                       
                                       return (
-                                        <div className="space-y-2">
+                                        <div className="space-y-1">
                                           <div className="flex gap-2">
                                             <Button 
                                               variant="default" 
                                               size="sm"
                                               onClick={() => handleAcceptContactRequest(request.id)}
-                                              className="flex-1 bg-teal hover:bg-teal/90"
+                                              className="flex-1 h-8 text-xs bg-teal hover:bg-teal/90"
                                               disabled={!isAnyInterestAccepted}
                                             >
-                                              <Check size={16} className="mr-2" />
+                                              <Check size={12} className="mr-1" />
                                               {t.accept}
                                             </Button>
                                             <Button 
                                               variant="destructive" 
                                               size="sm"
                                               onClick={() => handleDeclineContactRequest(request.id)}
-                                              className="flex-1"
+                                              className="flex-1 h-8 text-xs"
                                             >
-                                              <X size={16} className="mr-2" />
+                                              <X size={12} className="mr-1" />
                                               {t.decline}
                                             </Button>
                                           </div>
                                           {!isAnyInterestAccepted && (
-                                            <div className="text-center space-y-1">
-                                              <p className="text-xs text-amber-600 font-medium">
+                                            <div className="text-center space-y-0.5">
+                                              <p className="text-[10px] text-amber-600 font-medium">
                                                 ⚠️ {t.acceptInterestFirst}
                                               </p>
                                               {hasPendingInterest ? (
                                                 <Button
                                                   variant="link"
                                                   size="sm"
-                                                  className="text-xs h-auto p-0 text-primary underline"
+                                                  className="text-[10px] h-auto p-0 text-primary underline"
                                                   onClick={() => setActiveTab('received-interests')}
                                                 >
                                                   {language === 'hi' ? '→ प्राप्त रुचि में जाएं' : '→ Go to Received Interests'}
                                                 </Button>
                                               ) : (
-                                                <p className="text-xs text-muted-foreground">
+                                                <p className="text-[10px] text-muted-foreground">
                                                   {language === 'hi' ? 'इस प्रोफाइल के साथ कोई स्वीकृत रुचि नहीं' : 'No accepted interest with this profile'}
                                                 </p>
                                               )}
                                             </div>
                                           )}
-                                          <p className="text-xs text-muted-foreground text-center">
+                                          <p className="text-[10px] text-muted-foreground text-center">
                                             {t.contactFlowInfo}
                                           </p>
-                                          <p className="text-xs text-green-600 text-center">
+                                          <p className="text-[10px] text-green-600 text-center">
                                             {t.revokeInfo}
                                           </p>
                                         </div>
@@ -1684,8 +1696,8 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                     {/* Revoke button for approved RECEIVED contact requests */}
                                     {/* Note: Receiver does NOT get to view sender's contact - they only allowed sender to view THEIR contact */}
                                     {request.status === 'approved' && profile && (
-                                      <div className="flex flex-col gap-2">
-                                        <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                                      <div className="flex flex-col gap-1">
+                                        <p className="text-[10px] text-muted-foreground bg-muted/50 p-1.5 rounded">
                                           ℹ️ {language === 'hi' 
                                             ? 'आपने उन्हें अपना संपर्क देखने की अनुमति दी है। उनका संपर्क देखने के लिए आपको भी उन्हें अनुरोध भेजना होगा।'
                                             : 'You allowed them to view your contact. To view their contact, you need to send them a request too.'}
@@ -1694,26 +1706,26 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                           variant="outline" 
                                           size="sm"
                                           onClick={() => handleRevokeContactRequest(request.id)}
-                                          className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
+                                          className="h-8 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
                                         >
-                                          <X size={14} className="mr-1" />
+                                          <X size={12} className="mr-1" />
                                           {t.revoke}
                                         </Button>
                                       </div>
                                     )}
                                     {/* Undo button for declined contact requests */}
                                     {request.status === 'declined' && (
-                                      <div className="flex gap-2 mt-2">
+                                      <div className="flex gap-2 mt-1">
                                         <Button 
                                           variant="outline" 
                                           size="sm"
                                           onClick={() => handleUndoDeclineContactRequest(request.id)}
-                                          className="text-teal hover:text-teal hover:bg-teal/10 border-teal/30"
+                                          className="h-8 text-xs text-teal hover:text-teal hover:bg-teal/10 border-teal/30"
                                         >
-                                          <ArrowCounterClockwise size={14} className="mr-1" />
+                                          <ArrowCounterClockwise size={12} className="mr-1" />
                                           {t.undo}
                                         </Button>
-                                        <p className="text-xs text-muted-foreground flex items-center">
+                                        <p className="text-[10px] text-muted-foreground flex items-center">
                                           {language === 'hi' ? 'पुनर्विचार करने के लिए क्लिक करें' : 'Click to reconsider'}
                                         </p>
                                       </div>
@@ -1742,7 +1754,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                   {myChats.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">{t.noActivity}</p>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       {myChats.map((msg) => {
                         const isMyMessage = msg.fromProfileId === currentUserProfile?.profileId
                         const otherProfileId = isMyMessage ? msg.toProfileId : msg.fromProfileId
@@ -1750,13 +1762,15 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                         const isAdminMessage = msg.type === 'admin-broadcast' || msg.type === 'admin-to-user' || msg.type === 'admin'
                         
                         return (
-                          <Card key={msg.id}>
-                            <CardContent className="pt-6">
-                              <div className="flex items-start gap-4">
+                          <Card key={msg.id} className="hover:shadow-sm transition-shadow border-blue-100">
+                            <CardContent className="py-3 px-4">
+                              <div className="flex items-start gap-3">
                                 {/* Profile Photo */}
                                 {isAdminMessage ? (
-                                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <ChatCircle size={24} weight="fill" className="text-primary" />
+                                  <div className="p-[2px] rounded-full bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-500">
+                                    <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
+                                      <ChatCircle size={20} weight="fill" className="text-blue-500" />
+                                    </div>
                                   </div>
                                 ) : otherProfile?.photos?.[0] ? (
                                   <div 
@@ -1764,38 +1778,42 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                     onClick={() => openLightbox(otherProfile.photos || [], 0)}
                                     title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
                                   >
-                                    <img 
-                                      src={otherProfile.photos[0]} 
-                                      alt={otherProfile.fullName || ''}
-                                      className="w-12 h-12 rounded-full object-cover border-2 border-primary/20 group-hover:ring-2 group-hover:ring-primary/50 transition-all"
-                                    />
+                                    <div className="p-[2px] rounded-full bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-500">
+                                      <img 
+                                        src={otherProfile.photos[0]} 
+                                        alt={otherProfile.fullName || ''}
+                                        className="w-11 h-11 rounded-full object-cover border-2 border-white group-hover:scale-105 transition-transform"
+                                      />
+                                    </div>
                                     <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                      <MagnifyingGlassPlus size={16} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                      <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </div>
                                   </div>
                                 ) : (
-                                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                                    <ChatCircle size={24} weight="fill" className={isMyMessage ? 'text-primary' : 'text-accent'} />
+                                  <div className="p-[2px] rounded-full bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-500">
+                                    <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
+                                      <ChatCircle size={20} weight="fill" className={isMyMessage ? 'text-blue-500' : 'text-indigo-500'} />
+                                    </div>
                                   </div>
                                 )}
-                                <div className="flex-1">
-                                  <div className="flex items-center justify-between mb-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between mb-1">
                                     <div>
                                       <p 
-                                        className={`font-semibold ${!isAdminMessage && otherProfile && onViewProfile ? 'cursor-pointer hover:text-primary hover:underline transition-colors' : ''}`}
+                                        className={`font-semibold text-sm text-blue-700 ${!isAdminMessage && otherProfile && onViewProfile ? 'cursor-pointer hover:underline transition-colors' : ''}`}
                                         onClick={() => !isAdminMessage && otherProfile && onViewProfile?.(otherProfile)}
                                       >
                                         {isAdminMessage ? 'Admin' : (otherProfile?.fullName || 'Unknown')}
                                       </p>
                                       {!isAdminMessage && (
-                                        <p className="text-xs text-muted-foreground">{otherProfile?.profileId || otherProfileId}</p>
+                                        <p className="text-[10px] text-muted-foreground">{otherProfile?.profileId || otherProfileId}</p>
                                       )}
                                     </div>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-[10px] text-muted-foreground">
                                       {new Date(msg.timestamp || msg.createdAt).toLocaleString(language === 'hi' ? 'hi-IN' : 'en-IN')}
                                     </p>
                                   </div>
-                                  <p className="text-sm text-muted-foreground line-clamp-2">{msg.message}</p>
+                                  <p className="text-xs text-muted-foreground line-clamp-1">{msg.message}</p>
                                 </div>
                               </div>
                             </CardContent>
