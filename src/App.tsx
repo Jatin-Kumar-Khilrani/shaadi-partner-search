@@ -51,6 +51,9 @@ interface MembershipSettings {
   sixMonthContactLimit: number    // 6-month plan: contact view limit
   oneYearChatLimit: number        // 1-year plan: chat request limit
   oneYearContactLimit: number     // 1-year plan: contact view limit
+  // Inactivity deactivation settings
+  inactivityDays: number          // Days of inactivity before deactivation (default: 30)
+  freePlanChatDurationMonths: number  // Months free plan users can chat with admin after deactivation (default: 6)
   // Payment details
   upiId: string                   // UPI ID for payments
   bankName: string                // Bank name
@@ -75,6 +78,9 @@ const defaultMembershipSettings: MembershipSettings = {
   sixMonthContactLimit: 20,
   oneYearChatLimit: 120,
   oneYearContactLimit: 50,
+  // Default inactivity settings
+  inactivityDays: 30,
+  freePlanChatDurationMonths: 6,
   // Default payment details
   upiId: '',
   bankName: '',
@@ -325,6 +331,53 @@ function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Check and deactivate profiles that have been inactive for too long
+  // This runs once when data is ready, and checks all profiles
+  useEffect(() => {
+    if (!isDataReady || !profiles || profiles.length === 0) return
+    
+    const inactivityDays = membershipSettings?.inactivityDays || 30
+    const inactivityThreshold = inactivityDays * 24 * 60 * 60 * 1000 // Convert days to milliseconds
+    const now = new Date()
+    
+    // Find profiles that should be deactivated (inactive for too long and not already deactivated)
+    const profilesToDeactivate = profiles.filter(profile => {
+      // Skip already deactivated, deleted, or pending profiles
+      if (profile.accountStatus === 'deactivated') return false
+      if (profile.isDeleted) return false
+      if (profile.status !== 'verified') return false
+      
+      // Check last activity (prefer lastActivityAt, fallback to lastLoginAt, then createdAt)
+      const lastActive = profile.lastActivityAt || profile.lastLoginAt || profile.createdAt
+      if (!lastActive) return false
+      
+      const lastActiveDate = new Date(lastActive)
+      const timeSinceActive = now.getTime() - lastActiveDate.getTime()
+      
+      return timeSinceActive > inactivityThreshold
+    })
+    
+    // Deactivate inactive profiles
+    if (profilesToDeactivate.length > 0) {
+      setProfiles(current => {
+        if (!current) return []
+        return current.map(profile => {
+          const shouldDeactivate = profilesToDeactivate.some(p => p.id === profile.id)
+          if (shouldDeactivate) {
+            return {
+              ...profile,
+              accountStatus: 'deactivated' as const,
+              deactivatedAt: now.toISOString(),
+              deactivationReason: 'inactivity' as const
+            }
+          }
+          return profile
+        })
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDataReady, membershipSettings?.inactivityDays])
+
   const handleSearch = (filters: SearchFilters) => {
     setSearchFilters(filters)
     setCurrentView('search-results')
@@ -338,6 +391,9 @@ function App() {
       
       // Exclude deleted profiles from regular users
       if (profile.isDeleted) return false
+      
+      // Exclude deactivated profiles from regular users (only admin can see them)
+      if (profile.accountStatus === 'deactivated' && !isAdmin) return false
       
       if (currentUserProfile && blockedProfiles) {
         const isBlocked = blockedProfiles.some(
@@ -358,7 +414,7 @@ function App() {
       
       return true
     })
-  }, [profiles, searchFilters, currentUserProfile, blockedProfiles])
+  }, [profiles, searchFilters, currentUserProfile, blockedProfiles, isAdmin])
 
   const handleRegisterProfile = (profileData: Partial<Profile>) => {
     // Ensure data is loaded from Azure before registering
@@ -488,13 +544,23 @@ function App() {
     // Redirect to home page after login
     setCurrentView('home')
     
-    // Update last login time for the profile
+    // Update last login time and last activity time for the profile
+    // Also reactivate the profile if user was deactivated (login = active again)
     // Note: profileId from User type is actually the profile's id (UUID), not profileId (M1234567)
     setProfiles(current => {
       if (!current) return []
+      const now = new Date().toISOString()
       return current.map(p => {
         if (p.id === profileId) {
-          return { ...p, lastLoginAt: new Date().toISOString() }
+          return { 
+            ...p, 
+            lastLoginAt: now,
+            lastActivityAt: now,
+            // Reactivate if was deactivated due to inactivity (user logged back in)
+            accountStatus: 'active',
+            deactivatedAt: undefined,
+            deactivationReason: undefined
+          }
         }
         return p
       })

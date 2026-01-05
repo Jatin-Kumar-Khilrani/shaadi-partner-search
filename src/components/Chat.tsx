@@ -27,6 +27,9 @@ interface MembershipSettings {
   sixMonthContactLimit: number
   oneYearChatLimit: number
   oneYearContactLimit: number
+  // Inactivity settings
+  inactivityDays?: number
+  freePlanChatDurationMonths?: number
 }
 
 interface ChatProps {
@@ -48,7 +51,9 @@ const DEFAULT_SETTINGS: MembershipSettings = {
   sixMonthChatLimit: 50,
   sixMonthContactLimit: 20,
   oneYearChatLimit: 120,
-  oneYearContactLimit: 50
+  oneYearContactLimit: 50,
+  inactivityDays: 30,
+  freePlanChatDurationMonths: 6
 }
 
 export function Chat({ currentUserProfile, profiles, language, isAdmin = false, shouldBlur = false, membershipPlan, membershipSettings, setProfiles, initialChatProfileId }: ChatProps) {
@@ -259,6 +264,12 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     if (isAdmin) return true
     if (!currentUserProfile) return false
     if (!otherProfileId) return false
+    
+    // If user is deactivated, they can only chat with admin
+    if (currentUserProfile.accountStatus === 'deactivated') {
+      return otherProfileId === 'admin'
+    }
+    
     if (!interests || interests.length === 0) return false
 
     const currentProfileId = currentUserProfile.profileId
@@ -272,6 +283,32 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     )
 
     return hasAcceptedInterest
+  }
+  
+  // Check if deactivated user can still chat with admin (based on plan and duration)
+  const canDeactivatedUserChatWithAdmin = (): boolean => {
+    if (!currentUserProfile) return false
+    if (currentUserProfile.accountStatus !== 'deactivated') return true // Active users can always chat
+    
+    const now = new Date()
+    const deactivatedAt = currentUserProfile.deactivatedAt ? new Date(currentUserProfile.deactivatedAt) : null
+    if (!deactivatedAt) return true
+    
+    // For paid plan users: can chat with admin until plan validity
+    if (currentUserProfile.membershipPlan && currentUserProfile.membershipPlan !== 'free') {
+      const planExpiry = currentUserProfile.membershipExpiry ? new Date(currentUserProfile.membershipExpiry) : null
+      if (planExpiry && planExpiry > now) {
+        return true
+      }
+      return false // Plan expired
+    }
+    
+    // For free plan users: can chat with admin for configured months after deactivation
+    const freePlanChatMonths = membershipSettings?.freePlanChatDurationMonths || 6
+    const chatExpiry = new Date(deactivatedAt)
+    chatExpiry.setMonth(chatExpiry.getMonth() + freePlanChatMonths)
+    
+    return now < chatExpiry
   }
 
   // Mark messages as delivered when user/admin loads the chat
@@ -878,6 +915,32 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   return (
     <div className="container mx-auto px-4 md:px-8 py-8 pb-24 md:pb-8">
       <div className="max-w-6xl mx-auto">
+        {/* Deactivated Account Alert */}
+        {!isAdmin && currentUserProfile?.accountStatus === 'deactivated' && (
+          <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <div className="flex items-start gap-3">
+              <Warning size={24} className="text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-800 dark:text-amber-200">
+                  {language === 'hi' ? 'प्रोफाइल निष्क्रिय' : 'Profile Deactivated'}
+                </h3>
+                <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                  {language === 'hi' 
+                    ? 'आपकी प्रोफाइल निष्क्रियता के कारण डिएक्टिवेट हो गई है। इस स्थिति में आप केवल एडमिन से चैट कर सकते हैं। पुनः सक्रिय करने के लिए एडमिन से संपर्क करें।'
+                    : 'Your profile has been deactivated due to inactivity. In this state, you can only chat with admin. Contact admin to request reactivation.'}
+                </p>
+                {!canDeactivatedUserChatWithAdmin() && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-2 font-medium">
+                    {language === 'hi' 
+                      ? '⚠️ आपकी चैट अवधि समाप्त हो गई है। कृपया प्लान नवीनीकृत करें।'
+                      : '⚠️ Your chat period has expired. Please renew your plan.'}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold">{t.title}</h1>
@@ -899,8 +962,128 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
           )}
         </div>
 
+        {/* Deactivated user - Only admin chat allowed */}
+        {!isAdmin && currentUserProfile?.accountStatus === 'deactivated' && canDeactivatedUserChatWithAdmin() && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[600px]">
+            {/* Left panel - Admin Support only */}
+            <Card className="md:col-span-1">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {language === 'hi' ? 'सहायता चैट (केवल एडमिन)' : 'Support Chat (Admin Only)'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {/* Admin Support Chat Option - Always visible */}
+                {(() => {
+                  const adminConvId = `admin-${currentUserProfile?.profileId}`
+                  const adminConv = conversations.find(c => c.id === adminConvId)
+                  const adminUnread = adminConv?.unreadCount || 0
+                  const hasAdminUnread = adminUnread > 0
+                  
+                  return (
+                    <div
+                      onClick={() => setSelectedConversation(adminConvId)}
+                      className={`p-3 rounded-lg cursor-pointer transition-all ${
+                        selectedConversation === adminConvId 
+                          ? 'bg-primary/10 border border-primary shadow-sm' 
+                          : hasAdminUnread 
+                            ? 'bg-green-50 dark:bg-green-950/30 border-l-4 border-green-500 hover:bg-green-100 dark:hover:bg-green-950/50'
+                            : 'hover:bg-muted'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-sm">
+                            <span className="text-lg text-primary-foreground">👤</span>
+                          </div>
+                          {hasAdminUnread && (
+                            <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 bg-green-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md animate-pulse">
+                              {adminUnread > 99 ? '99+' : adminUnread}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm truncate">{language === 'hi' ? 'एडमिन सहायता' : 'Admin Support'}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {language === 'hi' ? 'पुनः सक्रियण के लिए संपर्क करें' : 'Contact for reactivation'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+                
+                {/* Info about deactivated state */}
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground">
+                    {language === 'hi' 
+                      ? '🔒 अन्य प्रोफाइल के साथ चैट निष्क्रियता के कारण प्रतिबंधित है।'
+                      : '🔒 Chat with other profiles is restricted due to inactivity.'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Right panel - Chat area */}
+            <Card className="md:col-span-2 flex flex-col">
+              {selectedConversation ? (
+                <>
+                  <CardHeader className="pb-2 border-b">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+                          <span className="text-sm text-primary-foreground">👤</span>
+                        </div>
+                        <div>
+                          <p className="font-semibold">{language === 'hi' ? 'एडमिन सहायता' : 'Admin Support'}</p>
+                          <p className="text-xs text-muted-foreground">{language === 'hi' ? 'ऑनलाइन' : 'Online'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 overflow-hidden p-0 flex flex-col">
+                    <ScrollArea className="flex-1 p-4">
+                      {filteredMessages.length === 0 ? (
+                        <div className="text-center text-muted-foreground py-8">
+                          <ChatCircle size={48} className="mx-auto mb-2 opacity-50" />
+                          <p>{language === 'hi' ? 'पुनः सक्रियण के लिए एडमिन से बात करें' : 'Talk to admin for reactivation'}</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {filteredMessages.map((msg) => renderMessageBubble(msg))}
+                          <div ref={messagesEndRef} />
+                        </div>
+                      )}
+                    </ScrollArea>
+                    <div className="p-4 border-t">
+                      <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex gap-2">
+                        <Input
+                          value={messageInput}
+                          onChange={(e) => setMessageInput(e.target.value)}
+                          placeholder={language === 'hi' ? 'संदेश लिखें...' : 'Type a message...'}
+                          className="flex-1"
+                        />
+                        <Button type="submit" disabled={!messageInput.trim()}>
+                          <PaperPlaneTilt size={20} />
+                        </Button>
+                      </form>
+                    </div>
+                  </CardContent>
+                </>
+              ) : (
+                <CardContent className="flex-1 flex items-center justify-center">
+                  <div className="text-center text-muted-foreground">
+                    <ChatCircle size={48} className="mx-auto mb-2 opacity-50" />
+                    <p>{language === 'hi' ? 'एडमिन सहायता चुनें' : 'Select Admin Support'}</p>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          </div>
+        )}
+
         {/* Limited chat for free/expired membership - only admin chat allowed */}
-        {shouldBlur && !isAdmin && (
+        {shouldBlur && !isAdmin && currentUserProfile?.accountStatus !== 'deactivated' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[600px]">
             {/* Left panel - Admin Support only */}
             <Card className="md:col-span-1">

@@ -4225,6 +4225,21 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   )}
                 </div>
 
+                {/* Inactivity Notice */}
+                <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-700">
+                  <Warning size={18} className="text-amber-600" />
+                  <AlertDescription className="text-amber-800 dark:text-amber-200">
+                    <p className="font-medium mb-1">
+                      {language === 'hi' ? 'महत्वपूर्ण: निष्क्रियता नीति' : 'Important: Inactivity Policy'}
+                    </p>
+                    <p className="text-sm">
+                      {language === 'hi' 
+                        ? 'यदि आपकी प्रोफाइल 30 दिनों तक निष्क्रिय रहती है (कोई लॉगिन नहीं), तो यह स्वचालित रूप से निष्क्रिय हो जाएगी और अन्य उपयोगकर्ताओं को दिखाई नहीं देगी। अपनी प्रोफाइल सक्रिय रखने के लिए नियमित रूप से लॉगिन करें।'
+                        : 'If your profile remains inactive for 30 days (no login), it will be automatically deactivated and will not be visible to other users. Login regularly to keep your profile active.'}
+                    </p>
+                  </AlertDescription>
+                </Alert>
+
                 <Alert>
                   <Info size={18} />
                   <AlertDescription>

@@ -120,6 +120,9 @@ interface MembershipSettings {
   sixMonthContactLimit: number    // 6-month plan: contact view limit
   oneYearChatLimit: number        // 1-year plan: chat request limit
   oneYearContactLimit: number     // 1-year plan: contact view limit
+  // Inactivity deactivation settings
+  inactivityDays: number          // Days of inactivity before deactivation (default: 30)
+  freePlanChatDurationMonths: number  // Months free plan users can chat with admin after deactivation (default: 6)
   // Payment details
   upiId: string                   // UPI ID for payments
   bankName: string                // Bank name
@@ -149,6 +152,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     sixMonthContactLimit: 20,
     oneYearChatLimit: 120,
     oneYearContactLimit: 50,
+    // Default inactivity settings
+    inactivityDays: 30,
+    freePlanChatDurationMonths: 6,
     // Default payment details
     upiId: '',
     bankName: '',
@@ -173,6 +179,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     sixMonthContactLimit: 20,
     oneYearChatLimit: 120,
     oneYearContactLimit: 50,
+    inactivityDays: 30,
+    freePlanChatDurationMonths: 6,
     upiId: '',
     bankName: '',
     accountNumber: '',
@@ -1456,6 +1464,21 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               <Storefront size={16} weight="fill" className="shrink-0" />
               <span className="hidden sm:inline">{t.weddingServices}</span>
               <span className="sm:hidden">{language === 'hi' ? 'सेवाएं' : 'Services'}</span>
+            </TabsTrigger>
+            <TabsTrigger value="reactivations" className="gap-1 text-xs sm:text-sm whitespace-nowrap text-purple-600">
+              <ArrowClockwise size={16} weight="fill" className="shrink-0" />
+              <span className="hidden sm:inline">{language === 'hi' ? 'पुनः सक्रियण अनुरोध' : 'Reactivation Requests'}</span>
+              <span className="sm:hidden">{language === 'hi' ? 'पुनः सक्रियण' : 'Reactivate'}</span>
+              {(() => {
+                const reactivationRequestsCount = profiles?.filter(p => 
+                  p.accountStatus === 'deactivated' && 
+                  p.reactivationRequested && 
+                  !p.isDeleted
+                ).length || 0
+                return reactivationRequestsCount > 0 ? (
+                  <Badge variant="destructive" className="ml-1 text-xs animate-pulse">{reactivationRequestsCount}</Badge>
+                ) : null
+              })()}
             </TabsTrigger>
           </TabsList>
 
@@ -3591,6 +3614,143 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
             </Card>
           </TabsContent>
 
+          {/* Reactivation Requests Tab */}
+          <TabsContent value="reactivations">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-purple-600">
+                  <ArrowClockwise size={24} weight="fill" />
+                  {language === 'hi' ? 'पुनः सक्रियण अनुरोध' : 'Reactivation Requests'}
+                </CardTitle>
+                <CardDescription>
+                  {language === 'hi' 
+                    ? 'निष्क्रिय प्रोफाइल जिन्होंने पुनः सक्रियण का अनुरोध किया है'
+                    : 'Deactivated profiles that have requested reactivation'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const reactivationRequests = profiles?.filter(p => 
+                    p.accountStatus === 'deactivated' && 
+                    p.reactivationRequested && 
+                    !p.isDeleted
+                  ) || []
+                  
+                  if (reactivationRequests.length === 0) {
+                    return (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <ArrowClockwise size={48} className="mx-auto mb-4 opacity-50" />
+                        <p>{language === 'hi' ? 'कोई लंबित पुनः सक्रियण अनुरोध नहीं' : 'No pending reactivation requests'}</p>
+                      </div>
+                    )
+                  }
+                  
+                  return (
+                    <div className="space-y-4">
+                      {reactivationRequests.map((profile) => (
+                        <div 
+                          key={profile.id} 
+                          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border rounded-lg bg-purple-50 dark:bg-purple-950/20"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full overflow-hidden bg-muted">
+                              {profile.photos?.[0] ? (
+                                <img src={profile.photos[0]} alt={profile.fullName} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-purple-100 dark:bg-purple-900">
+                                  <User size={24} className="text-purple-600" />
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <h4 className="font-semibold">{profile.fullName}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {profile.profileId} • {profile.membershipPlan === 'free' ? (language === 'hi' ? 'मुफ्त' : 'Free') : profile.membershipPlan}
+                              </p>
+                              {profile.deactivatedAt && (
+                                <p className="text-xs text-muted-foreground">
+                                  {language === 'hi' ? 'निष्क्रिय:' : 'Deactivated:'} {new Date(profile.deactivatedAt).toLocaleDateString()}
+                                </p>
+                              )}
+                              {profile.reactivationRequestedAt && (
+                                <p className="text-xs text-purple-600">
+                                  {language === 'hi' ? 'अनुरोध तिथि:' : 'Requested:'} {new Date(profile.reactivationRequestedAt).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2 w-full sm:w-auto">
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="flex-1 sm:flex-initial gap-1 bg-green-600 hover:bg-green-700"
+                              onClick={() => {
+                                if (onUpdateProfile) {
+                                  onUpdateProfile({
+                                    ...profile,
+                                    accountStatus: 'active',
+                                    deactivatedAt: undefined,
+                                    deactivationReason: undefined,
+                                    reactivationRequested: false,
+                                    reactivationRequestedAt: undefined,
+                                    reactivationApprovedAt: new Date().toISOString(),
+                                    reactivationApprovedBy: currentUserId,
+                                    lastActivityAt: new Date().toISOString()
+                                  })
+                                  toast.success(
+                                    language === 'hi' 
+                                      ? `${profile.fullName} की प्रोफाइल पुनः सक्रिय!`
+                                      : `${profile.fullName}'s profile reactivated!`
+                                  )
+                                }
+                              }}
+                            >
+                              <Check size={16} />
+                              {language === 'hi' ? 'स्वीकृत करें' : 'Approve'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 sm:flex-initial gap-1 text-red-600 border-red-300 hover:bg-red-50"
+                              onClick={() => {
+                                if (onUpdateProfile) {
+                                  onUpdateProfile({
+                                    ...profile,
+                                    reactivationRequested: false,
+                                    reactivationRequestedAt: undefined,
+                                    reactivationRejectedAt: new Date().toISOString(),
+                                    reactivationRejectionReason: 'Admin rejected reactivation request'
+                                  })
+                                  toast.info(
+                                    language === 'hi' 
+                                      ? `${profile.fullName} का पुनः सक्रियण अनुरोध अस्वीकृत`
+                                      : `${profile.fullName}'s reactivation request rejected`
+                                  )
+                                }
+                              }}
+                            >
+                              <X size={16} />
+                              {language === 'hi' ? 'अस्वीकार करें' : 'Reject'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="gap-1"
+                              onClick={() => setViewProfileDialog(profile)}
+                            >
+                              <Eye size={16} />
+                              {language === 'hi' ? 'देखें' : 'View'}
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Membership Settings Tab */}
           <TabsContent value="membership">
             <div className="space-y-6">
@@ -3820,6 +3980,75 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         ? '💬 सभी प्लान में एडमिन चैट मुफ्त है। ये सीमाएं केवल प्रोफाइल-टू-प्रोफाइल चैट और संपर्क देखने पर लागू होती हैं।' 
                         : '💬 Admin chat is free for all plans. These limits apply only to profile-to-profile chats and contact views.'}
                     </p>
+                  </div>
+
+                  {/* Inactivity Deactivation Settings */}
+                  <Separator className="my-6" />
+                  <div className="space-y-4">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <Clock size={20} className="text-amber-500" />
+                      {language === 'hi' ? 'निष्क्रियता सेटिंग्स' : 'Inactivity Settings'}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'hi' 
+                        ? 'निर्धारित दिनों तक निष्क्रिय रहने पर प्रोफाइल डिएक्टिवेट हो जाएगी। डिएक्टिवेट प्रोफाइल केवल एडमिन को दिखेगी और केवल एडमिन चैट की अनुमति होगी।' 
+                        : 'Profiles will be deactivated after specified days of inactivity. Deactivated profiles are only visible to admin and can only chat with admin.'}
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Inactivity Days */}
+                      <div className="space-y-3 p-3 border rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                        <h5 className="font-medium text-sm text-amber-600 dark:text-amber-300">
+                          {language === 'hi' ? '⏰ निष्क्रियता अवधि' : '⏰ Inactivity Period'}
+                        </h5>
+                        <div className="space-y-2">
+                          <Label className="text-xs">{language === 'hi' ? 'निष्क्रियता दिन (डिएक्टिवेशन से पहले)' : 'Inactivity Days (before deactivation)'}</Label>
+                          <Input 
+                            type="number" 
+                            min="7"
+                            max="365"
+                            value={localMembershipSettings.inactivityDays || 30}
+                            onChange={(e) => setLocalMembershipSettings(prev => ({
+                              ...prev,
+                              inactivityDays: parseInt(e.target.value) || 30
+                            }))}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {language === 'hi' ? 'डिफ़ॉल्ट: 30 दिन। सभी प्लान पर लागू।' : 'Default: 30 days. Applies to all plans.'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Free Plan Chat Duration */}
+                      <div className="space-y-3 p-3 border rounded-lg bg-purple-50 dark:bg-purple-900/20">
+                        <h5 className="font-medium text-sm text-purple-600 dark:text-purple-300">
+                          {language === 'hi' ? '💬 फ्री प्लान चैट अवधि' : '💬 Free Plan Chat Duration'}
+                        </h5>
+                        <div className="space-y-2">
+                          <Label className="text-xs">{language === 'hi' ? 'डिएक्टिवेशन के बाद एडमिन चैट (महीने)' : 'Admin Chat After Deactivation (months)'}</Label>
+                          <Input 
+                            type="number" 
+                            min="1"
+                            max="24"
+                            value={localMembershipSettings.freePlanChatDurationMonths || 6}
+                            onChange={(e) => setLocalMembershipSettings(prev => ({
+                              ...prev,
+                              freePlanChatDurationMonths: parseInt(e.target.value) || 6
+                            }))}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {language === 'hi' ? 'फ्री प्लान यूजर डिएक्टिवेट होने के बाद भी इतने महीने तक एडमिन से चैट कर सकते हैं।' : 'Free plan users can chat with admin for this many months after deactivation.'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-900/20">
+                      <Info size={16} className="text-amber-600" />
+                      <AlertDescription className="text-xs text-amber-700 dark:text-amber-300">
+                        {language === 'hi' 
+                          ? '📌 पेड प्लान यूजर अपनी प्लान वैलिडिटी तक एडमिन से चैट कर सकते हैं। फ्री प्लान यूजर ऊपर निर्धारित महीनों तक चैट कर सकते हैं।' 
+                          : '📌 Paid plan users can chat with admin until their plan validity. Free plan users can chat for the months specified above.'}
+                      </AlertDescription>
+                    </Alert>
                   </div>
 
                   {/* Payment Details Section */}

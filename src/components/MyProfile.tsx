@@ -12,7 +12,7 @@ import { formatEducation, formatOccupation } from '@/lib/utils'
 import { 
   User, MapPin, Briefcase, GraduationCap, Heart, House, PencilSimple,
   ChatCircle, Envelope, Phone, Calendar, Warning, FilePdf, Trash,
-  CurrencyInr, ArrowClockwise, Camera, CheckCircle
+  CurrencyInr, ArrowClockwise, Camera, CheckCircle, ProhibitInset, ArrowUp
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Profile } from '@/types/profile'
@@ -475,6 +475,68 @@ export function MyProfile({ profile, language, onEdit, onDeleteProfile, onUpdate
             </AlertTitle>
             <AlertDescription className="text-blue-700 dark:text-blue-300">
               {t.pendingApprovalDesc}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Deactivated Profile Alert with Reactivation Request */}
+        {profile.accountStatus === 'deactivated' && (
+          <Alert className="mb-6 bg-red-50 border-red-400 dark:bg-red-950/30 dark:border-red-700">
+            <ProhibitInset size={20} weight="fill" className="text-red-600" />
+            <AlertTitle className="text-red-800 dark:text-red-200 font-semibold">
+              {language === 'hi' ? 'प्रोफाइल निष्क्रिय' : 'Profile Deactivated'}
+            </AlertTitle>
+            <AlertDescription className="text-red-700 dark:text-red-300">
+              <div className="space-y-2">
+                <p>
+                  {language === 'hi' 
+                    ? 'आपकी प्रोफाइल निष्क्रियता के कारण निष्क्रिय कर दी गई है। इसका मतलब है कि आपकी प्रोफाइल अन्य उपयोगकर्ताओं को दिखाई नहीं देगी।'
+                    : 'Your profile has been deactivated due to inactivity. This means your profile will not be visible to other users.'}
+                </p>
+                {profile.deactivatedAt && (
+                  <p className="text-sm">
+                    {language === 'hi' 
+                      ? `निष्क्रिय होने की तिथि: ${new Date(profile.deactivatedAt).toLocaleDateString('hi-IN')}`
+                      : `Deactivated on: ${new Date(profile.deactivatedAt).toLocaleDateString()}`}
+                  </p>
+                )}
+                <p className="text-sm">
+                  {language === 'hi' 
+                    ? 'आप अभी भी केवल एडमिन के साथ चैट कर सकते हैं। लॉगिन करने से आपकी प्रोफाइल स्वचालित रूप से पुनः सक्रिय हो जाएगी।'
+                    : 'You can still chat with admin only. Logging in will automatically reactivate your profile.'}
+                </p>
+                
+                {profile.reactivationRequested ? (
+                  <div className="flex items-center gap-2 mt-3 p-2 bg-blue-100 dark:bg-blue-900/30 rounded text-blue-700 dark:text-blue-300">
+                    <ArrowClockwise size={16} className="animate-spin" />
+                    <span>
+                      {language === 'hi' 
+                        ? 'पुनः सक्रियण अनुरोध लंबित है। कृपया एडमिन की प्रतिक्रिया की प्रतीक्षा करें।'
+                        : 'Reactivation request pending. Please wait for admin response.'}
+                    </span>
+                  </div>
+                ) : (
+                  <Button 
+                    onClick={() => {
+                      if (onUpdateProfile) {
+                        onUpdateProfile({
+                          reactivationRequested: true,
+                          reactivationRequestedAt: new Date().toISOString()
+                        })
+                        toast.success(
+                          language === 'hi' 
+                            ? 'पुनः सक्रियण अनुरोध भेजा गया!'
+                            : 'Reactivation request sent!'
+                        )
+                      }
+                    }}
+                    className="mt-3 gap-2 bg-primary hover:bg-primary/90 text-white"
+                  >
+                    <ArrowUp size={20} weight="bold" />
+                    {language === 'hi' ? 'पुनः सक्रियण का अनुरोध करें' : 'Request Reactivation'}
+                  </Button>
+                )}
+              </div>
             </AlertDescription>
           </Alert>
         )}

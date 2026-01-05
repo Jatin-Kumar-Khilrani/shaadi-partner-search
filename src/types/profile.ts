@@ -1,6 +1,7 @@
 export type Gender = 'male' | 'female'
 export type MaritalStatus = 'never-married' | 'divorced' | 'widowed' | 'awaiting-divorce'
 export type ProfileStatus = 'pending' | 'verified' | 'rejected'
+export type AccountStatus = 'active' | 'deactivated'  // Active/Deactivated based on inactivity
 export type DietPreference = 'veg' | 'non-veg' | 'eggetarian'
 export type DrinkingHabit = 'never' | 'occasionally' | 'regularly'
 export type SmokingHabit = 'never' | 'occasionally' | 'regularly'
@@ -86,6 +87,18 @@ export interface Profile {
   returnedAt?: string
   // Last login tracking
   lastLoginAt?: string
+  // Account status based on inactivity (deactivated after 1 month of inactivity)
+  accountStatus?: AccountStatus  // 'active' | 'deactivated'
+  deactivatedAt?: string          // When the account was deactivated
+  deactivationReason?: 'inactivity' | 'admin' | 'user-request'  // Reason for deactivation
+  lastActivityAt?: string         // Last meaningful activity timestamp
+  // Reactivation request (for deactivated users)
+  reactivationRequested?: boolean
+  reactivationRequestedAt?: string
+  reactivationApprovedAt?: string
+  reactivationApprovedBy?: string  // Admin who approved
+  reactivationRejectedAt?: string
+  reactivationRejectionReason?: string
   // Soft delete feature - profile hidden from everyone but admin
   isDeleted?: boolean
   deletedAt?: string
