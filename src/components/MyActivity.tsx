@@ -180,6 +180,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     profileBlocked: language === 'hi' ? 'प्रोफाइल ब्लॉक की गई' : 'Profile blocked',
     sentOn: language === 'hi' ? 'भेजा गया' : 'Sent on',
     acceptedOn: language === 'hi' ? 'स्वीकार किया' : 'Accepted on',
+    approvedOn: language === 'hi' ? 'स्वीकृति दी' : 'Approved on',
     clickToViewProfile: language === 'hi' ? 'प्रोफाइल देखने के लिए क्लिक करें' : 'Click to view profile',
     years: language === 'hi' ? 'वर्ष' : 'years',
     // Business flow info messages
@@ -450,11 +451,6 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
   // Include 'revoked' status to preserve history - these were once accepted but later revoked
   const youAcceptedInterests = receivedInterests.filter(i => i.status === 'accepted' || i.status === 'revoked') // I received, I accepted (may be revoked later)
   const theyAcceptedInterests = sentInterests.filter(i => i.status === 'accepted' || i.status === 'revoked') // I sent, they accepted (may be revoked later)
-  // Legacy: keep for backward compat if needed
-  const acceptedInterests = interests?.filter(
-    i => (i.toProfileId === currentUserProfile?.profileId || i.fromProfileId === currentUserProfile?.profileId) && 
-       i.status === 'accepted'
-  ) || []
   // Declined interests split: "You Declined" vs "They Declined"
   // You Declined = I received interest and declined it OR I sent interest and withdrew it
   const youDeclinedInterests = interests?.filter(
@@ -470,7 +466,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
       (i.toProfileId === currentUserProfile?.profileId && i.declinedBy === 'sender') // They sent to me, they withdrew
     )
   ) || []
-  // Legacy: keep for backward compat if needed
+  // Declined interests count for tab badge
   const declinedInterests = interests?.filter(
     i => (i.toProfileId === currentUserProfile?.profileId || i.fromProfileId === currentUserProfile?.profileId) && 
        i.status === 'declined'
@@ -821,7 +817,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     if (!currentUserProfile) return
 
     if (type === 'block') {
-      // Unblock the profile
+      // Unblock the profile - update blockedProfiles list
       setBlockedProfiles((current) =>
         (current || []).map(b =>
           b.blockerProfileId === currentUserProfile.profileId && b.blockedProfileId === profileId
@@ -829,6 +825,26 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
             : b
         )
       )
+      
+      // IMPORTANT: Also restore the interest status from 'blocked' back to 'pending'
+      // When we blocked, the interest was set to 'blocked' status - we need to undo that
+      setInterests((current) =>
+        (current || []).map(i => {
+          // Find the interest from this profile that was blocked
+          if (i.fromProfileId === profileId && 
+              i.toProfileId === currentUserProfile.profileId && 
+              i.status === 'blocked') {
+            return {
+              ...i,
+              status: 'pending' as const,
+              blockedAt: undefined,
+              unblockedAt: new Date().toISOString()
+            }
+          }
+          return i
+        })
+      )
+      
       toast.success(t.profileUnblocked)
     } else {
       // Mark as reconsidered in declined profiles
@@ -1057,7 +1073,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     setContactRequests((current) => 
       (current || []).map(req => 
         req.id === requestId 
-          ? { ...req, status: 'approved' as const }
+          ? { ...req, status: 'approved' as const, approvedAt: new Date().toISOString() }
           : req
       )
     )
@@ -1097,7 +1113,12 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     setContactRequests((current) => 
       (current || []).map(req => 
         req.id === requestId 
-          ? { ...req, status: 'declined' as const }
+          ? { 
+              ...req, 
+              status: 'declined' as const,
+              declinedAt: new Date().toISOString(),
+              declinedBy: 'receiver' as const
+            }
           : req
       )
     )
@@ -1135,7 +1156,13 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     setContactRequests((current) => 
       (current || []).map(req => 
         req.id === requestId 
-          ? { ...req, status: 'pending' as const }
+          ? { 
+              ...req, 
+              status: 'pending' as const,
+              declinedAt: undefined,
+              declinedBy: undefined,
+              autoDeclinedDueToInterest: undefined
+            }
           : req
       )
     )
@@ -1617,8 +1644,8 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                         </Button>
                                         <Button 
                                           variant="outline"
-                                          onClick={() => setInterestToDecline(interest.id)}
-                                          className="gap-1 h-8 text-xs"
+                                          onClick={() => handleRevokeInterest(interest.id)}
+                                          className="gap-1 h-8 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
                                         >
                                           <X size={14} />
                                           {t.revoke}
@@ -1758,8 +1785,8 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                         </Button>
                                         <Button 
                                           variant="outline"
-                                          onClick={() => setInterestToDecline(interest.id)}
-                                          className="gap-1 h-8 text-xs"
+                                          onClick={() => handleRevokeInterest(interest.id)}
+                                          className="gap-1 h-8 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
                                         >
                                           <X size={14} />
                                           {t.withdraw}
@@ -2394,7 +2421,10 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                           {isProfileMissing ? t.profileNotFound : (profile?.fullName || 'Unknown')}
                                         </p>
                                         <p className="text-xs text-muted-foreground">{profile?.profileId || request.toProfileId || '—'}</p>
-                                        <p className="text-[10px] text-muted-foreground">{t.sentOn}: {formatDate(request.createdAt)}</p>
+                                        <div className="text-[10px] text-gray-400 dark:text-gray-500 space-y-0.5 mt-0.5">
+                                          <p>{t.sentOn}: {formatDate(request.createdAt)}</p>
+                                          {request.approvedAt && <p className="text-emerald-600 dark:text-emerald-400">{t.approvedOn}: {formatDate(request.approvedAt)}</p>}
+                                        </div>
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -2567,7 +2597,10 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                             {isProfileMissing ? t.profileNotFound : (profile?.fullName || 'Unknown')}
                                           </p>
                                           <p className="text-xs text-muted-foreground">{profile?.profileId || request.fromProfileId || '—'}</p>
-                                          <p className="text-[10px] text-muted-foreground">{t.sentOn}: {formatDate(request.createdAt)}</p>
+                                          <div className="text-[10px] text-gray-400 dark:text-gray-500 space-y-0.5 mt-0.5">
+                                            <p>{t.sentOn}: {formatDate(request.createdAt)}</p>
+                                            {request.approvedAt && <p className="text-emerald-600 dark:text-emerald-400">{t.approvedOn}: {formatDate(request.approvedAt)}</p>}
+                                          </div>
                                         </div>
                                       </div>
                                       {/* Expiry countdown for pending contact requests */}
