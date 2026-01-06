@@ -130,6 +130,8 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     sentInterests: language === 'hi' ? 'भेजी गई रुचि' : 'Sent Interests',
     receivedInterests: language === 'hi' ? 'प्राप्त रुचि' : 'Received Interests',
     acceptedInterests: language === 'hi' ? 'स्वीकृत रुचि' : 'Accepted Interests',
+    youAccepted: language === 'hi' ? 'आपने स्वीकारा' : 'You Accepted',
+    theyAccepted: language === 'hi' ? 'उन्होंने स्वीकारा' : 'They Accepted',
     declinedInterests: language === 'hi' ? 'अस्वीकृत रुचि' : 'Declined Interests',
     myContactRequests: language === 'hi' ? 'संपर्क अनुरोध' : 'Contact Requests',
     recentChats: language === 'hi' ? 'नवीनतम चैट' : 'Recent Chats',
@@ -147,6 +149,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     viewProfile: language === 'hi' ? 'प्रोफाइल देखें' : 'View Profile',
     accept: language === 'hi' ? 'स्वीकार करें' : 'Accept',
     decline: language === 'hi' ? 'अस्वीकार करें' : 'Decline',
+    withdraw: language === 'hi' ? 'वापस लें' : 'Withdraw',
     block: language === 'hi' ? 'ब्लॉक करें' : 'Block',
     blockTooltip: language === 'hi' 
       ? 'इस प्रोफाइल को ब्लॉक करें - वे आपको दोबारा नहीं दिखेंगे' 
@@ -436,7 +439,10 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
   const receivedInterests = interests?.filter(i => i.toProfileId === currentUserProfile?.profileId) || []
   // Filter for pending received interests (for badge count)
   const pendingReceivedInterests = receivedInterests.filter(i => i.status === 'pending')
-  // Accepted interests (both sent and received that are accepted)
+  // Accepted interests split: "You Accepted" (received & accepted by me) vs "They Accepted" (sent & accepted by them)
+  const youAcceptedInterests = receivedInterests.filter(i => i.status === 'accepted') // I received, I accepted
+  const theyAcceptedInterests = sentInterests.filter(i => i.status === 'accepted') // I sent, they accepted
+  // Legacy: keep for backward compat if needed
   const acceptedInterests = interests?.filter(
     i => (i.toProfileId === currentUserProfile?.profileId || i.fromProfileId === currentUserProfile?.profileId) && 
        i.status === 'accepted'
@@ -1374,119 +1380,241 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
             </Card>
           </TabsContent>
 
-          {/* ACCEPTED INTERESTS TAB - Ready to chat */}
+          {/* ACCEPTED INTERESTS TAB - Split into You Accepted / They Accepted */}
           <TabsContent value="accepted-interests">
             <Card>
               <CardHeader>
                 <CardTitle>{t.acceptedInterests}</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[500px]">
-                  {acceptedInterests.length === 0 ? (
-                    <Alert>
-                      <AlertDescription>{t.noActivity}</AlertDescription>
-                    </Alert>
-                  ) : (
-                    <div className="space-y-4">
-                      {acceptedInterests.map((interest) => {
-                        const otherProfileId = interest.fromProfileId === currentUserProfile?.profileId 
-                          ? interest.toProfileId 
-                          : interest.fromProfileId
-                        const profile = getProfileByProfileId(otherProfileId)
-                        const isSentByMe = interest.fromProfileId === currentUserProfile?.profileId
-                        
-                        return (
-                          <Card key={interest.id} className="hover:shadow-md transition-shadow border-rose-100 dark:border-rose-900/30">
-                            <CardContent className="py-3 px-4">
-                              <div className="flex flex-col gap-3">
-                                <div 
-                                  className="flex items-center justify-between cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/20 -mx-2 px-2 py-1.5 rounded-lg transition-colors"
-                                  onClick={() => profile && setSelectedProfileForDetails(profile)}
-                                  title={t.clickToViewProfile}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    {profile?.photos?.[0] ? (
-                                      <div 
-                                        className="relative cursor-pointer group"
-                                        onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
-                                        title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
-                                      >
-                                        <div className="absolute -inset-0.5 bg-gradient-to-tr from-emerald-300 to-teal-200 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"></div>
-                                        <img 
-                                          src={profile.photos[0]} 
-                                          alt={profile.fullName || ''}
-                                          className="relative w-11 h-11 rounded-full object-cover border-2 border-white dark:border-gray-800 group-hover:scale-105 transition-transform"
-                                        />
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                          <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Tabs defaultValue="you-accepted">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="you-accepted" className="relative">
+                      {t.youAccepted}
+                      {youAcceptedInterests.length > 0 && (
+                        <Badge className="ml-1 h-5 px-1.5" variant="secondary">{youAcceptedInterests.length}</Badge>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger value="they-accepted" className="relative">
+                      {t.theyAccepted}
+                      {theyAcceptedInterests.length > 0 && (
+                        <Badge className="ml-1 h-5 px-1.5" variant="secondary">{theyAcceptedInterests.length}</Badge>
+                      )}
+                    </TabsTrigger>
+                  </TabsList>
+
+                  {/* You Accepted Sub-tab - Interests you received and accepted */}
+                  <TabsContent value="you-accepted">
+                    <ScrollArea className="h-[450px]">
+                      {youAcceptedInterests.length === 0 ? (
+                        <Alert>
+                          <AlertDescription>{t.noActivity}</AlertDescription>
+                        </Alert>
+                      ) : (
+                        <div className="space-y-4">
+                          {youAcceptedInterests.map((interest) => {
+                            const profile = getProfileByProfileId(interest.fromProfileId)
+                            
+                            return (
+                              <Card key={interest.id} className="hover:shadow-md transition-shadow border-emerald-100 dark:border-emerald-900/30">
+                                <CardContent className="py-3 px-4">
+                                  <div className="flex flex-col gap-3">
+                                    <div 
+                                      className="flex items-center justify-between cursor-pointer hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 -mx-2 px-2 py-1.5 rounded-lg transition-colors"
+                                      onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                      title={t.clickToViewProfile}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        {profile?.photos?.[0] ? (
+                                          <div 
+                                            className="relative cursor-pointer group"
+                                            onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
+                                            title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                          >
+                                            <div className="absolute -inset-0.5 bg-gradient-to-tr from-emerald-300 to-teal-200 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"></div>
+                                            <img 
+                                              src={profile.photos[0]} 
+                                              alt={profile.fullName || ''}
+                                              className="relative w-11 h-11 rounded-full object-cover border-2 border-white dark:border-gray-800 group-hover:scale-105 transition-transform"
+                                            />
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                              <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/50 dark:to-teal-900/50 flex items-center justify-center text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                                            {profile?.firstName?.[0]}{profile?.lastName?.[0]}
+                                          </div>
+                                        )}
+                                        <div>
+                                          <p className="font-semibold text-gray-800 dark:text-gray-100 hover:text-emerald-600 dark:hover:text-emerald-400 inline-flex items-center gap-1 text-sm">
+                                            {profile?.fullName || 'Unknown'}
+                                            <User size={10} weight="bold" className="opacity-60" />
+                                          </p>
+                                          <p className="text-xs text-gray-500 dark:text-gray-400">{profile?.profileId}</p>
+                                          <p className="text-xs text-gray-600 dark:text-gray-300">
+                                            {profile?.age} {t.years} • {profile?.location}
+                                          </p>
+                                          <div className="flex items-center gap-1 mt-0.5">
+                                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+                                              <Check size={10} className="mr-0.5" weight="bold" />
+                                              {language === 'hi' ? 'आपने स्वीकारा' : 'You accepted'}
+                                            </Badge>
+                                          </div>
                                         </div>
                                       </div>
-                                    ) : (
-                                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/50 dark:to-teal-900/50 flex items-center justify-center text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                                        {profile?.firstName?.[0]}{profile?.lastName?.[0]}
-                                      </div>
-                                    )}
-                                    <div>
-                                      <p className="font-semibold text-gray-800 dark:text-gray-100 hover:text-emerald-600 dark:hover:text-emerald-400 inline-flex items-center gap-1 text-sm">
-                                        {profile?.fullName || 'Unknown'}
-                                        <User size={10} weight="bold" className="opacity-60" />
-                                      </p>
-                                      <p className="text-xs text-gray-500 dark:text-gray-400">{profile?.profileId}</p>
-                                      <p className="text-xs text-gray-600 dark:text-gray-300">
-                                        {profile?.age} {t.years} • {profile?.location}
-                                      </p>
-                                      <div className="flex items-center gap-1 mt-0.5">
-                                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                                          <Heart size={10} className="mr-0.5" weight="fill" />
-                                          {isSentByMe ? (language === 'hi' ? 'आपने भेजी' : 'You sent') : (language === 'hi' ? 'आपको मिली' : 'You received')}
-                                        </Badge>
-                                      </div>
+                                      {getStatusBadge(interest.status)}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button 
+                                        onClick={() => onNavigateToChat && onNavigateToChat(interest.fromProfileId)}
+                                        className="gap-1 flex-1 h-8 text-xs"
+                                      >
+                                        <ChatCircle size={14} weight="fill" />
+                                        {t.startChat}
+                                      </Button>
+                                      <Button 
+                                        variant="outline"
+                                        onClick={() => setInterestToDecline(interest.id)}
+                                        className="gap-1 h-8 text-xs"
+                                      >
+                                        <X size={14} />
+                                        {t.decline}
+                                      </Button>
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button 
+                                              variant="destructive"
+                                              onClick={() => setInterestToBlock({ interestId: interest.id, profileId: interest.fromProfileId })}
+                                              className="gap-1 h-8 text-xs px-2"
+                                            >
+                                              <ProhibitInset size={14} weight="fill" />
+                                              <span className="hidden sm:inline">{t.block}</span>
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="top" className="max-w-[200px] text-center">
+                                            <p>{t.blockTooltip}</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
                                     </div>
                                   </div>
-                                  {getStatusBadge(interest.status)}
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button 
-                                    onClick={() => onNavigateToChat && onNavigateToChat(otherProfileId)}
-                                    className="gap-1 flex-1 h-8 text-xs"
-                                  >
-                                    <ChatCircle size={14} weight="fill" />
-                                    {t.startChat}
-                                  </Button>
-                                  <Button 
-                                    variant="outline"
-                                    onClick={() => setInterestToDecline(interest.id)}
-                                    className="gap-1 h-8 text-xs"
-                                  >
-                                    <X size={14} />
-                                    {t.decline}
-                                  </Button>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button 
-                                          variant="destructive"
-                                          onClick={() => setInterestToBlock({ interestId: interest.id, profileId: otherProfileId })}
-                                          className="gap-1 h-8 text-xs px-2"
-                                        >
-                                          <ProhibitInset size={14} weight="fill" />
-                                          <span className="hidden sm:inline">{t.block}</span>
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top" className="max-w-[200px] text-center">
-                                        <p>{t.blockTooltip}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )
-                      })}
-                    </div>
-                  )}
-                </ScrollArea>
+                                </CardContent>
+                              </Card>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </TabsContent>
+
+                  {/* They Accepted Sub-tab - Interests you sent that were accepted */}
+                  <TabsContent value="they-accepted">
+                    <ScrollArea className="h-[450px]">
+                      {theyAcceptedInterests.length === 0 ? (
+                        <Alert>
+                          <AlertDescription>{t.noActivity}</AlertDescription>
+                        </Alert>
+                      ) : (
+                        <div className="space-y-4">
+                          {theyAcceptedInterests.map((interest) => {
+                            const profile = getProfileByProfileId(interest.toProfileId)
+                            
+                            return (
+                              <Card key={interest.id} className="hover:shadow-md transition-shadow border-teal-100 dark:border-teal-900/30">
+                                <CardContent className="py-3 px-4">
+                                  <div className="flex flex-col gap-3">
+                                    <div 
+                                      className="flex items-center justify-between cursor-pointer hover:bg-teal-50/50 dark:hover:bg-teal-950/20 -mx-2 px-2 py-1.5 rounded-lg transition-colors"
+                                      onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                      title={t.clickToViewProfile}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        {profile?.photos?.[0] ? (
+                                          <div 
+                                            className="relative cursor-pointer group"
+                                            onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
+                                            title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                          >
+                                            <div className="absolute -inset-0.5 bg-gradient-to-tr from-teal-300 to-cyan-200 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"></div>
+                                            <img 
+                                              src={profile.photos[0]} 
+                                              alt={profile.fullName || ''}
+                                              className="relative w-11 h-11 rounded-full object-cover border-2 border-white dark:border-gray-800 group-hover:scale-105 transition-transform"
+                                            />
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                              <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-900/50 dark:to-cyan-900/50 flex items-center justify-center text-sm font-bold text-teal-700 dark:text-teal-300">
+                                            {profile?.firstName?.[0]}{profile?.lastName?.[0]}
+                                          </div>
+                                        )}
+                                        <div>
+                                          <p className="font-semibold text-gray-800 dark:text-gray-100 hover:text-teal-600 dark:hover:text-teal-400 inline-flex items-center gap-1 text-sm">
+                                            {profile?.fullName || 'Unknown'}
+                                            <User size={10} weight="bold" className="opacity-60" />
+                                          </p>
+                                          <p className="text-xs text-gray-500 dark:text-gray-400">{profile?.profileId}</p>
+                                          <p className="text-xs text-gray-600 dark:text-gray-300">
+                                            {profile?.age} {t.years} • {profile?.location}
+                                          </p>
+                                          <div className="flex items-center gap-1 mt-0.5">
+                                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300">
+                                              <Heart size={10} className="mr-0.5" weight="fill" />
+                                              {language === 'hi' ? 'उन्होंने स्वीकारा' : 'They accepted'}
+                                            </Badge>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      {getStatusBadge(interest.status)}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button 
+                                        onClick={() => onNavigateToChat && onNavigateToChat(interest.toProfileId)}
+                                        className="gap-1 flex-1 h-8 text-xs"
+                                      >
+                                        <ChatCircle size={14} weight="fill" />
+                                        {t.startChat}
+                                      </Button>
+                                      <Button 
+                                        variant="outline"
+                                        onClick={() => setInterestToDecline(interest.id)}
+                                        className="gap-1 h-8 text-xs"
+                                      >
+                                        <X size={14} />
+                                        {t.withdraw}
+                                      </Button>
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button 
+                                              variant="destructive"
+                                              onClick={() => setInterestToBlock({ interestId: interest.id, profileId: interest.toProfileId })}
+                                              className="gap-1 h-8 text-xs px-2"
+                                            >
+                                              <ProhibitInset size={14} weight="fill" />
+                                              <span className="hidden sm:inline">{t.block}</span>
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="top" className="max-w-[200px] text-center">
+                                            <p>{t.blockTooltip}</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </TabsContent>
