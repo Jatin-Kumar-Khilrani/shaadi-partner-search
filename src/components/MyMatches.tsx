@@ -16,7 +16,8 @@ import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { ProfileCard } from './ProfileCard'
 import { MagnifyingGlass, Funnel, X, GraduationCap, Globe, Calendar, Trophy, Sparkle, Heart, Users } from '@phosphor-icons/react'
-import type { Profile, SearchFilters, BlockedProfile, MembershipPlan, ProfileStatus, Interest, DeclinedProfile, DietPreference, DrinkingHabit, SmokingHabit } from '@/types/profile'
+import type { Profile, SearchFilters, BlockedProfile, MembershipPlan, ProfileStatus, Interest, DeclinedProfile, DietPreference, DrinkingHabit, SmokingHabit, ContactRequest } from '@/types/profile'
+import type { ProfileInteractionStatus } from './ProfileCard'
 import type { Language } from '@/lib/translations'
 
 // Extended filters interface with additional fields
@@ -49,6 +50,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
   const [showFilters, setShowFilters] = useState(false)
   const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
+  const [contactRequests] = useKV<ContactRequest[]>('contactRequests', [])
   const [declinedProfiles, setDeclinedProfiles] = useKV<DeclinedProfile[]>('declinedProfiles', [])
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 60])
   const [usePartnerPreferences, setUsePartnerPreferences] = useState(true) // Smart matching toggle
@@ -66,8 +68,15 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     isDeclinedByThem: boolean
     isBlocked: boolean
     isBlockedByThem: boolean
+    interactionStatus: ProfileInteractionStatus
   } => {
-    if (!currentUserProfile) return { isDeclinedByMe: false, isDeclinedByThem: false, isBlocked: false, isBlockedByThem: false }
+    if (!currentUserProfile) return { 
+      isDeclinedByMe: false, 
+      isDeclinedByThem: false, 
+      isBlocked: false, 
+      isBlockedByThem: false,
+      interactionStatus: {}
+    }
     
     // Check if I declined them
     const isDeclinedByMe = declinedProfiles?.some(
@@ -97,7 +106,74 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
            !b.isUnblocked
     ) || false
 
-    return { isDeclinedByMe, isDeclinedByThem, isBlocked, isBlockedByThem }
+    // --- Interaction Status for badges ---
+    
+    // Interest sent by me to this profile
+    const interestSent = interests?.some(
+      i => i.fromProfileId === currentUserProfile.profileId && 
+           i.toProfileId === profileId && 
+           (i.status === 'pending' || i.status === 'accepted')
+    ) || false
+
+    // Interest received from this profile
+    const interestReceived = interests?.some(
+      i => i.fromProfileId === profileId && 
+           i.toProfileId === currentUserProfile.profileId && 
+           i.status === 'pending'
+    ) || false
+
+    // Mutual interest accepted (I can chat with them)
+    const interestAccepted = interests?.some(
+      i => ((i.fromProfileId === currentUserProfile.profileId && i.toProfileId === profileId) ||
+            (i.fromProfileId === profileId && i.toProfileId === currentUserProfile.profileId)) &&
+           i.status === 'accepted'
+    ) || false
+
+    // Contact request sent by me
+    const contactRequestSent = contactRequests?.some(
+      r => r.fromProfileId === currentUserProfile.profileId && 
+           r.toProfileId === profileId && 
+           (r.status === 'pending' || r.status === 'approved')
+    ) || false
+
+    // Contact request received from this profile
+    const contactRequestReceived = contactRequests?.some(
+      r => r.fromProfileId === profileId && 
+           r.toProfileId === currentUserProfile.profileId && 
+           r.status === 'pending'
+    ) || false
+
+    // Contact request accepted
+    const contactRequestAccepted = contactRequests?.some(
+      r => ((r.fromProfileId === currentUserProfile.profileId && r.toProfileId === profileId) ||
+            (r.fromProfileId === profileId && r.toProfileId === currentUserProfile.profileId)) &&
+           r.status === 'approved'
+    ) || false
+
+    // Can chat = interest accepted
+    const canChat = interestAccepted
+
+    // Profile viewed by me (using freeViewedProfiles for now)
+    const isViewed = currentUserProfile.freeViewedProfiles?.includes(profileId) || false
+
+    // New = not viewed and no interaction
+    const isNew = !isViewed && !interestSent && !interestReceived && !interestAccepted && 
+                  !contactRequestSent && !contactRequestReceived && !contactRequestAccepted &&
+                  !isDeclinedByMe && !isDeclinedByThem
+
+    const interactionStatus: ProfileInteractionStatus = {
+      isNew,
+      isViewed,
+      interestSent,
+      interestReceived,
+      interestAccepted,
+      contactRequestSent,
+      contactRequestReceived,
+      contactRequestAccepted,
+      canChat
+    }
+
+    return { isDeclinedByMe, isDeclinedByThem, isBlocked, isBlockedByThem, interactionStatus }
   }
 
   // Handler to reconsider a declined profile - synced with MyActivity logic
@@ -1014,6 +1090,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                   isDeclinedByMe={status.isDeclinedByMe}
                   isDeclinedByThem={status.isDeclinedByThem}
                   onReconsider={handleReconsiderProfile}
+                  interactionStatus={status.interactionStatus}
                 />
               )
             })}

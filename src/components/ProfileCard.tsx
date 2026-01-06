@@ -1,10 +1,23 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MapPin, Briefcase, GraduationCap, UserCircle, ShieldCheck, Seal, Clock, Lock, Crown, Eye, XCircle, ArrowCounterClockwise, ProhibitInset } from '@phosphor-icons/react'
+import { MapPin, Briefcase, GraduationCap, UserCircle, ShieldCheck, Seal, Clock, Lock, Crown, Eye, XCircle, ArrowCounterClockwise, ProhibitInset, Heart, PaperPlaneTilt, Phone, CheckCircle, Sparkle } from '@phosphor-icons/react'
 import type { Profile, MembershipPlan } from '@/types/profile'
 import { motion } from 'framer-motion'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
+
+// Status indicators for profile interactions
+export interface ProfileInteractionStatus {
+  isNew?: boolean  // Not viewed yet
+  isViewed?: boolean  // Profile has been viewed by current user
+  interestSent?: boolean  // Interest sent by current user
+  interestReceived?: boolean  // Interest received from this profile
+  interestAccepted?: boolean  // Mutual interest accepted
+  contactRequestSent?: boolean  // Contact request sent by current user
+  contactRequestReceived?: boolean  // Contact request received from this profile
+  contactRequestAccepted?: boolean  // Contact request accepted
+  canChat?: boolean  // Can chat with this profile (interest accepted)
+}
 
 interface ProfileCardProps {
   profile: Profile
@@ -17,9 +30,11 @@ interface ProfileCardProps {
   isDeclinedByMe?: boolean
   isDeclinedByThem?: boolean
   onReconsider?: (profileId: string) => void
+  // New prop for interaction status
+  interactionStatus?: ProfileInteractionStatus
 }
 
-export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedIn = false, shouldBlur = false, membershipPlan, isDeclinedByMe = false, isDeclinedByThem = false, onReconsider }: ProfileCardProps) {
+export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedIn = false, shouldBlur = false, membershipPlan, isDeclinedByMe = false, isDeclinedByThem = false, onReconsider, interactionStatus }: ProfileCardProps) {
   
   // Lightbox for photo zoom
   const { lightboxState, openLightbox, closeLightbox } = useLightbox()
@@ -70,7 +85,82 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
     declinedByMe: language === 'hi' ? 'मेरे द्वारा अस्वीकृत' : 'Declined by me',
     declinedByThem: language === 'hi' ? 'उनके द्वारा अस्वीकृत' : 'Declined by them',
     reconsider: language === 'hi' ? 'पुनर्विचार' : 'Reconsider',
+    // Interaction status labels
+    new: language === 'hi' ? 'नया' : 'New',
+    viewed: language === 'hi' ? 'देखा गया' : 'Viewed',
+    interestSent: language === 'hi' ? 'रुचि भेजी' : 'Interest Sent',
+    interestReceived: language === 'hi' ? 'रुचि मिली' : 'Interest Received',
+    connected: language === 'hi' ? 'जुड़े हुए' : 'Connected',
+    contactSent: language === 'hi' ? 'संपर्क भेजा' : 'Contact Sent',
+    contactReceived: language === 'hi' ? 'संपर्क मिला' : 'Contact Received',
+    canChat: language === 'hi' ? 'चैट करें' : 'Can Chat',
   }
+
+  // Get primary interaction status badge
+  const getInteractionBadge = () => {
+    if (!interactionStatus || !isLoggedIn) return null
+    
+    // Priority order: Connected > Interest Accepted > Contact Sent > Interest Sent > Interest Received > Contact Received > Viewed > New
+    if (interactionStatus.canChat || interactionStatus.interestAccepted) {
+      return {
+        text: t.connected,
+        icon: <Heart size={10} weight="fill" />,
+        className: 'bg-green-500 text-white border-green-600'
+      }
+    }
+    if (interactionStatus.contactRequestAccepted) {
+      return {
+        text: t.canChat,
+        icon: <Phone size={10} weight="fill" />,
+        className: 'bg-emerald-500 text-white border-emerald-600'
+      }
+    }
+    if (interactionStatus.contactRequestSent) {
+      return {
+        text: t.contactSent,
+        icon: <Phone size={10} weight="regular" />,
+        className: 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/50 dark:text-purple-300'
+      }
+    }
+    if (interactionStatus.interestSent) {
+      return {
+        text: t.interestSent,
+        icon: <PaperPlaneTilt size={10} weight="fill" />,
+        className: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/50 dark:text-blue-300'
+      }
+    }
+    if (interactionStatus.interestReceived) {
+      return {
+        text: t.interestReceived,
+        icon: <Heart size={10} weight="fill" />,
+        className: 'bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-900/50 dark:text-rose-300 animate-pulse'
+      }
+    }
+    if (interactionStatus.contactRequestReceived) {
+      return {
+        text: t.contactReceived,
+        icon: <Phone size={10} weight="fill" />,
+        className: 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/50 dark:text-amber-300 animate-pulse'
+      }
+    }
+    if (interactionStatus.isViewed) {
+      return {
+        text: t.viewed,
+        icon: <Eye size={10} weight="fill" />,
+        className: 'bg-gray-100 text-gray-600 border-gray-300 dark:bg-gray-800 dark:text-gray-400'
+      }
+    }
+    if (interactionStatus.isNew) {
+      return {
+        text: t.new,
+        icon: <Sparkle size={10} weight="fill" />,
+        className: 'bg-gradient-to-r from-rose-500 to-amber-500 text-white border-rose-400'
+      }
+    }
+    return null
+  }
+
+  const interactionBadge = getInteractionBadge()
 
   // Determine if this card should have special styling for declined status
   const hasDeclinedStatus = isDeclinedByMe || isDeclinedByThem
@@ -109,7 +199,7 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
       whileHover={{ y: -6, transition: { duration: 0.2 } }}
     >
       <Card 
-        className={`overflow-hidden hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border border-rose-100 dark:border-rose-900/30 hover:border-primary/50 cursor-pointer group/card bg-gradient-to-b from-white to-rose-50/30 dark:from-gray-900 dark:to-rose-950/20 active:scale-[0.98] ${declinedCardClass} ${declinedByMeClass} ${declinedByThemClass}`}
+        className={`relative overflow-hidden hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border border-rose-100 dark:border-rose-900/30 hover:border-primary/50 cursor-pointer group/card bg-gradient-to-b from-white to-rose-50/30 dark:from-gray-900 dark:to-rose-950/20 active:scale-[0.98] ${declinedCardClass} ${declinedByMeClass} ${declinedByThemClass}`}
         onClick={() => onViewProfile(profile)}
         role="button"
         tabIndex={0}
@@ -140,6 +230,16 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
                 {t.reconsider}
               </button>
             )}
+          </div>
+        )}
+
+        {/* Interaction status badge - floating in top right */}
+        {interactionBadge && !hasDeclinedStatus && (
+          <div className="absolute top-2 right-2 z-10">
+            <Badge className={`${interactionBadge.className} text-[9px] px-1.5 py-0.5 flex items-center gap-1 shadow-sm border`}>
+              {interactionBadge.icon}
+              <span>{interactionBadge.text}</span>
+            </Badge>
           </div>
         )}
         

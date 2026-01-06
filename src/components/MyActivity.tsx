@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { useKV } from '@/hooks/useKV'
-import { Eye, Heart, ChatCircle, Check, X, MagnifyingGlassPlus, ProhibitInset, Phone, Envelope as EnvelopeIcon, User, Clock, ArrowCounterClockwise, Warning, Rocket, UploadSimple, CurrencyInr } from '@phosphor-icons/react'
+import { Eye, Heart, ChatCircle, Check, X, MagnifyingGlassPlus, ProhibitInset, Phone, Envelope as EnvelopeIcon, User, Clock, ArrowCounterClockwise, Warning, Rocket, UploadSimple, CurrencyInr, Trash } from '@phosphor-icons/react'
 import type { Interest, ContactRequest, Profile, BlockedProfile, MembershipPlan, DeclinedProfile, UserNotification } from '@/types/profile'
 import type { ChatMessage } from '@/types/chat'
 import type { Language } from '@/lib/translations'
@@ -450,9 +450,23 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
   const receivedContactRequests = contactRequests?.filter(r => r.toUserId === loggedInUserId) || []
   // Filter for pending contact requests (for badge count)
   const pendingContactRequests = receivedContactRequests.filter(r => r.status === 'pending')
-  const myChats = messages?.filter(
-    m => m.fromUserId === loggedInUserId || m.fromProfileId === currentUserProfile?.profileId || m.toProfileId === currentUserProfile?.profileId
-  ).slice(-10) || []
+  
+  // Filter chats: Show messages where the current user is either sender OR recipient
+  // But for system-generated messages (fromUserId === 'system'), only show if user is the intended recipient (toProfileId)
+  const myChats = messages?.filter(m => {
+    const isSystemMessage = m.fromUserId === 'system'
+    const isMyProfile = currentUserProfile?.profileId
+    
+    if (isSystemMessage) {
+      // System messages: only show to the intended recipient
+      return m.toProfileId === isMyProfile
+    }
+    
+    // Regular user messages: show if user is sender or recipient
+    return m.fromUserId === loggedInUserId || 
+           m.fromProfileId === isMyProfile || 
+           m.toProfileId === isMyProfile
+  }).slice(-10) || []
 
   const getProfileByProfileId = (profileId: string) => {
     return profiles.find(p => p.profileId === profileId)
@@ -536,36 +550,23 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
       )
     )
 
-    // Send welcome messages to both users
+    // Send a single welcome message to the conversation (both users will see it)
+    // Using fromUserId='system' to indicate it's a system notification, not from either user
     const welcomeMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
       fromUserId: 'system',
-      fromProfileId: currentUserProfile.profileId,
-      toProfileId: interest.fromProfileId,
+      fromProfileId: 'system', // System message, not from either profile
+      toProfileId: interest.fromProfileId, // The other user in conversation
       message: language === 'hi' 
-        ? `${currentUserProfile.fullName} ने आपकी रुचि स्वीकार कर ली है! अब आप उनसे बात कर सकते हैं।`
-        : `${currentUserProfile.fullName} has accepted your interest! You can now chat with them.`,
+        ? `🎉 रुचि स्वीकृत! ${currentUserProfile.fullName} और ${senderProfile.fullName} अब एक-दूसरे से बात कर सकते हैं।`
+        : `🎉 Interest accepted! ${currentUserProfile.fullName} and ${senderProfile.fullName} can now chat with each other.`,
       timestamp: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       read: false,
       type: 'user-to-user',
     }
 
-    const responseMessage: ChatMessage = {
-      id: `msg-${Date.now() + 1}`,
-      fromUserId: 'system',
-      fromProfileId: interest.fromProfileId,
-      toProfileId: currentUserProfile.profileId,
-      message: language === 'hi' 
-        ? `आपने ${senderProfile.fullName} की रुचि स्वीकार कर ली है। अब आप उनसे बात कर सकते हैं।`
-        : `You have accepted ${senderProfile.fullName}'s interest. You can now chat with them.`,
-      timestamp: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      read: false,
-      type: 'user-to-user',
-    }
-
-    setMessages(current => [...(current || []), welcomeMessage, responseMessage])
+    setMessages(current => [...(current || []), welcomeMessage])
 
     // Store in-app notification for the sender (they'll see it in their bell icon)
     const notification: UserNotification = {
@@ -2132,12 +2133,14 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                     <div className="space-y-2">
                       {myChats.map((msg) => {
                         const isMyMessage = msg.fromProfileId === currentUserProfile?.profileId
-                        const otherProfileId = isMyMessage ? msg.toProfileId : msg.fromProfileId
+                        const isSystemMessage = msg.fromProfileId === 'system'
+                        const otherProfileId = isSystemMessage ? msg.toProfileId : (isMyMessage ? msg.toProfileId : msg.fromProfileId)
                         const otherProfile = profiles.find(p => p.profileId === otherProfileId)
                         const isAdminMessage = msg.type === 'admin-broadcast' || msg.type === 'admin-to-user' || msg.type === 'admin'
+                        const isDeletedProfile = !isAdminMessage && !isSystemMessage && !otherProfile
                         
                         return (
-                          <Card key={msg.id} className="hover:shadow-sm transition-shadow border-blue-100">
+                          <Card key={msg.id} className={`hover:shadow-sm transition-shadow ${isDeletedProfile ? 'border-gray-300 bg-gray-50/50 opacity-70' : 'border-blue-100'}`}>
                             <CardContent className="py-3 px-4">
                               <div className="flex items-start gap-3">
                                 {/* Profile Photo */}
@@ -2145,6 +2148,18 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                   <div className="p-[2px] rounded-full bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-500">
                                     <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
                                       <ChatCircle size={20} weight="fill" className="text-blue-500" />
+                                    </div>
+                                  </div>
+                                ) : isSystemMessage ? (
+                                  <div className="p-[2px] rounded-full bg-gradient-to-r from-green-400 via-emerald-400 to-teal-500">
+                                    <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
+                                      <Check size={20} weight="bold" className="text-green-500" />
+                                    </div>
+                                  </div>
+                                ) : isDeletedProfile ? (
+                                  <div className="p-[2px] rounded-full bg-gradient-to-r from-gray-300 via-gray-400 to-gray-500">
+                                    <div className="w-11 h-11 rounded-full bg-gray-100 flex items-center justify-center">
+                                      <Trash size={20} weight="fill" className="text-gray-400" />
                                     </div>
                                   </div>
                                 ) : otherProfile?.photos?.[0] ? (
@@ -2174,21 +2189,40 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between mb-1">
                                     <div>
-                                      <p 
-                                        className={`font-semibold text-sm text-blue-700 ${!isAdminMessage && otherProfile && onViewProfile ? 'cursor-pointer hover:underline transition-colors' : ''}`}
-                                        onClick={() => !isAdminMessage && otherProfile && onViewProfile?.(otherProfile)}
-                                      >
-                                        {isAdminMessage ? 'Admin' : (otherProfile?.fullName || 'Unknown')}
-                                      </p>
-                                      {!isAdminMessage && (
-                                        <p className="text-[10px] text-muted-foreground">{otherProfile?.profileId || otherProfileId}</p>
+                                      {isSystemMessage ? (
+                                        <p className="font-semibold text-sm text-green-600">
+                                          {language === 'hi' ? 'सिस्टम सूचना' : 'System Notification'}
+                                        </p>
+                                      ) : isDeletedProfile ? (
+                                        <>
+                                          <p className="font-semibold text-sm text-gray-500 line-through">
+                                            {language === 'hi' ? 'हटाई गई प्रोफाइल' : 'Deleted Profile'}
+                                          </p>
+                                          <p className="text-[10px] text-red-500">{otherProfileId}</p>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <p 
+                                            className={`font-semibold text-sm text-blue-700 ${!isAdminMessage && otherProfile && onViewProfile ? 'cursor-pointer hover:underline transition-colors' : ''}`}
+                                            onClick={() => !isAdminMessage && otherProfile && onViewProfile?.(otherProfile)}
+                                          >
+                                            {isAdminMessage ? 'Admin' : (otherProfile?.fullName || 'Unknown')}
+                                          </p>
+                                          {!isAdminMessage && (
+                                            <p className="text-[10px] text-muted-foreground">{otherProfile?.profileId || otherProfileId}</p>
+                                          )}
+                                        </>
                                       )}
                                     </div>
                                     <p className="text-[10px] text-muted-foreground">
                                       {new Date(msg.timestamp || msg.createdAt).toLocaleString(language === 'hi' ? 'hi-IN' : 'en-IN')}
                                     </p>
                                   </div>
-                                  <p className="text-xs text-muted-foreground line-clamp-1">{msg.message}</p>
+                                  <p className={`text-xs line-clamp-1 ${isDeletedProfile ? 'text-gray-400 italic' : 'text-muted-foreground'}`}>
+                                    {isDeletedProfile 
+                                      ? (language === 'hi' ? 'यह प्रोफाइल अब उपलब्ध नहीं है' : 'This profile is no longer available')
+                                      : msg.message}
+                                  </p>
                                 </div>
                               </div>
                             </CardContent>

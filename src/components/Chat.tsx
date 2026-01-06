@@ -612,7 +612,9 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       return messages.filter(m => 
         m.type === 'user-to-user' &&
         ((m.fromProfileId === profileId1 && m.toProfileId === profileId2) ||
-         (m.fromProfileId === profileId2 && m.toProfileId === profileId1))
+         (m.fromProfileId === profileId2 && m.toProfileId === profileId1) ||
+         // Include system messages for this conversation
+         (m.fromProfileId === 'system' && (m.toProfileId === profileId1 || m.toProfileId === profileId2)))
       )
     }
 
@@ -620,7 +622,9 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     return messages.filter(m => 
       m.type === 'user-to-user' &&
       ((m.fromProfileId === profileId1 && m.toProfileId === profileId2) ||
-       (m.fromProfileId === profileId2 && m.toProfileId === profileId1))
+       (m.fromProfileId === profileId2 && m.toProfileId === profileId1) ||
+       // Include system messages for this conversation
+       (m.fromProfileId === 'system' && (m.toProfileId === profileId1 || m.toProfileId === profileId2)))
     )
   }
 
