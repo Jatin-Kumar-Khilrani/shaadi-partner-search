@@ -72,6 +72,10 @@ function DialogContent({
         }}
         {...props}
       >
+        {/* Visually hidden title for accessibility - prevents Radix UI warning when no visible DialogTitle is used */}
+        <VisuallyHidden.Root asChild>
+          <DialogPrimitive.Title>Dialog</DialogPrimitive.Title>
+        </VisuallyHidden.Root>
         {/* Visually hidden description for accessibility - prevents Radix UI warning */}
         <VisuallyHidden.Root asChild>
           <DialogPrimitive.Description>Dialog content</DialogPrimitive.Description>

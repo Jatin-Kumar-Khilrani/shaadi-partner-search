@@ -33,6 +33,7 @@ export function PhotoLightbox({ photos, initialIndex = 0, open, onClose }: Photo
             size="icon"
             className="absolute top-2 right-2 z-50 text-white hover:bg-white/20 rounded-full"
             onClick={onClose}
+            aria-label="Close photo viewer"
           >
             <X size={24} weight="bold" />
           </Button>
@@ -45,6 +46,7 @@ export function PhotoLightbox({ photos, initialIndex = 0, open, onClose }: Photo
                 size="icon"
                 className="absolute left-2 z-40 text-white hover:bg-white/20 rounded-full h-12 w-12"
                 onClick={handlePrev}
+                aria-label="Previous photo"
               >
                 <ArrowLeft size={28} weight="bold" />
               </Button>
@@ -53,6 +55,7 @@ export function PhotoLightbox({ photos, initialIndex = 0, open, onClose }: Photo
                 size="icon"
                 className="absolute right-2 z-40 text-white hover:bg-white/20 rounded-full h-12 w-12"
                 onClick={handleNext}
+                aria-label="Next photo"
               >
                 <ArrowRight size={28} weight="bold" />
               </Button>

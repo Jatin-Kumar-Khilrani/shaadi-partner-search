@@ -833,6 +833,7 @@ function App() {
               onClick={() => setCurrentView('home')}
               className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
               size="sm"
+              aria-label={t.homeButton}
             >
               <Heart size={18} weight="fill" />
               <span className="hidden xl:inline">{t.homeButton}</span>
@@ -844,6 +845,7 @@ function App() {
                   onClick={() => setCurrentView('my-matches')}
                   className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
                   size="sm"
+                  aria-label={t.myMatches}
                 >
                   <MagnifyingGlass size={18} />
                   <span className="hidden xl:inline">{t.myMatches}</span>
@@ -853,6 +855,7 @@ function App() {
                   onClick={() => setCurrentView('my-activity')}
                   className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
                   size="sm"
+                  aria-label={t.myActivity}
                 >
                   <ClockCounterClockwise size={18} />
                   <span className="hidden xl:inline">{t.myActivity}</span>
@@ -862,6 +865,7 @@ function App() {
                   onClick={() => { setChatTargetProfileId(null); setCurrentView('chat'); }}
                   className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
                   size="sm"
+                  aria-label={t.chat}
                 >
                   <ChatCircle size={18} />
                   <span className="hidden xl:inline">{t.chat}</span>
@@ -871,6 +875,7 @@ function App() {
                   onClick={() => setCurrentView('readiness')}
                   className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
                   size="sm"
+                  aria-label={language === 'hi' ? 'तत्परता' : 'Readiness'}
                 >
                   <Trophy size={18} weight="fill" />
                   <span className="hidden xl:inline">{language === 'hi' ? 'तत्परता' : 'Readiness'}</span>
@@ -882,6 +887,7 @@ function App() {
               onClick={() => setCurrentView('wedding-services')}
               className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
               size="sm"
+              aria-label={t.weddingServices}
             >
               <Storefront size={18} />
               <span className="hidden xl:inline">{t.weddingServices}</span>
@@ -897,6 +903,7 @@ function App() {
               }}
               className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0"
               size="sm"
+              aria-label={t.adminButton}
             >
               <ShieldCheck size={18} weight="fill" />
               <span className="hidden xl:inline">{t.adminButton}</span>
@@ -906,17 +913,18 @@ function App() {
               size="sm"
               onClick={() => setLanguage(language === 'hi' ? 'en' : 'hi')}
               title={language === 'hi' ? 'Switch to English' : 'हिंदी में बदलें'}
+              aria-label={language === 'hi' ? 'Switch to English' : 'हिंदी में बदलें'}
               className="text-lg font-bold px-2 flex-shrink-0"
             >
               {language === 'hi' ? 'A' : 'अ'}
             </Button>
             {!loggedInUser ? (
               <>
-                <Button onClick={() => setShowLogin(true)} variant="ghost" className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0" size="sm">
+                <Button onClick={() => setShowLogin(true)} variant="ghost" className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm flex-shrink-0" size="sm" aria-label={t.login}>
                   <SignIn size={18} weight="bold" />
                   <span className="hidden xl:inline">{t.login}</span>
                 </Button>
-                <Button onClick={() => setShowRegistration(true)} className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm bg-accent hover:bg-accent/90 text-accent-foreground flex-shrink-0" size="sm">
+                <Button onClick={() => setShowRegistration(true)} className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm bg-accent hover:bg-accent/90 text-accent-foreground flex-shrink-0" size="sm" aria-label={t.register}>
                   <UserPlus size={18} weight="bold" />
                   <span className="hidden xl:inline">{t.register}</span>
                 </Button>
@@ -991,7 +999,7 @@ function App() {
                   return (
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="relative group">
+                        <Button variant="ghost" size="icon" className="relative group" aria-label={language === 'hi' ? 'सूचनाएं' : 'Notifications'}>
                           <Bell 
                             size={20} 
                             weight={unreadCount > 0 ? "fill" : "regular"} 
