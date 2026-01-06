@@ -139,6 +139,14 @@ interface MembershipSettings {
   qrCodeImage: string             // QR code image URL/base64
 }
 
+// Site settings for emergency controls (registration pause, maintenance, etc.)
+interface SiteSettings {
+  registrationPaused: boolean       // When true, new registrations are blocked
+  pauseReason: string               // Reason shown to users (e.g., "System maintenance", "Emergency")
+  pausedAt: string | null           // Timestamp when registration was paused
+  estimatedResumeTime: string       // Optional: When registration is expected to resume
+}
+
 // Sub-component for Pending Review Story Card with edit capability
 interface PendingReviewStoryCardProps {
   story: SuccessStory
@@ -502,6 +510,14 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
       setLocalMembershipSettings(membershipSettings)
     }
   }, [membershipSettings])
+  
+  // Site settings for emergency controls
+  const [siteSettings, setSiteSettings] = useKV<SiteSettings>('siteSettings', {
+    registrationPaused: false,
+    pauseReason: '',
+    pausedAt: null,
+    estimatedResumeTime: ''
+  })
   
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [selectedProfiles, setSelectedProfiles] = useState<string[]>([])
@@ -1862,6 +1878,14 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   <Badge variant="secondary" className="ml-1 text-xs bg-rose-100 text-rose-700">{pendingStoriesCount}</Badge>
                 ) : null
               })()}
+            </TabsTrigger>
+            <TabsTrigger value="site-settings" className="gap-1 text-xs sm:text-sm whitespace-nowrap text-gray-600">
+              <Prohibit size={16} weight="fill" className={`shrink-0 ${siteSettings?.registrationPaused ? 'text-red-600 animate-pulse' : ''}`} />
+              <span className="hidden sm:inline">{language === 'hi' ? 'साइट सेटिंग्स' : 'Site Settings'}</span>
+              <span className="sm:hidden">{language === 'hi' ? 'साइट' : 'Site'}</span>
+              {siteSettings?.registrationPaused && (
+                <Badge variant="destructive" className="ml-1 text-xs animate-pulse">!</Badge>
+              )}
             </TabsTrigger>
           </TabsList>
 
@@ -4763,6 +4787,197 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     </div>
                   )
                 })()}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Site Settings Tab - Emergency Controls */}
+          <TabsContent value="site-settings">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Prohibit size={24} weight="fill" className={siteSettings?.registrationPaused ? 'text-red-600' : 'text-gray-600'} />
+                  {language === 'hi' ? 'साइट सेटिंग्स' : 'Site Settings'}
+                </CardTitle>
+                <CardDescription>
+                  {language === 'hi' 
+                    ? 'साइट व्यवहार और आपातकालीन नियंत्रण प्रबंधित करें' 
+                    : 'Manage site behavior and emergency controls'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Registration Pause Control */}
+                <div className={`p-4 rounded-lg border-2 ${siteSettings?.registrationPaused ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${siteSettings?.registrationPaused ? 'bg-red-100' : 'bg-gray-100'}`}>
+                        <Prohibit size={24} weight="fill" className={siteSettings?.registrationPaused ? 'text-red-600' : 'text-gray-500'} />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">
+                          {language === 'hi' ? 'नई रजिस्ट्रेशन बंद करें' : 'Pause New Registrations'}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {language === 'hi' 
+                            ? 'आपातकाल, मेंटेनेंस या व्यक्तिगत कारणों से नए उपयोगकर्ता पंजीकरण को अस्थायी रूप से रोकें' 
+                            : 'Temporarily stop new user registrations for emergency, maintenance, or personal reasons'}
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={siteSettings?.registrationPaused || false}
+                      onCheckedChange={(checked) => {
+                        setSiteSettings({
+                          ...siteSettings,
+                          registrationPaused: checked,
+                          pausedAt: checked ? new Date().toISOString() : null,
+                          pauseReason: checked ? (siteSettings?.pauseReason || '') : '',
+                          estimatedResumeTime: checked ? (siteSettings?.estimatedResumeTime || '') : ''
+                        })
+                        toast.success(
+                          checked 
+                            ? (language === 'hi' ? 'रजिस्ट्रेशन बंद किया गया' : 'Registration paused') 
+                            : (language === 'hi' ? 'रजिस्ट्रेशन फिर से शुरू' : 'Registration resumed')
+                        )
+                      }}
+                    />
+                  </div>
+                  
+                  {siteSettings?.registrationPaused && (
+                    <div className="space-y-4 pt-4 border-t border-red-200">
+                      <Alert className="bg-red-100 border-red-300">
+                        <Warning size={18} className="text-red-600" />
+                        <AlertDescription className="text-red-800">
+                          {language === 'hi' 
+                            ? `रजिस्ट्रेशन ${siteSettings.pausedAt ? formatDateDDMMYYYY(siteSettings.pausedAt) : 'अभी'} से बंद है। नए उपयोगकर्ता साइनअप नहीं कर पाएंगे।` 
+                            : `Registration has been paused since ${siteSettings.pausedAt ? formatDateDDMMYYYY(siteSettings.pausedAt) : 'now'}. New users won't be able to sign up.`}
+                        </AlertDescription>
+                      </Alert>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>
+                            {language === 'hi' ? 'बंद करने का कारण (वैकल्पिक)' : 'Reason for Pause (Optional)'}
+                          </Label>
+                          <Input
+                            placeholder={language === 'hi' ? 'जैसे: सिस्टम मेंटेनेंस, आपातकाल' : 'e.g., System maintenance, Emergency'}
+                            value={siteSettings?.pauseReason || ''}
+                            onChange={(e) => setSiteSettings({
+                              ...siteSettings,
+                              pauseReason: e.target.value
+                            })}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {language === 'hi' ? 'यह कारण उपयोगकर्ताओं को दिखाया जाएगा' : 'This reason will be shown to users'}
+                          </p>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>
+                            {language === 'hi' ? 'अनुमानित पुनः शुरू समय (वैकल्पिक)' : 'Estimated Resume Time (Optional)'}
+                          </Label>
+                          <Input
+                            placeholder={language === 'hi' ? 'जैसे: 2 घंटे में, कल तक' : 'e.g., In 2 hours, Tomorrow'}
+                            value={siteSettings?.estimatedResumeTime || ''}
+                            onChange={(e) => setSiteSettings({
+                              ...siteSettings,
+                              estimatedResumeTime: e.target.value
+                            })}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {language === 'hi' ? 'उपयोगकर्ताओं को पता चलेगा कब रजिस्ट्रेशन खुलेगा' : 'Users will know when registration will reopen'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Quick Pause Reasons */}
+                {!siteSettings?.registrationPaused && (
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">
+                      {language === 'hi' ? 'त्वरित बंद विकल्प:' : 'Quick Pause Options:'}
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 text-amber-600 border-amber-300 hover:bg-amber-50"
+                        onClick={() => {
+                          setSiteSettings({
+                            registrationPaused: true,
+                            pauseReason: language === 'hi' ? 'सिस्टम मेंटेनेंस' : 'System Maintenance',
+                            pausedAt: new Date().toISOString(),
+                            estimatedResumeTime: language === 'hi' ? '2 घंटे में' : 'In 2 hours'
+                          })
+                          toast.success(language === 'hi' ? 'मेंटेनेंस मोड चालू' : 'Maintenance mode enabled')
+                        }}
+                      >
+                        🔧 {language === 'hi' ? 'मेंटेनेंस' : 'Maintenance'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 text-red-600 border-red-300 hover:bg-red-50"
+                        onClick={() => {
+                          setSiteSettings({
+                            registrationPaused: true,
+                            pauseReason: language === 'hi' ? 'आपातकालीन स्थिति' : 'Emergency Situation',
+                            pausedAt: new Date().toISOString(),
+                            estimatedResumeTime: ''
+                          })
+                          toast.success(language === 'hi' ? 'आपातकालीन मोड चालू' : 'Emergency mode enabled')
+                        }}
+                      >
+                        🚨 {language === 'hi' ? 'आपातकाल' : 'Emergency'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50"
+                        onClick={() => {
+                          setSiteSettings({
+                            registrationPaused: true,
+                            pauseReason: language === 'hi' ? 'व्यक्तिगत अवकाश' : 'Personal Break',
+                            pausedAt: new Date().toISOString(),
+                            estimatedResumeTime: language === 'hi' ? 'जल्द ही' : 'Soon'
+                          })
+                          toast.success(language === 'hi' ? 'अवकाश मोड चालू' : 'Break mode enabled')
+                        }}
+                      >
+                        🌴 {language === 'hi' ? 'अवकाश' : 'Break'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 text-purple-600 border-purple-300 hover:bg-purple-50"
+                        onClick={() => {
+                          setSiteSettings({
+                            registrationPaused: true,
+                            pauseReason: language === 'hi' ? 'क्षमता पूर्ण - लंबित समीक्षाएं' : 'At Capacity - Pending Reviews',
+                            pausedAt: new Date().toISOString(),
+                            estimatedResumeTime: language === 'hi' ? 'समीक्षा पूर्ण होने पर' : 'After reviews complete'
+                          })
+                          toast.success(language === 'hi' ? 'क्षमता मोड चालू' : 'Capacity mode enabled')
+                        }}
+                      >
+                        📋 {language === 'hi' ? 'क्षमता पूर्ण' : 'At Capacity'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Admin Human Note */}
+                <Alert className="bg-blue-50 border-blue-200">
+                  <Info size={18} className="text-blue-600" />
+                  <AlertDescription className="text-blue-800">
+                    <strong>{language === 'hi' ? 'नोट:' : 'Note:'}</strong>{' '}
+                    {language === 'hi' 
+                      ? 'एडमिन भी इंसान है! मेंटेनेंस, आपातकाल, या व्यक्तिगत समय के लिए नए रजिस्ट्रेशन बंद करना ठीक है। मौजूदा उपयोगकर्ता अपनी प्रोफाइल देख और संपादित कर सकते हैं।' 
+                      : 'Admin is human too! It\'s okay to pause registrations for maintenance, emergencies, or personal time. Existing users can still view and edit their profiles.'}
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             </Card>
           </TabsContent>

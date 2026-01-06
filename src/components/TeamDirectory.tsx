@@ -1,55 +1,55 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Phone, MapPin, User } from '@phosphor-icons/react'
-import type { Volunteer } from '@/types/profile'
+import type { TeamMember } from '@/types/profile'
 
-interface VolunteerDirectoryProps {
-  volunteers: Volunteer[]
+interface TeamDirectoryProps {
+  members: TeamMember[]
 }
 
-export function VolunteerDirectory({ volunteers }: VolunteerDirectoryProps) {
-  const groupedByCity = volunteers.reduce((acc, volunteer) => {
-    if (!acc[volunteer.city]) {
-      acc[volunteer.city] = []
+export function TeamDirectory({ members }: TeamDirectoryProps) {
+  const groupedByCity = members.reduce((acc, member) => {
+    if (!acc[member.city]) {
+      acc[member.city] = []
     }
-    acc[volunteer.city].push(volunteer)
+    acc[member.city].push(member)
     return acc
-  }, {} as Record<string, Volunteer[]>)
+  }, {} as Record<string, TeamMember[]>)
 
   return (
     <div className="container mx-auto px-4 md:px-8 py-12">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            अनुभवी पेशेवर सहायता
+            विशेषज्ञ सहायता टीम
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            हमारे अनुभवी पेशेवर ऑनलाइन परिवारों की मदद करते हैं
+            हमारे अनुभवी पेशेवर परिवारों की सहायता करते हैं
           </p>
         </div>
 
         <div className="space-y-8">
-          {Object.entries(groupedByCity).map(([city, cityVolunteers]) => (
+          {Object.entries(groupedByCity).map(([city, cityMembers]) => (
             <div key={city}>
               <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
                 <MapPin size={24} weight="fill" className="text-primary" />
                 {city}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {cityVolunteers.map((volunteer) => (
-                  <Card key={volunteer.id} className="hover:shadow-lg transition-shadow">
+                {cityMembers.map((member) => (
+                  <Card key={member.id} className="hover:shadow-lg transition-shadow">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-lg">
                         <User size={20} weight="fill" />
-                        {volunteer.name}
+                        {member.name}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-muted-foreground mb-3">{volunteer.role}</p>
+                      <p className="text-sm text-muted-foreground mb-3">{member.role}</p>
                       <Button variant="outline" size="sm" className="w-full" asChild>
-                        <a href={`tel:${volunteer.mobile}`}>
+                        <a href={`tel:${member.mobile}`}>
                           <Phone size={16} className="mr-2" />
-                          {volunteer.mobile}
+                          {member.mobile}
                         </a>
                       </Button>
                     </CardContent>

@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { useState } from 'react'
 
 export function Support() {
-  const [volunteerForm, setVolunteerForm] = useState({
+  const [joinForm, setJoinForm] = useState({
     name: '',
     email: '',
     mobile: '',
@@ -17,12 +17,12 @@ export function Support() {
     role: ''
   })
 
-  const handleVolunteerSubmit = (e: React.FormEvent) => {
+  const handleJoinSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     toast.success('धन्यवाद!', {
-      description: 'आपकी स्वयंसेवक आवेदन प्राप्त हुआ। हम जल्द ही संपर्क करेंगे।'
+      description: 'आपका आवेदन प्राप्त हुआ। हम जल्द ही संपर्क करेंगे।'
     })
-    setVolunteerForm({ name: '', email: '', mobile: '', city: '', role: '' })
+    setJoinForm({ name: '', email: '', mobile: '', city: '', role: '' })
   }
 
   return (
@@ -33,7 +33,7 @@ export function Support() {
             सहयोग करें
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            समुदाय सेवा में योगदान दें — स्वयंसेवक बनें या दान करें
+            समुदाय सेवा में योगदान दें — टीम से जुड़ें या दान करें
           </p>
         </div>
 
@@ -42,20 +42,20 @@ export function Support() {
             <CardHeader>
               <CardTitle className="text-2xl flex items-center gap-2">
                 <User size={28} weight="fill" />
-                स्वयंसेवक बनें
+                टीम से जुड़ें
               </CardTitle>
               <CardDescription>
                 तकनीकी सहायता, परिवारों से संवाद, या इवेंट आयोजन में मदद करें
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleVolunteerSubmit} className="space-y-4">
+              <form onSubmit={handleJoinSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="v-name">नाम / Name</Label>
                   <Input
                     id="v-name"
-                    value={volunteerForm.name}
-                    onChange={(e) => setVolunteerForm({ ...volunteerForm, name: e.target.value })}
+                    value={joinForm.name}
+                    onChange={(e) => setJoinForm({ ...joinForm, name: e.target.value })}
                     required
                   />
                 </div>
@@ -65,8 +65,8 @@ export function Support() {
                   <Input
                     id="v-email"
                     type="email"
-                    value={volunteerForm.email}
-                    onChange={(e) => setVolunteerForm({ ...volunteerForm, email: e.target.value })}
+                    value={joinForm.email}
+                    onChange={(e) => setJoinForm({ ...joinForm, email: e.target.value })}
                     required
                   />
                 </div>
@@ -76,8 +76,8 @@ export function Support() {
                   <Input
                     id="v-mobile"
                     type="tel"
-                    value={volunteerForm.mobile}
-                    onChange={(e) => setVolunteerForm({ ...volunteerForm, mobile: e.target.value })}
+                    value={joinForm.mobile}
+                    onChange={(e) => setJoinForm({ ...joinForm, mobile: e.target.value })}
                     required
                   />
                 </div>
@@ -86,8 +86,8 @@ export function Support() {
                   <Label htmlFor="v-city">शहर / City</Label>
                   <Input
                     id="v-city"
-                    value={volunteerForm.city}
-                    onChange={(e) => setVolunteerForm({ ...volunteerForm, city: e.target.value })}
+                    value={joinForm.city}
+                    onChange={(e) => setJoinForm({ ...joinForm, city: e.target.value })}
                     required
                   />
                 </div>
@@ -97,8 +97,8 @@ export function Support() {
                   <Textarea
                     id="v-role"
                     placeholder="उदाहरण: प्रोफाइल सत्यापन, परिवार परामर्श, तकनीकी सहायता..."
-                    value={volunteerForm.role}
-                    onChange={(e) => setVolunteerForm({ ...volunteerForm, role: e.target.value })}
+                    value={joinForm.role}
+                    onChange={(e) => setJoinForm({ ...joinForm, role: e.target.value })}
                     rows={3}
                   />
                 </div>

@@ -406,8 +406,8 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     familyDetails: language === 'hi' ? 'पारिवारिक विवरण' : 'Family Details',
     contactInfo: language === 'hi' ? 'संपर्क जानकारी' : 'Contact Information',
     privacyNotice: language === 'hi' 
-      ? 'गोपनीयता और सुरक्षा के लिए, संपर्क विवरण केवल स्वयंसेवक अनुमोदन के बाद साझा किए जाते हैं।'
-      : 'For privacy and security, contact details are shared only after volunteer approval.',
+      ? 'गोपनीयता और सुरक्षा के लिए, संपर्क विवरण केवल एडमिन अनुमोदन के बाद साझा किए जाते हैं।'
+      : 'For privacy and security, contact details are shared only after admin approval.',
     expressInterest: language === 'hi' ? 'रुचि दर्ज करें' : 'Express Interest',
     requestContact: language === 'hi' ? 'संपर्क अनुरोध करें' : 'Request Contact',
     requestSent: language === 'hi' ? 'अनुरोध भेजा गया' : 'Request Sent',

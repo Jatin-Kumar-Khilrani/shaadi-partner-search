@@ -3910,7 +3910,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                   </li>
                                   <li className="flex items-center gap-2">
                                     <CheckCircle size={16} weight="fill" className="text-teal" />
-                                    {t.registration.volunteerSupport}
+                                    {t.registration.expertSupport}
                                   </li>
                                   <li className="flex items-center gap-2">
                                     <CheckCircle size={16} weight="fill" className="text-teal" />

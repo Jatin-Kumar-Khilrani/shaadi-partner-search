@@ -126,6 +126,21 @@ function App() {
   const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [membershipSettings] = useKV<MembershipSettings>('membershipSettings', defaultMembershipSettings)
   
+  // Site settings for emergency controls (registration pause, maintenance, etc.)
+  interface SiteSettings {
+    registrationPaused: boolean       // When true, new registrations are blocked
+    pauseReason: string               // Reason shown to users (e.g., "System maintenance", "Emergency")
+    pausedAt: string | null           // Timestamp when registration was paused
+    estimatedResumeTime: string       // Optional: When registration is expected to resume
+  }
+  const defaultSiteSettings: SiteSettings = {
+    registrationPaused: false,
+    pauseReason: '',
+    pausedAt: null,
+    estimatedResumeTime: ''
+  }
+  const [siteSettings] = useKV<SiteSettings>('siteSettings', defaultSiteSettings)
+  
   // Track if critical data is loaded from Azure
   const isDataReady = isProfilesLoaded && isUsersLoaded
   
@@ -780,6 +795,20 @@ function App() {
     toast.success(language === 'hi' ? 'लॉगआउट सफल' : 'Logged out successfully')
   }
 
+  // Helper: Try to open registration, show error if paused
+  const tryOpenRegistration = (onSuccess?: () => void) => {
+    if (siteSettings?.registrationPaused) {
+      toast.error(
+        language === 'hi' 
+          ? `रजिस्ट्रेशन अस्थायी रूप से बंद है। ${siteSettings.pauseReason || 'कृपया बाद में पुनः प्रयास करें।'}` 
+          : `Registration is temporarily paused. ${siteSettings.pauseReason || 'Please try again later.'}`
+      )
+      return
+    }
+    setShowRegistration(true)
+    if (onSuccess) onSuccess()
+  }
+
   const t = {
     homeButton: language === 'hi' ? 'मुखपृष्ठ' : 'Home',
     register: language === 'hi' ? 'पंजीकरण करें' : 'Register',
@@ -924,7 +953,12 @@ function App() {
                   <SignIn size={18} weight="bold" />
                   <span className="hidden xl:inline">{t.login}</span>
                 </Button>
-                <Button onClick={() => setShowRegistration(true)} className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm bg-accent hover:bg-accent/90 text-accent-foreground flex-shrink-0" size="sm" aria-label={t.register}>
+                <Button 
+                  onClick={() => tryOpenRegistration()} 
+                  className="gap-1 xl:gap-2 px-2 xl:px-3 text-sm bg-accent hover:bg-accent/90 text-accent-foreground flex-shrink-0" 
+                  size="sm" 
+                  aria-label={t.register}
+                >
                   <UserPlus size={18} weight="bold" />
                   <span className="hidden xl:inline">{t.register}</span>
                 </Button>
@@ -1355,8 +1389,7 @@ function App() {
                     </Button>
                     <Button 
                       onClick={() => {
-                        setShowRegistration(true)
-                        setMobileMenuOpen(false)
+                        tryOpenRegistration(() => setMobileMenuOpen(false))
                       }} 
                       className="justify-start gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
                     >
@@ -1384,6 +1417,32 @@ function App() {
       </header>
 
       <main className={`flex-1 ${loggedInUser ? 'pb-16 md:pb-0' : ''}`}>
+        {/* Emergency Registration Pause Banner */}
+        {siteSettings?.registrationPaused && (
+          <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-white py-3 px-4 text-center shadow-lg">
+            <div className="container mx-auto flex flex-col sm:flex-row items-center justify-center gap-2">
+              <span className="text-xl">⚠️</span>
+              <div className="text-sm sm:text-base font-medium">
+                {language === 'hi' 
+                  ? 'नई प्रोफाइल रजिस्ट्रेशन अस्थायी रूप से बंद है।' 
+                  : 'New profile registration is temporarily paused.'}
+                {siteSettings.pauseReason && (
+                  <span className="ml-1 opacity-90">
+                    ({siteSettings.pauseReason})
+                  </span>
+                )}
+                {siteSettings.estimatedResumeTime && (
+                  <span className="ml-2 text-xs sm:text-sm opacity-80">
+                    {language === 'hi' 
+                      ? `अनुमानित पुनः शुरू: ${siteSettings.estimatedResumeTime}` 
+                      : `Expected resume: ${siteSettings.estimatedResumeTime}`}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
         {currentView === 'home' && (
           <>
             <HeroSearch 
@@ -1592,7 +1651,7 @@ function App() {
                         </span>
                       </div>
                       <Button 
-                        onClick={() => loggedInUser ? setCurrentView('readiness') : setShowRegistration(true)}
+                        onClick={() => loggedInUser ? setCurrentView('readiness') : tryOpenRegistration()}
                         size="lg"
                         className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white gap-2 shadow-lg"
                       >
@@ -1626,7 +1685,7 @@ function App() {
                         </div>
                       </div>
                       <Button 
-                        onClick={() => setShowRegistration(true)}
+                        onClick={() => tryOpenRegistration()}
                         size="lg"
                         className="bg-red-600 hover:bg-red-700 text-white gap-2 whitespace-nowrap"
                       >

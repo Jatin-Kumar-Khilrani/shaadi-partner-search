@@ -470,7 +470,7 @@ DigiLocker/Aadhaar Verification:
 • Manual verification by admin
 • "DigiLocker Verified" badge on verified profiles
 
-Volunteer Verification (Optional):
+Enhanced Verification (Optional):
 • Family background verification
 • Business/Job verification
 • Income verification (with documents)

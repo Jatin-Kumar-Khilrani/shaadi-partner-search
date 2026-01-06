@@ -459,7 +459,7 @@ export interface PartnerPreferenceData {
   annualIncomeMax?: string      // Maximum annual income preference
 }
 
-export interface Volunteer {
+export interface TeamMember {
   id: string
   name: string
   city: string
