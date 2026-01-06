@@ -150,15 +150,27 @@ interface PendingReviewStoryCardProps {
 function PendingReviewStoryCard({ story, language, getStatusBadge, setSuccessStories }: PendingReviewStoryCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedTestimonial, setEditedTestimonial] = useState(story.profile1Testimonial || '')
+  const [editedProfile1Name, setEditedProfile1Name] = useState(story.profile1Name || '')
+  const [editedProfile2Name, setEditedProfile2Name] = useState(story.profile2Name || '')
+  const [editedProfile1City, setEditedProfile1City] = useState(story.profile1City || '')
+  const [editedProfile2City, setEditedProfile2City] = useState(story.profile2City || '')
 
-  const handleSaveTestimonial = () => {
+  const handleSaveAll = () => {
     setSuccessStories(prev => (prev || []).map(s => 
       s.id === story.id 
-        ? { ...s, profile1Testimonial: editedTestimonial, profile1TestimonialEditedByAdmin: true }
+        ? { 
+            ...s, 
+            profile1Name: editedProfile1Name,
+            profile2Name: editedProfile2Name,
+            profile1City: editedProfile1City,
+            profile2City: editedProfile2City,
+            profile1Testimonial: editedTestimonial, 
+            profile1TestimonialEditedByAdmin: editedTestimonial !== story.profile1Testimonial 
+          }
         : s
     ))
     setIsEditing(false)
-    toast.success(language === 'hi' ? 'प्रशंसापत्र सहेजा गया' : 'Testimonial saved')
+    toast.success(language === 'hi' ? 'कहानी सहेजी गई' : 'Story saved')
   }
 
   const handleApproveTestimonial = () => {
@@ -170,16 +182,25 @@ function PendingReviewStoryCard({ story, language, getStatusBadge, setSuccessSto
     toast.success(language === 'hi' ? 'प्रशंसापत्र स्वीकृत' : 'Testimonial approved')
   }
 
-  const handleRejectTestimonial = () => {
-    setSuccessStories(prev => (prev || []).map(s => 
-      s.id === story.id 
-        ? { ...s, profile1TestimonialStatus: 'rejected', profile1TestimonialRejectedReason: 'Inappropriate content' }
-        : s
-    ))
-    toast.success(language === 'hi' ? 'प्रशंसापत्र अस्वीकृत' : 'Testimonial rejected')
+  const handleRejectStory = () => {
+    if (confirm(language === 'hi' ? 'क्या आप यह कहानी अस्वीकृत करना चाहते हैं?' : 'Are you sure you want to reject this story?')) {
+      setSuccessStories(prev => (prev || []).map(s => 
+        s.id === story.id 
+          ? { ...s, status: 'rejected' as const, rejectedReason: 'Rejected by admin' }
+          : s
+      ))
+      toast.success(language === 'hi' ? 'कहानी अस्वीकृत' : 'Story rejected')
+    }
   }
 
-  const handlePublish = () => {
+  const handleDeleteStory = () => {
+    if (confirm(language === 'hi' ? 'क्या आप यह कहानी हटाना चाहते हैं?' : 'Are you sure you want to delete this story?')) {
+      setSuccessStories(prev => (prev || []).filter(s => s.id !== story.id))
+      toast.success(language === 'hi' ? 'कहानी हटाई गई' : 'Story deleted')
+    }
+  }
+
+  const handlePublish = (singleParty: boolean = false) => {
     setSuccessStories(prev => (prev || []).map(s => 
       s.id === story.id 
         ? { 
@@ -187,11 +208,14 @@ function PendingReviewStoryCard({ story, language, getStatusBadge, setSuccessSto
             status: 'published', 
             publishedAt: new Date().toISOString(), 
             approvedBy: 'Admin',
-            profile1TestimonialStatus: 'approved'
+            profile1TestimonialStatus: 'approved',
+            singlePartyPublish: singleParty
           }
         : s
     ))
-    toast.success(language === 'hi' ? 'सफलता की कहानी प्रकाशित!' : 'Success story published!')
+    toast.success(language === 'hi' 
+      ? (singleParty ? 'एक पक्ष की कहानी प्रकाशित!' : 'सफलता की कहानी प्रकाशित!') 
+      : (singleParty ? 'Single party story published!' : 'Success story published!'))
   }
 
   return (
@@ -207,8 +231,26 @@ function PendingReviewStoryCard({ story, language, getStatusBadge, setSuccessSto
               </div>
             )}
             <div>
-              <p className="font-medium text-sm">{story.profile1Name}</p>
-              <p className="text-xs text-muted-foreground">{story.profile1City}</p>
+              {isEditing ? (
+                <Input
+                  value={editedProfile1Name}
+                  onChange={(e) => setEditedProfile1Name(e.target.value)}
+                  className="h-7 text-sm w-32"
+                  placeholder={language === 'hi' ? 'नाम' : 'Name'}
+                />
+              ) : (
+                <p className="font-medium text-sm">{story.profile1Name}</p>
+              )}
+              {isEditing ? (
+                <Input
+                  value={editedProfile1City}
+                  onChange={(e) => setEditedProfile1City(e.target.value)}
+                  className="h-6 text-xs w-28 mt-1"
+                  placeholder={language === 'hi' ? 'शहर' : 'City'}
+                />
+              ) : (
+                <p className="text-xs text-muted-foreground">{story.profile1City}</p>
+              )}
             </div>
           </div>
           <Heart size={20} className="text-rose-400" />
@@ -221,8 +263,26 @@ function PendingReviewStoryCard({ story, language, getStatusBadge, setSuccessSto
               </div>
             )}
             <div>
-              <p className="font-medium text-sm">{story.profile2Name}</p>
-              <p className="text-xs text-muted-foreground">{story.profile2City}</p>
+              {isEditing ? (
+                <Input
+                  value={editedProfile2Name}
+                  onChange={(e) => setEditedProfile2Name(e.target.value)}
+                  className="h-7 text-sm w-32"
+                  placeholder={language === 'hi' ? 'नाम' : 'Name'}
+                />
+              ) : (
+                <p className="font-medium text-sm">{story.profile2Name}</p>
+              )}
+              {isEditing ? (
+                <Input
+                  value={editedProfile2City}
+                  onChange={(e) => setEditedProfile2City(e.target.value)}
+                  className="h-6 text-xs w-28 mt-1"
+                  placeholder={language === 'hi' ? 'शहर' : 'City'}
+                />
+              ) : (
+                <p className="text-xs text-muted-foreground">{story.profile2City}</p>
+              )}
             </div>
           </div>
         </div>
@@ -230,105 +290,136 @@ function PendingReviewStoryCard({ story, language, getStatusBadge, setSuccessSto
       </div>
       
       {/* Testimonial with Edit Capability */}
-      {story.profile1Testimonial && (
-        <div className="mt-3 p-3 rounded-lg bg-white border border-purple-100">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <p className="text-xs font-medium text-gray-600">
-                {language === 'hi' ? `${story.profile1Name} का प्रशंसापत्र:` : `${story.profile1Name}'s Testimonial:`}
-              </p>
-              {story.profile1TestimonialEditedByAdmin && (
-                <Badge variant="outline" className="text-xs border-purple-300 text-purple-600">
-                  {language === 'hi' ? 'संपादित' : 'Edited'}
-                </Badge>
-              )}
-            </div>
-            {story.profile1TestimonialStatus === 'pending' && (
-              <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
-                {language === 'hi' ? 'समीक्षा लंबित' : 'Pending Review'}
-              </Badge>
-            )}
-            {story.profile1TestimonialStatus === 'approved' && (
-              <Badge variant="outline" className="text-xs border-green-500 text-green-600">
-                {language === 'hi' ? 'स्वीकृत' : 'Approved'}
+      <div className="mt-3 p-3 rounded-lg bg-white border border-purple-100">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-medium text-gray-600">
+              {language === 'hi' ? 'प्रशंसापत्र:' : 'Testimonial:'}
+            </p>
+            {story.profile1TestimonialEditedByAdmin && (
+              <Badge variant="outline" className="text-xs border-purple-300 text-purple-600">
+                {language === 'hi' ? 'संपादित' : 'Edited'}
               </Badge>
             )}
           </div>
-          
-          {isEditing ? (
-            <div className="space-y-2">
-              <Textarea
-                value={editedTestimonial}
-                onChange={(e) => setEditedTestimonial(e.target.value)}
-                rows={3}
-                className="text-sm"
-              />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleSaveTestimonial}>
-                  <Check size={14} className="mr-1" />
-                  {language === 'hi' ? 'सहेजें' : 'Save'}
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => {
-                  setIsEditing(false)
-                  setEditedTestimonial(story.profile1Testimonial || '')
-                }}>
-                  <X size={14} className="mr-1" />
-                  {language === 'hi' ? 'रद्द करें' : 'Cancel'}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-700 italic">"{story.profile1Testimonial}"</p>
+          {story.profile1TestimonialStatus === 'pending' && story.profile1Testimonial && (
+            <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+              {language === 'hi' ? 'समीक्षा लंबित' : 'Pending Review'}
+            </Badge>
           )}
-          
-          {!isEditing && story.profile1TestimonialStatus === 'pending' && (
-            <div className="flex gap-2 mt-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-purple-600 border-purple-200 hover:bg-purple-50"
-                onClick={() => setIsEditing(true)}
-              >
-                <Pencil size={14} className="mr-1" />
-                {language === 'hi' ? 'संपादित करें' : 'Edit'}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-green-600 border-green-200 hover:bg-green-50"
-                onClick={handleApproveTestimonial}
-              >
-                <Check size={14} className="mr-1" />
-                {language === 'hi' ? 'स्वीकृत करें' : 'Approve'}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-red-600 border-red-200 hover:bg-red-50"
-                onClick={handleRejectTestimonial}
-              >
-                <X size={14} className="mr-1" />
-                {language === 'hi' ? 'अस्वीकृत करें' : 'Reject'}
-              </Button>
-            </div>
+          {story.profile1TestimonialStatus === 'approved' && (
+            <Badge variant="outline" className="text-xs border-green-500 text-green-600">
+              {language === 'hi' ? 'स्वीकृत' : 'Approved'}
+            </Badge>
           )}
         </div>
-      )}
+        
+        {isEditing ? (
+          <Textarea
+            value={editedTestimonial}
+            onChange={(e) => setEditedTestimonial(e.target.value)}
+            rows={3}
+            className="text-sm"
+            placeholder={language === 'hi' ? 'प्रशंसापत्र लिखें...' : 'Write testimonial...'}
+          />
+        ) : (
+          story.profile1Testimonial ? (
+            <p className="text-sm text-gray-700 italic">"{story.profile1Testimonial}"</p>
+          ) : (
+            <p className="text-sm text-gray-400 italic">
+              {language === 'hi' ? 'कोई प्रशंसापत्र नहीं' : 'No testimonial'}
+            </p>
+          )
+        )}
+        
+        {!isEditing && story.profile1TestimonialStatus === 'pending' && story.profile1Testimonial && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-green-600 border-green-200 hover:bg-green-50 mt-2"
+            onClick={handleApproveTestimonial}
+          >
+            <Check size={14} className="mr-1" />
+            {language === 'hi' ? 'प्रशंसापत्र स्वीकृत करें' : 'Approve Testimonial'}
+          </Button>
+        )}
+      </div>
       
       <div className="flex items-center justify-between mt-3">
         <p className="text-xs text-muted-foreground">
           {language === 'hi' ? 'जमा किया:' : 'Submitted:'} {formatDateDDMMYYYY(story.submittedAt)}
         </p>
         
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            className="gap-1 bg-rose-500 hover:bg-rose-600"
-            onClick={handlePublish}
-          >
-            <Confetti size={14} />
-            {language === 'hi' ? 'प्रकाशित करें' : 'Publish'}
-          </Button>
+        <div className="flex gap-2 flex-wrap">
+          {isEditing ? (
+            <>
+              <Button size="sm" onClick={handleSaveAll} className="gap-1">
+                <Check size={14} />
+                {language === 'hi' ? 'सहेजें' : 'Save'}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => {
+                setIsEditing(false)
+                setEditedTestimonial(story.profile1Testimonial || '')
+                setEditedProfile1Name(story.profile1Name || '')
+                setEditedProfile2Name(story.profile2Name || '')
+                setEditedProfile1City(story.profile1City || '')
+                setEditedProfile2City(story.profile2City || '')
+              }}>
+                <X size={14} className="mr-1" />
+                {language === 'hi' ? 'रद्द' : 'Cancel'}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1"
+                onClick={() => setIsEditing(true)}
+              >
+                <Pencil size={14} />
+                {language === 'hi' ? 'संपादित' : 'Edit'}
+              </Button>
+              <Button
+                size="sm"
+                className="gap-1 bg-rose-500 hover:bg-rose-600"
+                onClick={() => handlePublish(false)}
+              >
+                <Confetti size={14} />
+                {language === 'hi' ? 'प्रकाशित करें' : 'Publish'}
+              </Button>
+              {/* Single party publish - when only one person consented */}
+              {!story.bothConsented && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1 text-amber-600 border-amber-200 hover:bg-amber-50"
+                  onClick={() => handlePublish(true)}
+                  title={language === 'hi' ? 'एक पक्ष की सहमति से प्रकाशित' : 'Publish with single party consent'}
+                >
+                  <UserIcon size={14} />
+                  {language === 'hi' ? 'एकल प्रकाशित' : 'Single Publish'}
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1 text-red-600 border-red-200 hover:bg-red-50"
+                onClick={handleRejectStory}
+              >
+                <X size={14} />
+                {language === 'hi' ? 'अस्वीकृत' : 'Reject'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1 text-gray-600 border-gray-200 hover:bg-gray-50"
+                onClick={handleDeleteStory}
+              >
+                <Trash size={14} />
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -536,6 +627,29 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   
   // Delete transaction confirmation dialog state
   const [showDeleteTransactionDialog, setShowDeleteTransactionDialog] = useState<PaymentTransaction | null>(null)
+  
+  // Success Story CRUD state
+  const [showSuccessStoryDialog, setShowSuccessStoryDialog] = useState(false)
+  const [editingSuccessStory, setEditingSuccessStory] = useState<SuccessStory | null>(null)
+  const [successStoryFormData, setSuccessStoryFormData] = useState<{
+    profile1Name: string
+    profile1City: string
+    profile1PhotoUrl: string
+    profile2Name: string
+    profile2City: string
+    profile2PhotoUrl: string
+    profile1Testimonial: string
+    status: SuccessStory['status']
+  }>({
+    profile1Name: '',
+    profile1City: '',
+    profile1PhotoUrl: '',
+    profile2Name: '',
+    profile2City: '',
+    profile2PhotoUrl: '',
+    profile1Testimonial: '',
+    status: 'published'
+  })
   
   const t = {
     title: language === 'hi' ? 'प्रशासन पैनल' : 'Admin Panel',
@@ -3998,6 +4112,27 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     ? 'जोड़ों की सफलता की कहानियां प्रबंधित करें - समीक्षा करें, संपादित करें और प्रकाशित करें' 
                     : 'Manage couple success stories - review, edit and publish testimonials'}
                 </CardDescription>
+                <Button
+                  size="sm"
+                  className="gap-1 bg-rose-500 hover:bg-rose-600 mt-2"
+                  onClick={() => {
+                    setEditingSuccessStory(null)
+                    setSuccessStoryFormData({
+                      profile1Name: '',
+                      profile1City: '',
+                      profile1PhotoUrl: '',
+                      profile2Name: '',
+                      profile2City: '',
+                      profile2PhotoUrl: '',
+                      profile1Testimonial: '',
+                      status: 'published'
+                    })
+                    setShowSuccessStoryDialog(true)
+                  }}
+                >
+                  <Plus size={16} />
+                  {language === 'hi' ? 'नई कहानी जोड़ें' : 'Add New Story'}
+                </Button>
               </CardHeader>
               <CardContent>
                 {(() => {
@@ -4014,8 +4149,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Heart size={18} className="text-rose-400" />
                         <AlertDescription>
                           {language === 'hi' 
-                            ? 'कोई सफलता की कहानी नहीं मिली। जब कोई उपयोगकर्ता इस प्लेटफॉर्म से मैच खोजकर प्रोफाइल हटाता है, तो कहानियां यहां दिखाई देंगी।' 
-                            : 'No success stories yet. Stories will appear here when users delete their profiles after finding a match on this platform.'}
+                            ? 'कोई सफलता की कहानी नहीं मिली। जब कोई उपयोगकर्ता इस प्लेटफॉर्म से मैच खोजकर प्रोफाइल हटाता है, तो कहानियां यहां दिखाई देंगी। आप मैन्युअल रूप से भी जोड़ सकते हैं।' 
+                            : 'No success stories yet. Stories will appear here when users delete their profiles after finding a match. You can also add stories manually.'}
                         </AlertDescription>
                       </Alert>
                     )
@@ -4414,12 +4549,69 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 <p className="text-sm text-rose-600">
                                   {story.profile1City} {story.profile2City && `& ${story.profile2City}`}
                                 </p>
-                                <div className="flex items-center gap-2 mt-2">
-                                  {story.publishedAt && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {language === 'hi' ? 'प्रकाशित:' : 'Published:'} {formatDateDDMMYYYY(story.publishedAt)}
-                                    </span>
-                                  )}
+                                {story.profile1Testimonial && (
+                                  <p className="text-xs text-gray-600 mt-2 italic line-clamp-2">
+                                    "{story.profile1Testimonial}"
+                                  </p>
+                                )}
+                                <div className="flex items-center justify-between mt-3">
+                                  <span className="text-xs text-muted-foreground">
+                                    {language === 'hi' ? 'प्रकाशित:' : 'Published:'} {formatDateDDMMYYYY(story.publishedAt || story.submittedAt)}
+                                  </span>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 text-xs gap-1"
+                                      onClick={() => {
+                                        setEditingSuccessStory(story)
+                                        setSuccessStoryFormData({
+                                          profile1Name: story.profile1Name,
+                                          profile1City: story.profile1City || '',
+                                          profile1PhotoUrl: story.profile1PhotoUrl || '',
+                                          profile2Name: story.profile2Name,
+                                          profile2City: story.profile2City || '',
+                                          profile2PhotoUrl: story.profile2PhotoUrl || '',
+                                          profile1Testimonial: story.profile1Testimonial || '',
+                                          status: story.status
+                                        })
+                                        setShowSuccessStoryDialog(true)
+                                      }}
+                                    >
+                                      <Pencil size={12} />
+                                      {language === 'hi' ? 'संपादित' : 'Edit'}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 text-xs gap-1 text-amber-600 border-amber-200 hover:bg-amber-50"
+                                      onClick={() => {
+                                        setSuccessStories(prev => (prev || []).map(s => 
+                                          s.id === story.id 
+                                            ? { ...s, status: 'pending-review' as const, publishedAt: undefined }
+                                            : s
+                                        ))
+                                        toast.success(language === 'hi' ? 'अप्रकाशित किया गया' : 'Unpublished')
+                                      }}
+                                    >
+                                      <ArrowCounterClockwise size={12} />
+                                      {language === 'hi' ? 'अप्रकाशित' : 'Unpublish'}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 text-xs gap-1 text-red-600 border-red-200 hover:bg-red-50"
+                                      onClick={() => {
+                                        if (confirm(language === 'hi' ? 'क्या आप यह कहानी हटाना चाहते हैं?' : 'Are you sure you want to delete this story?')) {
+                                          setSuccessStories(prev => (prev || []).filter(s => s.id !== story.id))
+                                          toast.success(language === 'hi' ? 'कहानी हटाई गई' : 'Story deleted')
+                                        }
+                                      }}
+                                    >
+                                      <Trash size={12} />
+                                      {language === 'hi' ? 'हटाएं' : 'Delete'}
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             ))}
@@ -8081,6 +8273,268 @@ ShaadiPartnerSearch Team
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowChatHistoryDialog(false)}>
               {t.close}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Story Create/Edit Dialog */}
+      <Dialog open={showSuccessStoryDialog} onOpenChange={(open) => {
+        setShowSuccessStoryDialog(open)
+        if (!open) {
+          setEditingSuccessStory(null)
+          setSuccessStoryFormData({
+            profile1Name: '',
+            profile1City: '',
+            profile1PhotoUrl: '',
+            profile2Name: '',
+            profile2City: '',
+            profile2PhotoUrl: '',
+            profile1Testimonial: '',
+            status: 'published'
+          })
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Heart className="h-5 w-5 text-primary" />
+              {editingSuccessStory 
+                ? (language === 'hi' ? 'सफलता की कहानी संपादित करें' : 'Edit Success Story')
+                : (language === 'hi' ? 'नई सफलता की कहानी जोड़ें' : 'Add New Success Story')}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'hi' 
+                ? 'नीचे दोनों प्रोफाइल की जानकारी और प्रशंसापत्र दर्ज करें'
+                : 'Enter details for both profiles and their testimonial below'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Profile 1 Section */}
+            <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <UserIcon className="h-4 w-4" />
+                {language === 'hi' ? 'प्रोफाइल 1 (पति/पत्नी)' : 'Profile 1 (Spouse)'}
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{language === 'hi' ? 'नाम' : 'Name'} *</label>
+                  <Input
+                    placeholder={language === 'hi' ? 'नाम दर्ज करें' : 'Enter name'}
+                    value={successStoryFormData.profile1Name}
+                    onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile1Name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{language === 'hi' ? 'शहर' : 'City'}</label>
+                  <Input
+                    placeholder={language === 'hi' ? 'शहर दर्ज करें' : 'Enter city'}
+                    value={successStoryFormData.profile1City}
+                    onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile1City: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{language === 'hi' ? 'फोटो URL' : 'Photo URL'}</label>
+                <Input
+                  placeholder="https://example.com/photo.jpg"
+                  value={successStoryFormData.profile1PhotoUrl}
+                  onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile1PhotoUrl: e.target.value }))}
+                />
+                {successStoryFormData.profile1PhotoUrl && (
+                  <div className="mt-2">
+                    <img 
+                      src={successStoryFormData.profile1PhotoUrl} 
+                      alt="Preview" 
+                      className="w-16 h-16 rounded-full object-cover border-2 border-primary/20"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Profile 2 Section */}
+            <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <UserIcon className="h-4 w-4" />
+                {language === 'hi' ? 'प्रोफाइल 2 (पति/पत्नी)' : 'Profile 2 (Spouse)'}
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{language === 'hi' ? 'नाम' : 'Name'} *</label>
+                  <Input
+                    placeholder={language === 'hi' ? 'नाम दर्ज करें' : 'Enter name'}
+                    value={successStoryFormData.profile2Name}
+                    onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile2Name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{language === 'hi' ? 'शहर' : 'City'}</label>
+                  <Input
+                    placeholder={language === 'hi' ? 'शहर दर्ज करें' : 'Enter city'}
+                    value={successStoryFormData.profile2City}
+                    onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile2City: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{language === 'hi' ? 'फोटो URL' : 'Photo URL'}</label>
+                <Input
+                  placeholder="https://example.com/photo.jpg"
+                  value={successStoryFormData.profile2PhotoUrl}
+                  onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile2PhotoUrl: e.target.value }))}
+                />
+                {successStoryFormData.profile2PhotoUrl && (
+                  <div className="mt-2">
+                    <img 
+                      src={successStoryFormData.profile2PhotoUrl} 
+                      alt="Preview" 
+                      className="w-16 h-16 rounded-full object-cover border-2 border-primary/20"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Testimonial Section */}
+            <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <ChatCircle className="h-4 w-4" />
+                {language === 'hi' ? 'प्रशंसापत्र' : 'Testimonial'}
+              </h4>
+              <Textarea
+                placeholder={language === 'hi' 
+                  ? 'जोड़े की कहानी और अनुभव लिखें...' 
+                  : 'Write the couple\'s story and experience...'}
+                value={successStoryFormData.profile1Testimonial}
+                onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile1Testimonial: e.target.value }))}
+                rows={4}
+              />
+            </div>
+
+            {/* Status Section */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{language === 'hi' ? 'स्थिति' : 'Status'}</label>
+              <Select 
+                value={successStoryFormData.status}
+                onValueChange={(value: SuccessStory['status']) => setSuccessStoryFormData(prev => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="published">
+                    <span className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      {language === 'hi' ? 'प्रकाशित' : 'Published'}
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="pending-review">
+                    <span className="flex items-center gap-2">
+                      <Spinner className="h-4 w-4 text-yellow-500" />
+                      {language === 'hi' ? 'समीक्षा के लिए लंबित' : 'Pending Review'}
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="approved">
+                    <span className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-blue-500" />
+                      {language === 'hi' ? 'स्वीकृत' : 'Approved'}
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="rejected">
+                    <span className="flex items-center gap-2">
+                      <XCircle className="h-4 w-4 text-red-500" />
+                      {language === 'hi' ? 'अस्वीकृत' : 'Rejected'}
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowSuccessStoryDialog(false)
+                setEditingSuccessStory(null)
+              }}
+            >
+              {t.cancel}
+            </Button>
+            <Button
+              onClick={() => {
+                if (!successStoryFormData.profile1Name || !successStoryFormData.profile2Name) {
+                  alert(language === 'hi' ? 'कृपया दोनों प्रोफाइल के नाम दर्ज करें' : 'Please enter names for both profiles')
+                  return
+                }
+
+                if (editingSuccessStory) {
+                  // Update existing story
+                  setSuccessStories(prev => (prev || []).map(story => 
+                    story.id === editingSuccessStory.id 
+                      ? {
+                          ...story,
+                          profile1Name: successStoryFormData.profile1Name,
+                          profile1City: successStoryFormData.profile1City,
+                          profile1PhotoUrl: successStoryFormData.profile1PhotoUrl,
+                          profile2Name: successStoryFormData.profile2Name,
+                          profile2City: successStoryFormData.profile2City,
+                          profile2PhotoUrl: successStoryFormData.profile2PhotoUrl,
+                          profile1Testimonial: successStoryFormData.profile1Testimonial,
+                          status: successStoryFormData.status
+                        }
+                      : story
+                  ))
+                } else {
+                  // Create new story with all required fields
+                  const newStory: SuccessStory = {
+                    id: `story-${Date.now()}`,
+                    profile1Id: `manual-${Date.now()}-1`,
+                    profile2Id: `manual-${Date.now()}-2`,
+                    profile1Name: successStoryFormData.profile1Name,
+                    profile1City: successStoryFormData.profile1City,
+                    profile1PhotoUrl: successStoryFormData.profile1PhotoUrl,
+                    profile1Gender: 'male',  // Default for manual stories
+                    profile2Name: successStoryFormData.profile2Name,
+                    profile2City: successStoryFormData.profile2City,
+                    profile2PhotoUrl: successStoryFormData.profile2PhotoUrl,
+                    profile2Gender: 'female',  // Default for manual stories
+                    profile1Consent: true,  // Admin manually creating = consent assumed
+                    profile1PhotoConsent: true,
+                    profile1NameConsent: true,
+                    profile2Consent: true,
+                    profile2PhotoConsent: true,
+                    profile2NameConsent: true,
+                    bothConsented: true,
+                    profile1Testimonial: successStoryFormData.profile1Testimonial,
+                    status: successStoryFormData.status,
+                    submittedAt: new Date().toISOString()
+                  }
+                  setSuccessStories(prev => [...(prev || []), newStory])
+                }
+
+                setShowSuccessStoryDialog(false)
+                setEditingSuccessStory(null)
+                setSuccessStoryFormData({
+                  profile1Name: '',
+                  profile1City: '',
+                  profile1PhotoUrl: '',
+                  profile2Name: '',
+                  profile2City: '',
+                  profile2PhotoUrl: '',
+                  profile1Testimonial: '',
+                  status: 'published'
+                })
+              }}
+            >
+              <Check className="h-4 w-4 mr-2" />
+              {editingSuccessStory 
+                ? (language === 'hi' ? 'अपडेट करें' : 'Update')
+                : (language === 'hi' ? 'बनाएं' : 'Create')}
             </Button>
           </DialogFooter>
         </DialogContent>
