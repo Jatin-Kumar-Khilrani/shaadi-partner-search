@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MapPin, Briefcase, GraduationCap, UserCircle, ShieldCheck, Seal, Clock, Lock, Crown, Eye, XCircle, ArrowCounterClockwise, ProhibitInset, Heart, PaperPlaneTilt, Phone, CheckCircle, Sparkle } from '@phosphor-icons/react'
+import { MapPin, Briefcase, GraduationCap, UserCircle, ShieldCheck, Seal, Clock, Lock, Crown, Eye, XCircle, ArrowCounterClockwise, ProhibitInset, Heart, PaperPlaneTilt, Phone, CheckCircle, Sparkle, Star } from '@phosphor-icons/react'
 import type { Profile, MembershipPlan } from '@/types/profile'
 import { motion } from 'framer-motion'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
@@ -289,6 +289,11 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
                   {profile.status === 'verified' && badge && (
                     <Badge className={`${badge.color} gap-0.5 whitespace-nowrap shrink-0 text-[10px] px-1.5 py-0`}>
                       <span className="text-[10px]">{badge.icon}</span>
+                    </Badge>
+                  )}
+                  {profile.hasReadinessBadge && (
+                    <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white gap-0.5 whitespace-nowrap shrink-0 text-[10px] px-1.5 py-0" title={language === 'hi' ? 'विवाह तैयार' : 'Marriage Ready'}>
+                      <Star size={10} weight="fill" />
                     </Badge>
                   )}
                   {profile.digilockerVerified && (

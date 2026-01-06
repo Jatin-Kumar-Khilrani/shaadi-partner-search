@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -970,6 +970,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     otherReason: language === 'hi' ? 'अन्य' : 'Other',
     chatHistory: language === 'hi' ? 'चैट इतिहास' : 'Chat History',
     noMessagesFound: language === 'hi' ? 'कोई संदेश नहीं मिला' : 'No messages found',
+    // Trust Level translations
+    trustLevel: language === 'hi' ? 'विश्वास स्तर' : 'Trust Level',
+    setTrustLevel: language === 'hi' ? 'विश्वास स्तर सेट करें' : 'Set Trust Level',
+    trustLevel1: language === 'hi' ? 'स्तर 1 - मोबाइल सत्यापित' : 'Level 1 - Mobile Verified',
+    trustLevel3: language === 'hi' ? 'स्तर 3 - ID सत्यापित' : 'Level 3 - ID Verified',
+    trustLevel5: language === 'hi' ? 'स्तर 5 - वीडियो सत्यापित' : 'Level 5 - Video Verified',
+    trustLevelUpdated: language === 'hi' ? 'विश्वास स्तर अपडेट हो गया!' : 'Trust level updated!',
     // Pagination translations
     page: language === 'hi' ? 'पृष्ठ' : 'Page',
     of: language === 'hi' ? 'का' : 'of',
@@ -1537,6 +1544,18 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     } else {
       toast.warning(t.faceNotVerifiedSuccess)
     }
+  }
+
+  // Handle setting trust level manually by admin
+  const handleSetTrustLevel = (profile: Profile, level: 1 | 3 | 5) => {
+    setProfiles((current) => 
+      (current || []).map(p => 
+        p.id === profile.id 
+          ? { ...p, trustLevel: level }
+          : p
+      )
+    )
+    toast.success(t.trustLevelUpdated)
   }
 
   const handleGetAISuggestions = async (profile: Profile) => {
@@ -2371,6 +2390,47 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     <ChatCircle size={14} className="mr-2" />
                                     {t.chat}
                                   </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  {/* Trust Level Submenu */}
+                                  <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger className="text-teal focus:text-teal focus:bg-teal/10">
+                                      <ShieldCheck size={14} className="mr-2" />
+                                      {t.setTrustLevel}
+                                      <span className="ml-auto text-xs opacity-70">L{profile.trustLevel}</span>
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
+                                      <DropdownMenuItem 
+                                        onClick={() => handleSetTrustLevel(profile, 1)}
+                                        className={profile.trustLevel === 1 ? 'bg-muted' : ''}
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <span className="w-3 h-3 rounded-full bg-gray-400" />
+                                          <span>{t.trustLevel1}</span>
+                                          {profile.trustLevel === 1 && <Check size={14} className="ml-auto" />}
+                                        </div>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem 
+                                        onClick={() => handleSetTrustLevel(profile, 3)}
+                                        className={profile.trustLevel === 3 ? 'bg-teal/10' : ''}
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <span className="w-3 h-3 rounded-full bg-teal" />
+                                          <span>{t.trustLevel3}</span>
+                                          {profile.trustLevel === 3 && <Check size={14} className="ml-auto" />}
+                                        </div>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem 
+                                        onClick={() => handleSetTrustLevel(profile, 5)}
+                                        className={profile.trustLevel === 5 ? 'bg-accent/10' : ''}
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <span className="w-3 h-3 rounded-full bg-accent" />
+                                          <span>{t.trustLevel5}</span>
+                                          {profile.trustLevel === 5 && <Check size={14} className="ml-auto" />}
+                                        </div>
+                                      </DropdownMenuItem>
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuSub>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>

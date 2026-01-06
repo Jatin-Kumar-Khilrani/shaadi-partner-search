@@ -565,6 +565,26 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                   <span>{badge.text}</span>
                 </Badge>
               )}
+              {/* Readiness Badge - shows if user has completed readiness assessment */}
+              {profile.hasReadinessBadge && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white gap-1.5 mt-2 ml-1 shadow-sm cursor-help">
+                        <Star size={14} weight="fill" />
+                        <span>{language === 'hi' ? 'विवाह तैयार' : 'Marriage Ready'}</span>
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-sm">
+                        {language === 'hi' 
+                          ? `तत्परता स्कोर: ${profile.readinessScore || 0}%`
+                          : `Readiness Score: ${profile.readinessScore || 0}%`}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </div>
           </div>
         </DialogHeader>

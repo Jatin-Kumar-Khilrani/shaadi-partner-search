@@ -361,13 +361,18 @@ export interface Interest {
   id: string
   fromProfileId: string
   toProfileId: string
-  status: 'pending' | 'accepted' | 'declined' | 'blocked' | 'revoked'
+  status: 'pending' | 'accepted' | 'declined' | 'blocked' | 'revoked' | 'expired' | 'cancelled'
   message?: string
   createdAt: string
+  acceptedAt?: string
   approvedBy?: string
   declinedAt?: string
   blockedAt?: string
   revokedAt?: string
+  expiredAt?: string
+  cancelledAt?: string
+  expiryReason?: 'timeout' | string
+  reconsideredAt?: string
   // Track who performed the action for UI display
   declinedBy?: 'sender' | 'receiver'  // Who declined the interest
   revokedBy?: 'sender' | 'receiver'   // Who revoked after acceptance
@@ -422,11 +427,14 @@ export interface ContactRequest {
   toUserId: string
   fromProfileId: string
   toProfileId?: string
-  status: 'pending' | 'approved' | 'declined' | 'revoked'
+  status: 'pending' | 'approved' | 'declined' | 'revoked' | 'expired' | 'cancelled'
   createdAt: string
   approvedAt?: string
   declinedAt?: string
   revokedAt?: string
+  expiredAt?: string
+  cancelledAt?: string
+  reconsideredAt?: string
   // Track who performed the action for UI display
   declinedBy?: 'sender' | 'receiver'  // Who declined the contact request
   revokedBy?: 'sender' | 'receiver'   // Who revoked after approval
