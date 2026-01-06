@@ -17,7 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, CaretLeft, CaretRight, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User as UserIcon, CreditCard, Upload, ShieldWarning, Prohibit, Warning, Heart, Gift, Trophy, Confetti } from '@phosphor-icons/react'
+import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, CaretLeft, CaretRight, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User as UserIcon, CreditCard, Upload, ShieldWarning, Prohibit, Warning, Heart, Gift, Trophy, Confetti, MagnifyingGlass } from '@phosphor-icons/react'
 import type { Profile, WeddingService, PaymentTransaction, BlockedProfile, ReportReason, SuccessStory } from '@/types/profile'
 import type { User } from '@/types/user'
 import type { ChatMessage } from '@/types/chat'
@@ -631,13 +631,21 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   // Success Story CRUD state
   const [showSuccessStoryDialog, setShowSuccessStoryDialog] = useState(false)
   const [editingSuccessStory, setEditingSuccessStory] = useState<SuccessStory | null>(null)
+  const [profile1Search, setProfile1Search] = useState('')
+  const [profile2Search, setProfile2Search] = useState('')
+  const [showProfile1Dropdown, setShowProfile1Dropdown] = useState(false)
+  const [showProfile2Dropdown, setShowProfile2Dropdown] = useState(false)
   const [successStoryFormData, setSuccessStoryFormData] = useState<{
+    profile1Id: string
     profile1Name: string
     profile1City: string
     profile1PhotoUrl: string
+    profile1Gender: 'male' | 'female'
+    profile2Id: string
     profile2Name: string
     profile2City: string
     profile2PhotoUrl: string
+    profile2Gender: 'male' | 'female'
     profile1Testimonial: string
     status: SuccessStory['status']
     // Privacy controls
@@ -648,12 +656,16 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     hideProfile1Completely: boolean
     hideProfile2Completely: boolean
   }>({
+    profile1Id: '',
     profile1Name: '',
     profile1City: '',
     profile1PhotoUrl: '',
+    profile1Gender: 'male',
+    profile2Id: '',
     profile2Name: '',
     profile2City: '',
     profile2PhotoUrl: '',
+    profile2Gender: 'female',
     profile1Testimonial: '',
     status: 'published',
     hideProfile1Photo: false,
@@ -663,6 +675,21 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     hideProfile1Completely: false,
     hideProfile2Completely: false
   })
+  
+  // Filter profiles for success story search
+  const getFilteredProfiles = (searchTerm: string, excludeId?: string) => {
+    if (!profiles) return []
+    const term = searchTerm.toLowerCase().trim()
+    return profiles
+      .filter(p => p.profileId !== excludeId) // Exclude already selected profile
+      .filter(p => 
+        !term || 
+        p.fullName?.toLowerCase().includes(term) ||
+        p.profileId?.toLowerCase().includes(term) ||
+        p.city?.toLowerCase().includes(term)
+      )
+      .slice(0, 10) // Limit to 10 results for performance
+  }
   
   const t = {
     title: language === 'hi' ? 'प्रशासन पैनल' : 'Admin Panel',
@@ -4130,13 +4157,21 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   className="gap-1 bg-rose-500 hover:bg-rose-600 mt-2"
                   onClick={() => {
                     setEditingSuccessStory(null)
+                    setProfile1Search('')
+                    setProfile2Search('')
+                    setShowProfile1Dropdown(false)
+                    setShowProfile2Dropdown(false)
                     setSuccessStoryFormData({
+                      profile1Id: '',
                       profile1Name: '',
                       profile1City: '',
                       profile1PhotoUrl: '',
+                      profile1Gender: 'male',
+                      profile2Id: '',
                       profile2Name: '',
                       profile2City: '',
                       profile2PhotoUrl: '',
+                      profile2Gender: 'female',
                       profile1Testimonial: '',
                       status: 'published',
                       hideProfile1Photo: false,
@@ -4539,10 +4574,67 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <h3 className="font-semibold text-rose-700 flex items-center gap-2">
                             <Trophy size={18} />
                             {language === 'hi' ? 'प्रकाशित कहानियां' : 'Published Stories'} ({published.length})
+                            <span className="text-xs text-muted-foreground font-normal ml-2">
+                              {language === 'hi' ? '(क्रम बदलने के लिए तीर का उपयोग करें)' : '(Use arrows to reorder)'}
+                            </span>
                           </h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {published.map((story) => (
-                              <div key={story.id} className="p-4 rounded-lg border border-rose-200 bg-gradient-to-r from-rose-50 to-pink-50">
+                          <div className="space-y-3">
+                            {/* Sort published stories by displayOrder */}
+                            {[...published].sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999)).map((story, index, sortedList) => (
+                              <div key={story.id} className="p-4 rounded-lg border border-rose-200 bg-gradient-to-r from-rose-50 to-pink-50 flex gap-3">
+                                {/* Reorder Controls */}
+                                <div className="flex flex-col justify-center gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 w-7 p-0"
+                                    disabled={index === 0}
+                                    title={language === 'hi' ? 'ऊपर ले जाएं' : 'Move up'}
+                                    onClick={() => {
+                                      const prevStory = sortedList[index - 1]
+                                      if (!prevStory) return
+                                      // Swap display orders
+                                      const currentOrder = story.displayOrder ?? index
+                                      const prevOrder = prevStory.displayOrder ?? (index - 1)
+                                      setSuccessStories(prev => (prev || []).map(s => {
+                                        if (s.id === story.id) return { ...s, displayOrder: prevOrder }
+                                        if (s.id === prevStory.id) return { ...s, displayOrder: currentOrder }
+                                        return s
+                                      }))
+                                      toast.success(language === 'hi' ? 'क्रम बदला गया' : 'Order updated')
+                                    }}
+                                  >
+                                    <CaretUp size={14} />
+                                  </Button>
+                                  <span className="text-xs text-center text-muted-foreground font-medium">
+                                    #{index + 1}
+                                  </span>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 w-7 p-0"
+                                    disabled={index === sortedList.length - 1}
+                                    title={language === 'hi' ? 'नीचे ले जाएं' : 'Move down'}
+                                    onClick={() => {
+                                      const nextStory = sortedList[index + 1]
+                                      if (!nextStory) return
+                                      // Swap display orders
+                                      const currentOrder = story.displayOrder ?? index
+                                      const nextOrder = nextStory.displayOrder ?? (index + 1)
+                                      setSuccessStories(prev => (prev || []).map(s => {
+                                        if (s.id === story.id) return { ...s, displayOrder: nextOrder }
+                                        if (s.id === nextStory.id) return { ...s, displayOrder: currentOrder }
+                                        return s
+                                      }))
+                                      toast.success(language === 'hi' ? 'क्रम बदला गया' : 'Order updated')
+                                    }}
+                                  >
+                                    <CaretDown size={14} />
+                                  </Button>
+                                </div>
+                                
+                                {/* Story Content */}
+                                <div className="flex-1">
                                 {/* Privacy badges */}
                                 {(story.hideProfile1Completely || story.hideProfile2Completely || story.hideProfile1Photo || story.hideProfile2Photo || story.hideProfile1Name || story.hideProfile2Name) && (
                                   <div className="flex flex-wrap gap-1 mb-2">
@@ -4605,12 +4697,16 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                       onClick={() => {
                                         setEditingSuccessStory(story)
                                         setSuccessStoryFormData({
+                                          profile1Id: story.profile1Id || '',
                                           profile1Name: story.profile1Name,
                                           profile1City: story.profile1City || '',
                                           profile1PhotoUrl: story.profile1PhotoUrl || '',
+                                          profile1Gender: story.profile1Gender || 'male',
+                                          profile2Id: story.profile2Id || '',
                                           profile2Name: story.profile2Name,
                                           profile2City: story.profile2City || '',
                                           profile2PhotoUrl: story.profile2PhotoUrl || '',
+                                          profile2Gender: story.profile2Gender || 'female',
                                           profile1Testimonial: story.profile1Testimonial || '',
                                           status: story.status,
                                           hideProfile1Photo: story.hideProfile1Photo || false,
@@ -4658,6 +4754,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     </Button>
                                   </div>
                                 </div>
+                                </div> {/* Close flex-1 story content wrapper */}
                               </div>
                             ))}
                           </div>
@@ -8328,13 +8425,21 @@ ShaadiPartnerSearch Team
         setShowSuccessStoryDialog(open)
         if (!open) {
           setEditingSuccessStory(null)
+          setProfile1Search('')
+          setProfile2Search('')
+          setShowProfile1Dropdown(false)
+          setShowProfile2Dropdown(false)
           setSuccessStoryFormData({
+            profile1Id: '',
             profile1Name: '',
             profile1City: '',
             profile1PhotoUrl: '',
+            profile1Gender: 'male',
+            profile2Id: '',
             profile2Name: '',
             profile2City: '',
             profile2PhotoUrl: '',
+            profile2Gender: 'female',
             profile1Testimonial: '',
             status: 'published',
             hideProfile1Photo: false,
@@ -8368,22 +8473,125 @@ ShaadiPartnerSearch Team
                 <UserIcon className="h-4 w-4" />
                 {language === 'hi' ? 'प्रोफाइल 1 (पति/पत्नी)' : 'Profile 1 (Spouse)'}
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{language === 'hi' ? 'नाम' : 'Name'} *</label>
-                  <Input
-                    placeholder={language === 'hi' ? 'नाम दर्ज करें' : 'Enter name'}
-                    value={successStoryFormData.profile1Name}
-                    onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile1Name: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{language === 'hi' ? 'शहर' : 'City'}</label>
-                  <Input
-                    placeholder={language === 'hi' ? 'शहर दर्ज करें' : 'Enter city'}
-                    value={successStoryFormData.profile1City}
-                    onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile1City: e.target.value }))}
-                  />
+              
+              {/* Search from Database */}
+              <div className="space-y-2 relative">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <MagnifyingGlass className="h-3 w-3" />
+                  {language === 'hi' ? 'डेटाबेस से खोजें' : 'Search from Database'}
+                </label>
+                <Input
+                  placeholder={language === 'hi' ? 'नाम या प्रोफाइल ID खोजें...' : 'Search by name or profile ID...'}
+                  value={profile1Search}
+                  onChange={(e) => {
+                    setProfile1Search(e.target.value)
+                    setShowProfile1Dropdown(true)
+                  }}
+                  onFocus={() => setShowProfile1Dropdown(true)}
+                />
+                {showProfile1Dropdown && profile1Search.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-900 border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {getFilteredProfiles(profile1Search, successStoryFormData.profile2Id).length === 0 ? (
+                      <div className="p-3 text-sm text-muted-foreground text-center">
+                        {language === 'hi' ? 'कोई प्रोफाइल नहीं मिला' : 'No profiles found'}
+                      </div>
+                    ) : (
+                      getFilteredProfiles(profile1Search, successStoryFormData.profile2Id).map(profile => (
+                        <div
+                          key={profile.id}
+                          className="flex items-center gap-3 p-2 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                          onClick={() => {
+                            setSuccessStoryFormData(prev => ({
+                              ...prev,
+                              profile1Id: profile.profileId,
+                              profile1Name: profile.fullName || '',
+                              profile1City: profile.city || '',
+                              profile1PhotoUrl: profile.photos?.[0] || '',
+                              profile1Gender: profile.gender || 'male'
+                            }))
+                            setProfile1Search('')
+                            setShowProfile1Dropdown(false)
+                          }}
+                        >
+                          {profile.photos?.[0] ? (
+                            <img src={profile.photos[0]} alt="" className="w-10 h-10 rounded-full object-cover border" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                              <UserIcon size={20} className="text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{profile.fullName}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {profile.profileId} • {profile.city || 'N/A'}
+                            </p>
+                          </div>
+                          <span className={`text-xs px-2 py-0.5 rounded ${profile.gender === 'male' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
+                            {profile.gender === 'male' ? '♂' : '♀'}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+                {/* Selected profile indicator */}
+                {successStoryFormData.profile1Id && (
+                  <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg">
+                    {successStoryFormData.profile1PhotoUrl ? (
+                      <img src={successStoryFormData.profile1PhotoUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                        <UserIcon size={16} />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{successStoryFormData.profile1Name}</p>
+                      <p className="text-xs text-muted-foreground">{successStoryFormData.profile1Id}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => {
+                        setSuccessStoryFormData(prev => ({
+                          ...prev,
+                          profile1Id: '',
+                          profile1Name: '',
+                          profile1City: '',
+                          profile1PhotoUrl: '',
+                          profile1Gender: 'male'
+                        }))
+                      }}
+                    >
+                      <X size={14} />
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Manual Entry Section */}
+              <div className="border-t pt-3 mt-2">
+                <p className="text-xs text-muted-foreground mb-3">
+                  {language === 'hi' ? 'या मैन्युअल रूप से दर्ज करें:' : 'Or enter manually:'}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">{language === 'hi' ? 'नाम' : 'Name'} *</label>
+                    <Input
+                      placeholder={language === 'hi' ? 'नाम दर्ज करें' : 'Enter name'}
+                      value={successStoryFormData.profile1Name}
+                      onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile1Name: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">{language === 'hi' ? 'शहर' : 'City'}</label>
+                    <Input
+                      placeholder={language === 'hi' ? 'शहर दर्ज करें' : 'Enter city'}
+                      value={successStoryFormData.profile1City}
+                      onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile1City: e.target.value }))}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="space-y-2">
@@ -8454,22 +8662,125 @@ ShaadiPartnerSearch Team
                 <UserIcon className="h-4 w-4" />
                 {language === 'hi' ? 'प्रोफाइल 2 (पति/पत्नी)' : 'Profile 2 (Spouse)'}
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{language === 'hi' ? 'नाम' : 'Name'} *</label>
-                  <Input
-                    placeholder={language === 'hi' ? 'नाम दर्ज करें' : 'Enter name'}
-                    value={successStoryFormData.profile2Name}
-                    onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile2Name: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{language === 'hi' ? 'शहर' : 'City'}</label>
-                  <Input
-                    placeholder={language === 'hi' ? 'शहर दर्ज करें' : 'Enter city'}
-                    value={successStoryFormData.profile2City}
-                    onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile2City: e.target.value }))}
-                  />
+              
+              {/* Search from Database */}
+              <div className="space-y-2 relative">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <MagnifyingGlass className="h-3 w-3" />
+                  {language === 'hi' ? 'डेटाबेस से खोजें' : 'Search from Database'}
+                </label>
+                <Input
+                  placeholder={language === 'hi' ? 'नाम या प्रोफाइल ID खोजें...' : 'Search by name or profile ID...'}
+                  value={profile2Search}
+                  onChange={(e) => {
+                    setProfile2Search(e.target.value)
+                    setShowProfile2Dropdown(true)
+                  }}
+                  onFocus={() => setShowProfile2Dropdown(true)}
+                />
+                {showProfile2Dropdown && profile2Search.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-900 border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {getFilteredProfiles(profile2Search, successStoryFormData.profile1Id).length === 0 ? (
+                      <div className="p-3 text-sm text-muted-foreground text-center">
+                        {language === 'hi' ? 'कोई प्रोफाइल नहीं मिला' : 'No profiles found'}
+                      </div>
+                    ) : (
+                      getFilteredProfiles(profile2Search, successStoryFormData.profile1Id).map(profile => (
+                        <div
+                          key={profile.id}
+                          className="flex items-center gap-3 p-2 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                          onClick={() => {
+                            setSuccessStoryFormData(prev => ({
+                              ...prev,
+                              profile2Id: profile.profileId,
+                              profile2Name: profile.fullName || '',
+                              profile2City: profile.city || '',
+                              profile2PhotoUrl: profile.photos?.[0] || '',
+                              profile2Gender: profile.gender || 'female'
+                            }))
+                            setProfile2Search('')
+                            setShowProfile2Dropdown(false)
+                          }}
+                        >
+                          {profile.photos?.[0] ? (
+                            <img src={profile.photos[0]} alt="" className="w-10 h-10 rounded-full object-cover border" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                              <UserIcon size={20} className="text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{profile.fullName}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {profile.profileId} • {profile.city || 'N/A'}
+                            </p>
+                          </div>
+                          <span className={`text-xs px-2 py-0.5 rounded ${profile.gender === 'male' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
+                            {profile.gender === 'male' ? '♂' : '♀'}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+                {/* Selected profile indicator */}
+                {successStoryFormData.profile2Id && (
+                  <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg">
+                    {successStoryFormData.profile2PhotoUrl ? (
+                      <img src={successStoryFormData.profile2PhotoUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                        <UserIcon size={16} />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{successStoryFormData.profile2Name}</p>
+                      <p className="text-xs text-muted-foreground">{successStoryFormData.profile2Id}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => {
+                        setSuccessStoryFormData(prev => ({
+                          ...prev,
+                          profile2Id: '',
+                          profile2Name: '',
+                          profile2City: '',
+                          profile2PhotoUrl: '',
+                          profile2Gender: 'female'
+                        }))
+                      }}
+                    >
+                      <X size={14} />
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Manual Entry Section */}
+              <div className="border-t pt-3 mt-2">
+                <p className="text-xs text-muted-foreground mb-3">
+                  {language === 'hi' ? 'या मैन्युअल रूप से दर्ज करें:' : 'Or enter manually:'}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">{language === 'hi' ? 'नाम' : 'Name'} *</label>
+                    <Input
+                      placeholder={language === 'hi' ? 'नाम दर्ज करें' : 'Enter name'}
+                      value={successStoryFormData.profile2Name}
+                      onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile2Name: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">{language === 'hi' ? 'शहर' : 'City'}</label>
+                    <Input
+                      placeholder={language === 'hi' ? 'शहर दर्ज करें' : 'Enter city'}
+                      value={successStoryFormData.profile2City}
+                      onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile2City: e.target.value }))}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="space-y-2">
@@ -8613,12 +8924,16 @@ ShaadiPartnerSearch Team
                     story.id === editingSuccessStory.id 
                       ? {
                           ...story,
+                          profile1Id: successStoryFormData.profile1Id || story.profile1Id,
                           profile1Name: successStoryFormData.profile1Name,
                           profile1City: successStoryFormData.profile1City,
                           profile1PhotoUrl: successStoryFormData.profile1PhotoUrl,
+                          profile1Gender: successStoryFormData.profile1Gender,
+                          profile2Id: successStoryFormData.profile2Id || story.profile2Id,
                           profile2Name: successStoryFormData.profile2Name,
                           profile2City: successStoryFormData.profile2City,
                           profile2PhotoUrl: successStoryFormData.profile2PhotoUrl,
+                          profile2Gender: successStoryFormData.profile2Gender,
                           profile1Testimonial: successStoryFormData.profile1Testimonial,
                           status: successStoryFormData.status,
                           // Privacy controls
@@ -8636,16 +8951,16 @@ ShaadiPartnerSearch Team
                   // Create new story with all required fields
                   const newStory: SuccessStory = {
                     id: `story-${Date.now()}`,
-                    profile1Id: `manual-${Date.now()}-1`,
-                    profile2Id: `manual-${Date.now()}-2`,
+                    profile1Id: successStoryFormData.profile1Id || `manual-${Date.now()}-1`,
+                    profile2Id: successStoryFormData.profile2Id || `manual-${Date.now()}-2`,
                     profile1Name: successStoryFormData.profile1Name,
                     profile1City: successStoryFormData.profile1City,
                     profile1PhotoUrl: successStoryFormData.profile1PhotoUrl,
-                    profile1Gender: 'male',  // Default for manual stories
+                    profile1Gender: successStoryFormData.profile1Gender,
                     profile2Name: successStoryFormData.profile2Name,
                     profile2City: successStoryFormData.profile2City,
                     profile2PhotoUrl: successStoryFormData.profile2PhotoUrl,
-                    profile2Gender: 'female',  // Default for manual stories
+                    profile2Gender: successStoryFormData.profile2Gender,
                     profile1Consent: !successStoryFormData.hideProfile1Completely,
                     profile1PhotoConsent: !successStoryFormData.hideProfile1Photo && !successStoryFormData.hideProfile1Completely,
                     profile1NameConsent: !successStoryFormData.hideProfile1Name && !successStoryFormData.hideProfile1Completely,
@@ -8670,13 +8985,19 @@ ShaadiPartnerSearch Team
 
                 setShowSuccessStoryDialog(false)
                 setEditingSuccessStory(null)
+                setProfile1Search('')
+                setProfile2Search('')
                 setSuccessStoryFormData({
+                  profile1Id: '',
                   profile1Name: '',
                   profile1City: '',
                   profile1PhotoUrl: '',
+                  profile1Gender: 'male',
+                  profile2Id: '',
                   profile2Name: '',
                   profile2City: '',
                   profile2PhotoUrl: '',
+                  profile2Gender: 'female',
                   profile1Testimonial: '',
                   status: 'published',
                   hideProfile1Photo: false,

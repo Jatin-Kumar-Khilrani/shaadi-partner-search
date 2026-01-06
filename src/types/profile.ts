@@ -69,6 +69,9 @@ export interface SuccessStory {
   hideProfile1Completely?: boolean  // Hide profile1 entirely (for single-party publish)
   hideProfile2Completely?: boolean  // Hide profile2 entirely (for single-party publish)
   
+  // Display order (for sorting published stories on homepage)
+  displayOrder?: number          // Lower numbers appear first, admin can reorder
+  
   // Testimonials from both parties (optional)
   profile1Testimonial?: string         // Optional testimonial/comment from profile1
   profile1TestimonialHi?: string       // Hindi version of testimonial

@@ -1649,7 +1649,9 @@ function App() {
 
                 {/* Success Stories Section */}
                 {(() => {
-                  const publishedStories = successStories?.filter(s => s.status === 'published') || []
+                  // Filter published stories and sort by displayOrder (lower numbers appear first)
+                  const publishedStories = (successStories?.filter(s => s.status === 'published') || [])
+                    .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999))
                   if (publishedStories.length === 0) return null
                   
                   return (
