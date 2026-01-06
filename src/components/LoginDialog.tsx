@@ -114,6 +114,20 @@ export function LoginDialog({ open, onClose, onLogin, onUpdatePassword, users, p
     )
 
     if (user) {
+      // Check if profile is deleted
+      const userProfile = profiles.find(p => p.id === user.profileId)
+      if (userProfile?.isDeleted) {
+        toast.error(
+          language === 'hi' ? 'प्रोफाइल हटा दी गई है' : 'Profile Deleted',
+          {
+            description: language === 'hi'
+              ? 'यह प्रोफाइल हटा दी गई है और अब लॉगिन नहीं कर सकती।'
+              : 'This profile has been deleted and can no longer login.'
+          }
+        )
+        return
+      }
+
       // Check if first-time login (password never changed)
       if (user.firstLogin !== false && !user.passwordChangedAt) {
         // Prompt user to change password

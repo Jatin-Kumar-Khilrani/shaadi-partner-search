@@ -562,66 +562,54 @@ Admin Removal:
       content: isHindi
         ? `सफलता की कहानी कार्यक्रम:
 
-जब आप इस प्लेटफॉर्म के माध्यम से अपना जीवनसाथी पाते हैं, तो आप हमारी सफलता की कहानी कार्यक्रम में भाग ले सकते हैं।
+जब आप इस प्लेटफॉर्म के माध्यम से अपना जीवनसाथी पाते हैं, तो आप प्रोफ़ाइल हटाते समय सफलता की कहानी साझा करने का विकल्प चुन सकते हैं।
 
-सहमति आवश्यकताएं:
-• सफलता की कहानी प्रकाशित करने के लिए दोनों पक्षों की सहमति अनिवार्य है
-• आप तस्वीरों के उपयोग की अनुमति दे सकते हैं (वैकल्पिक)
-• आप असली नाम के उपयोग की अनुमति दे सकते हैं (वैकल्पिक)
-• प्रत्येक पक्ष स्वतंत्र रूप से सहमति दे सकता है
+व्यक्तिगत सहमति मॉडल:
+• प्रत्येक व्यक्ति स्वतंत्र रूप से अपनी कहानी साझा कर सकता है
+• आपके पार्टनर को सूचित नहीं किया जाएगा
+• आपकी कहानी केवल आपकी सहमति के आधार पर प्रकाशित होगी
+• आप तस्वीरों और नाम के उपयोग की अनुमति दे सकते हैं (वैकल्पिक)
 
 प्रशंसापत्र (Testimonials):
 • आप अपना अनुभव साझा कर सकते हैं (वैकल्पिक)
-• प्रशंसापत्र एडमिन द्वारा समीक्षा के बाद ही प्रकाशित होंगे
-• अनुचित या आपत्तिजनक सामग्री अस्वीकार की जाएगी
-• दोनों पक्ष अलग-अलग प्रशंसापत्र दे सकते हैं
+• एडमिन प्रकाशन से पहले प्रशंसापत्र की समीक्षा और संपादन कर सकता है
+• अनुचित या आपत्तिजनक सामग्री अस्वीकार या संपादित की जाएगी
+• संपादित प्रशंसापत्रों को चिह्नित किया जाएगा
 
-एकतरफा प्रकाशन (जब पार्टनर प्रतिक्रिया न दे):
-• यदि आपका पार्टनर 30 दिनों के भीतर प्रतिक्रिया नहीं देता
-• एडमिन आपकी सहमति और प्रशंसापत्र के आधार पर प्रकाशन का निर्णय ले सकता है
-• केवल आपका नाम और जानकारी प्रकाशित होगी (पार्टनर का नहीं)
-• यह सुनिश्चित करता है कि अच्छी कहानियां साझा हों भले ही एक पक्ष प्रतिक्रिया न दे
-
-विवाह उपहार (Wedding Goodies):
-• दोनों की सहमति पर, जोड़े को विवाह उपहार मिल सकता है
-• उपहार का निर्णय एडमिन द्वारा किया जाता है
-• उपहार वितरण की स्थिति ट्रैक की जाती है
-• उपहार का दावा करने के लिए पता प्रदान करना आवश्यक है
+प्रकाशन प्रक्रिया:
+• आपकी कहानी एडमिन समीक्षा के लिए जमा होगी
+• एडमिन प्रशंसापत्र को स्वीकृत, अस्वीकृत या संपादित कर सकता है
+• स्वीकृति के बाद कहानी प्रकाशित होगी
+• पार्टनर की सहमति आवश्यक नहीं है
 
 गोपनीयता:
-• प्रकाशित कहानियां केवल सहमति के अनुसार जानकारी दिखाएंगी
+• प्रकाशित कहानियां केवल आपकी सहमति के अनुसार जानकारी दिखाएंगी
 • आप कभी भी अपनी कहानी हटाने का अनुरोध कर सकते हैं
 • हटाने का अनुरोध 7 कार्य दिवसों में प्रोसेस होगा`
         : `Success Story Program:
 
-When you find your life partner through this platform, you can participate in our Success Story program.
+When you find your life partner through this platform, you can choose to share a success story when deleting your profile.
 
-Consent Requirements:
-• Consent from both parties is mandatory to publish a success story
-• You can consent to use of photos (optional)
-• You can consent to use of real names (optional)
-• Each party can provide consent independently
+Individual Consent Model:
+• Each individual can independently share their story
+• Your partner will NOT be notified
+• Your story will be published based on YOUR consent only
+• You can optionally consent to use of photos and real name
 
 Testimonials:
 • You can share your experience (optional)
-• Testimonials will only be published after admin review
-• Inappropriate or objectionable content will be rejected
-• Both parties can provide separate testimonials
+• Admin may review and edit testimonials before publishing
+• Inappropriate or objectionable content will be rejected or edited
+• Edited testimonials will be marked as such
 
-Single-Party Publishing (When Partner Doesn't Respond):
-• If your partner doesn't respond within 30 days
-• Admin may decide to publish based on your consent and testimonial
-• Only your name and information will be published (not partner's)
-• This ensures good stories are shared even if one party doesn't respond
-
-Wedding Goodies:
-• Upon mutual consent, couples may receive wedding goodies
-• Goodies are determined by admin
-• Dispatch and delivery status is tracked
-• Address must be provided to claim goodies
+Publishing Process:
+• Your story will be submitted for admin review
+• Admin can approve, reject, or edit testimonials
+• Story will be published after approval
+• Partner's consent is NOT required
 
 Privacy:
-• Published stories will only show information as per consent
+• Published stories will only show information as per your consent
 • You can request removal of your story anytime
 • Removal requests processed within 7 business days`
     },

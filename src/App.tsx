@@ -330,6 +330,29 @@ function App() {
     }
   }, [loggedInUser, currentUserProfile, language])
 
+  // Check if logged-in user's profile is deleted and force logout
+  useEffect(() => {
+    if (loggedInUser && currentUserProfile?.isDeleted) {
+      // Profile is deleted, force logout
+      setLoggedInUser(null)
+      try {
+        localStorage.removeItem('shaadi_loggedInUser')
+        localStorage.removeItem('shaadi_keepLoggedIn')
+        sessionStorage.removeItem('shaadi_loggedInUser')
+      } catch (e) {
+        logger.warn('Failed to clear login storage:', e)
+      }
+      toast.error(
+        language === 'hi' ? 'प्रोफाइल हटा दी गई है' : 'Profile Deleted',
+        {
+          description: language === 'hi'
+            ? 'आपकी प्रोफाइल हटा दी गई है। कृपया पुनः पंजीकरण करें।'
+            : 'Your profile has been deleted. Please register again.'
+        }
+      )
+    }
+  }, [loggedInUser, currentUserProfile, language])
+
   // Load sample wedding services if none exist (wedding services are not stored in Azure)
   useEffect(() => {
     if ((!weddingServices || weddingServices.length === 0) && sampleWeddingServices.length > 0) {
@@ -603,14 +626,13 @@ function App() {
             successStoryNameConsent: deletionData?.consentForName,
             deletionFeedback: deletionData?.feedbackMessage,
             deletionTestimonial: deletionData?.testimonial,
-            deletionConsentToDeletePartner: deletionData?.consentToDeletePartner,
           }
         }
         return p
       })
     })
     
-    // If user found match from this platform and consented, create a success story
+    // If user found match from this platform and consented, create an individual success story
     if (deletionData?.reason === 'found-match-shaadi-partner-search' && 
         deletionData.partnerId && 
         deletionData.consentToPublish &&
@@ -630,70 +652,35 @@ function App() {
           profile1Gender: deletingProfile.gender,
           
           profile2Id: deletionData.partnerId,
-          profile2Name: partnerProfile.fullName || partnerProfile.firstName || 'Anonymous',
-          profile2PhotoUrl: undefined, // Will be set when partner consents
+          profile2Name: partnerProfile.fullName || partnerProfile.firstName || 'Partner',
+          profile2PhotoUrl: undefined, // Partner didn't consent yet
           profile2City: partnerProfile.city || partnerProfile.location,
           profile2Gender: partnerProfile.gender,
           
+          // Individual consent model - only track this user's consent
           profile1Consent: true,
           profile1ConsentAt: new Date().toISOString(),
           profile1PhotoConsent: deletionData.consentForPhotos,
           profile1NameConsent: deletionData.consentForName,
-          profile2Consent: false, // Awaiting partner consent
+          profile2Consent: false,
           profile2ConsentAt: undefined,
           profile2PhotoConsent: false,
           profile2NameConsent: false,
-          bothConsented: false,
+          bothConsented: false, // Not required for publishing
           
-          // Add testimonial from profile1
+          // Add testimonial from this user
           profile1Testimonial: deletionData.testimonial,
           profile1TestimonialStatus: deletionData.testimonial ? 'pending' : undefined,
           
-          status: 'awaiting-partner',
+          // Story goes directly to pending-review for admin
+          status: 'pending-review',
           submittedAt: new Date().toISOString(),
-          partnerNotifiedAt: new Date().toISOString(),
           
-          rewardStatus: 'pending',
+          rewardStatus: 'not-applicable', // No wedding goodies
         }
         
         // Add to success stories
         setSuccessStories(current => [...(current || []), newSuccessStory])
-        
-        // Create notification for the partner about success story
-        const partnerNotification: UserNotification = {
-          id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          recipientProfileId: deletionData.partnerId,
-          type: 'interest_accepted', // Repurposing for now
-          title: 'Success Story Invitation',
-          titleHi: 'सफलता की कहानी निमंत्रण',
-          description: `${deletingProfile.fullName || deletingProfile.firstName} has invited you to be featured in our Success Stories! You may also receive wedding goodies.`,
-          descriptionHi: `${deletingProfile.fullName || deletingProfile.firstName} ने आपको सफलता की कहानियों में शामिल होने का निमंत्रण दिया है! आपको शादी के उपहार भी मिल सकते हैं।`,
-          senderProfileId: profileId,
-          senderName: deletingProfile.fullName || deletingProfile.firstName,
-          isRead: false,
-          createdAt: new Date().toISOString(),
-        }
-        
-        setUserNotifications(current => [...(current || []), partnerNotification])
-        
-        // If user consented to delete partner's profile too, send a notification about that
-        if (deletionData.consentToDeletePartner) {
-          const partnerDeleteNotification: UserNotification = {
-            id: `notif-delete-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            recipientProfileId: deletionData.partnerId,
-            type: 'interest_accepted', // Repurposing
-            title: 'Profile Deletion Request',
-            titleHi: 'प्रोफाइल हटाने का अनुरोध',
-            description: `${deletingProfile.fullName || deletingProfile.firstName} has requested to delete both profiles as you found each other on this platform. If you agree, please delete your profile to confirm.`,
-            descriptionHi: `${deletingProfile.fullName || deletingProfile.firstName} ने दोनों प्रोफाइल हटाने का अनुरोध किया है क्योंकि आपने एक-दूसरे को इस प्लेटफॉर्म पर पाया। यदि आप सहमत हैं, तो कृपया पुष्टि के लिए अपनी प्रोफाइल हटाएं।`,
-            senderProfileId: profileId,
-            senderName: deletingProfile.fullName || deletingProfile.firstName,
-            isRead: false,
-            createdAt: new Date().toISOString(),
-          }
-          
-          setUserNotifications(current => [...(current || []), partnerDeleteNotification])
-        }
         
         // Update the profile to link to success story
         setProfiles(current => {
@@ -706,12 +693,11 @@ function App() {
           })
         })
         
-        logger.info('Success story created, awaiting partner consent', { 
+        logger.info('Success story created for admin review', { 
           storyId: newSuccessStory.id,
           profile1: profileId,
           profile2: deletionData.partnerId,
           hasTestimonial: !!deletionData.testimonial,
-          consentToDeletePartner: deletionData.consentToDeletePartner 
         })
       }
     }
@@ -1595,6 +1581,97 @@ function App() {
                     }
                   </AlertDescription>
                 </Alert>
+
+                {/* Success Stories Section */}
+                {(() => {
+                  const publishedStories = successStories?.filter(s => s.status === 'published') || []
+                  if (publishedStories.length === 0) return null
+                  
+                  return (
+                    <Card className="mt-12 bg-gradient-to-r from-rose-50 via-pink-50 to-amber-50 border-2 border-rose-200 dark:from-rose-950/30 dark:via-pink-950/30 dark:to-amber-950/30 dark:border-rose-800 overflow-hidden">
+                      <div className="absolute top-0 right-0 bg-gradient-to-l from-rose-500 to-pink-500 text-white px-4 py-1 text-sm font-bold rounded-bl-lg">
+                        💕 {language === 'hi' ? 'सफलता की कहानियां' : 'Success Stories'}
+                      </div>
+                      <CardContent className="pt-10 pb-6">
+                        <div className="text-center mb-6">
+                          <h3 className="text-2xl md:text-3xl font-bold text-rose-700 dark:text-rose-400 mb-2">
+                            {language === 'hi' ? '❤️ हमारी सफलता की कहानियां' : '❤️ Our Success Stories'}
+                          </h3>
+                          <p className="text-muted-foreground">
+                            {language === 'hi' 
+                              ? 'इस प्लेटफॉर्म के माध्यम से अपना जीवनसाथी पाने वाले जोड़े' 
+                              : 'Couples who found their life partner through this platform'}
+                          </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {publishedStories.slice(0, 6).map((story) => (
+                            <div key={story.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-rose-100 dark:border-rose-900/50 hover:shadow-md transition-shadow">
+                              <div className="flex items-center justify-center gap-3 mb-3">
+                                {/* Profile 1 Photo */}
+                                {story.profile1PhotoUrl ? (
+                                  <div className="relative">
+                                    <div className="w-14 h-14 rounded-full ring-2 ring-rose-300 ring-offset-2 overflow-hidden">
+                                      <img src={story.profile1PhotoUrl} alt="" className="w-full h-full object-cover" />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/50 dark:to-pink-900/50 flex items-center justify-center ring-2 ring-rose-300 ring-offset-2">
+                                    <Heart size={24} weight="fill" className="text-rose-400" />
+                                  </div>
+                                )}
+                                
+                                {/* Heart Icon */}
+                                <Heart size={28} weight="fill" className="text-rose-500 animate-pulse" />
+                                
+                                {/* Profile 2 Photo */}
+                                {story.profile2PhotoUrl ? (
+                                  <div className="relative">
+                                    <div className="w-14 h-14 rounded-full ring-2 ring-rose-300 ring-offset-2 overflow-hidden">
+                                      <img src={story.profile2PhotoUrl} alt="" className="w-full h-full object-cover" />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/50 dark:to-pink-900/50 flex items-center justify-center ring-2 ring-rose-300 ring-offset-2">
+                                    <Heart size={24} weight="fill" className="text-rose-400" />
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Names */}
+                              <p className="text-center font-semibold text-rose-700 dark:text-rose-400 mb-1">
+                                {story.profile1Name} & {story.profile2Name}
+                              </p>
+                              <p className="text-center text-xs text-muted-foreground mb-3">
+                                {story.profile1City}{story.profile2City ? ` & ${story.profile2City}` : ''}
+                              </p>
+                              
+                              {/* Testimonial */}
+                              {story.profile1Testimonial && story.profile1TestimonialStatus === 'approved' && (
+                                <div className="bg-rose-50 dark:bg-rose-950/20 rounded-lg p-3 border border-rose-100 dark:border-rose-900/50">
+                                  <p className="text-xs text-gray-600 dark:text-gray-300 italic line-clamp-3">
+                                    "{story.profile1Testimonial}"
+                                  </p>
+                                  <p className="text-[10px] text-rose-500 mt-1 text-right">— {story.profile1Name}</p>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {publishedStories.length > 6 && (
+                          <div className="text-center mt-6">
+                            <p className="text-sm text-muted-foreground">
+                              {language === 'hi' 
+                                ? `और ${publishedStories.length - 6} सफल जोड़े...` 
+                                : `And ${publishedStories.length - 6} more successful couples...`}
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })()}
               </div>
             </section>
           </>

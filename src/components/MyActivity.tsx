@@ -221,6 +221,11 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
       ? '⚠️ वे आपका संपर्क नहीं देख सकते (जब तक वे भी अनुरोध न भेजें)'
       : '⚠️ They cannot view your contact (unless they also request)',
     autoDeclined: language === 'hi' ? 'स्वतः अस्वीकृत' : 'Auto-declined',
+    // Profile deleted translations
+    profileDeleted: language === 'hi' ? 'प्रोफाइल हटाई गई' : 'Profile Deleted',
+    profileDeletedInfo: language === 'hi' 
+      ? 'यह प्रोफाइल हटा दी गई है और अब उपलब्ध नहीं है' 
+      : 'This profile has been deleted and is no longer available',
     // Request expiry translations
     expiresIn: language === 'hi' ? 'में समाप्त' : 'Expires in',
     daysLeft: language === 'hi' ? 'दिन शेष' : 'days left',
@@ -1192,15 +1197,16 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                         const profile = getProfileByProfileId(interest.fromProfileId)
                         const alreadyChatted = chatRequestsUsed.includes(interest.fromProfileId)
                         const canAccept = alreadyChatted || remainingChats > 0
+                        const isProfileDeleted = profile?.isDeleted === true
                         
                         return (
-                          <Card key={interest.id} className="hover:shadow-md transition-shadow border-rose-100 dark:border-rose-900/30">
+                          <Card key={interest.id} className={`hover:shadow-md transition-shadow ${isProfileDeleted ? 'opacity-70 bg-gray-50 dark:bg-gray-900/50 border-gray-300' : 'border-rose-100 dark:border-rose-900/30'}`}>
                             <CardContent className="py-2 px-3">
                               <div className="flex flex-col gap-2">
                                 <div 
-                                  className="flex items-center justify-between cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/20 -mx-2 px-2 py-1 rounded-lg transition-colors"
-                                  onClick={() => profile && setSelectedProfileForDetails(profile)}
-                                  title={t.clickToViewProfile}
+                                  className={`flex items-center justify-between ${isProfileDeleted ? '' : 'cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/20'} -mx-2 px-2 py-1 rounded-lg transition-colors`}
+                                  onClick={() => !isProfileDeleted && profile && setSelectedProfileForDetails(profile)}
+                                  title={isProfileDeleted ? t.profileDeletedInfo : t.clickToViewProfile}
                                 >
                                   <div className="flex items-center gap-2">
                                     {/* Profile Photo */}
@@ -1237,8 +1243,14 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">{t.sentOn}: {formatDate(interest.createdAt)}</p>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-1.5">
-                                    {interest.status === 'pending' && (() => {
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    {isProfileDeleted && (
+                                      <Badge variant="destructive" className="text-[10px] px-1.5 py-0 bg-gray-500">
+                                        <ProhibitInset size={10} className="mr-0.5" />
+                                        {t.profileDeleted}
+                                      </Badge>
+                                    )}
+                                    {interest.status === 'pending' && !isProfileDeleted && (() => {
                                       const expiry = formatExpiryCountdown(interest.createdAt)
                                       return (
                                         <Badge 
@@ -1253,7 +1265,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                     {getStatusBadge(interest.status)}
                                   </div>
                                 </div>
-                                {interest.status === 'pending' && (
+                                {interest.status === 'pending' && !isProfileDeleted && (
                                   <>
                                     <div className="flex gap-1.5">
                                       <Button 
@@ -1304,6 +1316,13 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       <p>💡 {t.interestFlowInfo} <span className="text-emerald-600 dark:text-emerald-400">• {t.revokeInfo}</span></p>
                                     </div>
                                   </>
+                                )}
+                                {/* Show message for pending interests from deleted profiles */}
+                                {interest.status === 'pending' && isProfileDeleted && (
+                                  <div className="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1.5 rounded border border-gray-200 dark:border-gray-700 text-center">
+                                    <ProhibitInset size={12} className="inline mr-1" />
+                                    {t.profileDeletedInfo}
+                                  </div>
                                 )}
                                 {interest.status === 'accepted' && (
                                   <div className="flex gap-2">
@@ -1625,51 +1644,61 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                     <div className="space-y-2">
                       {sentInterests.map((interest) => {
                         const profile = getProfileByProfileId(interest.toProfileId)
+                        const isProfileDeleted = profile?.isDeleted === true
                         return (
-                          <Card key={interest.id} className="hover:shadow-sm transition-shadow border-amber-100">
+                          <Card key={interest.id} className={`hover:shadow-sm transition-shadow ${isProfileDeleted ? 'opacity-70 bg-gray-50 dark:bg-gray-900/50 border-gray-300' : 'border-amber-100'}`}>
                             <CardContent className="py-3 px-4">
                               <div 
-                                className="flex items-center justify-between cursor-pointer hover:bg-amber-50/50 -mx-2 px-2 py-1 rounded-lg transition-colors"
-                                onClick={() => profile && setSelectedProfileForDetails(profile)}
-                                title={t.clickToViewProfile}
+                                className={`flex items-center justify-between ${isProfileDeleted ? '' : 'cursor-pointer hover:bg-amber-50/50'} -mx-2 px-2 py-1 rounded-lg transition-colors`}
+                                onClick={() => !isProfileDeleted && profile && setSelectedProfileForDetails(profile)}
+                                title={isProfileDeleted ? t.profileDeletedInfo : t.clickToViewProfile}
                               >
                                 <div className="flex items-center gap-3">
                                   {/* Profile Photo */}
                                   {profile?.photos?.[0] ? (
                                     <div 
-                                      className="relative cursor-pointer group"
-                                      onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
-                                      title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                      className={`relative ${isProfileDeleted ? '' : 'cursor-pointer'} group`}
+                                      onClick={(e) => { if (!isProfileDeleted) { e.stopPropagation(); openLightbox(profile.photos || [], 0) } }}
+                                      title={isProfileDeleted ? t.profileDeletedInfo : (language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge')}
                                     >
-                                      <div className="p-[2px] rounded-full bg-gradient-to-r from-amber-400 via-rose-400 to-amber-500">
+                                      <div className={`p-[2px] rounded-full ${isProfileDeleted ? 'bg-gray-400' : 'bg-gradient-to-r from-amber-400 via-rose-400 to-amber-500'}`}>
                                         <img 
                                           src={profile.photos[0]} 
                                           alt={profile.fullName || ''}
-                                          className="w-11 h-11 rounded-full object-cover border-2 border-white group-hover:scale-105 transition-transform"
+                                          className={`w-11 h-11 rounded-full object-cover border-2 border-white ${isProfileDeleted ? 'grayscale' : 'group-hover:scale-105'} transition-transform`}
                                         />
                                       </div>
-                                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                        <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                      </div>
+                                      {!isProfileDeleted && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                          <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </div>
+                                      )}
                                     </div>
                                   ) : (
-                                    <div className="p-[2px] rounded-full bg-gradient-to-r from-amber-400 via-rose-400 to-amber-500">
+                                    <div className={`p-[2px] rounded-full ${isProfileDeleted ? 'bg-gray-400' : 'bg-gradient-to-r from-amber-400 via-rose-400 to-amber-500'}`}>
                                       <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
-                                        <Heart size={20} weight="fill" className="text-amber-500" />
+                                        <Heart size={20} weight="fill" className={isProfileDeleted ? 'text-gray-400' : 'text-amber-500'} />
                                       </div>
                                     </div>
                                   )}
                                   <div>
-                                    <p className="font-semibold text-sm text-amber-700 hover:underline">
+                                    <p className={`font-semibold text-sm ${isProfileDeleted ? 'text-gray-500 line-through' : 'text-amber-700 hover:underline'}`}>
                                       {profile?.fullName || 'Unknown'}
                                     </p>
                                     <p className="text-xs text-muted-foreground">{profile?.profileId || interest.toProfileId}</p>
                                     <p className="text-[10px] text-muted-foreground">{formatDate(interest.createdAt)}</p>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                                  {/* Deleted profile badge */}
+                                  {isProfileDeleted && (
+                                    <Badge variant="destructive" className="text-[10px] px-1.5 py-0 bg-gray-500">
+                                      <ProhibitInset size={10} className="mr-0.5" />
+                                      {t.profileDeleted}
+                                    </Badge>
+                                  )}
                                   {/* Expiry countdown for pending interests */}
-                                  {interest.status === 'pending' && (() => {
+                                  {interest.status === 'pending' && !isProfileDeleted && (() => {
                                     const expiry = formatExpiryCountdown(interest.createdAt)
                                     return (
                                       <Badge 
@@ -1764,42 +1793,45 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                         <div className="space-y-2">
                           {sentContactRequests.map((request) => {
                             const profile = profiles.find(p => p.id === request.toUserId)
+                            const isProfileDeleted = profile?.isDeleted === true
                             return (
-                              <Card key={request.id} className="hover:shadow-sm transition-shadow border-purple-100">
+                              <Card key={request.id} className={`hover:shadow-sm transition-shadow ${isProfileDeleted ? 'opacity-70 bg-gray-50 dark:bg-gray-900/50 border-gray-300' : 'border-purple-100'}`}>
                                 <CardContent className="py-3 px-4">
                                   <div 
-                                    className="flex items-center justify-between cursor-pointer hover:bg-purple-50/50 -mx-2 px-2 py-1 rounded-lg transition-colors"
-                                    onClick={() => profile && setSelectedProfileForDetails(profile)}
-                                    title={t.clickToViewProfile}
+                                    className={`flex items-center justify-between ${isProfileDeleted ? '' : 'cursor-pointer hover:bg-purple-50/50'} -mx-2 px-2 py-1 rounded-lg transition-colors`}
+                                    onClick={() => !isProfileDeleted && profile && setSelectedProfileForDetails(profile)}
+                                    title={isProfileDeleted ? t.profileDeletedInfo : t.clickToViewProfile}
                                   >
                                     <div className="flex items-center gap-3">
                                       {/* Profile Photo */}
                                       {profile?.photos?.[0] ? (
                                         <div 
-                                          className="relative cursor-pointer group"
-                                          onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
-                                          title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                          className={`relative ${isProfileDeleted ? '' : 'cursor-pointer'} group`}
+                                          onClick={(e) => { if (!isProfileDeleted) { e.stopPropagation(); openLightbox(profile.photos || [], 0) } }}
+                                          title={isProfileDeleted ? t.profileDeletedInfo : (language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge')}
                                         >
-                                          <div className="p-[2px] rounded-full bg-gradient-to-r from-purple-400 via-rose-400 to-purple-500">
+                                          <div className={`p-[2px] rounded-full ${isProfileDeleted ? 'bg-gray-400' : 'bg-gradient-to-r from-purple-400 via-rose-400 to-purple-500'}`}>
                                             <img 
                                               src={profile.photos[0]} 
                                               alt={profile.fullName || ''}
-                                              className="w-11 h-11 rounded-full object-cover border-2 border-white group-hover:scale-105 transition-transform"
+                                              className={`w-11 h-11 rounded-full object-cover border-2 border-white ${isProfileDeleted ? 'grayscale' : 'group-hover:scale-105'} transition-transform`}
                                             />
                                           </div>
-                                          <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                            <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                          </div>
+                                          {!isProfileDeleted && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                              <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </div>
+                                          )}
                                         </div>
                                       ) : (
-                                        <div className="p-[2px] rounded-full bg-gradient-to-r from-purple-400 via-rose-400 to-purple-500">
+                                        <div className={`p-[2px] rounded-full ${isProfileDeleted ? 'bg-gray-400' : 'bg-gradient-to-r from-purple-400 via-rose-400 to-purple-500'}`}>
                                           <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
-                                            <Eye size={20} weight="fill" className="text-purple-500" />
+                                            <Eye size={20} weight="fill" className={isProfileDeleted ? 'text-gray-400' : 'text-purple-500'} />
                                           </div>
                                         </div>
                                       )}
                                       <div>
-                                        <p className="font-semibold text-sm text-purple-700 hover:underline">
+                                        <p className={`font-semibold text-sm ${isProfileDeleted ? 'text-gray-500 line-through' : 'text-purple-700 hover:underline'}`}>
                                           {profile?.fullName || 'Unknown'}
                                         </p>
                                         <p className="text-xs text-muted-foreground">{profile?.profileId || 'Unknown'}</p>
@@ -1807,8 +1839,15 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                      {/* Deleted profile badge */}
+                                      {isProfileDeleted && (
+                                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0 bg-gray-500">
+                                          <ProhibitInset size={10} className="mr-0.5" />
+                                          {t.profileDeleted}
+                                        </Badge>
+                                      )}
                                       {/* Expiry countdown for pending contact requests */}
-                                      {request.status === 'pending' && (() => {
+                                      {request.status === 'pending' && !isProfileDeleted && (() => {
                                         const expiry = formatExpiryCountdown(request.createdAt)
                                         return (
                                           <Badge 
@@ -1834,8 +1873,8 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                           {t.cancel}
                                         </Button>
                                       )}
-                                      {/* View Contact + Revoke button for approved contact requests */}
-                                      {request.status === 'approved' && profile && (
+                                      {/* View Contact + Revoke button for approved contact requests - but not for deleted profiles */}
+                                      {request.status === 'approved' && profile && !isProfileDeleted && (
                                         <>
                                           <Button 
                                             size="sm"
@@ -1876,43 +1915,46 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                         <div className="space-y-2">
                           {receivedContactRequests.map((request) => {
                             const profile = profiles.find(p => p.id === request.fromUserId)
+                            const isProfileDeleted = profile?.isDeleted === true
                             return (
-                              <Card key={request.id} className="hover:shadow-sm transition-shadow border-teal-100">
+                              <Card key={request.id} className={`hover:shadow-sm transition-shadow ${isProfileDeleted ? 'opacity-70 bg-gray-50 dark:bg-gray-900/50 border-gray-300' : 'border-teal-100'}`}>
                                 <CardContent className="py-3 px-4">
                                   <div className="flex flex-col gap-2">
                                     <div 
-                                      className="flex items-center justify-between cursor-pointer hover:bg-teal-50/50 -mx-2 px-2 py-1 rounded-lg transition-colors"
-                                      onClick={() => profile && setSelectedProfileForDetails(profile)}
-                                      title={t.clickToViewProfile}
+                                      className={`flex items-center justify-between ${isProfileDeleted ? '' : 'cursor-pointer hover:bg-teal-50/50'} -mx-2 px-2 py-1 rounded-lg transition-colors`}
+                                      onClick={() => !isProfileDeleted && profile && setSelectedProfileForDetails(profile)}
+                                      title={isProfileDeleted ? t.profileDeletedInfo : t.clickToViewProfile}
                                     >
                                       <div className="flex items-center gap-3">
                                         {/* Profile Photo */}
                                         {profile?.photos?.[0] ? (
                                           <div 
-                                            className="relative cursor-pointer group"
-                                            onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
-                                            title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                            className={`relative ${isProfileDeleted ? '' : 'cursor-pointer'} group`}
+                                            onClick={(e) => { if (!isProfileDeleted) { e.stopPropagation(); openLightbox(profile.photos || [], 0) } }}
+                                            title={isProfileDeleted ? t.profileDeletedInfo : (language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge')}
                                           >
-                                            <div className="p-[2px] rounded-full bg-gradient-to-r from-teal-400 via-cyan-400 to-teal-500">
+                                            <div className={`p-[2px] rounded-full ${isProfileDeleted ? 'bg-gray-400' : 'bg-gradient-to-r from-teal-400 via-cyan-400 to-teal-500'}`}>
                                               <img 
                                                 src={profile.photos[0]} 
                                                 alt={profile.fullName || ''}
-                                                className="w-11 h-11 rounded-full object-cover border-2 border-white group-hover:scale-105 transition-transform"
+                                                className={`w-11 h-11 rounded-full object-cover border-2 border-white ${isProfileDeleted ? 'grayscale' : 'group-hover:scale-105'} transition-transform`}
                                               />
                                             </div>
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                              <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            </div>
+                                            {!isProfileDeleted && (
+                                              <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                                <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                              </div>
+                                            )}
                                           </div>
                                         ) : (
-                                          <div className="p-[2px] rounded-full bg-gradient-to-r from-teal-400 via-cyan-400 to-teal-500">
+                                          <div className={`p-[2px] rounded-full ${isProfileDeleted ? 'bg-gray-400' : 'bg-gradient-to-r from-teal-400 via-cyan-400 to-teal-500'}`}>
                                             <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
-                                              <Eye size={20} weight="fill" className="text-teal-500" />
+                                              <Eye size={20} weight="fill" className={isProfileDeleted ? 'text-gray-400' : 'text-teal-500'} />
                                             </div>
                                           </div>
                                         )}
                                         <div>
-                                          <p className="font-semibold text-sm text-teal-700 hover:underline">
+                                          <p className={`font-semibold text-sm ${isProfileDeleted ? 'text-gray-500 line-through' : 'text-teal-700 hover:underline'}`}>
                                             {profile?.fullName || 'Unknown'}
                                           </p>
                                           <p className="text-xs text-muted-foreground">{profile?.profileId || 'Unknown'}</p>
@@ -1921,7 +1963,14 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                       </div>
                                       {/* Expiry countdown for pending contact requests */}
                                       <div className="flex items-center gap-2">
-                                        {request.status === 'pending' && (() => {
+                                        {/* Deleted profile badge */}
+                                        {isProfileDeleted && (
+                                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0 bg-gray-500">
+                                            <ProhibitInset size={10} className="mr-0.5" />
+                                            {t.profileDeleted}
+                                          </Badge>
+                                        )}
+                                        {request.status === 'pending' && !isProfileDeleted && (() => {
                                           const expiry = formatExpiryCountdown(request.createdAt)
                                           return (
                                             <Badge 
@@ -1937,8 +1986,16 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                         {getStatusBadge(request.status)}
                                       </div>
                                     </div>
-                                    {/* Accept/Decline buttons for pending requests */}
-                                    {request.status === 'pending' && (() => {
+                                    {/* Show deleted profile info message for pending requests from deleted profiles */}
+                                    {request.status === 'pending' && isProfileDeleted && (
+                                      <div className="text-center py-2">
+                                        <p className="text-xs text-gray-500 italic">
+                                          {t.profileDeletedInfo}
+                                        </p>
+                                      </div>
+                                    )}
+                                    {/* Accept/Decline buttons for pending requests - but not for deleted profiles */}
+                                    {request.status === 'pending' && !isProfileDeleted && (() => {
                                       // Check if there's any accepted interest between the two profiles (either direction)
                                       const senderProfileId = profile?.profileId || request.fromProfileId
                                       const interestFromSender = interests?.find(

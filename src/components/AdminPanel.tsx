@@ -139,6 +139,202 @@ interface MembershipSettings {
   qrCodeImage: string             // QR code image URL/base64
 }
 
+// Sub-component for Pending Review Story Card with edit capability
+interface PendingReviewStoryCardProps {
+  story: SuccessStory
+  language: 'hi' | 'en'
+  getStatusBadge: (status: SuccessStory['status']) => React.ReactNode
+  setSuccessStories: (newValue: SuccessStory[] | ((oldValue?: SuccessStory[] | undefined) => SuccessStory[])) => void
+}
+
+function PendingReviewStoryCard({ story, language, getStatusBadge, setSuccessStories }: PendingReviewStoryCardProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedTestimonial, setEditedTestimonial] = useState(story.profile1Testimonial || '')
+
+  const handleSaveTestimonial = () => {
+    setSuccessStories(prev => (prev || []).map(s => 
+      s.id === story.id 
+        ? { ...s, profile1Testimonial: editedTestimonial, profile1TestimonialEditedByAdmin: true }
+        : s
+    ))
+    setIsEditing(false)
+    toast.success(language === 'hi' ? 'प्रशंसापत्र सहेजा गया' : 'Testimonial saved')
+  }
+
+  const handleApproveTestimonial = () => {
+    setSuccessStories(prev => (prev || []).map(s => 
+      s.id === story.id 
+        ? { ...s, profile1TestimonialStatus: 'approved' }
+        : s
+    ))
+    toast.success(language === 'hi' ? 'प्रशंसापत्र स्वीकृत' : 'Testimonial approved')
+  }
+
+  const handleRejectTestimonial = () => {
+    setSuccessStories(prev => (prev || []).map(s => 
+      s.id === story.id 
+        ? { ...s, profile1TestimonialStatus: 'rejected', profile1TestimonialRejectedReason: 'Inappropriate content' }
+        : s
+    ))
+    toast.success(language === 'hi' ? 'प्रशंसापत्र अस्वीकृत' : 'Testimonial rejected')
+  }
+
+  const handlePublish = () => {
+    setSuccessStories(prev => (prev || []).map(s => 
+      s.id === story.id 
+        ? { 
+            ...s, 
+            status: 'published', 
+            publishedAt: new Date().toISOString(), 
+            approvedBy: 'Admin',
+            profile1TestimonialStatus: 'approved'
+          }
+        : s
+    ))
+    toast.success(language === 'hi' ? 'सफलता की कहानी प्रकाशित!' : 'Success story published!')
+  }
+
+  return (
+    <div className="p-4 rounded-lg border border-purple-200 bg-purple-50/50">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            {story.profile1PhotoUrl ? (
+              <img src={story.profile1PhotoUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                <UserIcon size={20} className="text-gray-500" />
+              </div>
+            )}
+            <div>
+              <p className="font-medium text-sm">{story.profile1Name}</p>
+              <p className="text-xs text-muted-foreground">{story.profile1City}</p>
+            </div>
+          </div>
+          <Heart size={20} className="text-rose-400" />
+          <div className="flex items-center gap-2">
+            {story.profile2PhotoUrl ? (
+              <img src={story.profile2PhotoUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                <UserIcon size={20} className="text-gray-500" />
+              </div>
+            )}
+            <div>
+              <p className="font-medium text-sm">{story.profile2Name}</p>
+              <p className="text-xs text-muted-foreground">{story.profile2City}</p>
+            </div>
+          </div>
+        </div>
+        {getStatusBadge(story.status)}
+      </div>
+      
+      {/* Testimonial with Edit Capability */}
+      {story.profile1Testimonial && (
+        <div className="mt-3 p-3 rounded-lg bg-white border border-purple-100">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-medium text-gray-600">
+                {language === 'hi' ? `${story.profile1Name} का प्रशंसापत्र:` : `${story.profile1Name}'s Testimonial:`}
+              </p>
+              {story.profile1TestimonialEditedByAdmin && (
+                <Badge variant="outline" className="text-xs border-purple-300 text-purple-600">
+                  {language === 'hi' ? 'संपादित' : 'Edited'}
+                </Badge>
+              )}
+            </div>
+            {story.profile1TestimonialStatus === 'pending' && (
+              <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                {language === 'hi' ? 'समीक्षा लंबित' : 'Pending Review'}
+              </Badge>
+            )}
+            {story.profile1TestimonialStatus === 'approved' && (
+              <Badge variant="outline" className="text-xs border-green-500 text-green-600">
+                {language === 'hi' ? 'स्वीकृत' : 'Approved'}
+              </Badge>
+            )}
+          </div>
+          
+          {isEditing ? (
+            <div className="space-y-2">
+              <Textarea
+                value={editedTestimonial}
+                onChange={(e) => setEditedTestimonial(e.target.value)}
+                rows={3}
+                className="text-sm"
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleSaveTestimonial}>
+                  <Check size={14} className="mr-1" />
+                  {language === 'hi' ? 'सहेजें' : 'Save'}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  setIsEditing(false)
+                  setEditedTestimonial(story.profile1Testimonial || '')
+                }}>
+                  <X size={14} className="mr-1" />
+                  {language === 'hi' ? 'रद्द करें' : 'Cancel'}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-700 italic">"{story.profile1Testimonial}"</p>
+          )}
+          
+          {!isEditing && story.profile1TestimonialStatus === 'pending' && (
+            <div className="flex gap-2 mt-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                onClick={() => setIsEditing(true)}
+              >
+                <Pencil size={14} className="mr-1" />
+                {language === 'hi' ? 'संपादित करें' : 'Edit'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-green-600 border-green-200 hover:bg-green-50"
+                onClick={handleApproveTestimonial}
+              >
+                <Check size={14} className="mr-1" />
+                {language === 'hi' ? 'स्वीकृत करें' : 'Approve'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-red-600 border-red-200 hover:bg-red-50"
+                onClick={handleRejectTestimonial}
+              >
+                <X size={14} className="mr-1" />
+                {language === 'hi' ? 'अस्वीकृत करें' : 'Reject'}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+      
+      <div className="flex items-center justify-between mt-3">
+        <p className="text-xs text-muted-foreground">
+          {language === 'hi' ? 'जमा किया:' : 'Submitted:'} {formatDateDDMMYYYY(story.submittedAt)}
+        </p>
+        
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            className="gap-1 bg-rose-500 hover:bg-rose-600"
+            onClick={handlePublish}
+          >
+            <Confetti size={14} />
+            {language === 'hi' ? 'प्रकाशित करें' : 'Publish'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function AdminPanel({ profiles, setProfiles, users, language, onLogout, onLoginAsUser }: AdminPanelProps) {
   const [_blockedContacts, setBlockedContacts] = useKV<BlockedContact[]>('blockedContacts', [])
   const [blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
@@ -1506,7 +1702,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               <span className="sm:hidden">{language === 'hi' ? 'सफलता' : 'Success'}</span>
               {(() => {
                 const pendingStoriesCount = successStories?.filter(s => 
-                  s.status === 'pending-consent' || s.status === 'awaiting-partner' || s.status === 'approved'
+                  s.status === 'pending-review' || s.status === 'pending-consent' || s.status === 'awaiting-partner' || s.status === 'approved'
                 ).length || 0
                 return pendingStoriesCount > 0 ? (
                   <Badge variant="secondary" className="ml-1 text-xs bg-rose-100 text-rose-700">{pendingStoriesCount}</Badge>
@@ -3799,13 +3995,14 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 </CardTitle>
                 <CardDescription>
                   {language === 'hi' 
-                    ? 'जोड़ों की सफलता की कहानियां प्रबंधित करें और उपहार वितरित करें' 
-                    : 'Manage couple success stories and distribute rewards'}
+                    ? 'जोड़ों की सफलता की कहानियां प्रबंधित करें - समीक्षा करें, संपादित करें और प्रकाशित करें' 
+                    : 'Manage couple success stories - review, edit and publish testimonials'}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {(() => {
                   // Categorize success stories
+                  const pendingReview = successStories?.filter(s => s.status === 'pending-review') || []
                   const awaitingPartner = successStories?.filter(s => s.status === 'awaiting-partner') || []
                   const pendingApproval = successStories?.filter(s => s.status === 'approved') || []
                   const published = successStories?.filter(s => s.status === 'published') || []
@@ -3826,6 +4023,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
 
                   const getStatusBadge = (status: SuccessStory['status']) => {
                     switch (status) {
+                      case 'pending-review':
+                        return <Badge variant="secondary" className="bg-purple-100 text-purple-700">{language === 'hi' ? 'समीक्षा लंबित' : 'Pending Review'}</Badge>
                       case 'awaiting-partner':
                         return <Badge variant="secondary" className="bg-amber-100 text-amber-700">{language === 'hi' ? 'पार्टनर की प्रतीक्षा' : 'Awaiting Partner'}</Badge>
                       case 'pending-consent':
@@ -3841,22 +4040,32 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     }
                   }
 
-                  const getRewardBadge = (rewardStatus?: SuccessStory['rewardStatus']) => {
-                    switch (rewardStatus) {
-                      case 'pending':
-                        return <Badge variant="outline" className="border-amber-500 text-amber-600"><Gift size={12} className="mr-1" />{language === 'hi' ? 'लंबित' : 'Pending'}</Badge>
-                      case 'dispatched':
-                        return <Badge variant="outline" className="border-blue-500 text-blue-600"><Gift size={12} className="mr-1" />{language === 'hi' ? 'भेजा गया' : 'Dispatched'}</Badge>
-                      case 'delivered':
-                        return <Badge variant="default" className="bg-green-500"><Gift size={12} className="mr-1" />{language === 'hi' ? 'पहुंचाया' : 'Delivered'}</Badge>
-                      default:
-                        return null
-                    }
-                  }
+                  // Reward badge removed - no longer offering wedding goodies
 
                   return (
                     <div className="space-y-6">
-                      {/* Awaiting Partner Consent */}
+                      {/* Pending Review - Individual Stories for Admin Review */}
+                      {pendingReview.length > 0 && (
+                        <div className="space-y-3">
+                          <h3 className="font-semibold text-purple-700 flex items-center gap-2">
+                            <Eye size={18} />
+                            {language === 'hi' ? 'समीक्षा के लिए लंबित' : 'Pending Review'} ({pendingReview.length})
+                          </h3>
+                          <div className="space-y-3">
+                            {pendingReview.map((story) => (
+                              <PendingReviewStoryCard
+                                key={story.id}
+                                story={story}
+                                language={language}
+                                getStatusBadge={getStatusBadge}
+                                setSuccessStories={setSuccessStories}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Awaiting Partner Consent - Legacy stories only */}
                       {awaitingPartner.length > 0 && (
                         <div className="space-y-3">
                           <h3 className="font-semibold text-amber-700 flex items-center gap-2">
@@ -4042,7 +4251,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   </div>
                                   <div className="flex items-center gap-2">
                                     {getStatusBadge(story.status)}
-                                    {getRewardBadge(story.rewardStatus)}
                                   </div>
                                 </div>
                                 
@@ -4207,31 +4415,12 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   {story.profile1City} {story.profile2City && `& ${story.profile2City}`}
                                 </p>
                                 <div className="flex items-center gap-2 mt-2">
-                                  {getRewardBadge(story.rewardStatus)}
                                   {story.publishedAt && (
                                     <span className="text-xs text-muted-foreground">
                                       {language === 'hi' ? 'प्रकाशित:' : 'Published:'} {formatDateDDMMYYYY(story.publishedAt)}
                                     </span>
                                   )}
                                 </div>
-                                {story.rewardStatus !== 'delivered' && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="gap-1 mt-2"
-                                    onClick={() => {
-                                      setSuccessStories(prev => (prev || []).map(s => 
-                                        s.id === story.id 
-                                          ? { ...s, rewardStatus: 'delivered', rewardDeliveredAt: new Date().toISOString() }
-                                          : s
-                                      ))
-                                      toast.success(language === 'hi' ? 'उपहार पहुंचाया गया के रूप में चिह्नित किया गया' : 'Reward marked as delivered')
-                                    }}
-                                  >
-                                    <CheckCircle size={16} />
-                                    {language === 'hi' ? 'पहुंचाया गया' : 'Mark Delivered'}
-                                  </Button>
-                                )}
                               </div>
                             ))}
                           </div>

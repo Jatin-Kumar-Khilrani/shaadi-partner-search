@@ -66,10 +66,12 @@ export interface SuccessStory {
   profile1TestimonialHi?: string       // Hindi version of testimonial
   profile1TestimonialStatus?: 'pending' | 'approved' | 'rejected'  // Admin review status
   profile1TestimonialRejectedReason?: string
+  profile1TestimonialEditedByAdmin?: boolean  // True if admin edited the testimonial
   profile2Testimonial?: string         // Optional testimonial/comment from profile2
   profile2TestimonialHi?: string       // Hindi version of testimonial
   profile2TestimonialStatus?: 'pending' | 'approved' | 'rejected'  // Admin review status
   profile2TestimonialRejectedReason?: string
+  profile2TestimonialEditedByAdmin?: boolean  // True if admin edited the testimonial
   
   // Story details (optional - can be added later)
   storyText?: string
@@ -78,7 +80,7 @@ export interface SuccessStory {
   weddingPhotoUrls?: string[]
   
   // Status
-  status: 'pending-consent' | 'awaiting-partner' | 'approved' | 'published' | 'rejected'
+  status: 'pending-review' | 'pending-consent' | 'awaiting-partner' | 'approved' | 'published' | 'rejected'
   submittedAt: string
   publishedAt?: string
   approvedBy?: string
@@ -88,8 +90,8 @@ export interface SuccessStory {
   singlePartyPublish?: boolean    // True if published with only one party's consent (admin decision)
   singlePartyPublishReason?: string  // Admin notes for single-party publish
   
-  // Rewards
-  rewardStatus?: 'pending' | 'dispatched' | 'delivered'
+  // Rewards (legacy - no longer offering wedding goodies)
+  rewardStatus?: 'pending' | 'dispatched' | 'delivered' | 'not-applicable'
   rewardDetails?: string
   rewardDispatchedAt?: string
   rewardDeliveredAt?: string
@@ -112,7 +114,6 @@ export interface ProfileDeletionData {
   consentForName: boolean    // Consent to use real name
   feedbackMessage?: string   // Optional feedback about the platform
   testimonial?: string       // Optional testimonial/comment for success story
-  consentToDeletePartner: boolean  // Consent to soft delete partner's profile too
 }
 
 // Boost Pack purchase record

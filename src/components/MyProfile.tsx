@@ -17,7 +17,7 @@ import {
   User, MapPin, Briefcase, GraduationCap, Heart, House, PencilSimple,
   ChatCircle, Envelope, Phone, Calendar, Warning, FilePdf, Trash,
   CurrencyInr, ArrowClockwise, Camera, CheckCircle, ProhibitInset, ArrowUp,
-  Confetti, Gift, UserCirclePlus, HeartBreak
+  Confetti, UserCirclePlus, HeartBreak
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Profile, Interest, ProfileDeletionReason, ProfileDeletionData, SuccessStory } from '@/types/profile'
@@ -78,7 +78,6 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onDeletePr
   const [consentForName, setConsentForName] = useState(false)
   const [feedbackMessage, setFeedbackMessage] = useState('')
   const [testimonial, setTestimonial] = useState('')
-  const [consentToDeletePartner, setConsentToDeletePartner] = useState(false)
   
   // Get accepted interests for partner selection dropdown
   const acceptedInterests = interests?.filter(
@@ -190,21 +189,19 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onDeletePr
     noAcceptedInterests: language === 'hi' ? 'कोई स्वीकृत रुचि नहीं मिली' : 'No accepted interests found',
     successStoryConsent: language === 'hi' ? 'सफलता की कहानी' : 'Success Story',
     successStoryConsentDesc: language === 'hi' ? 'क्या आप अपनी सफलता की कहानी हमारी वेबसाइट पर साझा करना चाहेंगे? इससे अन्य लोगों को प्रेरणा मिलेगी।' : 'Would you like to share your success story on our website? This will inspire others.',
-    consentPublish: language === 'hi' ? 'हां, मैं सफलता की कहानी प्रकाशित करने की अनुमति देता/देती हूं' : 'Yes, I consent to publish our success story',
+    consentPublish: language === 'hi' ? 'हां, मैं अपनी सफलता की कहानी प्रकाशित करने की अनुमति देता/देती हूं' : 'Yes, I consent to publish my success story',
     consentPhotos: language === 'hi' ? 'मेरी तस्वीरों का उपयोग करने की अनुमति है' : 'I allow using my photos',
     consentName: language === 'hi' ? 'मेरे असली नाम का उपयोग करने की अनुमति है' : 'I allow using my real name',
-    partnerConsentRequired: language === 'hi' ? 'नोट: आपके पार्टनर की सहमति भी आवश्यक है। उन्हें सूचित किया जाएगा।' : 'Note: Your partner\'s consent is also required. They will be notified.',
-    successStoryReward: language === 'hi' ? '🎁 दोनों की सहमति पर, आपको विवाह उपहार मिलेगा!' : '🎁 Upon both consents, you will receive wedding goodies!',
+    successStoryMessage: language === 'hi' ? '✨ अपनी सफलता की कहानी साझा करें और दूसरों को प्रेरित करें!' : '✨ Share your success story and inspire others!',
     feedbackOptional: language === 'hi' ? 'प्रतिक्रिया (वैकल्पिक)' : 'Feedback (Optional)',
     feedbackPlaceholder: language === 'hi' ? 'अपना अनुभव साझा करें...' : 'Share your experience...',
-    partnerNotified: language === 'hi' ? 'आपके पार्टनर को सूचित किया जाएगा' : 'Your partner will be notified',
     thankYouSuccess: language === 'hi' ? 'धन्यवाद! आपकी सफलता की कहानी हमें प्रेरित करती है।' : 'Thank you! Your success story inspires us.',
+    storySubmitted: language === 'hi' ? 'आपकी कहानी समीक्षा के लिए सबमिट हो गई है' : 'Your story has been submitted for review',
     proceedToVerify: language === 'hi' ? 'सत्यापित करें और हटाएं' : 'Verify & Delete',
     testimonialLabel: language === 'hi' ? 'अपनी कहानी साझा करें (वैकल्पिक)' : 'Share Your Story (Optional)',
     testimonialPlaceholder: language === 'hi' ? 'आपकी प्रेम कहानी कैसे शुरू हुई? अन्य लोगों को प्रेरित करें...' : 'How did your love story begin? Inspire others...',
-    testimonialHint: language === 'hi' ? 'आपकी कहानी एडमिन द्वारा समीक्षा के बाद प्रकाशित की जाएगी' : 'Your story will be published after admin review',
-    consentPartnerDelete: language === 'hi' ? 'मेरे पार्टनर की प्रोफाइल भी हटाने की सहमति है' : 'I consent to delete my partner\'s profile too',
-    consentPartnerDeleteHint: language === 'hi' ? 'दोनों की सहमति पर ही पार्टनर की प्रोफाइल हटाई जाएगी' : 'Partner\'s profile will only be deleted upon mutual consent',
+    testimonialHint: language === 'hi' ? 'आपकी कहानी एडमिन द्वारा समीक्षा/संपादन के बाद प्रकाशित की जाएगी' : 'Your story will be published after admin review/edit',
+    adminMayEdit: language === 'hi' ? 'एडमिन प्रकाशन से पहले संपादित कर सकता है' : 'Admin may edit before publishing',
   }
 
   // Deletion reason options
@@ -421,14 +418,13 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onDeletePr
         consentForName,
         feedbackMessage: feedbackMessage || undefined,
         testimonial: testimonial || undefined,
-        consentToDeletePartner,
       }
       
       onDeleteProfile(profile.profileId, deletionData)
       
       if (deletionReason === 'found-match-shaadi-partner-search' && consentToPublish) {
         toast.success(t.thankYouSuccess, {
-          description: t.partnerNotified,
+          description: t.storySubmitted,
           duration: 5000
         })
       } else {
@@ -450,7 +446,6 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onDeletePr
     setConsentForName(false)
     setFeedbackMessage('')
     setTestimonial('')
-    setConsentToDeletePartner(false)
     setEnteredOtp('')
     setGeneratedOtp('')
   }
@@ -686,8 +681,8 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onDeletePr
               <div className="space-y-4 mt-4">
                 <div className="p-4 rounded-lg bg-gradient-to-r from-amber-50 to-rose-50 border border-amber-200">
                   <div className="flex items-center gap-2 mb-3">
-                    <Gift size={24} className="text-amber-600" />
-                    <span className="font-semibold text-amber-800">{t.successStoryReward}</span>
+                    <Heart size={24} className="text-rose-600" />
+                    <span className="font-semibold text-rose-800">{t.successStoryMessage}</span>
                   </div>
                   
                   <div className="space-y-3">
@@ -740,39 +735,13 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onDeletePr
                             rows={3}
                           />
                           <p className="text-xs text-muted-foreground mt-1">
-                            {t.testimonialHint}
+                            {t.testimonialHint} {t.adminMayEdit}
                           </p>
-                        </div>
-                        
-                        {/* Partner Profile Delete Consent */}
-                        <div className="flex items-start gap-3 ml-6 mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
-                          <Checkbox
-                            id="consent-partner-delete"
-                            checked={consentToDeletePartner}
-                            onCheckedChange={(checked) => setConsentToDeletePartner(checked as boolean)}
-                          />
-                          <div>
-                            <Label htmlFor="consent-partner-delete" className="text-sm cursor-pointer font-medium text-blue-800">
-                              {t.consentPartnerDelete}
-                            </Label>
-                            <p className="text-xs text-blue-600 mt-1">
-                              {t.consentPartnerDeleteHint}
-                            </p>
-                          </div>
                         </div>
                       </>
                     )}
                   </div>
                 </div>
-                
-                {consentToPublish && (
-                  <Alert className="bg-blue-50 border-blue-200">
-                    <Heart size={18} className="text-blue-500" />
-                    <AlertDescription className="text-blue-700 text-sm">
-                      {t.partnerConsentRequired}
-                    </AlertDescription>
-                  </Alert>
-                )}
                 
                 <div className="flex gap-3 mt-4">
                   <Button variant="outline" onClick={handleDeleteStepBack} className="flex-1">
