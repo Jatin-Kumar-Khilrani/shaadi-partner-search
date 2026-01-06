@@ -133,6 +133,8 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     youAccepted: language === 'hi' ? 'आपने स्वीकारा' : 'You Accepted',
     theyAccepted: language === 'hi' ? 'उन्होंने स्वीकारा' : 'They Accepted',
     declinedInterests: language === 'hi' ? 'अस्वीकृत रुचि' : 'Declined Interests',
+    youDeclined: language === 'hi' ? 'आपने अस्वीकारा' : 'You Declined',
+    theyDeclined: language === 'hi' ? 'उन्होंने अस्वीकारा' : 'They Declined',
     myContactRequests: language === 'hi' ? 'संपर्क अनुरोध' : 'Contact Requests',
     recentChats: language === 'hi' ? 'नवीनतम चैट' : 'Recent Chats',
     profileViews: language === 'hi' ? 'प्रोफाइल देखे गए' : 'Profile Views',
@@ -447,7 +449,22 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     i => (i.toProfileId === currentUserProfile?.profileId || i.fromProfileId === currentUserProfile?.profileId) && 
        i.status === 'accepted'
   ) || []
-  // Declined interests (both where I declined or they declined)
+  // Declined interests split: "You Declined" vs "They Declined"
+  // You Declined = I received interest and declined it OR I sent interest and withdrew it
+  const youDeclinedInterests = interests?.filter(
+    i => i.status === 'declined' && (
+      (i.toProfileId === currentUserProfile?.profileId && i.declinedBy === 'receiver') || // I received, I declined
+      (i.fromProfileId === currentUserProfile?.profileId && i.declinedBy === 'sender') // I sent, I withdrew
+    )
+  ) || []
+  // They Declined = They received my interest and declined OR They sent interest and withdrew
+  const theyDeclinedInterests = interests?.filter(
+    i => i.status === 'declined' && (
+      (i.fromProfileId === currentUserProfile?.profileId && i.declinedBy === 'receiver') || // I sent, they declined
+      (i.toProfileId === currentUserProfile?.profileId && i.declinedBy === 'sender') // They sent to me, they withdrew
+    )
+  ) || []
+  // Legacy: keep for backward compat if needed
   const declinedInterests = interests?.filter(
     i => (i.toProfileId === currentUserProfile?.profileId || i.fromProfileId === currentUserProfile?.profileId) && 
        i.status === 'declined'
@@ -1619,116 +1636,219 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
             </Card>
           </TabsContent>
 
-          {/* DECLINED INTERESTS TAB */}
+          {/* DECLINED INTERESTS TAB - Split into You Declined / They Declined */}
           <TabsContent value="declined-interests">
             <Card>
               <CardHeader>
                 <CardTitle>{t.declinedInterests}</CardTitle>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[500px]">
-                  {declinedInterests.length === 0 ? (
-                    <Alert>
-                      <AlertDescription>{t.noActivity}</AlertDescription>
-                    </Alert>
-                  ) : (
-                    <div className="space-y-4">
-                      {declinedInterests.map((interest) => {
-                        const otherProfileId = interest.fromProfileId === currentUserProfile?.profileId 
-                          ? interest.toProfileId 
-                          : interest.fromProfileId
-                        const profile = getProfileByProfileId(otherProfileId)
-                        const wasDeclinedByMe = interest.declinedBy === 'receiver' && interest.toProfileId === currentUserProfile?.profileId
-                          || interest.declinedBy === 'sender' && interest.fromProfileId === currentUserProfile?.profileId
-                        const isSentByMe = interest.fromProfileId === currentUserProfile?.profileId
-                        
-                        return (
-                          <Card key={interest.id} className="hover:shadow-md transition-shadow border-l-4 border-l-rose-400/50 border-gray-200 dark:border-gray-700">
-                            <CardContent className="py-3 px-4">
-                              <div className="flex flex-col gap-3">
-                                <div 
-                                  className="flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 -mx-2 px-2 py-1.5 rounded-lg transition-colors"
-                                  onClick={() => profile && setSelectedProfileForDetails(profile)}
-                                  title={t.clickToViewProfile}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    {profile?.photos?.[0] ? (
-                                      <div 
-                                        className="relative cursor-pointer group"
-                                        onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
-                                        title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
-                                      >
-                                        <img 
-                                          src={profile.photos[0]} 
-                                          alt={profile.fullName || ''}
-                                          className="w-11 h-11 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600 grayscale-[30%] opacity-80 group-hover:opacity-100 group-hover:grayscale-0 transition-all"
-                                        />
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                          <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Tabs defaultValue="you-declined">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="you-declined" className="relative">
+                      {t.youDeclined}
+                      {youDeclinedInterests.length > 0 && (
+                        <Badge className="ml-1 h-5 px-1.5" variant="outline">{youDeclinedInterests.length}</Badge>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger value="they-declined" className="relative">
+                      {t.theyDeclined}
+                      {theyDeclinedInterests.length > 0 && (
+                        <Badge className="ml-1 h-5 px-1.5" variant="destructive">{theyDeclinedInterests.length}</Badge>
+                      )}
+                    </TabsTrigger>
+                  </TabsList>
+
+                  {/* You Declined Sub-tab - Interests you declined or withdrew */}
+                  <TabsContent value="you-declined">
+                    <ScrollArea className="h-[450px]">
+                      {youDeclinedInterests.length === 0 ? (
+                        <Alert>
+                          <AlertDescription>{t.noActivity}</AlertDescription>
+                        </Alert>
+                      ) : (
+                        <div className="space-y-4">
+                          {youDeclinedInterests.map((interest) => {
+                            const otherProfileId = interest.fromProfileId === currentUserProfile?.profileId 
+                              ? interest.toProfileId 
+                              : interest.fromProfileId
+                            const profile = getProfileByProfileId(otherProfileId)
+                            const isSentByMe = interest.fromProfileId === currentUserProfile?.profileId
+                            
+                            return (
+                              <Card key={interest.id} className="hover:shadow-md transition-shadow border-l-4 border-l-amber-400/50 border-gray-200 dark:border-gray-700">
+                                <CardContent className="py-3 px-4">
+                                  <div className="flex flex-col gap-3">
+                                    <div 
+                                      className="flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 -mx-2 px-2 py-1.5 rounded-lg transition-colors"
+                                      onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                      title={t.clickToViewProfile}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        {profile?.photos?.[0] ? (
+                                          <div 
+                                            className="relative cursor-pointer group"
+                                            onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
+                                            title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                          >
+                                            <img 
+                                              src={profile.photos[0]} 
+                                              alt={profile.fullName || ''}
+                                              className="w-11 h-11 rounded-full object-cover border-2 border-amber-300 dark:border-amber-600 grayscale-[30%] opacity-80 group-hover:opacity-100 group-hover:grayscale-0 transition-all"
+                                            />
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                              <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="w-11 h-11 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-sm font-bold text-amber-600 dark:text-amber-400">
+                                            {profile?.firstName?.[0]}{profile?.lastName?.[0]}
+                                          </div>
+                                        )}
+                                        <div>
+                                          <p className="font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 inline-flex items-center gap-1 text-sm">
+                                            {profile?.fullName || 'Unknown'}
+                                            <User size={10} weight="bold" className="opacity-60" />
+                                          </p>
+                                          <p className="text-xs text-gray-400 dark:text-gray-500">{profile?.profileId}</p>
+                                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            {profile?.age} {t.years} • {profile?.location}
+                                          </p>
+                                          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-300">
+                                              <X size={10} className="mr-0.5" />
+                                              {isSentByMe ? (language === 'hi' ? 'आपने वापस ली' : 'You withdrew') : (language === 'hi' ? 'आपने अस्वीकारा' : 'You declined')}
+                                            </Badge>
+                                            {interest.contactAutoDeclined && (
+                                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-amber-500 text-amber-600">
+                                                <Warning size={10} className="mr-0.5" />
+                                                {t.autoDeclinedContact}
+                                              </Badge>
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
-                                    ) : (
-                                      <div className="w-11 h-11 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm font-bold text-gray-500 dark:text-gray-400">
-                                        {profile?.firstName?.[0]}{profile?.lastName?.[0]}
-                                      </div>
-                                    )}
-                                    <div>
-                                      <p className="font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 inline-flex items-center gap-1 text-sm">
-                                        {profile?.fullName || 'Unknown'}
-                                        <User size={10} weight="bold" className="opacity-60" />
-                                      </p>
-                                      <p className="text-xs text-gray-400 dark:text-gray-500">{profile?.profileId}</p>
-                                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        {profile?.age} {t.years} • {profile?.location}
-                                      </p>
-                                      <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                                          <Heart size={10} className="mr-0.5" />
-                                          {isSentByMe ? (language === 'hi' ? 'आपने भेजी' : 'You sent') : (language === 'hi' ? 'आपको मिली' : 'You received')}
-                                        </Badge>
-                                        <Badge variant={wasDeclinedByMe ? "outline" : "destructive"} className="text-[10px] px-1.5 py-0 h-4">
-                                          <X size={10} className="mr-0.5" />
-                                          {wasDeclinedByMe ? t.declinedByMe : t.declinedByThem}
-                                        </Badge>
-                                        {interest.contactAutoDeclined && (
-                                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-amber-500 text-amber-600">
-                                            <Warning size={10} className="mr-0.5" />
-                                            {t.autoDeclinedContact}
-                                          </Badge>
-                                        )}
-                                      </div>
+                                      {getStatusBadge(interest.status, interest.declinedBy, interest.contactAutoDeclined)}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button 
+                                        variant="outline"
+                                        onClick={() => handleUndoDeclineInterest(interest.id)}
+                                        className="gap-1 flex-1 h-8 text-xs text-amber-700 hover:text-amber-800 hover:bg-amber-50 border-amber-200"
+                                      >
+                                        <ArrowCounterClockwise size={14} />
+                                        {t.undo} / {t.reconsider}
+                                      </Button>
+                                      <Button 
+                                        variant="outline"
+                                        onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                        className="gap-1 h-8 text-xs"
+                                      >
+                                        <Eye size={14} />
+                                        {t.viewProfile}
+                                      </Button>
                                     </div>
                                   </div>
-                                  {getStatusBadge(interest.status, interest.declinedBy, interest.contactAutoDeclined)}
-                                </div>
-                                <div className="flex gap-2">
-                                  {wasDeclinedByMe && (
-                                    <Button 
-                                      variant="outline"
-                                      onClick={() => handleUndoDeclineInterest(interest.id)}
-                                      className="gap-1 flex-1 h-8 text-xs"
+                                </CardContent>
+                              </Card>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </TabsContent>
+
+                  {/* They Declined Sub-tab - Interests they declined */}
+                  <TabsContent value="they-declined">
+                    <ScrollArea className="h-[450px]">
+                      {theyDeclinedInterests.length === 0 ? (
+                        <Alert>
+                          <AlertDescription>{t.noActivity}</AlertDescription>
+                        </Alert>
+                      ) : (
+                        <div className="space-y-4">
+                          {theyDeclinedInterests.map((interest) => {
+                            const otherProfileId = interest.fromProfileId === currentUserProfile?.profileId 
+                              ? interest.toProfileId 
+                              : interest.fromProfileId
+                            const profile = getProfileByProfileId(otherProfileId)
+                            const isSentByMe = interest.fromProfileId === currentUserProfile?.profileId
+                            
+                            return (
+                              <Card key={interest.id} className="hover:shadow-md transition-shadow border-l-4 border-l-rose-400/50 border-gray-200 dark:border-gray-700">
+                                <CardContent className="py-3 px-4">
+                                  <div className="flex flex-col gap-3">
+                                    <div 
+                                      className="flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 -mx-2 px-2 py-1.5 rounded-lg transition-colors"
+                                      onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                      title={t.clickToViewProfile}
                                     >
-                                      <ArrowCounterClockwise size={14} />
-                                      {t.undo} / {t.reconsider}
-                                    </Button>
-                                  )}
-                                  <Button 
-                                    variant="outline"
-                                    onClick={() => profile && setSelectedProfileForDetails(profile)}
-                                    className="gap-1 h-8 text-xs"
-                                  >
-                                    <Eye size={14} />
-                                    {t.viewProfile}
-                                  </Button>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )
-                      })}
-                    </div>
-                  )}
-                </ScrollArea>
+                                      <div className="flex items-center gap-3">
+                                        {profile?.photos?.[0] ? (
+                                          <div 
+                                            className="relative cursor-pointer group"
+                                            onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
+                                            title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                          >
+                                            <img 
+                                              src={profile.photos[0]} 
+                                              alt={profile.fullName || ''}
+                                              className="w-11 h-11 rounded-full object-cover border-2 border-rose-300 dark:border-rose-600 grayscale-[30%] opacity-80 group-hover:opacity-100 group-hover:grayscale-0 transition-all"
+                                            />
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                              <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="w-11 h-11 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-sm font-bold text-rose-600 dark:text-rose-400">
+                                            {profile?.firstName?.[0]}{profile?.lastName?.[0]}
+                                          </div>
+                                        )}
+                                        <div>
+                                          <p className="font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 inline-flex items-center gap-1 text-sm">
+                                            {profile?.fullName || 'Unknown'}
+                                            <User size={10} weight="bold" className="opacity-60" />
+                                          </p>
+                                          <p className="text-xs text-gray-400 dark:text-gray-500">{profile?.profileId}</p>
+                                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            {profile?.age} {t.years} • {profile?.location}
+                                          </p>
+                                          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4">
+                                              <X size={10} className="mr-0.5" />
+                                              {isSentByMe ? (language === 'hi' ? 'उन्होंने अस्वीकारा' : 'They declined') : (language === 'hi' ? 'उन्होंने वापस ली' : 'They withdrew')}
+                                            </Badge>
+                                            {interest.contactAutoDeclined && (
+                                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-amber-500 text-amber-600">
+                                                <Warning size={10} className="mr-0.5" />
+                                                {t.autoDeclinedContact}
+                                              </Badge>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      {getStatusBadge(interest.status, interest.declinedBy, interest.contactAutoDeclined)}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button 
+                                        variant="outline"
+                                        onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                        className="gap-1 flex-1 h-8 text-xs"
+                                      >
+                                        <Eye size={14} />
+                                        {t.viewProfile}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </TabsContent>
