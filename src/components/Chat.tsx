@@ -612,9 +612,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       return messages.filter(m => 
         m.type === 'user-to-user' &&
         ((m.fromProfileId === profileId1 && m.toProfileId === profileId2) ||
-         (m.fromProfileId === profileId2 && m.toProfileId === profileId1) ||
-         // Include system messages for this conversation
-         (m.fromProfileId === 'system' && (m.toProfileId === profileId1 || m.toProfileId === profileId2)))
+         (m.fromProfileId === profileId2 && m.toProfileId === profileId1))
       )
     }
 
@@ -622,9 +620,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     return messages.filter(m => 
       m.type === 'user-to-user' &&
       ((m.fromProfileId === profileId1 && m.toProfileId === profileId2) ||
-       (m.fromProfileId === profileId2 && m.toProfileId === profileId1) ||
-       // Include system messages for this conversation
-       (m.fromProfileId === 'system' && (m.toProfileId === profileId1 || m.toProfileId === profileId2)))
+       (m.fromProfileId === profileId2 && m.toProfileId === profileId1))
     )
   }
 
@@ -1609,6 +1605,20 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                   <ScrollArea className="h-[calc(600px-180px)] p-4">
                     <div className="space-y-4">
                       {getConversationMessages(selectedConversation).map(msg => {
+                        // Handle system messages (like interest accepted notification) - centered style
+                        if (msg.isSystemMessage) {
+                          return (
+                            <div key={msg.id} className="flex justify-center my-4">
+                              <div className="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 rounded-full px-4 py-2 text-sm text-center max-w-[85%]">
+                                <p>{msg.message || (msg as any).content}</p>
+                                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1">
+                                  {formatTime(msg.timestamp)}
+                                </p>
+                              </div>
+                            </div>
+                          )
+                        }
+
                         const isFromCurrentUser = isAdmin 
                           ? msg.fromProfileId === 'admin'
                           : msg.fromProfileId === currentUserProfile?.profileId

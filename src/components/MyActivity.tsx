@@ -574,12 +574,13 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     )
 
     // Send a single welcome message to the conversation (both users will see it)
-    // Using fromUserId='system' to indicate it's a system notification, not from either user
+    // The message is placed in the conversation between acceptor and sender
+    // Using isSystemMessage flag to style it differently
     const welcomeMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
-      fromUserId: 'system',
-      fromProfileId: 'system', // System message, not from either profile
-      toProfileId: interest.fromProfileId, // The other user in conversation
+      fromUserId: currentUserProfile.id, // Acceptor's user ID for grouping
+      fromProfileId: currentUserProfile.profileId, // Acceptor's profile ID for grouping
+      toProfileId: interest.fromProfileId, // Sender's profile ID
       message: language === 'hi' 
         ? `🎉 रुचि स्वीकृत! ${currentUserProfile.fullName} और ${senderProfile.fullName} अब एक-दूसरे से बात कर सकते हैं।`
         : `🎉 Interest accepted! ${currentUserProfile.fullName} and ${senderProfile.fullName} can now chat with each other.`,
@@ -587,6 +588,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
       createdAt: new Date().toISOString(),
       read: false,
       type: 'user-to-user',
+      isSystemMessage: true, // Flag to indicate this is a system notification, not a user message
     }
 
     setMessages(current => [...(current || []), welcomeMessage])

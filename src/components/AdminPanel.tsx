@@ -640,6 +640,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     profile2PhotoUrl: string
     profile1Testimonial: string
     status: SuccessStory['status']
+    // Privacy controls
+    hideProfile1Photo: boolean
+    hideProfile2Photo: boolean
+    hideProfile1Name: boolean
+    hideProfile2Name: boolean
+    hideProfile1Completely: boolean
+    hideProfile2Completely: boolean
   }>({
     profile1Name: '',
     profile1City: '',
@@ -648,7 +655,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     profile2City: '',
     profile2PhotoUrl: '',
     profile1Testimonial: '',
-    status: 'published'
+    status: 'published',
+    hideProfile1Photo: false,
+    hideProfile2Photo: false,
+    hideProfile1Name: false,
+    hideProfile2Name: false,
+    hideProfile1Completely: false,
+    hideProfile2Completely: false
   })
   
   const t = {
@@ -4125,7 +4138,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       profile2City: '',
                       profile2PhotoUrl: '',
                       profile1Testimonial: '',
-                      status: 'published'
+                      status: 'published',
+                      hideProfile1Photo: false,
+                      hideProfile2Photo: false,
+                      hideProfile1Name: false,
+                      hideProfile2Name: false,
+                      hideProfile1Completely: false,
+                      hideProfile2Completely: false
                     })
                     setShowSuccessStoryDialog(true)
                   }}
@@ -4524,6 +4543,26 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {published.map((story) => (
                               <div key={story.id} className="p-4 rounded-lg border border-rose-200 bg-gradient-to-r from-rose-50 to-pink-50">
+                                {/* Privacy badges */}
+                                {(story.hideProfile1Completely || story.hideProfile2Completely || story.hideProfile1Photo || story.hideProfile2Photo || story.hideProfile1Name || story.hideProfile2Name) && (
+                                  <div className="flex flex-wrap gap-1 mb-2">
+                                    {(story.hideProfile1Completely || story.hideProfile2Completely) && (
+                                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                                        🔒 {language === 'hi' ? 'एकल प्रकाशन' : 'Single Publish'}
+                                      </span>
+                                    )}
+                                    {(story.hideProfile1Photo || story.hideProfile2Photo) && !(story.hideProfile1Completely || story.hideProfile2Completely) && (
+                                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
+                                        📷 {language === 'hi' ? 'फोटो छुपा' : 'Photo Hidden'}
+                                      </span>
+                                    )}
+                                    {(story.hideProfile1Name || story.hideProfile2Name) && !(story.hideProfile1Completely || story.hideProfile2Completely) && (
+                                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">
+                                        👤 {language === 'hi' ? 'नाम छुपा' : 'Name Hidden'}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
                                 <div className="flex items-center gap-4 mb-3">
                                   <div className="flex items-center gap-2">
                                     {story.profile1PhotoUrl ? (
@@ -4573,7 +4612,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                           profile2City: story.profile2City || '',
                                           profile2PhotoUrl: story.profile2PhotoUrl || '',
                                           profile1Testimonial: story.profile1Testimonial || '',
-                                          status: story.status
+                                          status: story.status,
+                                          hideProfile1Photo: story.hideProfile1Photo || false,
+                                          hideProfile2Photo: story.hideProfile2Photo || false,
+                                          hideProfile1Name: story.hideProfile1Name || false,
+                                          hideProfile2Name: story.hideProfile2Name || false,
+                                          hideProfile1Completely: story.hideProfile1Completely || false,
+                                          hideProfile2Completely: story.hideProfile2Completely || false
                                         })
                                         setShowSuccessStoryDialog(true)
                                       }}
@@ -8291,7 +8336,13 @@ ShaadiPartnerSearch Team
             profile2City: '',
             profile2PhotoUrl: '',
             profile1Testimonial: '',
-            status: 'published'
+            status: 'published',
+            hideProfile1Photo: false,
+            hideProfile2Photo: false,
+            hideProfile1Name: false,
+            hideProfile2Name: false,
+            hideProfile1Completely: false,
+            hideProfile2Completely: false
           })
         }
       }}>
@@ -8341,8 +8392,9 @@ ShaadiPartnerSearch Team
                   placeholder="https://example.com/photo.jpg"
                   value={successStoryFormData.profile1PhotoUrl}
                   onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile1PhotoUrl: e.target.value }))}
+                  disabled={successStoryFormData.hideProfile1Completely}
                 />
-                {successStoryFormData.profile1PhotoUrl && (
+                {successStoryFormData.profile1PhotoUrl && !successStoryFormData.hideProfile1Completely && (
                   <div className="mt-2">
                     <img 
                       src={successStoryFormData.profile1PhotoUrl} 
@@ -8352,6 +8404,47 @@ ShaadiPartnerSearch Team
                     />
                   </div>
                 )}
+              </div>
+              {/* Privacy Controls for Profile 1 */}
+              <div className="border-t pt-3 mt-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground mb-2">
+                  {language === 'hi' ? '🔒 गोपनीयता नियंत्रण' : '🔒 Privacy Controls'}
+                </p>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={successStoryFormData.hideProfile1Photo}
+                    onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, hideProfile1Photo: e.target.checked }))}
+                    className="rounded border-gray-300"
+                    disabled={successStoryFormData.hideProfile1Completely}
+                  />
+                  <span className="text-sm">{language === 'hi' ? 'फोटो छुपाएं' : 'Hide Photo'}</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={successStoryFormData.hideProfile1Name}
+                    onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, hideProfile1Name: e.target.checked }))}
+                    className="rounded border-gray-300"
+                    disabled={successStoryFormData.hideProfile1Completely}
+                  />
+                  <span className="text-sm">{language === 'hi' ? 'नाम छुपाएं (केवल आद्याक्षर दिखाएं)' : 'Hide Name (show initials only)'}</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer bg-amber-50 dark:bg-amber-950/30 p-2 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <input
+                    type="checkbox"
+                    checked={successStoryFormData.hideProfile1Completely}
+                    onChange={(e) => setSuccessStoryFormData(prev => ({ 
+                      ...prev, 
+                      hideProfile1Completely: e.target.checked,
+                      // If hiding completely, also hide photo and name
+                      hideProfile1Photo: e.target.checked ? true : prev.hideProfile1Photo,
+                      hideProfile1Name: e.target.checked ? true : prev.hideProfile1Name
+                    }))}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm font-medium">{language === 'hi' ? 'इस व्यक्ति को पूरी तरह छुपाएं (एकल प्रकाशन)' : 'Hide this person completely (single publish)'}</span>
+                </label>
               </div>
             </div>
 
@@ -8385,8 +8478,9 @@ ShaadiPartnerSearch Team
                   placeholder="https://example.com/photo.jpg"
                   value={successStoryFormData.profile2PhotoUrl}
                   onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, profile2PhotoUrl: e.target.value }))}
+                  disabled={successStoryFormData.hideProfile2Completely}
                 />
-                {successStoryFormData.profile2PhotoUrl && (
+                {successStoryFormData.profile2PhotoUrl && !successStoryFormData.hideProfile2Completely && (
                   <div className="mt-2">
                     <img 
                       src={successStoryFormData.profile2PhotoUrl} 
@@ -8396,6 +8490,47 @@ ShaadiPartnerSearch Team
                     />
                   </div>
                 )}
+              </div>
+              {/* Privacy Controls for Profile 2 */}
+              <div className="border-t pt-3 mt-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground mb-2">
+                  {language === 'hi' ? '🔒 गोपनीयता नियंत्रण' : '🔒 Privacy Controls'}
+                </p>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={successStoryFormData.hideProfile2Photo}
+                    onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, hideProfile2Photo: e.target.checked }))}
+                    className="rounded border-gray-300"
+                    disabled={successStoryFormData.hideProfile2Completely}
+                  />
+                  <span className="text-sm">{language === 'hi' ? 'फोटो छुपाएं' : 'Hide Photo'}</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={successStoryFormData.hideProfile2Name}
+                    onChange={(e) => setSuccessStoryFormData(prev => ({ ...prev, hideProfile2Name: e.target.checked }))}
+                    className="rounded border-gray-300"
+                    disabled={successStoryFormData.hideProfile2Completely}
+                  />
+                  <span className="text-sm">{language === 'hi' ? 'नाम छुपाएं (केवल आद्याक्षर दिखाएं)' : 'Hide Name (show initials only)'}</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer bg-amber-50 dark:bg-amber-950/30 p-2 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <input
+                    type="checkbox"
+                    checked={successStoryFormData.hideProfile2Completely}
+                    onChange={(e) => setSuccessStoryFormData(prev => ({ 
+                      ...prev, 
+                      hideProfile2Completely: e.target.checked,
+                      // If hiding completely, also hide photo and name
+                      hideProfile2Photo: e.target.checked ? true : prev.hideProfile2Photo,
+                      hideProfile2Name: e.target.checked ? true : prev.hideProfile2Name
+                    }))}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm font-medium">{language === 'hi' ? 'इस व्यक्ति को पूरी तरह छुपाएं (एकल प्रकाशन)' : 'Hide this person completely (single publish)'}</span>
+                </label>
               </div>
             </div>
 
@@ -8485,7 +8620,15 @@ ShaadiPartnerSearch Team
                           profile2City: successStoryFormData.profile2City,
                           profile2PhotoUrl: successStoryFormData.profile2PhotoUrl,
                           profile1Testimonial: successStoryFormData.profile1Testimonial,
-                          status: successStoryFormData.status
+                          status: successStoryFormData.status,
+                          // Privacy controls
+                          hideProfile1Photo: successStoryFormData.hideProfile1Photo,
+                          hideProfile2Photo: successStoryFormData.hideProfile2Photo,
+                          hideProfile1Name: successStoryFormData.hideProfile1Name,
+                          hideProfile2Name: successStoryFormData.hideProfile2Name,
+                          hideProfile1Completely: successStoryFormData.hideProfile1Completely,
+                          hideProfile2Completely: successStoryFormData.hideProfile2Completely,
+                          singlePartyPublish: successStoryFormData.hideProfile1Completely || successStoryFormData.hideProfile2Completely
                         }
                       : story
                   ))
@@ -8503,13 +8646,21 @@ ShaadiPartnerSearch Team
                     profile2City: successStoryFormData.profile2City,
                     profile2PhotoUrl: successStoryFormData.profile2PhotoUrl,
                     profile2Gender: 'female',  // Default for manual stories
-                    profile1Consent: true,  // Admin manually creating = consent assumed
-                    profile1PhotoConsent: true,
-                    profile1NameConsent: true,
-                    profile2Consent: true,
-                    profile2PhotoConsent: true,
-                    profile2NameConsent: true,
-                    bothConsented: true,
+                    profile1Consent: !successStoryFormData.hideProfile1Completely,
+                    profile1PhotoConsent: !successStoryFormData.hideProfile1Photo && !successStoryFormData.hideProfile1Completely,
+                    profile1NameConsent: !successStoryFormData.hideProfile1Name && !successStoryFormData.hideProfile1Completely,
+                    profile2Consent: !successStoryFormData.hideProfile2Completely,
+                    profile2PhotoConsent: !successStoryFormData.hideProfile2Photo && !successStoryFormData.hideProfile2Completely,
+                    profile2NameConsent: !successStoryFormData.hideProfile2Name && !successStoryFormData.hideProfile2Completely,
+                    bothConsented: !successStoryFormData.hideProfile1Completely && !successStoryFormData.hideProfile2Completely,
+                    // Privacy controls
+                    hideProfile1Photo: successStoryFormData.hideProfile1Photo,
+                    hideProfile2Photo: successStoryFormData.hideProfile2Photo,
+                    hideProfile1Name: successStoryFormData.hideProfile1Name,
+                    hideProfile2Name: successStoryFormData.hideProfile2Name,
+                    hideProfile1Completely: successStoryFormData.hideProfile1Completely,
+                    hideProfile2Completely: successStoryFormData.hideProfile2Completely,
+                    singlePartyPublish: successStoryFormData.hideProfile1Completely || successStoryFormData.hideProfile2Completely,
                     profile1Testimonial: successStoryFormData.profile1Testimonial,
                     status: successStoryFormData.status,
                     submittedAt: new Date().toISOString()
@@ -8527,7 +8678,13 @@ ShaadiPartnerSearch Team
                   profile2City: '',
                   profile2PhotoUrl: '',
                   profile1Testimonial: '',
-                  status: 'published'
+                  status: 'published',
+                  hideProfile1Photo: false,
+                  hideProfile2Photo: false,
+                  hideProfile1Name: false,
+                  hideProfile2Name: false,
+                  hideProfile1Completely: false,
+                  hideProfile2Completely: false
                 })
               }}
             >

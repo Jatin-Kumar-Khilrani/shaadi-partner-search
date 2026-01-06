@@ -1670,45 +1670,112 @@ function App() {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {publishedStories.slice(0, 6).map((story) => (
+                          {publishedStories.slice(0, 6).map((story) => {
+                            // Helper to get initials from name
+                            const getInitials = (name: string) => {
+                              return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                            }
+                            
+                            // Determine what to show based on privacy settings
+                            const showProfile1 = !story.hideProfile1Completely
+                            const showProfile2 = !story.hideProfile2Completely
+                            const isSinglePublish = story.hideProfile1Completely || story.hideProfile2Completely
+                            
+                            // For names - show actual name or initials
+                            const profile1DisplayName = story.hideProfile1Name 
+                              ? getInitials(story.profile1Name) 
+                              : story.profile1Name
+                            const profile2DisplayName = story.hideProfile2Name 
+                              ? getInitials(story.profile2Name) 
+                              : story.profile2Name
+                            
+                            // For photos - show photo, hidden icon, or nothing
+                            const showProfile1Photo = showProfile1 && !story.hideProfile1Photo && story.profile1PhotoUrl
+                            const showProfile2Photo = showProfile2 && !story.hideProfile2Photo && story.profile2PhotoUrl
+                            
+                            return (
                             <div key={story.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-rose-100 dark:border-rose-900/50 hover:shadow-md transition-shadow">
                               <div className="flex items-center justify-center gap-3 mb-3">
-                                {/* Profile 1 Photo */}
-                                {story.profile1PhotoUrl ? (
-                                  <div className="relative">
-                                    <div className="w-14 h-14 rounded-full ring-2 ring-rose-300 ring-offset-2 overflow-hidden">
-                                      <img src={story.profile1PhotoUrl} alt="" className="w-full h-full object-cover" />
-                                    </div>
-                                  </div>
+                                {/* Single Publish Layout - Only one person shown */}
+                                {isSinglePublish ? (
+                                  <>
+                                    {showProfile1 && (
+                                      showProfile1Photo ? (
+                                        <div className="relative">
+                                          <div className="w-16 h-16 rounded-full ring-2 ring-rose-300 ring-offset-2 overflow-hidden">
+                                            <img src={story.profile1PhotoUrl} alt="" className="w-full h-full object-cover" />
+                                          </div>
+                                          <Heart size={20} weight="fill" className="absolute -bottom-1 -right-1 text-rose-500 bg-white rounded-full p-0.5" />
+                                        </div>
+                                      ) : (
+                                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/50 dark:to-pink-900/50 flex items-center justify-center ring-2 ring-rose-300 ring-offset-2">
+                                          <Heart size={28} weight="fill" className="text-rose-400" />
+                                        </div>
+                                      )
+                                    )}
+                                    {showProfile2 && (
+                                      showProfile2Photo ? (
+                                        <div className="relative">
+                                          <div className="w-16 h-16 rounded-full ring-2 ring-rose-300 ring-offset-2 overflow-hidden">
+                                            <img src={story.profile2PhotoUrl} alt="" className="w-full h-full object-cover" />
+                                          </div>
+                                          <Heart size={20} weight="fill" className="absolute -bottom-1 -right-1 text-rose-500 bg-white rounded-full p-0.5" />
+                                        </div>
+                                      ) : (
+                                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/50 dark:to-pink-900/50 flex items-center justify-center ring-2 ring-rose-300 ring-offset-2">
+                                          <Heart size={28} weight="fill" className="text-rose-400" />
+                                        </div>
+                                      )
+                                    )}
+                                  </>
                                 ) : (
-                                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/50 dark:to-pink-900/50 flex items-center justify-center ring-2 ring-rose-300 ring-offset-2">
-                                    <Heart size={24} weight="fill" className="text-rose-400" />
-                                  </div>
-                                )}
-                                
-                                {/* Heart Icon */}
-                                <Heart size={28} weight="fill" className="text-rose-500 animate-pulse" />
-                                
-                                {/* Profile 2 Photo */}
-                                {story.profile2PhotoUrl ? (
-                                  <div className="relative">
-                                    <div className="w-14 h-14 rounded-full ring-2 ring-rose-300 ring-offset-2 overflow-hidden">
-                                      <img src={story.profile2PhotoUrl} alt="" className="w-full h-full object-cover" />
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/50 dark:to-pink-900/50 flex items-center justify-center ring-2 ring-rose-300 ring-offset-2">
-                                    <Heart size={24} weight="fill" className="text-rose-400" />
-                                  </div>
+                                  <>
+                                    {/* Profile 1 Photo */}
+                                    {showProfile1Photo ? (
+                                      <div className="relative">
+                                        <div className="w-14 h-14 rounded-full ring-2 ring-rose-300 ring-offset-2 overflow-hidden">
+                                          <img src={story.profile1PhotoUrl} alt="" className="w-full h-full object-cover" />
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/50 dark:to-pink-900/50 flex items-center justify-center ring-2 ring-rose-300 ring-offset-2">
+                                        <Heart size={24} weight="fill" className="text-rose-400" />
+                                      </div>
+                                    )}
+                                    
+                                    {/* Heart Icon between photos */}
+                                    <Heart size={28} weight="fill" className="text-rose-500 animate-pulse" />
+                                    
+                                    {/* Profile 2 Photo */}
+                                    {showProfile2Photo ? (
+                                      <div className="relative">
+                                        <div className="w-14 h-14 rounded-full ring-2 ring-rose-300 ring-offset-2 overflow-hidden">
+                                          <img src={story.profile2PhotoUrl} alt="" className="w-full h-full object-cover" />
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/50 dark:to-pink-900/50 flex items-center justify-center ring-2 ring-rose-300 ring-offset-2">
+                                        <Heart size={24} weight="fill" className="text-rose-400" />
+                                      </div>
+                                    )}
+                                  </>
                                 )}
                               </div>
                               
                               {/* Names */}
                               <p className="text-center font-semibold text-rose-700 dark:text-rose-400 mb-1">
-                                {story.profile1Name} & {story.profile2Name}
+                                {isSinglePublish 
+                                  ? (showProfile1 ? profile1DisplayName : profile2DisplayName)
+                                  : `${profile1DisplayName} & ${profile2DisplayName}`
+                                }
                               </p>
                               <p className="text-center text-xs text-muted-foreground mb-3">
-                                {story.profile1City}{story.profile2City ? ` & ${story.profile2City}` : ''}
+                                {isSinglePublish
+                                  ? (showProfile1 ? (story.profile1City || '') : (story.profile2City || ''))
+                                  : (story.profile1City 
+                                      ? (story.profile2City ? `${story.profile1City} & ${story.profile2City}` : story.profile1City)
+                                      : story.profile2City || '')
+                                }
                               </p>
                               
                               {/* Testimonial - show if story is published (admin approved it) */}
@@ -1717,11 +1784,16 @@ function App() {
                                   <p className="text-xs text-gray-600 dark:text-gray-300 italic line-clamp-3">
                                     "{story.profile1Testimonial}"
                                   </p>
-                                  <p className="text-[10px] text-rose-500 mt-1 text-right">— {story.profile1Name}</p>
+                                  <p className="text-[10px] text-rose-500 mt-1 text-right">
+                                    — {isSinglePublish 
+                                        ? (showProfile1 ? profile1DisplayName : profile2DisplayName)
+                                        : profile1DisplayName
+                                      }
+                                  </p>
                                 </div>
                               )}
                             </div>
-                          ))}
+                          )})}
                         </div>
                         
                         {publishedStories.length > 6 && (

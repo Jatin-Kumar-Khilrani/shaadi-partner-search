@@ -13,6 +13,7 @@ export interface ChatMessage {
   delivered?: boolean
   deliveredAt?: string
   status?: 'sent' | 'delivered' | 'read'
+  isSystemMessage?: boolean // Flag for system-generated messages (e.g., interest accepted notification)
 }
 
 export interface ChatConversation {

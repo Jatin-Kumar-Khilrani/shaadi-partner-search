@@ -61,6 +61,14 @@ export interface SuccessStory {
   profile2NameConsent: boolean   // Consent to use real name
   bothConsented: boolean
   
+  // Admin privacy controls (overrides consent - for privacy requests)
+  hideProfile1Photo?: boolean    // Admin hides photo even if consent given
+  hideProfile2Photo?: boolean    // Admin hides photo even if consent given
+  hideProfile1Name?: boolean     // Admin hides name (shows initials only)
+  hideProfile2Name?: boolean     // Admin hides name (shows initials only)
+  hideProfile1Completely?: boolean  // Hide profile1 entirely (for single-party publish)
+  hideProfile2Completely?: boolean  // Hide profile2 entirely (for single-party publish)
+  
   // Testimonials from both parties (optional)
   profile1Testimonial?: string         // Optional testimonial/comment from profile1
   profile1TestimonialHi?: string       // Hindi version of testimonial
