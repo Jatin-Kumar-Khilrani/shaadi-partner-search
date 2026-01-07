@@ -632,6 +632,102 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     })
   }, [filters.states, locationOptionsWithCounts])
 
+  // Dynamic filter options - only show values that exist in matchable profiles
+  const dynamicFilterOptions = useMemo(() => {
+    if (!profiles || !currentUserProfile) return {
+      religions: RELIGION_OPTIONS,
+      motherTongues: MOTHER_TONGUE_OPTIONS,
+      dietPreferences: DIET_PREFERENCE_OPTIONS,
+      educationLevels: EDUCATION_OPTIONS,
+      employmentStatuses: EMPLOYMENT_STATUS_OPTIONS,
+      occupations: OCCUPATION_PROFESSION_OPTIONS,
+      drinkingHabits: DRINKING_HABIT_OPTIONS,
+      smokingHabits: SMOKING_HABIT_OPTIONS
+    }
+    
+    // Get opposite gender profiles only (excluding deleted profiles)
+    const matchableProfiles = profiles.filter(p => 
+      p.id !== currentUserProfile.id &&
+      p.status === 'verified' &&
+      !p.isDeleted &&
+      ((currentUserProfile.gender === 'male' && p.gender === 'female') ||
+       (currentUserProfile.gender === 'female' && p.gender === 'male'))
+    )
+    
+    // Count profiles by each field
+    const religionCount: Record<string, number> = {}
+    const motherTongueCount: Record<string, number> = {}
+    const dietCount: Record<string, number> = {}
+    const educationCount: Record<string, number> = {}
+    const employmentCount: Record<string, number> = {}
+    const occupationCount: Record<string, number> = {}
+    const drinkingCount: Record<string, number> = {}
+    const smokingCount: Record<string, number> = {}
+    
+    matchableProfiles.forEach(p => {
+      if (p.religion) {
+        const val = p.religion.toLowerCase()
+        religionCount[val] = (religionCount[val] || 0) + 1
+      }
+      if (p.motherTongue) {
+        const val = p.motherTongue.toLowerCase()
+        motherTongueCount[val] = (motherTongueCount[val] || 0) + 1
+      }
+      if (p.dietPreference) {
+        dietCount[p.dietPreference] = (dietCount[p.dietPreference] || 0) + 1
+      }
+      if (p.education) {
+        const val = p.education.toLowerCase()
+        educationCount[val] = (educationCount[val] || 0) + 1
+      }
+      if (p.occupation) {
+        const val = p.occupation.toLowerCase()
+        employmentCount[val] = (employmentCount[val] || 0) + 1
+      }
+      if (p.position) {
+        // Match occupation/profession options against position field
+        const pos = p.position.toLowerCase()
+        OCCUPATION_PROFESSION_OPTIONS.forEach(opt => {
+          if (pos.includes(opt.value.toLowerCase())) {
+            occupationCount[opt.value] = (occupationCount[opt.value] || 0) + 1
+          }
+        })
+      }
+      if (p.drinkingHabit) {
+        drinkingCount[p.drinkingHabit] = (drinkingCount[p.drinkingHabit] || 0) + 1
+      }
+      if (p.smokingHabit) {
+        smokingCount[p.smokingHabit] = (smokingCount[p.smokingHabit] || 0) + 1
+      }
+    })
+    
+    // Filter options to only show those with profiles and add counts
+    const filterWithCounts = (options: { value: string; label: string }[], counts: Record<string, number>, caseInsensitive = false) => {
+      return options.filter(opt => {
+        const key = caseInsensitive ? opt.value.toLowerCase() : opt.value
+        return counts[key] > 0
+      }).map(opt => {
+        const key = caseInsensitive ? opt.value.toLowerCase() : opt.value
+        const count = counts[key] || 0
+        return {
+          ...opt,
+          label: `${opt.label} (${count})`
+        }
+      })
+    }
+    
+    return {
+      religions: filterWithCounts(RELIGION_OPTIONS, religionCount, true),
+      motherTongues: filterWithCounts(MOTHER_TONGUE_OPTIONS, motherTongueCount, true),
+      dietPreferences: filterWithCounts(DIET_PREFERENCE_OPTIONS, dietCount),
+      educationLevels: filterWithCounts(EDUCATION_OPTIONS, educationCount, true),
+      employmentStatuses: filterWithCounts(EMPLOYMENT_STATUS_OPTIONS, employmentCount, true),
+      occupations: filterWithCounts(OCCUPATION_PROFESSION_OPTIONS, occupationCount),
+      drinkingHabits: filterWithCounts(DRINKING_HABIT_OPTIONS, drinkingCount),
+      smokingHabits: filterWithCounts(SMOKING_HABIT_OPTIONS, smokingCount)
+    }
+  }, [profiles, currentUserProfile])
+
   const t = {
     title: language === 'hi' ? 'मेरे मैच' : 'My Matches',
     search: language === 'hi' ? 'नाम, स्थान या प्रोफाइल ID से खोजें' : 'Search by name, location or profile ID',
@@ -1362,7 +1458,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">{t.education}</Label>
               <MultiSelect
-                options={EDUCATION_OPTIONS}
+                options={dynamicFilterOptions.educationLevels.length > 0 ? dynamicFilterOptions.educationLevels : EDUCATION_OPTIONS}
                 value={filters.educationLevels || []}
                 onValueChange={(val) => setFilters({ ...filters, educationLevels: val.length > 0 ? val : undefined })}
                 placeholder={t.any}
@@ -1376,7 +1472,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">{language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status'}</Label>
               <MultiSelect
-                options={EMPLOYMENT_STATUS_OPTIONS}
+                options={dynamicFilterOptions.employmentStatuses.length > 0 ? dynamicFilterOptions.employmentStatuses : EMPLOYMENT_STATUS_OPTIONS}
                 value={filters.employmentStatuses || []}
                 onValueChange={(val) => setFilters({ ...filters, employmentStatuses: val.length > 0 ? val : undefined })}
                 placeholder={t.any}
@@ -1390,7 +1486,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">{t.occupation}</Label>
               <MultiSelect
-                options={OCCUPATION_PROFESSION_OPTIONS}
+                options={dynamicFilterOptions.occupations.length > 0 ? dynamicFilterOptions.occupations : OCCUPATION_PROFESSION_OPTIONS}
                 value={filters.occupations || []}
                 onValueChange={(val) => setFilters({ ...filters, occupations: val.length > 0 ? val : undefined })}
                 placeholder={t.any}
@@ -1485,7 +1581,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">{t.religion}</Label>
               <MultiSelect
-                options={RELIGION_OPTIONS}
+                options={dynamicFilterOptions.religions.length > 0 ? dynamicFilterOptions.religions : RELIGION_OPTIONS}
                 value={filters.religions || []}
                 onValueChange={(val) => setFilters({ ...filters, religions: val.length > 0 ? val : undefined, religion: undefined })}
                 placeholder={t.any}
@@ -1508,7 +1604,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">{t.motherTongue}</Label>
               <MultiSelect
-                options={MOTHER_TONGUE_OPTIONS}
+                options={dynamicFilterOptions.motherTongues.length > 0 ? dynamicFilterOptions.motherTongues : MOTHER_TONGUE_OPTIONS}
                 value={filters.motherTongues || []}
                 onValueChange={(val) => setFilters({ ...filters, motherTongues: val.length > 0 ? val : undefined })}
                 placeholder={t.any}
@@ -1558,7 +1654,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">{t.diet}</Label>
               <MultiSelect
-                options={DIET_PREFERENCE_OPTIONS}
+                options={dynamicFilterOptions.dietPreferences.length > 0 ? dynamicFilterOptions.dietPreferences : DIET_PREFERENCE_OPTIONS}
                 value={filters.dietPreferences || []}
                 onValueChange={(val) => setFilters({ ...filters, dietPreferences: val.length > 0 ? val as DietPreference[] : undefined })}
                 placeholder={t.any}
@@ -1587,7 +1683,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="any">{t.any}</SelectItem>
-                  {DRINKING_HABIT_OPTIONS.map((option) => (
+                  {(dynamicFilterOptions.drinkingHabits.length > 0 ? dynamicFilterOptions.drinkingHabits : DRINKING_HABIT_OPTIONS).map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -1614,7 +1710,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="any">{t.any}</SelectItem>
-                  {SMOKING_HABIT_OPTIONS.map((option) => (
+                  {(dynamicFilterOptions.smokingHabits.length > 0 ? dynamicFilterOptions.smokingHabits : SMOKING_HABIT_OPTIONS).map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
