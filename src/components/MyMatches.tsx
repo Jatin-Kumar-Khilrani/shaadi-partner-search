@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { ProfileCard } from './ProfileCard'
-import { MagnifyingGlass, Funnel, X, GraduationCap, Globe, Calendar, Trophy, Sparkle, Heart, Users, FloppyDisk, ArrowCounterClockwise, SortAscending, CaretLeft, CaretRight, CircleNotch, CurrencyInr, Camera, Clock, UserCheck, Lightning, Eye, Info, WarningCircle } from '@phosphor-icons/react'
+import { MagnifyingGlass, Funnel, X, GraduationCap, Globe, Calendar, Trophy, Sparkle, Heart, Users, FloppyDisk, ArrowCounterClockwise, SortAscending, CaretLeft, CaretRight, CircleNotch, CurrencyInr, Camera, Clock, UserCheck, Lightning, Eye, Info, WarningCircle, ArrowRight } from '@phosphor-icons/react'
 import type { Profile, SearchFilters, BlockedProfile, MembershipPlan, ProfileStatus, Interest, DeclinedProfile, DietPreference, DrinkingHabit, SmokingHabit, ContactRequest } from '@/types/profile'
 import type { ProfileInteractionStatus } from './ProfileCard'
 import type { Language } from '@/lib/translations'
@@ -903,10 +903,15 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       
       // ============ PARTNER PREFERENCES BASED FILTERING ============
       // Apply partner preferences if enabled and preferences exist
+      // IMPORTANT: If user selects "Any" in a filter, skip that partner preference
       if (usePartnerPreferences && prefs) {
-        // Age filter based on partner preferences
-        if (prefs.ageMin && profile.age < prefs.ageMin) return false
-        if (prefs.ageMax && profile.age > prefs.ageMax) return false
+        // Age filter based on partner preferences (skip if user modified age filter)
+        // Only apply partner prefs age if filter is at default values
+        const isAgeFilterDefault = !filters.ageRange || (filters.ageRange[0] === 18 && filters.ageRange[1] === 60)
+        if (isAgeFilterDefault) {
+          if (prefs.ageMin && profile.age < prefs.ageMin) return false
+          if (prefs.ageMax && profile.age > prefs.ageMax) return false
+        }
         
         // Height filter - normalized to cm for reliable comparison
         if (prefs.heightMin || prefs.heightMax) {
@@ -925,8 +930,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           if (!prefs.maritalStatus.includes(profile.maritalStatus)) return false
         }
         
-        // Religion filter
-        if (prefs.religion && prefs.religion.length > 0) {
+        // Religion filter - skip if user selected "Any" in filter panel
+        if (prefs.religion && prefs.religion.length > 0 && !isAnySelected(filters.religions)) {
           const profileReligion = profile.religion?.toLowerCase() || ''
           if (!prefs.religion.some(r => profileReligion.includes(r.toLowerCase()))) return false
         }
@@ -937,51 +942,51 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           if (!prefs.caste.some(c => profileCaste.includes(c.toLowerCase()))) return false
         }
         
-        // Mother tongue filter
-        if (prefs.motherTongue && prefs.motherTongue.length > 0) {
+        // Mother tongue filter - skip if user selected "Any" in filter panel
+        if (prefs.motherTongue && prefs.motherTongue.length > 0 && !isAnySelected(filters.motherTongues)) {
           const profileMotherTongue = profile.motherTongue?.toLowerCase() || ''
           if (!prefs.motherTongue.some(mt => profileMotherTongue.includes(mt.toLowerCase()))) return false
         }
         
-        // Education filter
-        if (prefs.education && prefs.education.length > 0) {
+        // Education filter - skip if user selected "Any" in filter panel
+        if (prefs.education && prefs.education.length > 0 && !isAnySelected(filters.educationLevels)) {
           const profileEducation = profile.education?.toLowerCase() || ''
           if (!prefs.education.some(edu => profileEducation.toLowerCase() === edu.toLowerCase())) return false
         }
         
-        // Employment status filter
-        if (prefs.employmentStatus && prefs.employmentStatus.length > 0) {
+        // Employment status filter - skip if user selected "Any" in filter panel
+        if (prefs.employmentStatus && prefs.employmentStatus.length > 0 && !isAnySelected(filters.employmentStatuses)) {
           const profileOccupation = profile.occupation?.toLowerCase() || ''
           if (!prefs.employmentStatus.some(emp => profileOccupation.includes(emp.toLowerCase()))) return false
         }
         
-        // Occupation/Profession filter
+        // Occupation/Profession filter - skip if user selected "Any" in filter panel
         // Matches against profile.position (free-text profession like "Software Engineer", "Doctor")
-        if (prefs.occupation && prefs.occupation.length > 0) {
+        if (prefs.occupation && prefs.occupation.length > 0 && !isAnySelected(filters.occupations)) {
           const profilePosition = profile.position?.toLowerCase() || ''
           if (!prefs.occupation.some(occ => profilePosition.toLowerCase().includes(occ.toLowerCase()))) return false
         }
         
-        // Living country filter
-        if (prefs.livingCountry && prefs.livingCountry.length > 0) {
+        // Living country filter - skip if user selected "Any" in filter panel
+        if (prefs.livingCountry && prefs.livingCountry.length > 0 && !isAnySelected(filters.countries)) {
           const profileCountry = profile.country?.toLowerCase() || ''
           if (!prefs.livingCountry.some(c => profileCountry.includes(c.toLowerCase()))) return false
         }
         
-        // Living state filter
-        if (prefs.livingState && prefs.livingState.length > 0) {
+        // Living state filter - skip if user selected "Any" in filter panel
+        if (prefs.livingState && prefs.livingState.length > 0 && !isAnySelected(filters.states)) {
           const profileState = profile.state?.toLowerCase() || ''
           if (!prefs.livingState.some(s => profileState.includes(s.toLowerCase()))) return false
         }
         
-        // Location/City filter
-        if (prefs.location && prefs.location.length > 0) {
+        // Location/City filter - skip if user selected "Any" in filter panel
+        if (prefs.location && prefs.location.length > 0 && !isAnySelected(filters.cities)) {
           const profileLocation = profile.location?.toLowerCase() || ''
           if (!prefs.location.some(loc => profileLocation.includes(loc.toLowerCase()))) return false
         }
         
-        // Diet preference filter
-        if (prefs.dietPreference && prefs.dietPreference.length > 0) {
+        // Diet preference filter - skip if user selected "Any" in filter panel
+        if (prefs.dietPreference && prefs.dietPreference.length > 0 && !isAnySelected(filters.dietPreferences as string[])) {
           if (!profile.dietPreference || !prefs.dietPreference.includes(profile.dietPreference)) return false
         }
         
@@ -1172,6 +1177,42 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       return true
     })
   }, [profiles, currentUserProfile, debouncedSearchQuery, filters, blockedProfiles, declinedProfiles, interests, usePartnerPreferences, parseHeightToCm, isWithinDays, getProfileCompleteness])
+
+  // Handler to click on a filter issue and scroll to the relevant filter section
+  const handleIssueClick = useCallback((filterType: string) => {
+    // Map filter types to section IDs
+    const filterSectionMap: Record<string, string> = {
+      'age-pref': 'filter-age',
+      'age-filter': 'filter-age',
+      'religion-pref': 'filter-religion',
+      'education-pref': 'filter-education',
+      'country-filter': 'filter-location',
+      'state-filter': 'filter-location',
+      'city-filter': 'filter-location',
+      'diet-filter': 'filter-lifestyle',
+      'occupation-filter': 'filter-education',
+      'employment-filter': 'filter-education',
+      'mothertongue-filter': 'filter-religion',
+    }
+    
+    const sectionId = filterSectionMap[filterType] || 'filter-age'
+    
+    // Open filter panel first
+    setShowFilters(true)
+    
+    // Wait for panel to open, then scroll to section
+    setTimeout(() => {
+      const section = document.getElementById(sectionId)
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        // Add a brief highlight effect
+        section.classList.add('ring-2', 'ring-primary', 'ring-offset-2')
+        setTimeout(() => {
+          section.classList.remove('ring-2', 'ring-primary', 'ring-offset-2')
+        }, 2000)
+      }
+    }, 300)
+  }, [])
 
   // Diagnostic analysis: Why are there no matches?
   const filterDiagnostics = useMemo(() => {
@@ -1428,7 +1469,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
         </div>
 
         {/* Age Range */}
-        <div className="p-4 bg-muted/30 rounded-xl border">
+        <div id="filter-age" className="p-4 bg-muted/30 rounded-xl border">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-background rounded-lg border">
               <Calendar size={16} className="text-primary" />
@@ -1483,7 +1524,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
         </div>
 
         {/* Education & Career */}
-        <div className="p-4 bg-muted/30 rounded-xl border">
+        <div id="filter-education" className="p-4 bg-muted/30 rounded-xl border">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-background rounded-lg border">
               <GraduationCap size={16} className="text-primary" />
@@ -1537,7 +1578,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
         </div>
 
         {/* Location */}
-        <div className="p-4 bg-muted/30 rounded-xl border">
+        <div id="filter-location" className="p-4 bg-muted/30 rounded-xl border">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-background rounded-lg border">
               <Globe size={16} className="text-primary" />
@@ -1606,7 +1647,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
         </div>
 
         {/* Religion & Caste */}
-        <div className="p-4 bg-muted/30 rounded-xl border">
+        <div id="filter-religion" className="p-4 bg-muted/30 rounded-xl border">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-background rounded-lg border">
               <Users size={16} className="text-primary" />
@@ -1679,7 +1720,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
         </div>
 
         {/* Lifestyle */}
-        <div className="p-4 bg-muted/30 rounded-xl border">
+        <div id="filter-lifestyle" className="p-4 bg-muted/30 rounded-xl border">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-background rounded-lg border">
               <Heart size={16} className="text-primary" />
@@ -2235,19 +2276,24 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                     {filterDiagnostics.suggestions.length > 0 && (
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-foreground">
-                          {language === 'hi' ? 'संभावित समस्याएं:' : 'Possible issues:'}
+                          {language === 'hi' ? 'संभावित समस्याएं (क्लिक करें फ़िल्टर संपादित करने के लिए):' : 'Possible issues (click to edit filter):'}
                         </p>
                         {filterDiagnostics.suggestions.map((issue, idx) => (
-                          <div key={idx} className="p-2 bg-muted/50 rounded-lg text-sm flex items-start gap-2">
+                          <button
+                            key={idx}
+                            onClick={() => handleIssueClick(issue.filter)}
+                            className="w-full p-2 bg-muted/50 hover:bg-muted rounded-lg text-sm flex items-start gap-2 text-left transition-colors cursor-pointer group border border-transparent hover:border-primary/30"
+                          >
                             <WarningCircle size={14} className="mt-0.5 text-orange-500 flex-shrink-0" />
-                            <div>
-                              <span className="font-medium">{issue.label}:</span>{' '}
+                            <div className="flex-1">
+                              <span className="font-medium group-hover:text-primary transition-colors">{issue.label}:</span>{' '}
                               <span className="text-muted-foreground">{issue.suggestion}</span>
                               {issue.matchCount === 0 && (
                                 <span className="text-red-500 ml-1">({language === 'hi' ? '0 मैच' : '0 matches'})</span>
                               )}
                             </div>
-                          </div>
+                            <ArrowRight size={14} className="mt-0.5 text-muted-foreground group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100" />
+                          </button>
                         ))}
                       </div>
                     )}
