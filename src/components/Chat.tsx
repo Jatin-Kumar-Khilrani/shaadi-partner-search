@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks, X, Warning, ShieldWarning, Prohibit, MagnifyingGlassPlus, Paperclip, Image as ImageIcon, FilePdf, DownloadSimple, Smiley } from '@phosphor-icons/react'
+import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks, X, Warning, ShieldWarning, Prohibit, MagnifyingGlassPlus, Paperclip, Image as ImageIcon, FilePdf, DownloadSimple, Smiley, Trash } from '@phosphor-icons/react'
 import type { ChatMessage, ChatConversation, ChatAttachment } from '@/types/chat'
 import type { Profile, Interest, MembershipPlan, BlockedProfile, ReportReason } from '@/types/profile'
 import type { Language } from '@/lib/translations'
@@ -657,22 +657,20 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
           }
         }
       } else if (msg.type === 'user-to-user') {
-        if (isAdmin || msg.fromProfileId === currentUserProfile?.profileId || msg.toProfileId === currentUserProfile?.profileId) {
-          const otherProfileId = isAdmin 
-            ? (msg.fromProfileId < msg.toProfileId! ? `${msg.fromProfileId}-${msg.toProfileId}` : `${msg.toProfileId}-${msg.fromProfileId}`)
-            : msg.fromProfileId === currentUserProfile?.profileId ? msg.toProfileId! : msg.fromProfileId
+        // Admin should NOT see user-to-user conversations in Admin Chat
+        // Admin Chat is only for admin-to-user support conversations
+        if (!isAdmin && (msg.fromProfileId === currentUserProfile?.profileId || msg.toProfileId === currentUserProfile?.profileId)) {
+          const otherProfileId = msg.fromProfileId === currentUserProfile?.profileId ? msg.toProfileId! : msg.fromProfileId
           
-          const convId = isAdmin 
-            ? otherProfileId
-            : [currentUserProfile!.profileId, otherProfileId].sort().join('-')
+          const convId = [currentUserProfile!.profileId, otherProfileId].sort().join('-')
           
           if (!convMap.has(convId)) {
             convMap.set(convId, {
               id: convId,
-              participants: isAdmin ? [msg.fromProfileId, msg.toProfileId!] : [currentUserProfile!.profileId, otherProfileId],
+              participants: [currentUserProfile!.profileId, otherProfileId],
               lastMessage: msg,
               timestamp: msg.timestamp,
-              unreadCount: msg.read || (isAdmin ? false : msg.fromProfileId === currentUserProfile?.profileId) ? 0 : 1,
+              unreadCount: msg.read || msg.fromProfileId === currentUserProfile?.profileId ? 0 : 1,
               createdAt: msg.timestamp,
               updatedAt: msg.timestamp,
             })
@@ -684,7 +682,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
               conv.timestamp = msg.timestamp
               conv.updatedAt = msg.timestamp
             }
-            if (!msg.read && !isAdmin && msg.fromProfileId !== currentUserProfile?.profileId) {
+            if (!msg.read && msg.fromProfileId !== currentUserProfile?.profileId) {
               conv.unreadCount++
             }
           }
@@ -888,6 +886,39 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       ((m.fromProfileId === profileId1 && m.toProfileId === profileId2) ||
        (m.fromProfileId === profileId2 && m.toProfileId === profileId1))
     )
+  }
+
+  // Clear chat history (admin only) - removes all messages but keeps conversation in list
+  const handleClearChatHistory = (conversationId: string) => {
+    if (!isAdmin) return
+    
+    if (!confirm(language === 'hi' 
+      ? 'क्या आप वाकई इस चैट का इतिहास साफ़ करना चाहते हैं?' 
+      : 'Are you sure you want to clear this chat history?'
+    )) return
+
+    // Remove all messages for this conversation
+    setMessages((current) => {
+      if (!current) return []
+      return current.filter(msg => {
+        if (conversationId === 'admin-broadcast') {
+          return msg.type !== 'admin-broadcast'
+        }
+        if (conversationId.startsWith('admin-')) {
+          const userProfileId = conversationId.replace('admin-', '')
+          return !(msg.type === 'admin-to-user' && 
+            ((msg.fromProfileId === 'admin' && msg.toProfileId === userProfileId) ||
+             (msg.fromProfileId === userProfileId && msg.toProfileId === 'admin')))
+        }
+        const [profileId1, profileId2] = conversationId.split('-')
+        return !(
+          (msg.fromProfileId === profileId1 && msg.toProfileId === profileId2) ||
+          (msg.fromProfileId === profileId2 && msg.toProfileId === profileId1)
+        )
+      })
+    })
+    
+    toast.success(language === 'hi' ? 'चैट इतिहास साफ़ कर दिया गया' : 'Chat history cleared')
   }
 
   // Close/delete a conversation (admin only) - removes all messages for this conversation
@@ -1930,7 +1961,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
             </ScrollArea>
           </Card>
 
-          <Card className="md:col-span-2 flex flex-col">
+          <Card className="md:col-span-2 flex flex-col overflow-hidden">
             {!selectedConversation ? (
               <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-8">
                 <div className="w-24 h-24 rounded-full bg-muted/50 flex items-center justify-center mb-4">
@@ -2029,6 +2060,18 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                           <ShieldWarning size={20} weight="fill" />
                         </Button>
                       )}
+                      {/* Clear Chat History button - for admin only */}
+                      {isAdmin && selectedConversation && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                          onClick={() => handleClearChatHistory(selectedConversation)}
+                          title={language === 'hi' ? 'चैट इतिहास साफ़ करें' : 'Clear chat history'}
+                        >
+                          <Trash size={20} weight="fill" />
+                        </Button>
+                      )}
                     </div>
                   </CardHeader>
                   <ScrollArea className="h-[calc(600px-180px)] p-4">
@@ -2083,7 +2126,15 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                                     : 'bg-muted'
                                 }`}
                               >
-                                <p className="text-sm">{msg.message || (msg as any).content}</p>
+                                {/* Display attachments */}
+                                {msg.attachments && msg.attachments.length > 0 && (
+                                  <div className="space-y-2 mb-2">
+                                    {msg.attachments.map(attachment => renderAttachment(attachment, isFromCurrentUser))}
+                                  </div>
+                                )}
+                                {(msg.message || (msg as any).content) && (
+                                  <p className="text-sm">{msg.message || (msg as any).content}</p>
+                                )}
                                 <div className="flex items-center justify-end gap-1 mt-1">
                                   <span className="text-xs opacity-70">
                                     {formatTime(msg.timestamp)}
@@ -2114,10 +2165,10 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                   </ScrollArea>
                   <Separator />
                   {isChatAllowed || isAdmin ? (
-                    <div className="p-4 space-y-3">
+                    <div className="p-4 space-y-3 border-t">
                       {/* Pending attachments preview */}
                       {pendingAttachments.length > 0 && (
-                        <div className="flex flex-wrap gap-2 p-2 bg-muted/50 rounded-lg">
+                        <div className="flex flex-wrap gap-2 p-2 bg-muted/50 rounded-lg overflow-x-auto">
                           {pendingAttachments.map(attachment => (
                             <div key={attachment.id} className="relative group">
                               {attachment.type === 'image' ? (
@@ -2148,11 +2199,12 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                           ))}
                         </div>
                       )}
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center w-full">
                         {/* Attachment button */}
                         <Button 
                           variant="ghost" 
                           size="icon"
+                          className="shrink-0"
                           onClick={() => fileInputRef.current?.click()}
                           title={language === 'hi' ? 'फाइल जोड़ें' : 'Add file'}
                         >
@@ -2164,6 +2216,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                             <Button 
                               variant="ghost" 
                               size="icon"
+                              className="shrink-0"
                               title={language === 'hi' ? 'इमोजी जोड़ें' : 'Add emoji'}
                             >
                               <Smiley size={20} />
@@ -2177,13 +2230,14 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                           </PopoverContent>
                         </Popover>
                         <Input
+                          className="flex-1 min-w-0"
                           placeholder={t.typeMessage}
                           value={messageInput}
                           onChange={(e) => setMessageInput(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                           onPaste={handlePaste}
                         />
-                        <Button onClick={sendMessage} size="icon" disabled={!messageInput.trim() && pendingAttachments.length === 0}>
+                        <Button onClick={sendMessage} size="icon" className="shrink-0" disabled={!messageInput.trim() && pendingAttachments.length === 0}>
                           <PaperPlaneTilt size={20} weight="fill" />
                         </Button>
                       </div>

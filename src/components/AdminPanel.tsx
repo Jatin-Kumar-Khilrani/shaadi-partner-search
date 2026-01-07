@@ -567,6 +567,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [showAdminEmojiPicker, setShowAdminEmojiPicker] = useState(false)
   const [adminEmojiCategory, setAdminEmojiCategory] = useState<keyof typeof ADMIN_EMOJI_CATEGORIES>('smileys')
   
+  // Broadcast message attachment state
+  const [broadcastAttachments, setBroadcastAttachments] = useState<ChatAttachment[]>([])
+  const broadcastFileInputRef = useRef<HTMLInputElement>(null)
+  
   const [activeTab, setActiveTab] = useState('pending')
   const [showServiceDialog, setShowServiceDialog] = useState(false)
   const [editingService, setEditingService] = useState<WeddingService | null>(null)
@@ -1473,7 +1477,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
 
   // Broadcast message to multiple profiles
   const handleBroadcastMessage = () => {
-    if (!broadcastMessage.trim() || broadcastProfiles.length === 0) return
+    if ((!broadcastMessage.trim() && broadcastAttachments.length === 0) || broadcastProfiles.length === 0) return
     
     const newMessages: ChatMessage[] = broadcastProfiles.map(profileId => ({
       id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -1485,7 +1489,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
       createdAt: new Date().toISOString(),
       type: 'admin-to-user' as const,
       read: false,
-      status: 'sent' as const
+      status: 'sent' as const,
+      attachments: broadcastAttachments.length > 0 ? [...broadcastAttachments] : undefined
     }))
     
     setMessages((current) => [...(current || []), ...newMessages])
@@ -1493,6 +1498,45 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     setShowBroadcastDialog(false)
     setBroadcastMessage('')
     setBroadcastProfiles([])
+    setBroadcastAttachments([])
+  }
+
+  // Handle broadcast file select
+  const handleBroadcastFileSelect = (files: FileList | null) => {
+    if (!files) return
+    
+    Array.from(files).forEach(file => {
+      if (!ADMIN_ALLOWED_FILE_TYPES.includes(file.type)) {
+        toast.error(language === 'hi' ? 'केवल JPG, PNG, GIF, PDF अनुमत हैं' : 'Only JPG, PNG, GIF, PDF allowed')
+        return
+      }
+      
+      if (file.size > ADMIN_MAX_FILE_SIZE) {
+        toast.error(language === 'hi' ? 'फ़ाइल 20MB से छोटी होनी चाहिए' : 'File must be smaller than 20MB')
+        return
+      }
+      
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const isImage = file.type.startsWith('image/')
+        const attachment: ChatAttachment = {
+          id: `att-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          type: isImage ? 'image' : 'pdf',
+          name: file.name,
+          size: file.size,
+          mimeType: file.type,
+          url: e.target?.result as string,
+          thumbnailUrl: isImage ? e.target?.result as string : undefined
+        }
+        setBroadcastAttachments(prev => [...prev, attachment])
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  // Remove broadcast attachment
+  const removeBroadcastAttachment = (attachmentId: string) => {
+    setBroadcastAttachments(prev => prev.filter(a => a.id !== attachmentId))
   }
 
   // Open face verification dialog for manual review (default)
@@ -7176,26 +7220,127 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               </p>
             </div>
 
-            {/* Message Input */}
-            <div className="space-y-2">
+            {/* Message Input with Attachments and Emoji */}
+            <div className="space-y-3">
               <Label htmlFor="broadcastMsg">{language === 'hi' ? 'संदेश' : 'Message'}</Label>
-              <Textarea
-                id="broadcastMsg"
-                value={broadcastMessage}
-                onChange={(e) => setBroadcastMessage(e.target.value)}
-                placeholder={language === 'hi' ? 'अपना संदेश यहां टाइप करें...' : 'Type your message here...'}
-                rows={4}
+              
+              {/* Hidden file input */}
+              <input
+                ref={broadcastFileInputRef}
+                type="file"
+                accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
+                multiple
+                className="hidden"
+                onChange={(e) => handleBroadcastFileSelect(e.target.files)}
               />
+              
+              {/* Pending attachments preview */}
+              {broadcastAttachments.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-2 bg-muted/50 rounded-lg">
+                  {broadcastAttachments.map(attachment => (
+                    <div key={attachment.id} className="relative group">
+                      {attachment.type === 'image' ? (
+                        <div className="w-16 h-16 rounded-lg overflow-hidden border">
+                          <img 
+                            src={attachment.thumbnailUrl || attachment.url} 
+                            alt={attachment.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg border flex flex-col items-center justify-center bg-red-50">
+                          <FilePdf size={24} className="text-red-500" weight="fill" />
+                          <span className="text-[8px] text-muted-foreground truncate w-14 text-center mt-1">
+                            {attachment.name}
+                          </span>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => removeBroadcastAttachment(attachment.id)}
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X size={12} weight="bold" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Input row with attachment and emoji buttons */}
+              <div className="flex gap-2 items-start">
+                {/* Attachment button */}
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="shrink-0 mt-1"
+                  onClick={() => broadcastFileInputRef.current?.click()}
+                  title={language === 'hi' ? 'फाइल जोड़ें' : 'Add file'}
+                >
+                  <Paperclip size={20} />
+                </Button>
+                {/* Emoji picker button */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="shrink-0 mt-1"
+                      title={language === 'hi' ? 'इमोजी जोड़ें' : 'Add emoji'}
+                    >
+                      <Smiley size={20} />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-0" align="start" side="top">
+                    <div className="p-2">
+                      <div className="flex gap-1 mb-2 flex-wrap">
+                        {Object.keys(ADMIN_EMOJI_CATEGORIES).map((cat) => (
+                          <Button
+                            key={cat}
+                            variant={adminEmojiCategory === cat ? "default" : "ghost"}
+                            size="sm"
+                            className="text-xs px-2 py-1 h-7"
+                            onClick={() => setAdminEmojiCategory(cat as keyof typeof ADMIN_EMOJI_CATEGORIES)}
+                          >
+                            {ADMIN_EMOJI_CATEGORIES[cat as keyof typeof ADMIN_EMOJI_CATEGORIES][0]}
+                          </Button>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-8 gap-1 max-h-32 overflow-y-auto">
+                        {ADMIN_EMOJI_CATEGORIES[adminEmojiCategory].map((emoji, idx) => (
+                          <button
+                            key={idx}
+                            className="text-xl hover:bg-muted p-1 rounded transition-colors"
+                            onClick={() => setBroadcastMessage(prev => prev + emoji)}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <Textarea
+                  id="broadcastMsg"
+                  value={broadcastMessage}
+                  onChange={(e) => setBroadcastMessage(e.target.value)}
+                  placeholder={language === 'hi' ? 'अपना संदेश यहां टाइप करें...' : 'Type your message here...'}
+                  rows={3}
+                  className="flex-1"
+                />
+              </div>
             </div>
           </div>
           
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowBroadcastDialog(false)}>
+            <Button variant="outline" onClick={() => {
+              setShowBroadcastDialog(false)
+              setBroadcastAttachments([])
+            }}>
               {t.cancel}
             </Button>
             <Button 
               onClick={handleBroadcastMessage}
-              disabled={!broadcastMessage.trim() || broadcastProfiles.length === 0}
+              disabled={(!broadcastMessage.trim() && broadcastAttachments.length === 0) || broadcastProfiles.length === 0}
               className="bg-accent hover:bg-accent/90"
             >
               <PaperPlaneTilt size={16} className="mr-1" />
