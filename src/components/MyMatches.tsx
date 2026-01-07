@@ -1083,19 +1083,22 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     
     // Check each filter's impact
     if (usePartnerPreferences && prefs) {
-      // Age preference impact
-      if (prefs.ageMin || prefs.ageMax) {
+      // Age preference impact - use current ageRange filter if set, otherwise partner preferences
+      const effectiveAgeMin = filters.ageRange ? filters.ageRange[0] : (prefs.ageMin || 18)
+      const effectiveAgeMax = filters.ageRange ? filters.ageRange[1] : (prefs.ageMax || 60)
+      
+      if (effectiveAgeMin !== 18 || effectiveAgeMax !== 60) {
         const ageMatches = basePool.filter(p => {
-          if (prefs.ageMin && p.age < prefs.ageMin) return false
-          if (prefs.ageMax && p.age > prefs.ageMax) return false
+          if (p.age < effectiveAgeMin) return false
+          if (p.age > effectiveAgeMax) return false
           return true
         }).length
         if (ageMatches < basePool.length * 0.3) {
           issues.push({
             filter: 'age-pref',
-            label: language === 'hi' ? 'आयु प्राथमिकता' : 'Age Preference',
+            label: language === 'hi' ? 'आयु सीमा' : 'Age Range',
             matchCount: ageMatches,
-            suggestion: language === 'hi' ? `आयु सीमा ${prefs.ageMin || 18}-${prefs.ageMax || 60} बहुत सीमित है` : `Age range ${prefs.ageMin || 18}-${prefs.ageMax || 60} years is restrictive`
+            suggestion: language === 'hi' ? `आयु सीमा ${effectiveAgeMin}-${effectiveAgeMax} वर्ष बहुत सीमित है` : `Age range ${effectiveAgeMin}-${effectiveAgeMax} years is restrictive`
           })
         }
       }
@@ -1131,20 +1134,20 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           })
         }
       }
-    }
-    
-    // Check manual filter impacts
-    if (filters.ageRange && (filters.ageRange[0] !== 18 || filters.ageRange[1] !== 60)) {
-      const ageMatches = basePool.filter(p => 
-        p.age >= filters.ageRange![0] && p.age <= filters.ageRange![1]
-      ).length
-      if (ageMatches === 0) {
-        issues.push({
-          filter: 'age-filter',
-          label: language === 'hi' ? 'आयु फ़िल्टर' : 'Age Filter',
-          matchCount: ageMatches,
-          suggestion: language === 'hi' ? `${filters.ageRange[0]}-${filters.ageRange[1]} आयु में कोई प्रोफाइल नहीं` : `No profiles in age range ${filters.ageRange[0]}-${filters.ageRange[1]} years`
-        })
+    } else {
+      // When smart matching is OFF, check manual age filter
+      if (filters.ageRange && (filters.ageRange[0] !== 18 || filters.ageRange[1] !== 60)) {
+        const ageMatches = basePool.filter(p => 
+          p.age >= filters.ageRange![0] && p.age <= filters.ageRange![1]
+        ).length
+        if (ageMatches === 0 || ageMatches < basePool.length * 0.3) {
+          issues.push({
+            filter: 'age-filter',
+            label: language === 'hi' ? 'आयु सीमा' : 'Age Range',
+            matchCount: ageMatches,
+            suggestion: language === 'hi' ? `${filters.ageRange[0]}-${filters.ageRange[1]} आयु में कोई/कम प्रोफाइल` : `Age range ${filters.ageRange[0]}-${filters.ageRange[1]} years is restrictive`
+          })
+        }
       }
     }
     
