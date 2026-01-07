@@ -496,8 +496,18 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
   
   const sentInterests = interests?.filter(i => i.fromProfileId === currentUserProfile?.profileId) || []
   const receivedInterests = interests?.filter(i => i.toProfileId === currentUserProfile?.profileId) || []
+  
+  // Helper to check if a profile is deleted
+  const isProfileDeleted = (profileId: string) => {
+    const profile = profiles.find(p => p.profileId === profileId)
+    return profile?.isDeleted === true
+  }
+  
   // Filter for pending received interests (for badge count)
+  // Exclude interests from deleted profiles - they shouldn't count as actionable
   const pendingReceivedInterests = receivedInterests.filter(i => i.status === 'pending')
+  const actionablePendingInterests = pendingReceivedInterests.filter(i => !isProfileDeleted(i.fromProfileId))
+  
   // Accepted interests split: "You Accepted" (received & accepted by me) vs "They Accepted" (sent & accepted by them)
   // Include 'revoked' status to preserve history - these were once accepted but later revoked
   const youAcceptedInterests = receivedInterests.filter(i => i.status === 'accepted' || i.status === 'revoked') // I received, I accepted (may be revoked later)
@@ -1356,8 +1366,8 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
           <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 h-auto gap-1 p-1">
             <TabsTrigger value="received-interests" className="relative">
               {t.receivedInterests}
-              {pendingReceivedInterests.length > 0 && (
-                <Badge className="ml-1 h-5 px-1.5" variant="destructive">{pendingReceivedInterests.length}</Badge>
+              {actionablePendingInterests.length > 0 && (
+                <Badge className="ml-1 h-5 px-1.5" variant="destructive">{actionablePendingInterests.length}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="accepted-interests">{t.acceptedInterests}</TabsTrigger>
