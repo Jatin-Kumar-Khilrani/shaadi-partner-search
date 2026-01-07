@@ -65,10 +65,23 @@ type SortOption = 'newest' | 'age-asc' | 'age-desc' | 'name-asc' | 'compatibilit
 
 export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, membershipPlan, profileStatus }: MyMatchesProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [filters, setFilters] = useState<ExtendedFilters>({})
+  const [filters, setFiltersInternal] = useState<ExtendedFilters>({})
   const [showFilters, setShowFilters] = useState(false)
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const filterScrollRef = useRef<HTMLDivElement>(null)
+  
+  // Wrapper for setFilters that preserves scroll position
+  const setFilters = useCallback((newFilters: ExtendedFilters | ((prev: ExtendedFilters) => ExtendedFilters)) => {
+    const scrollTop = filterScrollRef.current?.scrollTop ?? 0
+    setFiltersInternal(newFilters)
+    // Restore scroll position after React re-renders
+    requestAnimationFrame(() => {
+      if (filterScrollRef.current) {
+        filterScrollRef.current.scrollTop = scrollTop
+      }
+    })
+  }, [])
+  
   const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests] = useKV<ContactRequest[]>('contactRequests', [])
