@@ -461,7 +461,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     // Don't count 'any' as active filter
     if (filters.educationLevels && filters.educationLevels.length > 0 && !(filters.educationLevels.length === 1 && filters.educationLevels[0] === 'any')) count++
     if (filters.employmentStatuses && filters.employmentStatuses.length > 0 && !(filters.employmentStatuses.length === 1 && filters.employmentStatuses[0] === 'any')) count++
-    if (filters.occupations && filters.occupations.length > 0) count++
+    if (filters.occupations && filters.occupations.length > 0 && !(filters.occupations.length === 1 && filters.occupations[0] === 'any')) count++
     if (filters.countries && filters.countries.length > 0) count++
     if (filters.states && filters.states.length > 0) count++
     if (filters.cities && filters.cities.length > 0) count++
@@ -954,7 +954,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       // Occupation/Profession filter - now multi-select
       // Matches against profile.position (free-text profession like "Software Engineer", "Doctor")
       // NOT profile.occupation which stores employment status like "employed", "self-employed"
-      if (filters.occupations && filters.occupations.length > 0) {
+      // Skip filter if 'any' is selected (means no preference)
+      if (filters.occupations && filters.occupations.length > 0 && !(filters.occupations.length === 1 && filters.occupations[0] === 'any')) {
         const profilePosition = profile.position?.toLowerCase() || ''
         if (!filters.occupations.some(occ => profilePosition.toLowerCase().includes(occ.toLowerCase()))) return false
       }
@@ -1300,9 +1301,9 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               )}
             </div>
 
-            {filters.countries && filters.countries.length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">{t.state}</Label>
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">{t.state}</Label>
+              {filters.countries && filters.countries.length > 0 ? (
                 <MultiSelect
                   options={stateOptionsWithCounts.length > 0 ? stateOptionsWithCounts : getStateOptionsForCountries(filters.countries)}
                   value={filters.states || []}
@@ -1311,12 +1312,16 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                   searchPlaceholder={language === 'hi' ? 'राज्य खोजें...' : 'Search state...'}
                   emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                 />
-              </div>
-            )}
+              ) : (
+                <div className="h-10 px-3 py-2 text-sm text-muted-foreground bg-muted/50 rounded-md border border-dashed flex items-center">
+                  {language === 'hi' ? 'पहले देश चुनें' : 'Select country first'}
+                </div>
+              )}
+            </div>
 
-            {filters.states && filters.states.length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">{t.city}</Label>
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">{t.city}</Label>
+              {filters.states && filters.states.length > 0 ? (
                 <MultiSelect
                   options={cityOptionsWithCounts.length > 0 ? cityOptionsWithCounts : getCityOptionsForStates(filters.states)}
                   value={filters.cities || []}
@@ -1325,8 +1330,12 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                   searchPlaceholder={language === 'hi' ? 'शहर खोजें...' : 'Search city...'}
                   emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                 />
-              </div>
-            )}
+              ) : (
+                <div className="h-10 px-3 py-2 text-sm text-muted-foreground bg-muted/50 rounded-md border border-dashed flex items-center">
+                  {language === 'hi' ? 'पहले राज्य चुनें' : 'Select state first'}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
