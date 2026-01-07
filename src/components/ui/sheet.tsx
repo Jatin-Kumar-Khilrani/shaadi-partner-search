@@ -4,8 +4,8 @@ import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { cn } from "@/lib/utils"
 
-function Sheet({ ...props }: ComponentProps<typeof SheetPrimitive.Root>) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />
+function Sheet({ modal = true, ...props }: ComponentProps<typeof SheetPrimitive.Root> & { modal?: boolean }) {
+  return <SheetPrimitive.Root data-slot="sheet" modal={modal} {...props} />
 }
 
 function SheetTrigger({
@@ -28,13 +28,15 @@ function SheetPortal({
 
 function SheetOverlay({
   className,
+  allowInteraction = false,
   ...props
-}: ComponentProps<typeof SheetPrimitive.Overlay>) {
+}: ComponentProps<typeof SheetPrimitive.Overlay> & { allowInteraction?: boolean }) {
   return (
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
       className={cn(
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
+        allowInteraction && "pointer-events-none bg-black/20",
         className
       )}
       {...props}
@@ -46,13 +48,15 @@ function SheetContent({
   className,
   children,
   side = "right",
+  allowBackgroundInteraction = false,
   ...props
 }: ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
+  allowBackgroundInteraction?: boolean
 }) {
   return (
     <SheetPortal>
-      <SheetOverlay />
+      <SheetOverlay allowInteraction={allowBackgroundInteraction} />
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(

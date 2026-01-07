@@ -1908,7 +1908,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">{t.title}</h1>
-          <Sheet open={showFilters} onOpenChange={setShowFilters}>
+          <Sheet open={showFilters} onOpenChange={setShowFilters} modal={false}>
             <SheetTrigger asChild>
               <Button variant="outline" className="gap-2 relative">
                 <Funnel size={20} />
@@ -1920,7 +1920,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 )}
               </Button>
             </SheetTrigger>
-            <SheetContent className="w-[350px] sm:w-[400px]">
+            <SheetContent className="w-[350px] sm:w-[400px]" allowBackgroundInteraction>
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-2">
                   <Funnel size={20} />
