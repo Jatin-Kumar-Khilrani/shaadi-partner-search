@@ -635,6 +635,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
   // Dynamic filter options - only show values that exist in matchable profiles
   const dynamicFilterOptions = useMemo(() => {
     if (!profiles || !currentUserProfile) return {
+      totalCount: 0,
       religions: RELIGION_OPTIONS,
       motherTongues: MOTHER_TONGUE_OPTIONS,
       dietPreferences: DIET_PREFERENCE_OPTIONS,
@@ -716,7 +717,10 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       })
     }
     
+    const totalCount = matchableProfiles.length
+    
     return {
+      totalCount,
       religions: filterWithCounts(RELIGION_OPTIONS, religionCount, true),
       motherTongues: filterWithCounts(MOTHER_TONGUE_OPTIONS, motherTongueCount, true),
       dietPreferences: filterWithCounts(DIET_PREFERENCE_OPTIONS, dietCount),
@@ -727,6 +731,11 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       smokingHabits: filterWithCounts(SMOKING_HABIT_OPTIONS, smokingCount)
     }
   }, [profiles, currentUserProfile])
+
+  // "Any" option label with total count
+  const anyOptionWithCount = language === 'hi' 
+    ? `\u0915\u094b\u0908 \u092d\u0940 / \u0938\u092d\u0940 (${dynamicFilterOptions.totalCount})` 
+    : `Any / All (${dynamicFilterOptions.totalCount})`
 
   const t = {
     title: language === 'hi' ? 'मेरे मैच' : 'My Matches',
@@ -1465,7 +1474,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 searchPlaceholder={language === 'hi' ? 'शिक्षा खोजें...' : 'Search education...'}
                 emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                 showAnyOption
-                anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+                anyOptionLabel={anyOptionWithCount}
               />
             </div>
 
@@ -1479,7 +1488,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 searchPlaceholder={language === 'hi' ? 'खोजें...' : 'Search...'}
                 emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                 showAnyOption
-                anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+                anyOptionLabel={anyOptionWithCount}
               />
             </div>
 
@@ -1493,7 +1502,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 searchPlaceholder={language === 'hi' ? 'व्यवसाय खोजें...' : 'Search occupation...'}
                 emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                 showAnyOption
-                anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+                anyOptionLabel={anyOptionWithCount}
               />
             </div>
           </div>
@@ -1519,7 +1528,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 searchPlaceholder={language === 'hi' ? 'देश खोजें...' : 'Search country...'}
                 emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                 showAnyOption
-                anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+                anyOptionLabel={anyOptionWithCount}
               />
               {locationOptionsWithCounts.countries.length === 0 && (
                 <p className="text-xs text-muted-foreground">{t.noProfilesInLocation}</p>
@@ -1537,7 +1546,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                   searchPlaceholder={language === 'hi' ? 'राज्य खोजें...' : 'Search state...'}
                   emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                   showAnyOption
-                  anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+                  anyOptionLabel={anyOptionWithCount}
                 />
               ) : (
                 <div className="h-10 px-3 py-2 text-sm text-muted-foreground bg-muted/50 rounded-md border border-dashed flex items-center">
@@ -1557,7 +1566,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                   searchPlaceholder={language === 'hi' ? 'शहर खोजें...' : 'Search city...'}
                   emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                   showAnyOption
-                  anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+                  anyOptionLabel={anyOptionWithCount}
                 />
               ) : (
                 <div className="h-10 px-3 py-2 text-sm text-muted-foreground bg-muted/50 rounded-md border border-dashed flex items-center">
@@ -1588,7 +1597,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 searchPlaceholder={language === 'hi' ? 'धर्म खोजें...' : 'Search religion...'}
                 emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                 showAnyOption
-                anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+                anyOptionLabel={anyOptionWithCount}
               />
             </div>
 
@@ -1611,7 +1620,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 searchPlaceholder={language === 'hi' ? 'मातृभाषा खोजें...' : 'Search mother tongue...'}
                 emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                 showAnyOption
-                anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+                anyOptionLabel={anyOptionWithCount}
               />
             </div>
 
@@ -1661,7 +1670,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 searchPlaceholder={language === 'hi' ? 'आहार खोजें...' : 'Search diet...'}
                 emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
                 showAnyOption
-                anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
+                anyOptionLabel={anyOptionWithCount}
               />
             </div>
 
