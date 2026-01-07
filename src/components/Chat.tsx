@@ -75,6 +75,10 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   const [reportReason, setReportReason] = useState<ReportReason | ''>('')
   const [reportDescription, setReportDescription] = useState('')
   const [profileToReport, setProfileToReport] = useState<{ profileId: string, name: string } | null>(null)
+  
+  // Prevent race condition on rapid message sends (double-click protection)
+  const isSendingRef = useRef(false)
+  const pendingChatSlotsRef = useRef<Set<string>>(new Set())
 
   // Force refresh messages from Azure on mount
   useEffect(() => {
@@ -495,14 +499,33 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       (a, b) => new Date(b.updatedAt || b.createdAt || '').getTime() - new Date(a.updatedAt || a.createdAt || '').getTime()
     )
 
-    // Filter out blocked profiles from conversations (for non-admin users)
+    // Filter out blocked and deleted profiles from conversations (for non-admin users)
     const filteredConversations = isAdmin ? sortedConversations : sortedConversations.filter(conv => {
       // Don't filter admin chats or broadcast
       if (conv.id === 'admin-broadcast' || conv.id.startsWith('admin-')) return true
       
-      // Check if the other participant is blocked
+      // Check if the other participant is blocked or deleted
       const otherProfileId = conv.participants?.find(id => id !== currentUserProfile?.profileId)
       if (!otherProfileId) return true
+      
+      // Check if the other profile exists (not deleted)
+      const otherProfile = profiles.find(p => p.profileId === otherProfileId)
+      if (!otherProfile) {
+        // Profile was deleted - don't show conversation unless there are recent messages
+        const recentThresholdDays = 30
+        const conversationMessages = messages?.filter(m => {
+          // Derive conversation ID from message participants
+          const msgConvId = [m.fromProfileId, m.toProfileId].sort().join('-')
+          return msgConvId === conv.id && m.fromProfileId !== currentUserProfile?.profileId
+        }) || []
+        const hasRecentMessages = conversationMessages.some(m => {
+          const msgDate = new Date(m.createdAt || '')
+          const daysSinceMsg = (Date.now() - msgDate.getTime()) / (1000 * 60 * 60 * 24)
+          return daysSinceMsg < recentThresholdDays
+        })
+        // Only hide old conversations with deleted profiles
+        if (!hasRecentMessages) return false
+      }
       
       // Check both directions of blocking
       const isBlocked = blockedProfiles?.some(
@@ -514,7 +537,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     })
 
     setConversations(filteredConversations)
-  }, [messages, currentUserProfile, isAdmin, interests, blockedProfiles])
+  }, [messages, currentUserProfile, isAdmin, interests, blockedProfiles, profiles])
 
   // Mark messages as delivered/read when conversation is opened
   useEffect(() => {
@@ -668,6 +691,16 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   const sendMessage = () => {
     if (!messageInput.trim() || !selectedConversation) return
     if (!isAdmin && !currentUserProfile) return
+    
+    // Prevent double-click race condition
+    if (isSendingRef.current) {
+      logger.debug('[Chat] Send blocked - already sending')
+      return
+    }
+    isSendingRef.current = true
+    
+    // Reset sending flag after a short delay to allow next message
+    setTimeout(() => { isSendingRef.current = false }, 300)
 
     // Check if this is admin chat (always allowed for all users - free feature)
     const isAdminChat = selectedConversation.startsWith('admin-')
@@ -707,18 +740,24 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
         const currentProfileProfileId = currentUserProfile.profileId
         
         // Use actual chatted profiles from messages (most accurate) or stored values
+        // Also include any pending slots being consumed to prevent race condition
         const chattedProfiles = chatRequestsUsed
+        const pendingSlots = pendingChatSlotsRef.current
+        const effectiveChattedCount = chattedProfiles.length + Array.from(pendingSlots).filter(id => !chattedProfiles.includes(id)).length
         
-        // If already chatted with this profile, allow without further checks
-        if (!chattedProfiles.includes(otherProfileId)) {
-          // Check if limit reached using actual count
-          if (chattedProfiles.length >= chatLimit) {
+        // If already chatted with this profile (or pending), allow without further checks
+        if (!chattedProfiles.includes(otherProfileId) && !pendingSlots.has(otherProfileId)) {
+          // Check if limit reached using effective count (including pending)
+          if (effectiveChattedCount >= chatLimit) {
             toast.error(t.chatLimitReached, {
               description: t.upgradeForMoreChats,
               duration: 6000
             })
             return
           }
+          
+          // Mark this slot as pending to prevent race condition
+          pendingSlots.add(otherProfileId)
 
           // Add to chatted profiles (use new field)
           const updatedChattedProfiles = [...chattedProfiles, otherProfileId]

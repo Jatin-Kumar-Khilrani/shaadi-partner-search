@@ -159,40 +159,136 @@ export function isAzureAvailable(): boolean {
 }
 
 /**
+ * Retry configuration for Azure operations
+ */
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  baseDelayMs: 500,
+  maxDelayMs: 5000,
+}
+
+/**
+ * Sleep for a given number of milliseconds
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+/**
+ * Execute an operation with exponential backoff retry
+ */
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  operationName: string,
+  shouldRetry: (error: unknown) => boolean = () => true
+): Promise<T> {
+  let lastError: unknown
+  
+  for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+    try {
+      return await operation()
+    } catch (error) {
+      lastError = error
+      
+      // Don't retry if it's a client error (4xx) or if shouldRetry returns false
+      if (!shouldRetry(error)) {
+        throw error
+      }
+      
+      if (attempt < RETRY_CONFIG.maxRetries) {
+        // Calculate exponential backoff with jitter
+        const delay = Math.min(
+          RETRY_CONFIG.baseDelayMs * Math.pow(2, attempt) + Math.random() * 100,
+          RETRY_CONFIG.maxDelayMs
+        )
+        logger.warn(`${operationName} failed (attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries + 1}), retrying in ${Math.round(delay)}ms...`, error)
+        await sleep(delay)
+      }
+    }
+  }
+  
+  // All retries exhausted
+  throw lastError
+}
+
+/**
+ * Check if an error is retryable (server errors, network errors, timeouts)
+ */
+function isRetryableError(error: unknown): boolean {
+  // Network errors
+  if (error instanceof TypeError && error.message.includes('fetch')) {
+    return true
+  }
+  
+  // HTTP errors - only retry server errors (5xx)
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase()
+    if (message.includes('500') || message.includes('502') || message.includes('503') || message.includes('504')) {
+      return true
+    }
+    if (message.includes('timeout') || message.includes('network') || message.includes('econnreset')) {
+      return true
+    }
+    // Don't retry client errors (4xx)
+    if (message.includes('400') || message.includes('401') || message.includes('403')) {
+      return false
+    }
+  }
+  
+  return true // Default to retrying unknown errors
+}
+
+/**
  * Storage operations using API backend or direct Cosmos DB
  */
 export const azureStorage = {
   async get<T>(key: string): Promise<T | null> {
     if (!isInitialized) await initializeAzureServices()
     
-    // API mode
+    // API mode with retry
     if (useApiMode && apiBaseUrl) {
       try {
-        const response = await fetch(`${apiBaseUrl}/api/kv/${encodeURIComponent(key)}`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        })
-        
-        if (response.status === 404) return null
-        if (!response.ok) throw new Error(`API error: ${response.status}`)
-        
-        const data = await response.json()
-        return data as T
+        return await withRetry(
+          async () => {
+            const response = await fetch(`${apiBaseUrl}/api/kv/${encodeURIComponent(key)}`, {
+              method: 'GET',
+              headers: { 'Accept': 'application/json' }
+            })
+            
+            if (response.status === 404) return null
+            if (!response.ok) throw new Error(`API error: ${response.status}`)
+            
+            const data = await response.json()
+            return data as T
+          },
+          `KV get "${key}"`,
+          isRetryableError
+        )
       } catch (error) {
-        logger.error(`API get error for key "${key}":`, error)
+        logger.error(`API get error for key "${key}" after retries:`, error)
         return null
       }
     }
     
-    // Direct Cosmos DB mode
+    // Direct Cosmos DB mode with retry
     const container = (globalThis as unknown as { _cosmosContainer?: import('@azure/cosmos').Container })._cosmosContainer
     if (container) {
       try {
-        const { resource } = await container.item(key, key).read<T & { id: string }>()
-        return resource ? (resource as T) : null
+        return await withRetry(
+          async () => {
+            const { resource } = await container.item(key, key).read<T & { id: string }>()
+            return resource ? (resource as T) : null
+          },
+          `Cosmos get "${key}"`,
+          (error) => {
+            // Don't retry 404s
+            if ((error as { code?: number }).code === 404) return false
+            return isRetryableError(error)
+          }
+        )
       } catch (error: unknown) {
         if ((error as { code?: number }).code === 404) return null
-        logger.error(`Cosmos get error for key "${key}":`, error)
+        logger.error(`Cosmos get error for key "${key}" after retries:`, error)
         return null
       }
     }
@@ -203,34 +299,46 @@ export const azureStorage = {
   async set<T>(key: string, value: T): Promise<boolean> {
     if (!isInitialized) await initializeAzureServices()
     
-    // API mode
+    // API mode with retry
     if (useApiMode && apiBaseUrl) {
       try {
-        const response = await fetch(`${apiBaseUrl}/api/kv/${encodeURIComponent(key)}`, {
-          method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+        return await withRetry(
+          async () => {
+            const response = await fetch(`${apiBaseUrl}/api/kv/${encodeURIComponent(key)}`, {
+              method: 'PUT',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify(value)
+            })
+            
+            if (!response.ok) throw new Error(`API error: ${response.status}`)
+            return true
           },
-          body: JSON.stringify(value)
-        })
-        
-        if (!response.ok) throw new Error(`API error: ${response.status}`)
-        return true
+          `KV set "${key}"`,
+          isRetryableError
+        )
       } catch (error) {
-        logger.error(`API set error for key "${key}":`, error)
+        logger.error(`API set error for key "${key}" after retries:`, error)
         return false
       }
     }
     
-    // Direct Cosmos DB mode
+    // Direct Cosmos DB mode with retry
     const container = (globalThis as unknown as { _cosmosContainer?: import('@azure/cosmos').Container })._cosmosContainer
     if (container) {
       try {
-        await container.items.upsert({ id: key, key: key, ...value as object })
-        return true
+        return await withRetry(
+          async () => {
+            await container.items.upsert({ id: key, key: key, ...value as object })
+            return true
+          },
+          `Cosmos set "${key}"`,
+          isRetryableError
+        )
       } catch (error) {
-        logger.error(`Cosmos set error for key "${key}":`, error)
+        logger.error(`Cosmos set error for key "${key}" after retries:`, error)
         return false
       }
     }
@@ -241,32 +349,48 @@ export const azureStorage = {
   async delete(key: string): Promise<boolean> {
     if (!isInitialized) await initializeAzureServices()
     
-    // API mode
+    // API mode with retry
     if (useApiMode && apiBaseUrl) {
       try {
-        const response = await fetch(`${apiBaseUrl}/api/kv/${encodeURIComponent(key)}`, {
-          method: 'DELETE',
-          headers: { 'Accept': 'application/json' }
-        })
-        
-        if (response.status === 404) return true // Already deleted
-        if (!response.ok) throw new Error(`API error: ${response.status}`)
-        return true
+        return await withRetry(
+          async () => {
+            const response = await fetch(`${apiBaseUrl}/api/kv/${encodeURIComponent(key)}`, {
+              method: 'DELETE',
+              headers: { 'Accept': 'application/json' }
+            })
+            
+            if (response.status === 404) return true // Already deleted
+            if (!response.ok) throw new Error(`API error: ${response.status}`)
+            return true
+          },
+          `KV delete "${key}"`,
+          isRetryableError
+        )
       } catch (error) {
-        logger.error(`API delete error for key "${key}":`, error)
+        logger.error(`API delete error for key "${key}" after retries:`, error)
         return false
       }
     }
     
-    // Direct Cosmos DB mode
+    // Direct Cosmos DB mode with retry
     const container = (globalThis as unknown as { _cosmosContainer?: import('@azure/cosmos').Container })._cosmosContainer
     if (container) {
       try {
-        await container.item(key, key).delete()
-        return true
+        return await withRetry(
+          async () => {
+            await container.item(key, key).delete()
+            return true
+          },
+          `Cosmos delete "${key}"`,
+          (error) => {
+            // Don't retry 404s (item already deleted)
+            if ((error as { code?: number }).code === 404) return false
+            return isRetryableError(error)
+          }
+        )
       } catch (error: unknown) {
         if ((error as { code?: number }).code === 404) return true
-        logger.error(`Cosmos delete error for key "${key}":`, error)
+        logger.error(`Cosmos delete error for key "${key}" after retries:`, error)
         return false
       }
     }

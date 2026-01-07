@@ -337,6 +337,46 @@ export function calculateBasicMatchScore(
  * This is used in matrimonial apps to enforce the contact request workflow
  */
 
+// Unicode digit ranges that could be used to bypass phone detection
+// Maps Unicode digit blocks to their ASCII equivalents
+const UNICODE_DIGIT_RANGES: Array<{ start: number; end: number }> = [
+  { start: 0x0660, end: 0x0669 }, // Arabic-Indic digits (٠١٢٣٤٥٦٧٨٩)
+  { start: 0x06F0, end: 0x06F9 }, // Extended Arabic-Indic (Persian) digits (۰۱۲۳۴۵۶۷۸۹)
+  { start: 0x0966, end: 0x096F }, // Devanagari digits (०१२३४५६७८९)
+  { start: 0x09E6, end: 0x09EF }, // Bengali digits (০১২৩৪৫৬৭৮৯)
+  { start: 0x0A66, end: 0x0A6F }, // Gurmukhi digits (੦੧੨੩੪੫੬੭੮੯)
+  { start: 0x0AE6, end: 0x0AEF }, // Gujarati digits (૦૧૨૩૪૫૬૭૮૯)
+  { start: 0x0B66, end: 0x0B6F }, // Oriya digits (୦୧୨୩୪୫୬୭୮୯)
+  { start: 0x0BE6, end: 0x0BEF }, // Tamil digits (௦௧௨௩௪௫௬௭௮௯)
+  { start: 0x0C66, end: 0x0C6F }, // Telugu digits (౦౧౨౩౪౫౬౭౮౯)
+  { start: 0x0CE6, end: 0x0CEF }, // Kannada digits (೦೧೨೩೪೫೬೭೮೯)
+  { start: 0x0D66, end: 0x0D6F }, // Malayalam digits (൦൧൨൩൪൫൬൭൮൯)
+  { start: 0xFF10, end: 0xFF19 }, // Fullwidth digits (０１２３４５６７８９)
+]
+
+/**
+ * Normalize Unicode digits to ASCII digits
+ * Prevents bypass of phone detection using lookalike characters
+ * e.g., "۹۸۲۸۵۸۵۳۰۰" -> "9828585300"
+ */
+function normalizeUnicodeDigits(text: string): string {
+  let result = ''
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i)
+    let normalized = text[i]
+    
+    for (const range of UNICODE_DIGIT_RANGES) {
+      if (code >= range.start && code <= range.end) {
+        // Convert to ASCII digit (0-9)
+        normalized = String.fromCharCode(0x30 + (code - range.start))
+        break
+      }
+    }
+    result += normalized
+  }
+  return result
+}
+
 // Number words mapping (English)
 const ENGLISH_NUMBER_WORDS: Record<string, string> = {
   'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
@@ -402,10 +442,13 @@ export function containsPhoneNumber(message: string): {
   let detected = false
   let reason = ''
 
+  // Normalize Unicode digits to ASCII to prevent bypass with lookalike characters
+  const normalizedMessage = normalizeUnicodeDigits(message)
+
   // 1. Direct 10+ digit sequences (with or without separators)
   // Matches: 9828585300, 982-8585-300, 982 8585 300, 982.8585.300, +91-9828585300
   const phoneWithSeparators = /(?:\+?\d{1,3}[-.\s]?)?\d{3,5}[-.\s]?\d{3,5}[-.\s]?\d{2,5}/g
-  const separatorMatches = message.match(phoneWithSeparators)
+  const separatorMatches = normalizedMessage.match(phoneWithSeparators)
   if (separatorMatches) {
     for (const match of separatorMatches) {
       const digits = extractDigitsOnly(match)
@@ -424,7 +467,7 @@ export function containsPhoneNumber(message: string): {
 
   // 2. Spaced out digits: 9 8 2 8 5 8 5 3 0 0
   const spacedDigits = /(?:\d\s+){9,}\d/g
-  const spacedMatches = message.match(spacedDigits)
+  const spacedMatches = normalizedMessage.match(spacedDigits)
   if (spacedMatches) {
     for (const match of spacedMatches) {
       const digits = extractDigitsOnly(match)
@@ -438,7 +481,7 @@ export function containsPhoneNumber(message: string): {
 
   // 3. Number words (English/Hindi): "nine eight two eight five eight five three zero zero"
   // Convert words to digits, remove spaces, then check for sequences
-  const convertedText = convertNumberWordsToDigits(message)
+  const convertedText = convertNumberWordsToDigits(normalizedMessage)
   const convertedNoSpaces = convertedText.replace(/\s+/g, '')
   const convertedDigits = extractDigitsOnly(convertedNoSpaces)
   
@@ -458,7 +501,7 @@ export function containsPhoneNumber(message: string): {
 
   // 4. Mixed patterns: "98two8585300" or "9 8 two 8 5 8 5 3 0 0"
   // First convert words to digits, then extract all digits
-  const mixedConverted = convertNumberWordsToDigits(message.replace(/\s+/g, ''))
+  const mixedConverted = convertNumberWordsToDigits(normalizedMessage.replace(/\s+/g, ''))
   const mixedDigits = extractDigitsOnly(mixedConverted)
   if (mixedDigits.length >= 10 && !detected) {
     // Check for a 10-digit sequence starting with 6-9
@@ -477,7 +520,7 @@ export function containsPhoneNumber(message: string): {
 
   // 5. Partially obfuscated: "call me at 98XXXXXXXX" or "whatsapp 98*****300"
   const obfuscatedPattern = /(?:\d{2,}[xX*]+\d{2,})|(?:\d+[xX*]{3,}\d+)/gi
-  const obfuscatedMatches = message.match(obfuscatedPattern)
+  const obfuscatedMatches = normalizedMessage.match(obfuscatedPattern)
   if (obfuscatedMatches) {
     patterns.push(...obfuscatedMatches)
     detected = true
@@ -486,7 +529,7 @@ export function containsPhoneNumber(message: string): {
 
   // 6. Check for keywords + numbers combo
   const phoneKeywords = /(?:call|phone|mobile|number|whatsapp|contact|reach|msg|message|dial)\s*(?:me\s*)?(?:at|on|@)?\s*:?\s*[\d\s\-.()]{8,}/gi
-  const keywordMatches = message.match(phoneKeywords)
+  const keywordMatches = normalizedMessage.match(phoneKeywords)
   if (keywordMatches) {
     for (const match of keywordMatches) {
       const digits = extractDigitsOnly(match)
@@ -504,9 +547,23 @@ export function containsPhoneNumber(message: string): {
 /**
  * Mask phone numbers in a message
  * Replaces detected phone numbers with asterisks
+ * Also handles Unicode digit lookalikes
  */
 export function maskPhoneNumbers(message: string): string {
+  // First, check if Unicode digits are present and normalize for detection
+  const normalizedMessage = normalizeUnicodeDigits(message)
+  
+  // If the message contains Unicode digits that form a phone number, mask them
+  // by replacing any sequence of Unicode digits with asterisks
   let masked = message
+  
+  // Check if normalized version contains phone numbers that original doesn't
+  // This indicates Unicode digit bypass attempt
+  const unicodeDigitPattern = /[\u0660-\u0669\u06F0-\u06F9\u0966-\u096F\u09E6-\u09EF\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0BE6-\u0BEF\u0C66-\u0C6F\u0CE6-\u0CEF\u0D66-\u0D6F\uFF10-\uFF19]+/g
+  masked = masked.replace(unicodeDigitPattern, (match) => {
+    // Mask any sequence of Unicode digits
+    return '*'.repeat(match.length)
+  })
 
   // 1. Mask direct phone patterns with separators
   masked = masked.replace(

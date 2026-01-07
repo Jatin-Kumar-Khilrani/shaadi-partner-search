@@ -68,6 +68,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
   const [filters, setFilters] = useState<ExtendedFilters>({})
   const [showFilters, setShowFilters] = useState(false)
   const [sortBy, setSortBy] = useState<SortOption>('newest')
+  const filterScrollRef = useRef<HTMLDivElement>(null)
   const [blockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests] = useKV<ContactRequest[]>('contactRequests', [])
@@ -530,10 +531,11 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
   const locationOptionsWithCounts = useMemo(() => {
     if (!profiles || !currentUserProfile) return { countries: [], states: [], cities: [] }
     
-    // Get opposite gender profiles only
+    // Get opposite gender profiles only (excluding deleted profiles)
     const matchableProfiles = profiles.filter(p => 
       p.id !== currentUserProfile.id &&
       p.status === 'verified' &&
+      !p.isDeleted &&
       ((currentUserProfile.gender === 'male' && p.gender === 'female') ||
        (currentUserProfile.gender === 'female' && p.gender === 'male'))
     )
@@ -747,6 +749,9 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       
       if (profile.status !== 'verified') return false
       
+      // Skip deleted profiles - they should not appear in matches
+      if (profile.isDeleted) return false
+      
       // Check if blocked (either direction)
       const isBlocked = blockedProfiles?.some(
         b => ((b.blockerProfileId === currentUserProfile.profileId && b.blockedProfileId === profile.profileId) ||
@@ -829,9 +834,10 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
         }
         
         // Occupation/Profession filter
+        // Matches against profile.position (free-text profession like "Software Engineer", "Doctor")
         if (prefs.occupation && prefs.occupation.length > 0) {
-          const profileOccupation = profile.occupation?.toLowerCase() || ''
-          if (!prefs.occupation.some(occ => profileOccupation.toLowerCase() === occ.toLowerCase())) return false
+          const profilePosition = profile.position?.toLowerCase() || ''
+          if (!prefs.occupation.some(occ => profilePosition.toLowerCase().includes(occ.toLowerCase()))) return false
         }
         
         // Living country filter
@@ -932,10 +938,12 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
         if (!filters.employmentStatuses.some(emp => profileOccupation.includes(emp.toLowerCase()))) return false
       }
       
-      // Occupation filter - now multi-select
+      // Occupation/Profession filter - now multi-select
+      // Matches against profile.position (free-text profession like "Software Engineer", "Doctor")
+      // NOT profile.occupation which stores employment status like "employed", "self-employed"
       if (filters.occupations && filters.occupations.length > 0) {
-        const profileOccupation = profile.occupation?.toLowerCase() || ''
-        if (!filters.occupations.some(occ => profileOccupation.toLowerCase() === occ.toLowerCase())) return false
+        const profilePosition = profile.position?.toLowerCase() || ''
+        if (!filters.occupations.some(occ => profilePosition.toLowerCase().includes(occ.toLowerCase()))) return false
       }
       
       // Country filter - now multi-select
@@ -1142,7 +1150,10 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
      currentUserProfile.partnerPreferences.dietPreference?.length)
 
   const FilterPanel = () => (
-    <ScrollArea className="h-[calc(100vh-180px)]">
+    <div 
+      ref={filterScrollRef} 
+      className="h-[calc(100vh-180px)] overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent"
+    >
       <div className="space-y-5 pr-4 pb-4">
         {/* Smart Matching Toggle */}
         <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 shadow-sm">
@@ -1244,6 +1255,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 placeholder={t.any}
                 searchPlaceholder={language === 'hi' ? 'व्यवसाय खोजें...' : 'Search occupation...'}
                 emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
+                showAnyOption
+                anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
               />
             </div>
           </div>
@@ -1741,7 +1754,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           </div>
         </div>
       </div>
-    </ScrollArea>
+    </div>
   )
 
   return (

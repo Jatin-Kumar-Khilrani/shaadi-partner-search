@@ -270,7 +270,6 @@ export const MARITAL_STATUS_OPTIONS: MultiSelectOption[] = [
   { value: "never-married", label: "Never Married" },
   { value: "divorced", label: "Divorced" },
   { value: "widowed", label: "Widowed" },
-  { value: "awaiting-divorce", label: "Awaiting Divorce" },
 ]
 
 export const EDUCATION_OPTIONS: MultiSelectOption[] = [
@@ -284,14 +283,26 @@ export const EDUCATION_OPTIONS: MultiSelectOption[] = [
   { value: "bsc", label: "B.Sc" },
   { value: "bcom", label: "B.Com" },
   { value: "ba", label: "B.A." },
+  { value: "llb", label: "LLB" },
   { value: "post-graduate", label: "Post Graduate" },
+  { value: "mtech-me", label: "M.Tech/M.E." },
   { value: "mba", label: "MBA" },
   { value: "mca", label: "MCA" },
-  { value: "mtech-me", label: "M.Tech/M.E." },
+  { value: "msc", label: "M.Sc" },
+  { value: "mcom", label: "M.Com" },
+  { value: "ma", label: "M.A." },
+  { value: "llm", label: "LLM" },
   { value: "phd", label: "PhD/Doctorate" },
   { value: "mbbs", label: "MBBS" },
   { value: "md-ms", label: "MD/MS" },
-  { value: "ca", label: "CA" },
+  { value: "bds", label: "BDS" },
+  { value: "bams-bhms", label: "BAMS/BHMS" },
+  { value: "ca", label: "Chartered Accountant (CA)" },
+  { value: "cs", label: "Company Secretary (CS)" },
+  { value: "cfa", label: "CFA" },
+  { value: "b-pharma", label: "B.Pharma" },
+  { value: "m-pharma", label: "M.Pharma" },
+  { value: "b-ed", label: "B.Ed" },
   { value: "other", label: "Other" },
 ]
 
@@ -302,6 +313,7 @@ export const EMPLOYMENT_STATUS_OPTIONS: MultiSelectOption[] = [
   { value: "govt-employee", label: "Government Employee" },
   { value: "student", label: "Student" },
   { value: "homemaker", label: "Homemaker" },
+  { value: "retired", label: "Retired" },
   { value: "not-working", label: "Not Working" },
 ]
 
@@ -310,8 +322,13 @@ export const RELIGION_OPTIONS: MultiSelectOption[] = [
   { value: "Muslim", label: "Muslim" },
   { value: "Sikh", label: "Sikh" },
   { value: "Christian", label: "Christian" },
-  { value: "Buddhist", label: "Buddhist" },
   { value: "Jain", label: "Jain" },
+  { value: "Buddhist", label: "Buddhist" },
+  { value: "Parsi", label: "Parsi" },
+  { value: "Jewish", label: "Jewish" },
+  { value: "Bahai", label: "Bahai" },
+  { value: "Spiritual", label: "Spiritual" },
+  { value: "No Religion", label: "No Religion" },
   { value: "Other", label: "Other" },
 ]
 
@@ -327,14 +344,21 @@ export const MOTHER_TONGUE_OPTIONS: MultiSelectOption[] = [
   { value: "Malayalam", label: "Malayalam" },
   { value: "Bengali", label: "Bengali" },
   { value: "Odia", label: "Odia" },
+  { value: "Assamese", label: "Assamese" },
+  { value: "Kashmiri", label: "Kashmiri" },
+  { value: "Konkani", label: "Konkani" },
+  { value: "Manipuri", label: "Manipuri" },
+  { value: "Nepali", label: "Nepali" },
+  { value: "Sanskrit", label: "Sanskrit" },
+  { value: "Sindhi", label: "Sindhi" },
   { value: "Urdu", label: "Urdu" },
   { value: "Bhojpuri", label: "Bhojpuri" },
   { value: "Rajasthani", label: "Rajasthani" },
   { value: "Haryanvi", label: "Haryanvi" },
-  { value: "Assamese", label: "Assamese" },
-  { value: "Sindhi", label: "Sindhi" },
-  { value: "Konkani", label: "Konkani" },
-  { value: "Nepali", label: "Nepali" },
+  { value: "Maithili", label: "Maithili" },
+  { value: "Dogri", label: "Dogri" },
+  { value: "Santali", label: "Santali" },
+  { value: "Bodo", label: "Bodo" },
   { value: "Other", label: "Other" },
 ]
 
@@ -430,9 +454,9 @@ export const COUNTRY_OPTIONS: MultiSelectOption[] = [
 export const DIET_PREFERENCE_OPTIONS: MultiSelectOption[] = [
   { value: "veg", label: "Vegetarian" },
   { value: "non-veg", label: "Non-Vegetarian" },
-  { value: "eggetarian", label: "Eggetarian" },
-  { value: "vegan", label: "Vegan" },
+  { value: "occasionally-non-veg", label: "Occasionally Non-Veg" },
   { value: "jain", label: "Jain" },
+  { value: "vegan", label: "Vegan" },
 ]
 
 export const DRINKING_HABIT_OPTIONS: MultiSelectOption[] = [

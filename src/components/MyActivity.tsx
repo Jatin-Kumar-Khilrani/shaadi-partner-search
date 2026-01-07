@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
@@ -93,6 +93,9 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
   const [viewContactProfile, setViewContactProfile] = useState<Profile | null>(null)
   const [selectedProfileForDetails, setSelectedProfileForDetails] = useState<Profile | null>(null)
   const [_profileToReconsider, setProfileToReconsider] = useState<{ profileId: string, type: 'interest' | 'contact' | 'block' } | null>(null)
+  
+  // Track which items have already been expired to prevent duplicate notifications
+  const expiredItemsRef = useRef<Set<string>>(new Set())
   
   // State for boost pack purchase
   const [showBoostPackDialog, setShowBoostPackDialog] = useState(false)
@@ -360,11 +363,13 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
   }
 
   // Auto-expire pending requests that have passed the expiry deadline
+  // Uses expiredItemsRef to prevent duplicate notifications
   useEffect(() => {
     if (!interests || !contactRequests || !currentUserProfile) return
 
     let hasChanges = false
     const now = new Date()
+    const expiredItems = expiredItemsRef.current
 
     // Check and expire pending interests
     const updatedInterests = interests.map(interest => {
@@ -373,24 +378,30 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
         if (daysRemaining <= 0) {
           hasChanges = true
           
-          // Send notification to the sender about expiry
-          const senderProfile = getProfileByProfileId(interest.fromProfileId)
-          const receiverProfile = getProfileByProfileId(interest.toProfileId)
-          
-          if (senderProfile) {
-            setUserNotifications(prev => [...(prev || []), {
-              id: `interest-expired-${interest.id}-${now.getTime()}`,
-              recipientProfileId: senderProfile.profileId,
-              type: 'interest_expired' as const,
-              title: 'Interest Expired',
-              titleHi: 'रुचि समाप्त',
-              description: `Your interest to ${receiverProfile?.fullName || 'profile'} has expired due to no response in ${requestExpiryDays} days.`,
-              descriptionHi: `${receiverProfile?.fullName || 'प्रोफाइल'} को भेजी गई आपकी रुचि ${requestExpiryDays} दिनों में जवाब न मिलने के कारण समाप्त हो गई।`,
-              senderProfileId: interest.toProfileId,
-              senderName: receiverProfile?.fullName,
-              isRead: false,
-              createdAt: now.toISOString()
-            }])
+          // Only send notification if we haven't already for this item
+          const expiredKey = `interest-${interest.id}`
+          if (!expiredItems.has(expiredKey)) {
+            expiredItems.add(expiredKey)
+            
+            // Send notification to the sender about expiry
+            const senderProfile = getProfileByProfileId(interest.fromProfileId)
+            const receiverProfile = getProfileByProfileId(interest.toProfileId)
+            
+            if (senderProfile) {
+              setUserNotifications(prev => [...(prev || []), {
+                id: `interest-expired-${interest.id}-${now.getTime()}`,
+                recipientProfileId: senderProfile.profileId,
+                type: 'interest_expired' as const,
+                title: 'Interest Expired',
+                titleHi: 'रुचि समाप्त',
+                description: `Your interest to ${receiverProfile?.fullName || 'profile'} has expired due to no response in ${requestExpiryDays} days.`,
+                descriptionHi: `${receiverProfile?.fullName || 'प्रोफाइल'} को भेजी गई आपकी रुचि ${requestExpiryDays} दिनों में जवाब न मिलने के कारण समाप्त हो गई।`,
+                senderProfileId: interest.toProfileId,
+                senderName: receiverProfile?.fullName,
+                isRead: false,
+                createdAt: now.toISOString()
+              }])
+            }
           }
           
           return {
@@ -412,24 +423,30 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
         if (now > expiryDate) {
           hasChanges = true
           
-          // Send notification to the sender about expiry
-          const senderProfile = profiles.find(p => p.id === request.fromUserId)
-          const receiverProfile = profiles.find(p => p.id === request.toUserId)
-          
-          if (senderProfile) {
-            setUserNotifications(prev => [...(prev || []), {
-              id: `contact-expired-${request.id}-${now.getTime()}`,
-              recipientProfileId: senderProfile.profileId,
-              type: 'contact_expired' as const,
-              title: 'Contact Request Expired',
-              titleHi: 'संपर्क अनुरोध समाप्त',
-              description: `Your contact request to ${receiverProfile?.fullName || 'profile'} has expired due to no response in ${requestExpiryDays} days.`,
-              descriptionHi: `${receiverProfile?.fullName || 'प्रोफाइल'} को भेजा गया आपका संपर्क अनुरोध ${requestExpiryDays} दिनों में जवाब न मिलने के कारण समाप्त हो गया।`,
-              senderProfileId: receiverProfile?.profileId,
-              senderName: receiverProfile?.fullName,
-              isRead: false,
-              createdAt: now.toISOString()
-            }])
+          // Only send notification if we haven't already for this item
+          const expiredKey = `contact-${request.id}`
+          if (!expiredItems.has(expiredKey)) {
+            expiredItems.add(expiredKey)
+            
+            // Send notification to the sender about expiry
+            const senderProfile = profiles.find(p => p.id === request.fromUserId)
+            const receiverProfile = profiles.find(p => p.id === request.toUserId)
+            
+            if (senderProfile) {
+              setUserNotifications(prev => [...(prev || []), {
+                id: `contact-expired-${request.id}-${now.getTime()}`,
+                recipientProfileId: senderProfile.profileId,
+                type: 'contact_expired' as const,
+                title: 'Contact Request Expired',
+                titleHi: 'संपर्क अनुरोध समाप्त',
+                description: `Your contact request to ${receiverProfile?.fullName || 'profile'} has expired due to no response in ${requestExpiryDays} days.`,
+                descriptionHi: `${receiverProfile?.fullName || 'प्रोफाइल'} को भेजा गया आपका संपर्क अनुरोध ${requestExpiryDays} दिनों में जवाब न मिलने के कारण समाप्त हो गया।`,
+                senderProfileId: receiverProfile?.profileId,
+                senderName: receiverProfile?.fullName,
+                isRead: false,
+                createdAt: now.toISOString()
+              }])
+            }
           }
           
           return {

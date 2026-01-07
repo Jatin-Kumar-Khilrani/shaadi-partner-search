@@ -351,7 +351,8 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, me
             ) : (
               receivedInterests.map(interest => {
                 const profile = getProfileByProfileId(interest.fromProfileId)
-                if (!profile) return null
+                // Skip if profile not found or is deleted
+                if (!profile || profile.isDeleted) return null
                 
                 // Check if already chatted with this profile
                 const alreadyChatted = chatRequestsUsed.includes(interest.fromProfileId)
@@ -450,7 +451,8 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, me
                   ? interest.toProfileId 
                   : interest.fromProfileId
                 const profile = getProfileByProfileId(otherProfileId)
-                if (!profile) return null
+                // Skip if profile not found or is deleted
+                if (!profile || profile.isDeleted) return null
                 
                 return (
                   <Card key={interest.id}>
@@ -539,7 +541,8 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, me
             ) : (
               allContactRequests.map(request => {
                 const profile = profiles.find(p => p.id === request.fromUserId)
-                if (!profile) return null
+                // Skip if profile not found or is deleted
+                if (!profile || profile.isDeleted) return null
                 
                 return (
                   <Card key={request.id}>

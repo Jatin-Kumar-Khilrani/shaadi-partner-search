@@ -354,6 +354,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
   
+  // OTP rate limiting - prevent spam
+  const [otpResendCount, setOtpResendCount] = useState(0)
+  const [otpLastSentAt, setOtpLastSentAt] = useState<number>(0)
+  const [otpCooldownRemaining, setOtpCooldownRemaining] = useState(0)
+  const OTP_RESEND_COOLDOWN_SECONDS = 30 // 30 seconds between resends
+  const OTP_MAX_RESEND_ATTEMPTS = 5 // Max resend attempts per session
+  
   // Custom city input when user selects "Other City"
   const [customCity, setCustomCity] = useState('')
   
@@ -1547,7 +1554,57 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     }
   }
 
-  const sendOtps = (emailOnly?: boolean, mobileOnly?: boolean) => {
+  // OTP cooldown countdown effect
+  useEffect(() => {
+    if (otpCooldownRemaining <= 0) return
+    
+    const timer = setInterval(() => {
+      setOtpCooldownRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    
+    return () => clearInterval(timer)
+  }, [otpCooldownRemaining])
+
+  const sendOtps = (emailOnly?: boolean, mobileOnly?: boolean, isResend?: boolean) => {
+    // Rate limiting checks for resends (skip check on initial send)
+    if (isResend) {
+      // Check max attempts
+      if (otpResendCount >= OTP_MAX_RESEND_ATTEMPTS) {
+        toast.error(
+          language === 'hi' 
+            ? 'अधिकतम OTP प्रयास पूर्ण। कृपया बाद में पुनः प्रयास करें।' 
+            : 'Maximum OTP attempts reached. Please try again later.'
+        )
+        return
+      }
+      
+      // Check cooldown
+      const now = Date.now()
+      const timeSinceLastSend = (now - otpLastSentAt) / 1000
+      if (timeSinceLastSend < OTP_RESEND_COOLDOWN_SECONDS) {
+        const remaining = Math.ceil(OTP_RESEND_COOLDOWN_SECONDS - timeSinceLastSend)
+        toast.error(
+          language === 'hi' 
+            ? `कृपया ${remaining} सेकंड प्रतीक्षा करें` 
+            : `Please wait ${remaining} seconds`
+        )
+        return
+      }
+      
+      // Update rate limiting state
+      setOtpResendCount(prev => prev + 1)
+    }
+    
+    // Update last sent time and cooldown
+    setOtpLastSentAt(Date.now())
+    setOtpCooldownRemaining(OTP_RESEND_COOLDOWN_SECONDS)
+    
     setShowVerification(true)
     
     // Send Email OTP via notification service
@@ -1568,6 +1625,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         language
       )
       setGeneratedMobileOtp(otp)
+    }
+    
+    // Show success with remaining attempts
+    if (isResend) {
+      const remainingAttempts = OTP_MAX_RESEND_ATTEMPTS - otpResendCount - 1
+      toast.success(
+        language === 'hi' 
+          ? `OTP भेजा गया! (${remainingAttempts} प्रयास शेष)` 
+          : `OTP sent! (${remainingAttempts} attempts remaining)`
+      )
     }
   }
 
@@ -2782,10 +2849,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                         type="button"
                         variant="link"
                         size="sm"
-                        onClick={() => sendOtps(true, false)}
+                        onClick={() => sendOtps(true, false, true)}
+                        disabled={otpCooldownRemaining > 0}
                         className="text-xs p-0 h-auto"
                       >
-                        {language === 'hi' ? 'ईमेल OTP पुनः भेजें' : 'Resend Email OTP'}
+                        {otpCooldownRemaining > 0 
+                          ? (language === 'hi' ? `${otpCooldownRemaining}s प्रतीक्षा करें` : `Wait ${otpCooldownRemaining}s`)
+                          : (language === 'hi' ? 'ईमेल OTP पुनः भेजें' : 'Resend Email OTP')}
                       </Button>
                     )}
                   </div>
@@ -2831,10 +2901,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                         type="button"
                         variant="link"
                         size="sm"
-                        onClick={() => sendOtps(false, true)}
+                        onClick={() => sendOtps(false, true, true)}
+                        disabled={otpCooldownRemaining > 0}
                         className="text-xs p-0 h-auto"
                       >
-                        {language === 'hi' ? 'मोबाइल OTP पुनः भेजें' : 'Resend Mobile OTP'}
+                        {otpCooldownRemaining > 0 
+                          ? (language === 'hi' ? `${otpCooldownRemaining}s प्रतीक्षा करें` : `Wait ${otpCooldownRemaining}s`)
+                          : (language === 'hi' ? 'मोबाइल OTP पुनः भेजें' : 'Resend Mobile OTP')}
                       </Button>
                     )}
                   </div>
@@ -2858,10 +2931,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       type="button"
                       variant="link"
                       size="sm"
-                      onClick={() => sendOtps()}
+                      onClick={() => sendOtps(false, false, true)}
+                      disabled={otpCooldownRemaining > 0}
                       className="text-sm"
                     >
-                      {language === 'hi' ? 'दोनों OTP पुनः भेजें' : 'Resend Both OTPs'}
+                      {otpCooldownRemaining > 0 
+                        ? (language === 'hi' ? `${otpCooldownRemaining}s प्रतीक्षा करें` : `Wait ${otpCooldownRemaining}s`)
+                        : (language === 'hi' ? 'दोनों OTP पुनः भेजें' : 'Resend Both OTPs')}
                     </Button>
                   </div>
                 )}

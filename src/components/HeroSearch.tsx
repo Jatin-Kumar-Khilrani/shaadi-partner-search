@@ -28,7 +28,15 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
   const [filters, setFilters] = useState<SearchFilters>({})
 
   const handleSearch = () => {
-    onSearch(filters)
+    // Validate age range - swap if min > max
+    const validatedFilters = { ...filters }
+    if (validatedFilters.ageMin && validatedFilters.ageMax && validatedFilters.ageMin > validatedFilters.ageMax) {
+      // Swap the values
+      const temp = validatedFilters.ageMin
+      validatedFilters.ageMin = validatedFilters.ageMax
+      validatedFilters.ageMax = temp
+    }
+    onSearch(validatedFilters)
   }
 
   // Dynamic pricing from membership settings

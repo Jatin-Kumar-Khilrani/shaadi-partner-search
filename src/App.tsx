@@ -172,6 +172,9 @@ function App() {
     : null
 
   // Membership status utility functions
+  // Note: This uses client time for UI display. Server-side validation should be done
+  // for sensitive operations like payment processing and contact reveal.
+  // Time manipulation can bypass UI restrictions but not server-side checks.
   const getMembershipStatus = (profile: Profile | null) => {
     if (!profile) return { isExpired: true, daysUntilExpiry: 0, isFree: false, shouldBlur: true, isVerified: false }
     
