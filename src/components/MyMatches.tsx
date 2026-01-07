@@ -1218,8 +1218,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
         }
       }
       
-      // Religion preference impact
-      if (prefs.religion && prefs.religion.length > 0) {
+      // Religion preference impact - skip if 'any' is selected in filter
+      if (prefs.religion && prefs.religion.length > 0 && !isAnySelected(filters.religions)) {
         const religionMatches = basePool.filter(p => {
           const profileReligion = p.religion?.toLowerCase() || ''
           return prefs.religion!.some(r => profileReligion.includes(r.toLowerCase()))
@@ -1234,8 +1234,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
         }
       }
       
-      // Education preference impact
-      if (prefs.education && prefs.education.length > 0) {
+      // Education preference impact - skip if 'any' is selected in filter
+      if (prefs.education && prefs.education.length > 0 && !isAnySelected(filters.educationLevels)) {
         const educationMatches = basePool.filter(p => {
           const profileEducation = p.education?.toLowerCase() || ''
           return prefs.education!.some(edu => profileEducation === edu.toLowerCase())
@@ -1266,8 +1266,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       }
     }
     
-    // Check location filters
-    if (filters.countries && filters.countries.length > 0) {
+    // Check location filters - skip if 'any' is selected
+    if (filters.countries && filters.countries.length > 0 && !isAnySelected(filters.countries)) {
       const countryMatches = basePool.filter(p => {
         const profileCountry = p.country?.toLowerCase() || ''
         return filters.countries!.some(c => profileCountry.includes(c.toLowerCase()))
@@ -1448,8 +1448,36 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               className="my-2"
             />
             <div className="flex justify-between mt-3 text-sm">
-              <span className="px-2 py-1 bg-background rounded-md border font-medium">{ageRange[0]} {t.years}</span>
-              <span className="px-2 py-1 bg-background rounded-md border font-medium">{ageRange[1]} {t.years}</span>
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  min={18}
+                  max={ageRange[1] - 1}
+                  value={ageRange[0]}
+                  onChange={(e) => {
+                    const val = Math.max(18, Math.min(parseInt(e.target.value) || 18, ageRange[1] - 1))
+                    setAgeRange([val, ageRange[1]])
+                    setFilters({ ...filters, ageRange: [val, ageRange[1]] })
+                  }}
+                  className="w-14 h-8 text-center px-1 font-medium"
+                />
+                <span className="text-muted-foreground">{t.years}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  min={ageRange[0] + 1}
+                  max={60}
+                  value={ageRange[1]}
+                  onChange={(e) => {
+                    const val = Math.min(60, Math.max(parseInt(e.target.value) || 60, ageRange[0] + 1))
+                    setAgeRange([ageRange[0], val])
+                    setFilters({ ...filters, ageRange: [ageRange[0], val] })
+                  }}
+                  className="w-14 h-8 text-center px-1 font-medium"
+                />
+                <span className="text-muted-foreground">{t.years}</span>
+              </div>
             </div>
           </div>
         </div>
