@@ -998,6 +998,7 @@ function App() {
                   
                   // Get icon for notification type
                   const getNotificationIcon = (type: string) => {
+                    if (type === 'admin_message') return <Bell size={16} weight="fill" className="text-orange-500" />
                     if (type.includes('interest_received')) return <Heart size={16} weight="fill" className="text-pink-500" />
                     if (type.includes('interest_accepted')) return <Check size={16} className="text-green-500" />
                     if (type.includes('interest_declined')) return <SignOut size={16} className="text-red-500" />
@@ -1121,7 +1122,11 @@ function App() {
                                     onClick={() => {
                                       handleMarkAsRead(notif.id)
                                       // Navigate to appropriate tab based on notification type
-                                      if (notif.type === 'message_received') {
+                                      if (notif.type === 'admin_message') {
+                                        // Navigate to chat with admin
+                                        setChatTargetProfileId('admin')
+                                        setCurrentView('chat')
+                                      } else if (notif.type === 'message_received') {
                                         // Navigate to chat with the sender
                                         setChatTargetProfileId(notif.senderProfileId || null)
                                         setCurrentView('chat')

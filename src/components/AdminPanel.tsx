@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, CaretLeft, CaretRight, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User as UserIcon, CreditCard, Upload, ShieldWarning, Prohibit, Warning, Heart, Gift, Trophy, Confetti, MagnifyingGlass, Paperclip, Image as ImageIcon, Smiley } from '@phosphor-icons/react'
-import type { Profile, WeddingService, PaymentTransaction, BlockedProfile, ReportReason, SuccessStory } from '@/types/profile'
+import type { Profile, WeddingService, PaymentTransaction, BlockedProfile, ReportReason, SuccessStory, UserNotification } from '@/types/profile'
 import type { User } from '@/types/user'
 import type { ChatMessage, ChatAttachment } from '@/types/chat'
 import { Chat } from '@/components/Chat'
@@ -570,6 +570,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   // Broadcast message attachment state
   const [broadcastAttachments, setBroadcastAttachments] = useState<ChatAttachment[]>([])
   const broadcastFileInputRef = useRef<HTMLInputElement>(null)
+  
+  // User notifications for broadcast
+  const [userNotifications, setUserNotifications] = useKV<UserNotification[]>('userNotifications', [])
   
   const [activeTab, setActiveTab] = useState('pending')
   const [showServiceDialog, setShowServiceDialog] = useState(false)
@@ -1479,21 +1482,42 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const handleBroadcastMessage = () => {
     if ((!broadcastMessage.trim() && broadcastAttachments.length === 0) || broadcastProfiles.length === 0) return
     
+    const timestamp = new Date().toISOString()
+    
     const newMessages: ChatMessage[] = broadcastProfiles.map(profileId => ({
       id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       fromProfileId: 'admin',
       fromUserId: 'admin',
       toProfileId: profileId,
       message: broadcastMessage,
-      timestamp: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
+      timestamp: timestamp,
+      createdAt: timestamp,
       type: 'admin-to-user' as const,
       read: false,
       status: 'sent' as const,
       attachments: broadcastAttachments.length > 0 ? [...broadcastAttachments] : undefined
     }))
     
+    // Create notifications for each recipient
+    const newNotifications: UserNotification[] = broadcastProfiles.map(profileId => {
+      const profile = profiles?.find(p => p.id === profileId)
+      return {
+        id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        recipientProfileId: profile?.profileId || profileId,
+        type: 'admin_message' as const,
+        title: 'New message from Admin',
+        titleHi: 'एडमिन से नया संदेश',
+        description: broadcastMessage.slice(0, 100) + (broadcastMessage.length > 100 ? '...' : ''),
+        descriptionHi: broadcastMessage.slice(0, 100) + (broadcastMessage.length > 100 ? '...' : ''),
+        senderProfileId: 'admin',
+        senderName: 'Admin',
+        isRead: false,
+        createdAt: timestamp
+      }
+    })
+    
     setMessages((current) => [...(current || []), ...newMessages])
+    setUserNotifications((current) => [...(current || []), ...newNotifications])
     toast.success(t.broadcastSuccess)
     setShowBroadcastDialog(false)
     setBroadcastMessage('')
