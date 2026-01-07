@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { ProfileCard } from './ProfileCard'
-import { MagnifyingGlass, Funnel, X, GraduationCap, Globe, Calendar, Trophy, Sparkle, Heart, Users, FloppyDisk, ArrowCounterClockwise, SortAscending, CaretLeft, CaretRight, CircleNotch, CurrencyInr, Camera, Clock, UserCheck, Lightning, Eye } from '@phosphor-icons/react'
+import { MagnifyingGlass, Funnel, X, GraduationCap, Globe, Calendar, Trophy, Sparkle, Heart, Users, FloppyDisk, ArrowCounterClockwise, SortAscending, CaretLeft, CaretRight, CircleNotch, CurrencyInr, Camera, Clock, UserCheck, Lightning, Eye, Info, WarningCircle } from '@phosphor-icons/react'
 import type { Profile, SearchFilters, BlockedProfile, MembershipPlan, ProfileStatus, Interest, DeclinedProfile, DietPreference, DrinkingHabit, SmokingHabit, ContactRequest } from '@/types/profile'
 import type { ProfileInteractionStatus } from './ProfileCard'
 import type { Language } from '@/lib/translations'
@@ -1058,6 +1058,120 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     })
   }, [profiles, currentUserProfile, debouncedSearchQuery, filters, blockedProfiles, declinedProfiles, interests, usePartnerPreferences, parseHeightToCm, isWithinDays, getProfileCompleteness])
 
+  // Diagnostic analysis: Why are there no matches?
+  const filterDiagnostics = useMemo(() => {
+    if (!profiles || !currentUserProfile || filteredProfiles.length > 0) {
+      return null // Only calculate when there are no matches
+    }
+    
+    const prefs = currentUserProfile.partnerPreferences
+    
+    // Get base pool (opposite gender, verified, not deleted, not blocked)
+    const basePool = profiles.filter(p => 
+      p.id !== currentUserProfile.id &&
+      p.status === 'verified' &&
+      !p.isDeleted &&
+      ((currentUserProfile.gender === 'male' && p.gender === 'female') ||
+       (currentUserProfile.gender === 'female' && p.gender === 'male'))
+    )
+    
+    if (basePool.length === 0) {
+      return { reason: 'no-profiles', totalProfiles: 0, suggestions: [] }
+    }
+    
+    const issues: Array<{ filter: string; label: string; matchCount: number; suggestion: string }> = []
+    
+    // Check each filter's impact
+    if (usePartnerPreferences && prefs) {
+      // Age preference impact
+      if (prefs.ageMin || prefs.ageMax) {
+        const ageMatches = basePool.filter(p => {
+          if (prefs.ageMin && p.age < prefs.ageMin) return false
+          if (prefs.ageMax && p.age > prefs.ageMax) return false
+          return true
+        }).length
+        if (ageMatches < basePool.length * 0.3) {
+          issues.push({
+            filter: 'age-pref',
+            label: language === 'hi' ? 'आयु प्राथमिकता' : 'Age Preference',
+            matchCount: ageMatches,
+            suggestion: language === 'hi' ? `आयु सीमा ${prefs.ageMin || 18}-${prefs.ageMax || 60} बहुत सीमित है` : `Age range ${prefs.ageMin || 18}-${prefs.ageMax || 60} years is restrictive`
+          })
+        }
+      }
+      
+      // Religion preference impact
+      if (prefs.religion && prefs.religion.length > 0) {
+        const religionMatches = basePool.filter(p => {
+          const profileReligion = p.religion?.toLowerCase() || ''
+          return prefs.religion!.some(r => profileReligion.includes(r.toLowerCase()))
+        }).length
+        if (religionMatches === 0) {
+          issues.push({
+            filter: 'religion-pref',
+            label: language === 'hi' ? 'धर्म प्राथमिकता' : 'Religion Preference',
+            matchCount: religionMatches,
+            suggestion: language === 'hi' ? 'चयनित धर्म वाले कोई प्रोफाइल नहीं' : `No profiles found for selected religion(s)`
+          })
+        }
+      }
+      
+      // Education preference impact
+      if (prefs.education && prefs.education.length > 0) {
+        const educationMatches = basePool.filter(p => {
+          const profileEducation = p.education?.toLowerCase() || ''
+          return prefs.education!.some(edu => profileEducation === edu.toLowerCase())
+        }).length
+        if (educationMatches === 0) {
+          issues.push({
+            filter: 'education-pref',
+            label: language === 'hi' ? 'शिक्षा प्राथमिकता' : 'Education Preference',
+            matchCount: educationMatches,
+            suggestion: language === 'hi' ? 'चयनित शिक्षा वाले कोई प्रोफाइल नहीं' : `No profiles match your education preference`
+          })
+        }
+      }
+    }
+    
+    // Check manual filter impacts
+    if (filters.ageRange && (filters.ageRange[0] !== 18 || filters.ageRange[1] !== 60)) {
+      const ageMatches = basePool.filter(p => 
+        p.age >= filters.ageRange![0] && p.age <= filters.ageRange![1]
+      ).length
+      if (ageMatches === 0) {
+        issues.push({
+          filter: 'age-filter',
+          label: language === 'hi' ? 'आयु फ़िल्टर' : 'Age Filter',
+          matchCount: ageMatches,
+          suggestion: language === 'hi' ? `${filters.ageRange[0]}-${filters.ageRange[1]} आयु में कोई प्रोफाइल नहीं` : `No profiles in age range ${filters.ageRange[0]}-${filters.ageRange[1]} years`
+        })
+      }
+    }
+    
+    // Check location filters
+    if (filters.countries && filters.countries.length > 0) {
+      const countryMatches = basePool.filter(p => {
+        const profileCountry = p.country?.toLowerCase() || ''
+        return filters.countries!.some(c => profileCountry.includes(c.toLowerCase()))
+      }).length
+      if (countryMatches === 0) {
+        issues.push({
+          filter: 'country-filter',
+          label: language === 'hi' ? 'देश फ़िल्टर' : 'Country Filter',
+          matchCount: countryMatches,
+          suggestion: language === 'hi' ? 'चयनित देश में कोई प्रोफाइल नहीं' : 'No profiles in selected country'
+        })
+      }
+    }
+    
+    return {
+      reason: issues.length > 0 ? 'filters-too-strict' : 'combined-filters',
+      totalProfiles: basePool.length,
+      suggestions: issues.slice(0, 3), // Show top 3 issues
+      smartMatchingOn: usePartnerPreferences && !!prefs
+    }
+  }, [profiles, currentUserProfile, filteredProfiles.length, filters, usePartnerPreferences, language])
+
   // Sort profiles based on selected option - with stable sort for consistency
   const sortedProfiles = useMemo(() => {
     // Create array with original indices for stable sort
@@ -1916,10 +2030,100 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
         )}
 
         {!isFiltering && sortedProfiles.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground text-lg">{t.noMatches}</p>
-              <p className="text-muted-foreground text-sm mt-2">{t.adjustFilters}</p>
+          <Card className="border-dashed">
+            <CardContent className="py-12">
+              <div className="text-center max-w-md mx-auto">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                  <MagnifyingGlass size={32} className="text-muted-foreground" />
+                </div>
+                <p className="text-lg font-medium text-foreground mb-2">{t.noMatches}</p>
+                <p className="text-muted-foreground text-sm mb-6">{t.adjustFilters}</p>
+                
+                {/* Diagnostic feedback */}
+                {filterDiagnostics && (
+                  <div className="text-left space-y-4">
+                    {filterDiagnostics.totalProfiles > 0 && (
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <p className="text-sm text-blue-800 dark:text-blue-300">
+                          <Info size={14} className="inline mr-2" />
+                          {language === 'hi' 
+                            ? `${filterDiagnostics.totalProfiles} प्रोफाइल उपलब्ध हैं, लेकिन आपके फ़िल्टर से कोई मेल नहीं खाता`
+                            : `${filterDiagnostics.totalProfiles} profiles available, but none match your current filters`}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {filterDiagnostics.smartMatchingOn && (
+                      <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+                        <p className="text-sm text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                          <Sparkle size={14} className="mt-0.5 flex-shrink-0" weight="fill" />
+                          <span>
+                            {language === 'hi' 
+                              ? 'स्मार्ट मैचिंग आपकी पार्टनर प्राथमिकताओं का उपयोग कर रही है। अधिक परिणामों के लिए इसे बंद करें।'
+                              : 'Smart Matching is using your partner preferences. Turn it OFF to see more results.'}
+                          </span>
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-2 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-400"
+                          onClick={() => setUsePartnerPreferences(false)}
+                        >
+                          {language === 'hi' ? 'स्मार्ट मैचिंग बंद करें' : 'Turn OFF Smart Matching'}
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {filterDiagnostics.suggestions.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-foreground">
+                          {language === 'hi' ? 'संभावित समस्याएं:' : 'Possible issues:'}
+                        </p>
+                        {filterDiagnostics.suggestions.map((issue, idx) => (
+                          <div key={idx} className="p-2 bg-muted/50 rounded-lg text-sm flex items-start gap-2">
+                            <WarningCircle size={14} className="mt-0.5 text-orange-500 flex-shrink-0" />
+                            <div>
+                              <span className="font-medium">{issue.label}:</span>{' '}
+                              <span className="text-muted-foreground">{issue.suggestion}</span>
+                              {issue.matchCount === 0 && (
+                                <span className="text-red-500 ml-1">({language === 'hi' ? '0 मैच' : '0 matches'})</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Quick actions */}
+                    <div className="pt-4 border-t flex flex-wrap gap-2 justify-center">
+                      {activeFilterCount > 0 && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setFilters({})
+                            setAgeRange([18, 60])
+                            setIncomeRange([0, 100])
+                            setHeightRange([140, 200])
+                          }}
+                        >
+                          <X size={14} className="mr-1" />
+                          {language === 'hi' ? 'सभी फ़िल्टर साफ़ करें' : 'Clear All Filters'}
+                        </Button>
+                      )}
+                      {usePartnerPreferences && (
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={() => setUsePartnerPreferences(false)}
+                        >
+                          {language === 'hi' ? 'सभी प्रोफाइल दिखाएं' : 'Show All Profiles'}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         ) : !isFiltering && (
