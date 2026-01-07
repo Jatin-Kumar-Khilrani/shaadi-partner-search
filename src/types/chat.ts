@@ -1,3 +1,14 @@
+// Attachment interface for file/image sharing in chat
+export interface ChatAttachment {
+  id: string
+  type: 'image' | 'pdf' | 'file'
+  name: string
+  size: number  // Size in bytes
+  url: string   // Base64 data URL or blob URL
+  mimeType: string
+  thumbnailUrl?: string  // For images - smaller preview
+}
+
 export interface ChatMessage {
   id: string
   fromProfileId: string
@@ -14,6 +25,8 @@ export interface ChatMessage {
   deliveredAt?: string
   status?: 'sent' | 'delivered' | 'read'
   isSystemMessage?: boolean // Flag for system-generated messages (e.g., interest accepted notification)
+  // Attachment support for file/image sharing (like WhatsApp)
+  attachments?: ChatAttachment[]
 }
 
 export interface ChatConversation {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useKV } from '@/hooks/useKV'
 import { logger } from '@/lib/logger'
 import { sanitizeChatMessage } from '@/lib/validation'
@@ -13,12 +13,24 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks, X, Warning, ShieldWarning, Prohibit, MagnifyingGlassPlus } from '@phosphor-icons/react'
-import type { ChatMessage, ChatConversation } from '@/types/chat'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks, X, Warning, ShieldWarning, Prohibit, MagnifyingGlassPlus, Paperclip, Image as ImageIcon, FilePdf, DownloadSimple, Smiley } from '@phosphor-icons/react'
+import type { ChatMessage, ChatConversation, ChatAttachment } from '@/types/chat'
 import type { Profile, Interest, MembershipPlan, BlockedProfile, ReportReason } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 import { toast } from 'sonner'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
+
+// Emoji categories for WhatsApp-like picker
+const EMOJI_CATEGORIES = {
+  smileys: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '🥲', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '🥸', '😎', '🤓', '🧐'],
+  gestures: ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🫀', '🫁', '🦷', '🦴', '👀', '👁️', '👅', '👄'],
+  love: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓', '🆔', '⚛️'],
+  celebration: ['🎉', '🎊', '🎈', '🎁', '🎀', '🎂', '🍰', '🧁', '🥂', '🍾', '🥳', '🎄', '🎃', '🎆', '🎇', '✨', '🎍', '🎋', '🎏', '🎎', '🎐', '🎑', '🏮', '🪔', '💐', '🌸', '🌺', '🌹', '🌷', '🌻', '🌼', '💮', '🏵️', '🍀', '🌿', '🌱', '🪴', '🌵', '🎋'],
+  objects: ['📱', '💻', '🖥️', '📷', '📸', '📹', '🎥', '📞', '☎️', '📺', '📻', '🎙️', '🎚️', '🎛️', '⏰', '⏱️', '⏲️', '🕰️', '💡', '🔦', '🕯️', '💰', '💵', '💴', '💶', '💷', '💳', '💎', '⚖️', '🔧', '🔨', '⚒️', '🛠️', '⛏️', '🔩', '⚙️', '🔗', '📎', '🖇️', '📏', '📐', '✂️', '📌', '📍', '🗑️'],
+  indian: ['🙏', '🪷', '🕉️', '🛕', '🪔', '🎪', '🐘', '🦚', '🌺', '🌸', '💐', '🍛', '🫓', '🥘', '🍚', '🥭', '🍌', '🥥', '🫖', '☕', '🍵', '🥛', '🍯', '🪘', '🎵', '💃', '🕺', '👰', '🤵', '💒', '💍', '👨‍👩‍👧', '👨‍👩‍👦', '👪', '🏠', '🏡']
+}
+
 // Membership settings interface for plan limits
 interface MembershipSettings {
   freePlanChatLimit: number
@@ -75,6 +87,18 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   const [reportReason, setReportReason] = useState<ReportReason | ''>('')
   const [reportDescription, setReportDescription] = useState('')
   const [profileToReport, setProfileToReport] = useState<{ profileId: string, name: string } | null>(null)
+  
+  // Attachment state for admin chat (WhatsApp-like file sharing)
+  const [pendingAttachments, setPendingAttachments] = useState<ChatAttachment[]>([])
+  const [previewAttachment, setPreviewAttachment] = useState<ChatAttachment | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const chatInputRef = useRef<HTMLInputElement>(null)
+  const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20 MB max
+  const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf']
+  
+  // Emoji picker state
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [emojiCategory, setEmojiCategory] = useState<keyof typeof EMOJI_CATEGORIES>('smileys')
   
   // Prevent race condition on rapid message sends (double-click protection)
   const isSendingRef = useRef(false)
@@ -256,6 +280,225 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       description: t.reportSuccessDesc,
       duration: 5000,
     })
+  }
+
+  // Attachment handling functions for admin chat (WhatsApp-like)
+  const handleFileSelect = useCallback((files: FileList | null) => {
+    if (!files || files.length === 0) return
+
+    Array.from(files).forEach(file => {
+      // Validate file type
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        toast.error(
+          language === 'hi' 
+            ? 'अमान्य फाइल प्रकार। केवल JPG, PNG, GIF, WebP और PDF अनुमत हैं।' 
+            : 'Invalid file type. Only JPG, PNG, GIF, WebP and PDF are allowed.'
+        )
+        return
+      }
+
+      // Validate file size (20 MB max)
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(
+          language === 'hi' 
+            ? `फाइल बहुत बड़ी है। अधिकतम ${Math.round(MAX_FILE_SIZE / 1024 / 1024)} MB अनुमत है।` 
+            : `File too large. Maximum ${Math.round(MAX_FILE_SIZE / 1024 / 1024)} MB allowed.`
+        )
+        return
+      }
+
+      // Read file as data URL
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string
+        const attachment: ChatAttachment = {
+          id: `attach-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          type: file.type === 'application/pdf' ? 'pdf' : 'image',
+          name: file.name,
+          size: file.size,
+          url: dataUrl,
+          mimeType: file.type,
+        }
+
+        // Create thumbnail for images
+        if (attachment.type === 'image') {
+          attachment.thumbnailUrl = dataUrl
+        }
+
+        setPendingAttachments(prev => [...prev, attachment])
+        toast.success(
+          language === 'hi' 
+            ? `${file.name} जोड़ा गया` 
+            : `${file.name} added`
+        )
+      }
+      reader.onerror = () => {
+        toast.error(language === 'hi' ? 'फाइल पढ़ने में त्रुटि' : 'Error reading file')
+      }
+      reader.readAsDataURL(file)
+    })
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }, [language, MAX_FILE_SIZE, ALLOWED_FILE_TYPES])
+
+  // Handle clipboard paste for images (like WhatsApp)
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    const imageItems = Array.from(items).filter(item => item.type.startsWith('image/'))
+    
+    if (imageItems.length === 0) return
+
+    e.preventDefault() // Prevent pasting text representation of image
+
+    imageItems.forEach(item => {
+      const file = item.getAsFile()
+      if (!file) return
+
+      // Check file size
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(
+          language === 'hi' 
+            ? `इमेज बहुत बड़ी है। अधिकतम ${Math.round(MAX_FILE_SIZE / 1024 / 1024)} MB अनुमत है।` 
+            : `Image too large. Maximum ${Math.round(MAX_FILE_SIZE / 1024 / 1024)} MB allowed.`
+        )
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string
+        const attachment: ChatAttachment = {
+          id: `attach-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          type: 'image',
+          name: `screenshot-${new Date().toISOString().slice(0, 19).replace(/[:-]/g, '')}.png`,
+          size: file.size,
+          url: dataUrl,
+          mimeType: file.type,
+          thumbnailUrl: dataUrl,
+        }
+        setPendingAttachments(prev => [...prev, attachment])
+        toast.success(
+          language === 'hi' 
+            ? 'स्क्रीनशॉट जोड़ा गया' 
+            : 'Screenshot added'
+        )
+      }
+      reader.readAsDataURL(file)
+    })
+  }, [language, MAX_FILE_SIZE])
+
+  const removeAttachment = useCallback((attachmentId: string) => {
+    setPendingAttachments(prev => prev.filter(a => a.id !== attachmentId))
+  }, [])
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+  }
+
+  // Insert emoji into message input
+  const insertEmoji = useCallback((emoji: string) => {
+    setMessageInput(prev => prev + emoji)
+    // Keep focus on input after emoji insertion
+    chatInputRef.current?.focus()
+  }, [])
+
+  // Emoji picker component
+  const EmojiPicker = ({ onSelect, onClose }: { onSelect: (emoji: string) => void, onClose: () => void }) => {
+    const categoryLabels: Record<keyof typeof EMOJI_CATEGORIES, { hi: string, en: string, icon: string }> = {
+      smileys: { hi: 'चेहरे', en: 'Smileys', icon: '😀' },
+      gestures: { hi: 'हाथ', en: 'Gestures', icon: '👋' },
+      love: { hi: 'प्यार', en: 'Love', icon: '❤️' },
+      celebration: { hi: 'जश्न', en: 'Celebration', icon: '🎉' },
+      objects: { hi: 'वस्तुएं', en: 'Objects', icon: '📱' },
+      indian: { hi: 'भारतीय', en: 'Indian', icon: '🙏' }
+    }
+
+    return (
+      <div className="w-72 bg-background border rounded-lg shadow-lg overflow-hidden">
+        {/* Category tabs */}
+        <div className="flex border-b overflow-x-auto">
+          {(Object.keys(EMOJI_CATEGORIES) as Array<keyof typeof EMOJI_CATEGORIES>).map(cat => (
+            <button
+              key={cat}
+              onClick={() => setEmojiCategory(cat)}
+              className={`flex-shrink-0 p-2 text-lg transition-colors ${
+                emojiCategory === cat 
+                  ? 'bg-primary/10 border-b-2 border-primary' 
+                  : 'hover:bg-muted'
+              }`}
+              title={language === 'hi' ? categoryLabels[cat].hi : categoryLabels[cat].en}
+            >
+              {categoryLabels[cat].icon}
+            </button>
+          ))}
+        </div>
+        
+        {/* Emoji grid */}
+        <ScrollArea className="h-48 p-2">
+          <div className="grid grid-cols-8 gap-1">
+            {EMOJI_CATEGORIES[emojiCategory].map((emoji, idx) => (
+              <button
+                key={`${emoji}-${idx}`}
+                onClick={() => {
+                  onSelect(emoji)
+                }}
+                className="p-1.5 text-xl hover:bg-muted rounded transition-colors"
+                title={emoji}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+    )
+  }
+
+  // Render attachment in message
+  const renderAttachment = (attachment: ChatAttachment, isFromUser: boolean) => {
+    if (attachment.type === 'image') {
+      return (
+        <div 
+          className="mt-2 rounded-lg overflow-hidden cursor-pointer max-w-[200px]"
+          onClick={() => setPreviewAttachment(attachment)}
+        >
+          <img 
+            src={attachment.thumbnailUrl || attachment.url} 
+            alt={attachment.name}
+            className="w-full h-auto object-cover"
+          />
+        </div>
+      )
+    }
+
+    if (attachment.type === 'pdf') {
+      return (
+        <a 
+          href={attachment.url}
+          download={attachment.name}
+          className={`mt-2 flex items-center gap-2 p-2 rounded-lg ${
+            isFromUser ? 'bg-primary-foreground/10' : 'bg-muted'
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <FilePdf size={32} className="text-red-500 shrink-0" weight="fill" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{attachment.name}</p>
+            <p className="text-xs opacity-70">{formatFileSize(attachment.size)}</p>
+          </div>
+          <DownloadSimple size={20} className="shrink-0" />
+        </a>
+      )
+    }
+
+    return null
   }
 
   // Open report dialog
@@ -1306,7 +1549,15 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-muted'
                               }`}>
-                                <p className="text-sm">{msg.message || (msg as any).content}</p>
+                                {/* Display attachments */}
+                                {msg.attachments && msg.attachments.length > 0 && (
+                                  <div className="space-y-2 mb-2">
+                                    {msg.attachments.map(attachment => renderAttachment(attachment, isFromUser))}
+                                  </div>
+                                )}
+                                {(msg.message || (msg as any).content) && (
+                                  <p className="text-sm">{msg.message || (msg as any).content}</p>
+                                )}
                                 <div className="flex items-center justify-end gap-1 mt-1">
                                   <span className={`text-xs ${
                                     isFromUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
@@ -1338,16 +1589,93 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                     </div>
                   </ScrollArea>
 
-                  {/* Admin chat input */}
-                  <div className="p-4 border-t">
+                  {/* Admin chat input with attachment support */}
+                  <div className="p-4 border-t space-y-3">
+                    {/* Hidden file input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
+                      multiple
+                      className="hidden"
+                      aria-label="Attach file"
+                      title="Attach file (JPG, PNG, PDF - up to 20 MB)"
+                      onChange={(e) => handleFileSelect(e.target.files)}
+                    />
+
+                    {/* Pending attachments preview */}
+                    {pendingAttachments.length > 0 && (
+                      <div className="flex flex-wrap gap-2 p-2 bg-muted/50 rounded-lg">
+                        {pendingAttachments.map(attachment => (
+                          <div key={attachment.id} className="relative group">
+                            {attachment.type === 'image' ? (
+                              <div className="w-16 h-16 rounded-lg overflow-hidden border">
+                                <img 
+                                  src={attachment.thumbnailUrl || attachment.url} 
+                                  alt={attachment.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-16 h-16 rounded-lg border flex flex-col items-center justify-center bg-red-50">
+                                <FilePdf size={24} className="text-red-500" weight="fill" />
+                                <span className="text-[8px] text-muted-foreground truncate w-14 text-center mt-1">
+                                  {attachment.name}
+                                </span>
+                              </div>
+                            )}
+                            <button
+                              onClick={() => removeAttachment(attachment.id)}
+                              className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              aria-label="Remove attachment"
+                              title="Remove attachment"
+                            >
+                              <X size={12} weight="bold" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="flex gap-2">
+                      {/* Attachment button */}
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => fileInputRef.current?.click()}
+                        title={language === 'hi' ? 'फाइल जोड़ें (JPG, PNG, PDF - 20 MB तक)' : 'Add file (JPG, PNG, PDF - up to 20 MB)'}
+                      >
+                        <Paperclip size={20} />
+                      </Button>
+
+                      {/* Emoji picker button */}
+                      <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+                        <PopoverTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            title={language === 'hi' ? 'इमोजी जोड़ें' : 'Add emoji'}
+                          >
+                            <Smiley size={20} />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start" side="top">
+                          <EmojiPicker 
+                            onSelect={(emoji) => insertEmoji(emoji)} 
+                            onClose={() => setShowEmojiPicker(false)} 
+                          />
+                        </PopoverContent>
+                      </Popover>
+
                       <Input
+                        ref={chatInputRef}
                         value={messageInput}
                         onChange={(e) => setMessageInput(e.target.value)}
                         placeholder={language === 'hi' ? 'एडमिन को संदेश लिखें...' : 'Type message to admin...'}
+                        onPaste={handlePaste}
                         onKeyPress={(e) => {
-                          if (e.key === 'Enter' && messageInput.trim()) {
-                            // Send message to admin
+                          if (e.key === 'Enter' && (messageInput.trim() || pendingAttachments.length > 0)) {
+                            // Send message to admin with attachments
                             const newMsg: ChatMessage = {
                               id: `msg-${Date.now()}`,
                               type: 'admin-to-user',
@@ -1358,17 +1686,19 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                               createdAt: new Date().toISOString(),
                               read: false,
                               status: 'sent',
-                              delivered: false
+                              delivered: false,
+                              attachments: pendingAttachments.length > 0 ? [...pendingAttachments] : undefined
                             }
                             setMessages([...(messages || []), newMsg])
                             setMessageInput('')
+                            setPendingAttachments([])
                             toast.success(language === 'hi' ? 'संदेश भेजा गया' : 'Message sent')
                           }
                         }}
                       />
                       <Button 
                         onClick={() => {
-                          if (messageInput.trim()) {
+                          if (messageInput.trim() || pendingAttachments.length > 0) {
                             const newMsg: ChatMessage = {
                               id: `msg-${Date.now()}`,
                               type: 'admin-to-user',
@@ -1379,18 +1709,29 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                               createdAt: new Date().toISOString(),
                               read: false,
                               status: 'sent',
-                              delivered: false
+                              delivered: false,
+                              attachments: pendingAttachments.length > 0 ? [...pendingAttachments] : undefined
                             }
                             setMessages([...(messages || []), newMsg])
                             setMessageInput('')
+                            setPendingAttachments([])
                             toast.success(language === 'hi' ? 'संदेश भेजा गया' : 'Message sent')
                           }
                         }} 
                         size="icon"
+                        disabled={!messageInput.trim() && pendingAttachments.length === 0}
                       >
                         <PaperPlaneTilt size={20} weight="fill" />
                       </Button>
                     </div>
+
+                    {/* Help text */}
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <ImageIcon size={12} />
+                      {language === 'hi' 
+                        ? 'स्क्रीनशॉट के लिए Ctrl+V दबाएं या फाइल जोड़ने के लिए 📎 क्लिक करें' 
+                        : 'Press Ctrl+V to paste screenshot or click 📎 to attach files'}
+                    </p>
                   </div>
                 </>
               ) : (
@@ -1726,6 +2067,24 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                   {isChatAllowed || isAdmin ? (
                     <div className="p-4">
                       <div className="flex gap-2">
+                        {/* Emoji picker button */}
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              title={language === 'hi' ? 'इमोजी जोड़ें' : 'Add emoji'}
+                            >
+                              <Smiley size={20} />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start" side="top">
+                            <EmojiPicker 
+                              onSelect={(emoji) => setMessageInput(prev => prev + emoji)} 
+                              onClose={() => {}} 
+                            />
+                          </PopoverContent>
+                        </Popover>
                         <Input
                           placeholder={t.typeMessage}
                           value={messageInput}
@@ -1754,6 +2113,45 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
         </div>
         )}
       </div>
+
+      {/* Image Attachment Preview Dialog */}
+      <Dialog open={!!previewAttachment} onOpenChange={() => setPreviewAttachment(null)}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden">
+          <DialogHeader className="p-4 pb-0">
+            <DialogTitle className="flex items-center gap-2">
+              <ImageIcon size={20} />
+              {previewAttachment?.name}
+            </DialogTitle>
+            <DialogDescription>
+              {previewAttachment && formatFileSize(previewAttachment.size)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-4">
+            {previewAttachment?.type === 'image' && (
+              <img 
+                src={previewAttachment.url} 
+                alt={previewAttachment.name}
+                className="max-w-full max-h-[70vh] mx-auto object-contain rounded-lg"
+              />
+            )}
+          </div>
+          <DialogFooter className="p-4 pt-0">
+            <a 
+              href={previewAttachment?.url || ''} 
+              download={previewAttachment?.name}
+              className="inline-flex items-center gap-2"
+            >
+              <Button variant="outline">
+                <DownloadSimple size={18} className="mr-2" />
+                {language === 'hi' ? 'डाउनलोड' : 'Download'}
+              </Button>
+            </a>
+            <Button onClick={() => setPreviewAttachment(null)}>
+              {language === 'hi' ? 'बंद करें' : 'Close'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Report & Block Dialog */}
       <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>

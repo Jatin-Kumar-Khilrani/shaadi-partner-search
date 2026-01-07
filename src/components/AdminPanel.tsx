@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useKV } from '@/hooks/useKV'
 import { logger } from '@/lib/logger'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,10 +17,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, CaretLeft, CaretRight, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User as UserIcon, CreditCard, Upload, ShieldWarning, Prohibit, Warning, Heart, Gift, Trophy, Confetti, MagnifyingGlass } from '@phosphor-icons/react'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, CaretLeft, CaretRight, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User as UserIcon, CreditCard, Upload, ShieldWarning, Prohibit, Warning, Heart, Gift, Trophy, Confetti, MagnifyingGlass, Paperclip, Image as ImageIcon, Smiley } from '@phosphor-icons/react'
 import type { Profile, WeddingService, PaymentTransaction, BlockedProfile, ReportReason, SuccessStory } from '@/types/profile'
 import type { User } from '@/types/user'
-import type { ChatMessage } from '@/types/chat'
+import type { ChatMessage, ChatAttachment } from '@/types/chat'
 import { Chat } from '@/components/Chat'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
@@ -28,6 +29,16 @@ import { RegistrationDialog } from '@/components/RegistrationDialog'
 import { toast } from 'sonner'
 import { formatDateDDMMYYYY } from '@/lib/utils'
 import { verifyPhotosWithVision, type PhotoVerificationResult } from '@/lib/visionPhotoVerification'
+
+// Emoji categories for WhatsApp-like picker (admin)
+const ADMIN_EMOJI_CATEGORIES = {
+  smileys: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '🥲', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '🥸', '😎', '🤓', '🧐'],
+  gestures: ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🫀', '🫁', '🦷', '🦴', '👀', '👁️', '👅', '👄'],
+  love: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓', '🆔', '⚛️'],
+  celebration: ['🎉', '🎊', '🎈', '🎁', '🎀', '🎂', '🍰', '🧁', '🥂', '🍾', '🥳', '🎄', '🎃', '🎆', '🎇', '✨', '🎍', '🎋', '🎏', '🎎', '🎐', '🎑', '🏮', '🪔', '💐', '🌸', '🌺', '🌹', '🌷', '🌻', '🌼', '💮', '🏵️', '🍀', '🌿', '🌱', '🪴', '🌵', '🎋'],
+  objects: ['📱', '💻', '🖥️', '📷', '📸', '📹', '🎥', '📞', '☎️', '📺', '📻', '🎙️', '🎚️', '🎛️', '⏰', '⏱️', '⏲️', '🕰️', '💡', '🔦', '🕯️', '💰', '💵', '💴', '💶', '💷', '💳', '💎', '⚖️', '🔧', '🔨', '⚒️', '🛠️', '⛏️', '🔩', '⚙️', '🔗', '📎', '🖇️', '📏', '📐', '✂️', '📌', '📍', '🗑️'],
+  indian: ['🙏', '🪷', '🕉️', '🛕', '🪔', '🎪', '🐘', '🦚', '🌺', '🌸', '💐', '🍛', '🫓', '🥘', '🍚', '🥭', '🍌', '🥥', '🫖', '☕', '🍵', '🥛', '🍯', '🪘', '🎵', '💃', '🕺', '👰', '🤵', '💒', '💍', '👨‍👩‍👧', '👨‍👩‍👦', '👪', '🏠', '🏡']
+}
 
 interface AdminPanelProps {
   profiles: Profile[] | undefined
@@ -543,6 +554,19 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([])
   const [isLoadingAI, setIsLoadingAI] = useState(false)
   const [showChatDialog, setShowChatDialog] = useState(false)
+  
+  // Admin chat attachment state (WhatsApp-like file sharing)
+  const [adminPendingAttachments, setAdminPendingAttachments] = useState<ChatAttachment[]>([])
+  const [adminPreviewAttachment, setAdminPreviewAttachment] = useState<ChatAttachment | null>(null)
+  const adminFileInputRef = useRef<HTMLInputElement>(null)
+  const adminChatInputRef = useRef<HTMLTextAreaElement>(null)
+  const ADMIN_MAX_FILE_SIZE = 20 * 1024 * 1024 // 20 MB max
+  const ADMIN_ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf']
+  
+  // Admin chat emoji picker state (WhatsApp-like)
+  const [showAdminEmojiPicker, setShowAdminEmojiPicker] = useState(false)
+  const [adminEmojiCategory, setAdminEmojiCategory] = useState<keyof typeof ADMIN_EMOJI_CATEGORIES>('smileys')
+  
   const [activeTab, setActiveTab] = useState('pending')
   const [showServiceDialog, setShowServiceDialog] = useState(false)
   const [editingService, setEditingService] = useState<WeddingService | null>(null)
@@ -1666,8 +1690,170 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     return suggestions
   }
 
+  // Admin chat attachment handling functions (WhatsApp-like)
+  const handleAdminFileSelect = useCallback((files: FileList | null) => {
+    if (!files || files.length === 0) return
+
+    Array.from(files).forEach(file => {
+      // Validate file type
+      if (!ADMIN_ALLOWED_FILE_TYPES.includes(file.type)) {
+        toast.error(
+          language === 'hi' 
+            ? 'अमान्य फाइल प्रकार। केवल JPG, PNG, GIF, WebP और PDF अनुमत हैं।' 
+            : 'Invalid file type. Only JPG, PNG, GIF, WebP and PDF are allowed.'
+        )
+        return
+      }
+
+      // Validate file size (20 MB max)
+      if (file.size > ADMIN_MAX_FILE_SIZE) {
+        toast.error(
+          language === 'hi' 
+            ? `फाइल बहुत बड़ी है। अधिकतम ${Math.round(ADMIN_MAX_FILE_SIZE / 1024 / 1024)} MB अनुमत है।` 
+            : `File too large. Maximum ${Math.round(ADMIN_MAX_FILE_SIZE / 1024 / 1024)} MB allowed.`
+        )
+        return
+      }
+
+      // Read file as data URL
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string
+        const attachment: ChatAttachment = {
+          id: `attach-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          type: file.type === 'application/pdf' ? 'pdf' : 'image',
+          name: file.name,
+          size: file.size,
+          url: dataUrl,
+          mimeType: file.type,
+        }
+
+        // Create thumbnail for images
+        if (attachment.type === 'image') {
+          attachment.thumbnailUrl = dataUrl
+        }
+
+        setAdminPendingAttachments(prev => [...prev, attachment])
+        toast.success(
+          language === 'hi' 
+            ? `${file.name} जोड़ा गया` 
+            : `${file.name} added`
+        )
+      }
+      reader.onerror = () => {
+        toast.error(language === 'hi' ? 'फाइल पढ़ने में त्रुटि' : 'Error reading file')
+      }
+      reader.readAsDataURL(file)
+    })
+
+    // Reset file input
+    if (adminFileInputRef.current) {
+      adminFileInputRef.current.value = ''
+    }
+  }, [language, ADMIN_MAX_FILE_SIZE, ADMIN_ALLOWED_FILE_TYPES])
+
+  // Handle clipboard paste for images in admin chat (like WhatsApp)
+  const handleAdminPaste = useCallback((e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    const imageItems = Array.from(items).filter(item => item.type.startsWith('image/'))
+    
+    if (imageItems.length === 0) return
+
+    e.preventDefault() // Prevent pasting text representation of image
+
+    imageItems.forEach(item => {
+      const file = item.getAsFile()
+      if (!file) return
+
+      // Check file size
+      if (file.size > ADMIN_MAX_FILE_SIZE) {
+        toast.error(
+          language === 'hi' 
+            ? `इमेज बहुत बड़ी है। अधिकतम ${Math.round(ADMIN_MAX_FILE_SIZE / 1024 / 1024)} MB अनुमत है।` 
+            : `Image too large. Maximum ${Math.round(ADMIN_MAX_FILE_SIZE / 1024 / 1024)} MB allowed.`
+        )
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string
+        const attachment: ChatAttachment = {
+          id: `attach-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          type: 'image',
+          name: `screenshot-${new Date().toISOString().slice(0, 19).replace(/[:-]/g, '')}.png`,
+          size: file.size,
+          url: dataUrl,
+          mimeType: file.type,
+          thumbnailUrl: dataUrl,
+        }
+        setAdminPendingAttachments(prev => [...prev, attachment])
+        toast.success(
+          language === 'hi' 
+            ? 'स्क्रीनशॉट जोड़ा गया' 
+            : 'Screenshot added'
+        )
+      }
+      reader.readAsDataURL(file)
+    })
+  }, [language, ADMIN_MAX_FILE_SIZE])
+
+  const removeAdminAttachment = useCallback((attachmentId: string) => {
+    setAdminPendingAttachments(prev => prev.filter(a => a.id !== attachmentId))
+  }, [])
+
+  const formatAdminFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+  }
+
+  // Render attachment in admin chat message
+  const renderAdminAttachment = (attachment: ChatAttachment, isFromAdmin: boolean) => {
+    if (attachment.type === 'image') {
+      return (
+        <div 
+          key={attachment.id}
+          className="mt-2 rounded-lg overflow-hidden cursor-pointer max-w-[200px]"
+          onClick={() => setAdminPreviewAttachment(attachment)}
+        >
+          <img 
+            src={attachment.thumbnailUrl || attachment.url} 
+            alt={attachment.name}
+            className="w-full h-auto object-cover"
+          />
+        </div>
+      )
+    }
+
+    if (attachment.type === 'pdf') {
+      return (
+        <a 
+          key={attachment.id}
+          href={attachment.url}
+          download={attachment.name}
+          className={`mt-2 flex items-center gap-2 p-2 rounded-lg ${
+            isFromAdmin ? 'bg-primary-foreground/10' : 'bg-muted'
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <FilePdf size={32} className="text-red-500 shrink-0" weight="fill" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{attachment.name}</p>
+            <p className="text-xs opacity-70">{formatAdminFileSize(attachment.size)}</p>
+          </div>
+          <DownloadSimple size={20} className="shrink-0" />
+        </a>
+      )
+    }
+
+    return null
+  }
+
   const handleSendMessage = () => {
-    if (!chatMessage.trim() || !selectedProfile) return
+    if ((!chatMessage.trim() && adminPendingAttachments.length === 0) || !selectedProfile) return
     
     const newMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
@@ -1680,12 +1866,14 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
       read: false,
       type: 'admin-to-user',
       status: 'sent',
-      delivered: false
+      delivered: false,
+      attachments: adminPendingAttachments.length > 0 ? [...adminPendingAttachments] : undefined
     }
 
     setMessages((current) => [...(current || []), newMessage])
     toast.success(t.messageSent)
     setChatMessage('')
+    setAdminPendingAttachments([])
     setShowChatDialog(false)
   }
 
@@ -5845,7 +6033,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             {selectedProfile?.fullName}
                           </p>
                         )}
-                        <p className="text-sm">{messageText}</p>
+                        {/* Display attachments */}
+                        {msg.attachments && msg.attachments.length > 0 && (
+                          <div className="space-y-2 mb-2">
+                            {msg.attachments.map(attachment => renderAdminAttachment(attachment, isFromAdmin))}
+                          </div>
+                        )}
+                        {messageText && <p className="text-sm">{messageText}</p>}
                         <div className="flex items-center justify-end gap-1 mt-1">
                           <span className={`text-xs ${isFromAdmin ? 'opacity-70' : 'text-muted-foreground'}`}>
                             {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -5874,25 +6068,201 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
             </div>
           </ScrollArea>
           
-          {/* New Message Input */}
+          {/* New Message Input with Attachment Support */}
           <div className="space-y-3 pt-2">
-            <Textarea
-              placeholder={t.typeMessage}
-              value={chatMessage}
-              onChange={(e) => setChatMessage(e.target.value)}
-              rows={3}
+            {/* Hidden file input */}
+            <input
+              ref={adminFileInputRef}
+              type="file"
+              accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
+              multiple
+              className="hidden"
+              aria-label="Attach file"
+              title="Attach file (JPG, PNG, PDF - up to 20 MB)"
+              onChange={(e) => handleAdminFileSelect(e.target.files)}
             />
+
+            {/* Pending attachments preview */}
+            {adminPendingAttachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 p-2 bg-muted/50 rounded-lg">
+                {adminPendingAttachments.map(attachment => (
+                  <div key={attachment.id} className="relative group">
+                    {attachment.type === 'image' ? (
+                      <div className="w-16 h-16 rounded-lg overflow-hidden border">
+                        <img 
+                          src={attachment.thumbnailUrl || attachment.url} 
+                          alt={attachment.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 rounded-lg border flex flex-col items-center justify-center bg-red-50">
+                        <FilePdf size={24} className="text-red-500" weight="fill" />
+                        <span className="text-[8px] text-muted-foreground truncate w-14 text-center mt-1">
+                          {attachment.name}
+                        </span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => removeAdminAttachment(attachment.id)}
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label="Remove attachment"
+                      title="Remove attachment"
+                    >
+                      <X size={12} weight="bold" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2 items-start">
+              {/* Attachment button */}
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="shrink-0 mt-1"
+                onClick={() => adminFileInputRef.current?.click()}
+                title={language === 'hi' ? 'फाइल जोड़ें (JPG, PNG, PDF - 20 MB तक)' : 'Add file (JPG, PNG, PDF - up to 20 MB)'}
+              >
+                <Paperclip size={20} />
+              </Button>
+
+              {/* Emoji picker button */}
+              <Popover open={showAdminEmojiPicker} onOpenChange={setShowAdminEmojiPicker}>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="shrink-0 mt-1"
+                    title={language === 'hi' ? 'इमोजी जोड़ें' : 'Add emoji'}
+                  >
+                    <Smiley size={20} />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-2" align="start" side="top">
+                  {/* Emoji category tabs */}
+                  <div className="flex gap-1 mb-2 flex-wrap">
+                    {(Object.keys(ADMIN_EMOJI_CATEGORIES) as Array<keyof typeof ADMIN_EMOJI_CATEGORIES>).map((category) => (
+                      <Button
+                        key={category}
+                        variant={adminEmojiCategory === category ? 'default' : 'ghost'}
+                        size="sm"
+                        className="text-xs px-2 py-1 h-7"
+                        onClick={() => setAdminEmojiCategory(category)}
+                      >
+                        {category === 'smileys' && '😀'}
+                        {category === 'gestures' && '👋'}
+                        {category === 'love' && '❤️'}
+                        {category === 'celebration' && '🎉'}
+                        {category === 'objects' && '📱'}
+                        {category === 'indian' && '🙏'}
+                      </Button>
+                    ))}
+                  </div>
+                  {/* Emoji grid */}
+                  <div className="grid grid-cols-8 gap-1 max-h-48 overflow-y-auto">
+                    {ADMIN_EMOJI_CATEGORIES[adminEmojiCategory].map((emoji, idx) => (
+                      <button
+                        key={idx}
+                        className="w-8 h-8 flex items-center justify-center hover:bg-muted rounded text-xl transition-colors"
+                        onClick={() => {
+                          const textarea = adminChatInputRef.current
+                          if (textarea) {
+                            const start = textarea.selectionStart
+                            const end = textarea.selectionEnd
+                            const text = chatMessage
+                            const newText = text.substring(0, start) + emoji + text.substring(end)
+                            setChatMessage(newText)
+                            // Set cursor position after emoji
+                            setTimeout(() => {
+                              textarea.focus()
+                              textarea.setSelectionRange(start + emoji.length, start + emoji.length)
+                            }, 0)
+                          } else {
+                            setChatMessage(prev => prev + emoji)
+                          }
+                          setShowAdminEmojiPicker(false)
+                        }}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              <Textarea
+                ref={adminChatInputRef}
+                placeholder={language === 'hi' ? 'संदेश लिखें... (Ctrl+V से स्क्रीनशॉट पेस्ट करें)' : 'Type message... (Ctrl+V to paste screenshot)'}
+                value={chatMessage}
+                onChange={(e) => setChatMessage(e.target.value)}
+                onPaste={handleAdminPaste}
+                rows={3}
+                className="flex-1"
+              />
+            </div>
+
+            {/* Help text */}
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <ImageIcon size={12} />
+              {language === 'hi' 
+                ? 'स्क्रीनशॉट के लिए Ctrl+V दबाएं या फाइल जोड़ने के लिए 📎 क्लिक करें (JPG, PNG, PDF - 20 MB तक)' 
+                : 'Press Ctrl+V to paste screenshot or click 📎 to attach files (JPG, PNG, PDF - up to 20 MB)'}
+            </p>
             
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowChatDialog(false)}>
+              <Button variant="outline" onClick={() => {
+                setShowChatDialog(false)
+                setAdminPendingAttachments([])
+              }}>
                 {t.close}
               </Button>
-              <Button onClick={handleSendMessage} disabled={!chatMessage.trim()}>
+              <Button onClick={handleSendMessage} disabled={!chatMessage.trim() && adminPendingAttachments.length === 0}>
                 <PaperPlaneTilt size={16} className="mr-1" />
                 {t.sendMessage}
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin Image Attachment Preview Dialog */}
+      <Dialog open={!!adminPreviewAttachment} onOpenChange={() => setAdminPreviewAttachment(null)}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden">
+          <DialogHeader className="p-4 pb-0">
+            <DialogTitle className="flex items-center gap-2">
+              <ImageIcon size={20} />
+              {adminPreviewAttachment?.name}
+            </DialogTitle>
+            <DialogDescription>
+              {adminPreviewAttachment && formatAdminFileSize(adminPreviewAttachment.size)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-4">
+            {adminPreviewAttachment?.type === 'image' && (
+              <img 
+                src={adminPreviewAttachment.url} 
+                alt={adminPreviewAttachment.name}
+                className="max-w-full max-h-[70vh] mx-auto object-contain rounded-lg"
+              />
+            )}
+          </div>
+          <DialogFooter className="p-4 pt-0">
+            <a 
+              href={adminPreviewAttachment?.url || ''} 
+              download={adminPreviewAttachment?.name}
+              className="inline-flex items-center gap-2"
+            >
+              <Button variant="outline">
+                <DownloadSimple size={18} className="mr-2" />
+                {language === 'hi' ? 'डाउनलोड' : 'Download'}
+              </Button>
+            </a>
+            <Button onClick={() => setAdminPreviewAttachment(null)}>
+              {language === 'hi' ? 'बंद करें' : 'Close'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
