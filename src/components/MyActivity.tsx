@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { useKV } from '@/hooks/useKV'
-import { Eye, Heart, ChatCircle, Check, X, MagnifyingGlassPlus, ProhibitInset, Phone, Envelope as EnvelopeIcon, User, Clock, ArrowCounterClockwise, Warning, Rocket, UploadSimple, CurrencyInr, Trash } from '@phosphor-icons/react'
+import { Eye, Heart, ChatCircle, Check, X, MagnifyingGlassPlus, ProhibitInset, Phone, Envelope as EnvelopeIcon, User, Clock, ArrowCounterClockwise, Warning, Rocket, UploadSimple, CurrencyInr } from '@phosphor-icons/react'
 import type { Interest, ContactRequest, Profile, BlockedProfile, MembershipPlan, DeclinedProfile, UserNotification } from '@/types/profile'
 import type { ChatMessage } from '@/types/chat'
 import type { Language } from '@/lib/translations'
@@ -63,25 +63,36 @@ interface MyActivityProps {
   membershipPlan?: MembershipPlan
   membershipSettings?: MembershipSettings
   setProfiles?: (newValue: Profile[] | ((oldValue?: Profile[] | undefined) => Profile[])) => void
+  initialTab?: string | null
+  onTabNavigated?: () => void
 }
 
-export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, onNavigateToChat, membershipPlan, membershipSettings, setProfiles }: MyActivityProps) {
+export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: _onViewProfile, onNavigateToChat, membershipPlan, membershipSettings, setProfiles, initialTab, onTabNavigated }: MyActivityProps) {
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests, setContactRequests] = useKV<ContactRequest[]>('contactRequests', [])
-  const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
+  const [_messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
   const [_blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
-  const [declinedProfiles, setDeclinedProfiles] = useKV<DeclinedProfile[]>('declinedProfiles', [])
+  const [_declinedProfiles, setDeclinedProfiles] = useKV<DeclinedProfile[]>('declinedProfiles', [])
   const [, setUserNotifications] = useKV<UserNotification[]>('userNotifications', [])
   
   // State for tab navigation
   const [activeTab, setActiveTab] = useState<string>('received-interests')
+  
+  // Effect to handle initial tab navigation from notifications
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab)
+      // Notify parent that we've handled the tab navigation
+      onTabNavigated?.()
+    }
+  }, [initialTab, onTabNavigated])
   
   // State for dialogs
   const [interestToDecline, setInterestToDecline] = useState<string | null>(null)
   const [interestToBlock, setInterestToBlock] = useState<{ interestId: string, profileId: string } | null>(null)
   const [viewContactProfile, setViewContactProfile] = useState<Profile | null>(null)
   const [selectedProfileForDetails, setSelectedProfileForDetails] = useState<Profile | null>(null)
-  const [profileToReconsider, setProfileToReconsider] = useState<{ profileId: string, type: 'interest' | 'contact' | 'block' } | null>(null)
+  const [_profileToReconsider, setProfileToReconsider] = useState<{ profileId: string, type: 'interest' | 'contact' | 'block' } | null>(null)
   
   // State for boost pack purchase
   const [showBoostPackDialog, setShowBoostPackDialog] = useState(false)
@@ -137,7 +148,6 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
     theyDeclined: language === 'hi' ? 'उन्होंने अस्वीकारा' : 'They Declined',
     blockedProfiles: language === 'hi' ? 'ब्लॉक किए गए' : 'Blocked',
     myContactRequests: language === 'hi' ? 'संपर्क अनुरोध' : 'Contact Requests',
-    recentChats: language === 'hi' ? 'नवीनतम चैट' : 'Recent Chats',
     profileViews: language === 'hi' ? 'प्रोफाइल देखे गए' : 'Profile Views',
     pending: language === 'hi' ? 'लंबित' : 'Pending',
     accepted: language === 'hi' ? 'स्वीकृत' : 'Accepted',
@@ -441,6 +451,30 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interests, contactRequests, currentUserProfile?.profileId, requestExpiryDays])
 
+  // Mark contact requests as viewed when user opens the Contact Requests tab
+  // This ensures the badge only shows NEW (unviewed) pending requests
+  useEffect(() => {
+    if (activeTab !== 'contact-requests') return
+    if (!contactRequests || !loggedInUserId) return
+
+    const now = new Date().toISOString()
+    const unviewedReceivedRequests = contactRequests.filter(
+      r => r.toUserId === loggedInUserId && r.status === 'pending' && !r.viewedByReceiverAt
+    )
+
+    if (unviewedReceivedRequests.length > 0) {
+      setContactRequests(prevRequests => 
+        (prevRequests || []).map(request => {
+          if (request.toUserId === loggedInUserId && request.status === 'pending' && !request.viewedByReceiverAt) {
+            return { ...request, viewedByReceiverAt: now }
+          }
+          return request
+        })
+      )
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, loggedInUserId])
+
   const remainingChats = Math.max(0, chatLimit - chatRequestsUsed.length)
   
   const sentInterests = interests?.filter(i => i.fromProfileId === currentUserProfile?.profileId) || []
@@ -475,27 +509,12 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
   const receivedContactRequests = contactRequests?.filter(r => r.toUserId === loggedInUserId) || []
   // Filter for pending contact requests (for badge count)
   const pendingContactRequests = receivedContactRequests.filter(r => r.status === 'pending')
+  // NEW pending contact requests (not yet viewed by receiver) - only these show in badge
+  const newPendingContactRequests = pendingContactRequests.filter(r => !r.viewedByReceiverAt)
   // Blocked interests - interests where I blocked the other profile
   const blockedInterests = interests?.filter(
     i => i.status === 'blocked' && i.toProfileId === currentUserProfile?.profileId // Only received interests can be blocked
   ) || []
-  
-  // Filter chats: Show messages where the current user is either sender OR recipient
-  // But for system-generated messages (fromUserId === 'system'), only show if user is the intended recipient (toProfileId)
-  const myChats = messages?.filter(m => {
-    const isSystemMessage = m.fromUserId === 'system'
-    const isMyProfile = currentUserProfile?.profileId
-    
-    if (isSystemMessage) {
-      // System messages: only show to the intended recipient
-      return m.toProfileId === isMyProfile
-    }
-    
-    // Regular user messages: show if user is sender or recipient
-    return m.fromUserId === loggedInUserId || 
-           m.fromProfileId === isMyProfile || 
-           m.toProfileId === isMyProfile
-  }).slice(-10) || []
 
   const getProfileByProfileId = (profileId: string) => {
     return profiles.find(p => p.profileId === profileId)
@@ -1334,11 +1353,10 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
             <TabsTrigger value="sent-interests">{t.sentInterests}</TabsTrigger>
             <TabsTrigger value="contact-requests" className="relative">
               {t.myContactRequests}
-              {pendingContactRequests.length > 0 && (
-                <Badge className="ml-1 h-5 px-1.5" variant="destructive">{pendingContactRequests.length}</Badge>
+              {newPendingContactRequests.length > 0 && (
+                <Badge className="ml-1 h-5 px-1.5" variant="destructive">{newPendingContactRequests.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="chats">{t.recentChats}</TabsTrigger>
           </TabsList>
 
           {/* RECEIVED INTERESTS TAB - Most actionable, now first */}
@@ -1367,59 +1385,75 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                         const alreadyChatted = chatRequestsUsed.includes(interest.fromProfileId)
                         const canAccept = alreadyChatted || remainingChats > 0
                         const isProfileDeleted = profile?.isDeleted === true
+                        const isProfileMissing = !profile
+                        const isUnavailable = isProfileDeleted || isProfileMissing
                         
                         return (
-                          <Card key={interest.id} className={`hover:shadow-md transition-shadow ${isProfileDeleted ? 'opacity-70 bg-gray-50 dark:bg-gray-900/50 border-gray-300' : 'border-rose-100 dark:border-rose-900/30'}`}>
+                          <Card key={interest.id} className={`hover:shadow-md transition-shadow ${isUnavailable ? 'opacity-70 bg-gray-50 dark:bg-gray-900/50 border-gray-300' : 'border-rose-100 dark:border-rose-900/30'}`}>
                             <CardContent className="py-2 px-3">
                               <div className="flex flex-col gap-2">
                                 <div 
-                                  className={`flex items-center justify-between ${isProfileDeleted ? '' : 'cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/20'} -mx-2 px-2 py-1 rounded-lg transition-colors`}
-                                  onClick={() => !isProfileDeleted && profile && setSelectedProfileForDetails(profile)}
-                                  title={isProfileDeleted ? t.profileDeletedInfo : t.clickToViewProfile}
+                                  className={`flex items-center justify-between ${isUnavailable ? '' : 'cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/20'} -mx-2 px-2 py-1 rounded-lg transition-colors`}
+                                  onClick={() => !isUnavailable && profile && setSelectedProfileForDetails(profile)}
+                                  title={isProfileMissing ? t.profileNotFoundInfo : isProfileDeleted ? t.profileDeletedInfo : t.clickToViewProfile}
                                 >
                                   <div className="flex items-center gap-2">
                                     {/* Profile Photo */}
                                     {profile?.photos?.[0] ? (
                                       <div 
-                                        className="relative cursor-pointer group"
-                                        onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
-                                        title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+                                        className={`relative ${isUnavailable ? '' : 'cursor-pointer'} group`}
+                                        onClick={(e) => { if (!isUnavailable) { e.stopPropagation(); openLightbox(profile.photos || [], 0) } }}
+                                        title={isUnavailable ? (isProfileMissing ? t.profileNotFoundInfo : t.profileDeletedInfo) : (language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge')}
                                       >
-                                        <div className="absolute -inset-0.5 bg-gradient-to-tr from-rose-300 to-amber-200 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"></div>
+                                        <div className={`absolute -inset-0.5 ${isUnavailable ? 'bg-gray-400' : 'bg-gradient-to-tr from-rose-300 to-amber-200'} rounded-full ${isUnavailable ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'} transition-opacity`}></div>
                                         <img 
                                           src={profile.photos[0]} 
                                           alt={profile.fullName || ''}
-                                          className="relative w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 group-hover:scale-105 transition-transform"
+                                          className={`relative w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 ${isUnavailable ? 'grayscale' : 'group-hover:scale-105'} transition-transform`}
                                         />
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                          <MagnifyingGlassPlus size={12} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        </div>
+                                        {!isUnavailable && (
+                                          <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                            <MagnifyingGlassPlus size={12} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                          </div>
+                                        )}
                                       </div>
                                     ) : (
-                                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50 flex items-center justify-center">
-                                        <Heart size={18} weight="fill" className="text-rose-500" />
+                                      <div className={`w-10 h-10 rounded-full ${isUnavailable ? 'bg-gray-200 dark:bg-gray-700' : 'bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50'} flex items-center justify-center`}>
+                                        {isProfileMissing ? (
+                                          <ProhibitInset size={18} weight="fill" className="text-gray-400" />
+                                        ) : (
+                                          <Heart size={18} weight="fill" className={isProfileDeleted ? 'text-gray-400' : 'text-rose-500'} />
+                                        )}
                                       </div>
                                     )}
                                     <div>
-                                      <p className="font-medium text-gray-800 dark:text-gray-100 hover:text-rose-600 dark:hover:text-rose-400 inline-flex items-center gap-1 text-sm leading-tight">
-                                        {profile?.fullName || 'Unknown'}
+                                      <p className={`font-medium ${isUnavailable ? 'text-gray-500 line-through' : 'text-gray-800 dark:text-gray-100 hover:text-rose-600 dark:hover:text-rose-400'} inline-flex items-center gap-1 text-sm leading-tight`}>
+                                        {isProfileMissing ? t.profileNotFound : (profile?.fullName || 'Unknown')}
                                         <User size={10} weight="bold" className="opacity-60" />
                                       </p>
                                       <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">{profile?.profileId || interest.fromProfileId}</p>
-                                      <p className="text-[11px] text-gray-600 dark:text-gray-300 leading-tight">
-                                        {profile?.age} {t.years} • {profile?.location}
-                                      </p>
+                                      {!isProfileMissing && (
+                                        <p className="text-[11px] text-gray-600 dark:text-gray-300 leading-tight">
+                                          {profile?.age} {t.years} • {profile?.location}
+                                        </p>
+                                      )}
                                       <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">{t.sentOn}: {formatDate(interest.createdAt)}</p>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-1.5 flex-wrap">
+                                    {isProfileMissing && (
+                                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-gray-200 text-gray-600">
+                                        <ProhibitInset size={10} className="mr-0.5" />
+                                        {t.profileNotFound}
+                                      </Badge>
+                                    )}
                                     {isProfileDeleted && (
                                       <Badge variant="destructive" className="text-[10px] px-1.5 py-0 bg-gray-500">
                                         <ProhibitInset size={10} className="mr-0.5" />
                                         {t.profileDeleted}
                                       </Badge>
                                     )}
-                                    {interest.status === 'pending' && !isProfileDeleted && (() => {
+                                    {interest.status === 'pending' && !isUnavailable && (() => {
                                       const expiry = formatExpiryCountdown(interest.createdAt)
                                       return (
                                         <Badge 
@@ -1434,7 +1468,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                     {getStatusBadge(interest.status)}
                                   </div>
                                 </div>
-                                {interest.status === 'pending' && !isProfileDeleted && (
+                                {interest.status === 'pending' && !isUnavailable && (
                                   <>
                                     <div className="flex gap-1.5">
                                       <Button 
@@ -2213,51 +2247,64 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                       {sentInterests.map((interest) => {
                         const profile = getProfileByProfileId(interest.toProfileId)
                         const isProfileDeleted = profile?.isDeleted === true
+                        const isProfileMissing = !profile
+                        const isUnavailable = isProfileDeleted || isProfileMissing
                         return (
-                          <Card key={interest.id} className={`hover:shadow-sm transition-shadow ${isProfileDeleted ? 'opacity-70 bg-gray-50 dark:bg-gray-900/50 border-gray-300' : 'border-amber-100'}`}>
+                          <Card key={interest.id} className={`hover:shadow-sm transition-shadow ${isUnavailable ? 'opacity-70 bg-gray-50 dark:bg-gray-900/50 border-gray-300' : 'border-amber-100'}`}>
                             <CardContent className="py-3 px-4">
                               <div 
-                                className={`flex items-center justify-between ${isProfileDeleted ? '' : 'cursor-pointer hover:bg-amber-50/50'} -mx-2 px-2 py-1 rounded-lg transition-colors`}
-                                onClick={() => !isProfileDeleted && profile && setSelectedProfileForDetails(profile)}
-                                title={isProfileDeleted ? t.profileDeletedInfo : t.clickToViewProfile}
+                                className={`flex items-center justify-between ${isUnavailable ? '' : 'cursor-pointer hover:bg-amber-50/50'} -mx-2 px-2 py-1 rounded-lg transition-colors`}
+                                onClick={() => !isUnavailable && profile && setSelectedProfileForDetails(profile)}
+                                title={isProfileMissing ? t.profileNotFoundInfo : isProfileDeleted ? t.profileDeletedInfo : t.clickToViewProfile}
                               >
                                 <div className="flex items-center gap-3">
                                   {/* Profile Photo */}
                                   {profile?.photos?.[0] ? (
                                     <div 
-                                      className={`relative ${isProfileDeleted ? '' : 'cursor-pointer'} group`}
-                                      onClick={(e) => { if (!isProfileDeleted) { e.stopPropagation(); openLightbox(profile.photos || [], 0) } }}
-                                      title={isProfileDeleted ? t.profileDeletedInfo : (language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge')}
+                                      className={`relative ${isUnavailable ? '' : 'cursor-pointer'} group`}
+                                      onClick={(e) => { if (!isUnavailable) { e.stopPropagation(); openLightbox(profile.photos || [], 0) } }}
+                                      title={isUnavailable ? (isProfileMissing ? t.profileNotFoundInfo : t.profileDeletedInfo) : (language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge')}
                                     >
-                                      <div className={`p-[2px] rounded-full ${isProfileDeleted ? 'bg-gray-400' : 'bg-gradient-to-r from-amber-400 via-rose-400 to-amber-500'}`}>
+                                      <div className={`p-[2px] rounded-full ${isUnavailable ? 'bg-gray-400' : 'bg-gradient-to-r from-amber-400 via-rose-400 to-amber-500'}`}>
                                         <img 
                                           src={profile.photos[0]} 
                                           alt={profile.fullName || ''}
-                                          className={`w-11 h-11 rounded-full object-cover border-2 border-white ${isProfileDeleted ? 'grayscale' : 'group-hover:scale-105'} transition-transform`}
+                                          className={`w-11 h-11 rounded-full object-cover border-2 border-white ${isUnavailable ? 'grayscale' : 'group-hover:scale-105'} transition-transform`}
                                         />
                                       </div>
-                                      {!isProfileDeleted && (
+                                      {!isUnavailable && (
                                         <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
                                           <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </div>
                                       )}
                                     </div>
                                   ) : (
-                                    <div className={`p-[2px] rounded-full ${isProfileDeleted ? 'bg-gray-400' : 'bg-gradient-to-r from-amber-400 via-rose-400 to-amber-500'}`}>
+                                    <div className={`p-[2px] rounded-full ${isUnavailable ? 'bg-gray-400' : 'bg-gradient-to-r from-amber-400 via-rose-400 to-amber-500'}`}>
                                       <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
-                                        <Heart size={20} weight="fill" className={isProfileDeleted ? 'text-gray-400' : 'text-amber-500'} />
+                                        {isProfileMissing ? (
+                                          <ProhibitInset size={20} weight="fill" className="text-gray-400" />
+                                        ) : (
+                                          <Heart size={20} weight="fill" className={isProfileDeleted ? 'text-gray-400' : 'text-amber-500'} />
+                                        )}
                                       </div>
                                     </div>
                                   )}
                                   <div>
-                                    <p className={`font-semibold text-sm ${isProfileDeleted ? 'text-gray-500 line-through' : 'text-amber-700 hover:underline'}`}>
-                                      {profile?.fullName || 'Unknown'}
+                                    <p className={`font-semibold text-sm ${isUnavailable ? 'text-gray-500 line-through' : 'text-amber-700 hover:underline'}`}>
+                                      {isProfileMissing ? t.profileNotFound : (profile?.fullName || 'Unknown')}
                                     </p>
                                     <p className="text-xs text-muted-foreground">{profile?.profileId || interest.toProfileId}</p>
                                     <p className="text-[10px] text-muted-foreground">{t.sentOn}: {formatDate(interest.createdAt)}</p>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                                  {/* Profile not found badge */}
+                                  {isProfileMissing && (
+                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-gray-200 text-gray-600">
+                                      <ProhibitInset size={10} className="mr-0.5" />
+                                      {t.profileNotFound}
+                                    </Badge>
+                                  )}
                                   {/* Deleted profile badge */}
                                   {isProfileDeleted && (
                                     <Badge variant="destructive" className="text-[10px] px-1.5 py-0 bg-gray-500">
@@ -2266,7 +2313,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                                     </Badge>
                                   )}
                                   {/* Expiry countdown for pending interests */}
-                                  {interest.status === 'pending' && !isProfileDeleted && (() => {
+                                  {interest.status === 'pending' && !isUnavailable && (() => {
                                     const expiry = formatExpiryCountdown(interest.createdAt)
                                     return (
                                       <Badge 
@@ -2789,122 +2836,6 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile, 
                     </ScrollArea>
                   </TabsContent>
                 </Tabs>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="chats">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t.recentChats}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[500px]">
-                  {myChats.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">{t.noActivity}</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {myChats.map((msg) => {
-                        const isMyMessage = msg.fromProfileId === currentUserProfile?.profileId
-                        const isSystemMessage = msg.fromProfileId === 'system'
-                        const otherProfileId = isSystemMessage ? msg.toProfileId : (isMyMessage ? msg.toProfileId : msg.fromProfileId)
-                        const otherProfile = profiles.find(p => p.profileId === otherProfileId)
-                        const isAdminMessage = msg.type === 'admin-broadcast' || msg.type === 'admin-to-user' || msg.type === 'admin'
-                        const isDeletedProfile = !isAdminMessage && !isSystemMessage && !otherProfile
-                        
-                        return (
-                          <Card key={msg.id} className={`hover:shadow-sm transition-shadow ${isDeletedProfile ? 'border-gray-300 bg-gray-50/50 opacity-70' : 'border-blue-100'}`}>
-                            <CardContent className="py-3 px-4">
-                              <div className="flex items-start gap-3">
-                                {/* Profile Photo */}
-                                {isAdminMessage ? (
-                                  <div className="p-[2px] rounded-full bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-500">
-                                    <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
-                                      <ChatCircle size={20} weight="fill" className="text-blue-500" />
-                                    </div>
-                                  </div>
-                                ) : isSystemMessage ? (
-                                  <div className="p-[2px] rounded-full bg-gradient-to-r from-green-400 via-emerald-400 to-teal-500">
-                                    <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
-                                      <Check size={20} weight="bold" className="text-green-500" />
-                                    </div>
-                                  </div>
-                                ) : isDeletedProfile ? (
-                                  <div className="p-[2px] rounded-full bg-gradient-to-r from-gray-300 via-gray-400 to-gray-500">
-                                    <div className="w-11 h-11 rounded-full bg-gray-100 flex items-center justify-center">
-                                      <Trash size={20} weight="fill" className="text-gray-400" />
-                                    </div>
-                                  </div>
-                                ) : otherProfile?.photos?.[0] ? (
-                                  <div 
-                                    className="relative cursor-pointer group"
-                                    onClick={() => openLightbox(otherProfile.photos || [], 0)}
-                                    title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
-                                  >
-                                    <div className="p-[2px] rounded-full bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-500">
-                                      <img 
-                                        src={otherProfile.photos[0]} 
-                                        alt={otherProfile.fullName || ''}
-                                        className="w-11 h-11 rounded-full object-cover border-2 border-white group-hover:scale-105 transition-transform"
-                                      />
-                                    </div>
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                      <MagnifyingGlassPlus size={14} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="p-[2px] rounded-full bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-500">
-                                    <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center">
-                                      <ChatCircle size={20} weight="fill" className={isMyMessage ? 'text-blue-500' : 'text-indigo-500'} />
-                                    </div>
-                                  </div>
-                                )}
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <div>
-                                      {isSystemMessage ? (
-                                        <p className="font-semibold text-sm text-green-600">
-                                          {language === 'hi' ? 'सिस्टम सूचना' : 'System Notification'}
-                                        </p>
-                                      ) : isDeletedProfile ? (
-                                        <>
-                                          <p className="font-semibold text-sm text-gray-500 line-through">
-                                            {language === 'hi' ? 'हटाई गई प्रोफाइल' : 'Deleted Profile'}
-                                          </p>
-                                          <p className="text-[10px] text-red-500">{otherProfileId}</p>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <p 
-                                            className={`font-semibold text-sm text-blue-700 ${!isAdminMessage && otherProfile && onViewProfile ? 'cursor-pointer hover:underline transition-colors' : ''}`}
-                                            onClick={() => !isAdminMessage && otherProfile && onViewProfile?.(otherProfile)}
-                                          >
-                                            {isAdminMessage ? 'Admin' : (otherProfile?.fullName || 'Unknown')}
-                                          </p>
-                                          {!isAdminMessage && (
-                                            <p className="text-[10px] text-muted-foreground">{otherProfile?.profileId || otherProfileId}</p>
-                                          )}
-                                        </>
-                                      )}
-                                    </div>
-                                    <p className="text-[10px] text-muted-foreground">
-                                      {new Date(msg.timestamp || msg.createdAt).toLocaleString(language === 'hi' ? 'hi-IN' : 'en-IN')}
-                                    </p>
-                                  </div>
-                                  <p className={`text-xs line-clamp-1 ${isDeletedProfile ? 'text-gray-400 italic' : 'text-muted-foreground'}`}>
-                                    {isDeletedProfile 
-                                      ? (language === 'hi' ? 'यह प्रोफाइल अब उपलब्ध नहीं है' : 'This profile is no longer available')
-                                      : msg.message}
-                                  </p>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )
-                      })}
-                    </div>
-                  )}
-                </ScrollArea>
               </CardContent>
             </Card>
           </TabsContent>

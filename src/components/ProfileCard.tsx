@@ -10,9 +10,10 @@ import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 export interface ProfileInteractionStatus {
   isNew?: boolean  // Not viewed yet
   isViewed?: boolean  // Profile has been viewed by current user
-  interestSent?: boolean  // Interest sent by current user
+  interestSent?: boolean  // Interest sent by current user (pending or accepted)
   interestReceived?: boolean  // Interest received from this profile
   interestAccepted?: boolean  // Mutual interest accepted
+  interestExpired?: boolean  // Interest sent but expired without response
   contactRequestSent?: boolean  // Contact request sent by current user
   contactRequestReceived?: boolean  // Contact request received from this profile
   contactRequestAccepted?: boolean  // Contact request accepted

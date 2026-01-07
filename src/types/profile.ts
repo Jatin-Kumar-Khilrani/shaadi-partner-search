@@ -435,6 +435,7 @@ export interface ContactRequest {
   expiredAt?: string
   cancelledAt?: string
   reconsideredAt?: string
+  viewedByReceiverAt?: string  // Timestamp when receiver first viewed this request (for badge count)
   // Track who performed the action for UI display
   declinedBy?: 'sender' | 'receiver'  // Who declined the contact request
   revokedBy?: 'sender' | 'receiver'   // Who revoked after approval

@@ -156,6 +156,7 @@ function App() {
   
   const [currentView, setCurrentView] = useState<View>('home')
   const [chatTargetProfileId, setChatTargetProfileId] = useState<string | null>(null)
+  const [activityTab, setActivityTab] = useState<string | null>(null)
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({})
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [showRegistration, setShowRegistration] = useState(false)
@@ -1113,7 +1114,32 @@ function App() {
                                     }`}
                                     onClick={() => {
                                       handleMarkAsRead(notif.id)
-                                      if (notif.type.includes('interest') || notif.type.includes('contact')) {
+                                      // Navigate to appropriate tab based on notification type
+                                      if (notif.type === 'message_received') {
+                                        // Navigate to chat with the sender
+                                        setChatTargetProfileId(notif.senderProfileId || null)
+                                        setCurrentView('chat')
+                                      } else if (notif.type === 'interest_received') {
+                                        setActivityTab('received-interests')
+                                        setCurrentView('my-activity')
+                                      } else if (notif.type === 'interest_accepted') {
+                                        setActivityTab('accepted-interests')
+                                        setCurrentView('my-activity')
+                                      } else if (notif.type === 'interest_declined') {
+                                        // When your sent interest was declined
+                                        setActivityTab('sent-interests')
+                                        setCurrentView('my-activity')
+                                      } else if (notif.type === 'interest_expired') {
+                                        // Your sent interest expired
+                                        setActivityTab('sent-interests')
+                                        setCurrentView('my-activity')
+                                      } else if (notif.type.includes('contact')) {
+                                        setActivityTab('contact-requests')
+                                        setCurrentView('my-activity')
+                                      } else if (notif.type === 'profile_viewed') {
+                                        setActivityTab('received-interests')
+                                        setCurrentView('my-activity')
+                                      } else {
                                         setCurrentView('my-activity')
                                       }
                                     }}
@@ -1131,6 +1157,8 @@ function App() {
                                           <p className={`text-sm truncate ${!notif.isRead ? 'font-semibold' : 'font-medium'}`}>
                                             {language === 'hi' ? notif.titleHi : notif.title}
                                           </p>
+                                          {/* Navigate arrow - shows on hover */}
+                                          <ArrowRight size={14} className="opacity-0 group-hover/item:opacity-100 transition-opacity text-primary flex-shrink-0 mt-0.5" />
                                           {/* Delete button - shows on hover */}
                                           <button
                                             onClick={(e) => handleDeleteNotification(notif.id, e)}
@@ -1945,6 +1973,8 @@ function App() {
               setChatTargetProfileId(profileId || null)
               setCurrentView('chat')
             }}
+            initialTab={activityTab}
+            onTabNavigated={() => setActivityTab(null)}
           />
         )}
 

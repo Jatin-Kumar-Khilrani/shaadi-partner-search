@@ -8780,7 +8780,7 @@ ShaadiPartnerSearch Team
                               ...prev,
                               profile1Id: profile.profileId,
                               profile1Name: profile.fullName || '',
-                              profile1City: profile.city || '',
+                              profile1City: profile.city || profile.location || '',
                               profile1PhotoUrl: profile.photos?.[0] || '',
                               profile1Gender: profile.gender || 'male'
                             }))
@@ -8798,7 +8798,7 @@ ShaadiPartnerSearch Team
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">{profile.fullName}</p>
                             <p className="text-xs text-muted-foreground truncate">
-                              {profile.profileId} • {profile.city || 'N/A'}
+                              {profile.profileId} • {profile.city || profile.location || 'N/A'}
                             </p>
                           </div>
                           <span className={`text-xs px-2 py-0.5 rounded ${profile.gender === 'male' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
@@ -8969,7 +8969,7 @@ ShaadiPartnerSearch Team
                               ...prev,
                               profile2Id: profile.profileId,
                               profile2Name: profile.fullName || '',
-                              profile2City: profile.city || '',
+                              profile2City: profile.city || profile.location || '',
                               profile2PhotoUrl: profile.photos?.[0] || '',
                               profile2Gender: profile.gender || 'female'
                             }))
@@ -8987,7 +8987,7 @@ ShaadiPartnerSearch Team
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">{profile.fullName}</p>
                             <p className="text-xs text-muted-foreground truncate">
-                              {profile.profileId} • {profile.city || 'N/A'}
+                              {profile.profileId} • {profile.city || profile.location || 'N/A'}
                             </p>
                           </div>
                           <span className={`text-xs px-2 py-0.5 rounded ${profile.gender === 'male' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
