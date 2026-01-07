@@ -115,8 +115,8 @@ export default defineConfig({
             return 'terms'
           }
           
-          // Profile components - heavy components
-          if (id.includes('ProfileDetailDialog') || id.includes('RegistrationDialog')) {
+          // Profile components - heavy components (including face service used by registration)
+          if (id.includes('ProfileDetailDialog') || id.includes('RegistrationDialog') || id.includes('azureFaceService')) {
             return 'profile-dialogs'
           }
           

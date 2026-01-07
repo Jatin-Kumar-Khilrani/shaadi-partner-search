@@ -17,6 +17,7 @@ import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, Ar
 import { toast } from 'sonner'
 import { logger } from '@/lib/logger'
 import { sendRegistrationEmailOtp, sendRegistrationMobileOtp } from '@/lib/notificationService'
+import { validateSelfie } from '@/lib/azureFaceService'
 import type { Gender, MaritalStatus, Profile, MembershipPlan, DisabilityStatus, DietPreference, DrinkingHabit, SmokingHabit, ResidentialStatus } from '@/types/profile'
 import { useTranslation, type Language } from '@/lib/translations'
 import { generateBio, type BioGenerationParams } from '@/lib/aiFoundryService'
@@ -1022,9 +1023,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     // Convert canvas to data URL for face detection service
     const imageData = canvas.toDataURL('image/jpeg', 0.9)
     
-    // Import and use the Azure Face Service
-    const { validateSelfie } = await import('@/lib/azureFaceService')
-    
+    // Use the Azure Face Service (imported statically)
     const result = await validateSelfie(imageData, language)
     
     if (!result.valid) {
