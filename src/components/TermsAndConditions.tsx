@@ -865,3 +865,156 @@ Last Updated: ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month:
     </Dialog>
   )
 }
+
+// Embedded version of Terms & Conditions for use in Settings dialog
+// This uses the same content as the registration Terms dialog (DRY principle)
+interface TermsContentEmbedProps {
+  language: Language
+  membershipSettings?: Partial<MembershipSettings>
+  maxHeight?: string
+}
+
+export function TermsContentEmbed({ language, membershipSettings, maxHeight = '400px' }: TermsContentEmbedProps) {
+  const isHindi = language === 'hi'
+  
+  // Dynamic pricing from membership settings
+  const sixMonthPrice = membershipSettings?.sixMonthPrice || 500
+  const oneYearPrice = membershipSettings?.oneYearPrice || 900
+  
+  // Dynamic plan limits from admin settings
+  const freePlanChatLimit = membershipSettings?.freePlanChatLimit ?? 5
+  const freePlanContactLimit = membershipSettings?.freePlanContactLimit ?? 0
+  const sixMonthChatLimit = membershipSettings?.sixMonthChatLimit ?? 50
+  const sixMonthContactLimit = membershipSettings?.sixMonthContactLimit ?? 20
+  const oneYearChatLimit = membershipSettings?.oneYearChatLimit ?? 120
+  const oneYearContactLimit = membershipSettings?.oneYearContactLimit ?? 50
+  
+  // Request expiry settings
+  const requestExpiryDays = membershipSettings?.requestExpiryDays ?? 15
+  
+  // Boost pack settings
+  const boostPackEnabled = membershipSettings?.boostPackEnabled ?? true
+  const boostPackInterestLimit = membershipSettings?.boostPackInterestLimit ?? 10
+  const boostPackContactLimit = membershipSettings?.boostPackContactLimit ?? 10
+  const boostPackPrice = membershipSettings?.boostPackPrice ?? 100
+
+  const sections = [
+    {
+      icon: <FileText size={20} weight="bold" className="text-primary" />,
+      title: isHindi ? '1. परिचय और स्वीकृति' : '1. Introduction and Acceptance',
+      content: isHindi 
+        ? `ShaadiPartnerSearch एक ऑनलाइन मैट्रिमोनी प्लेटफॉर्म है। इस सेवा का उपयोग करके, आप इन नियमों और शर्तों को स्वीकार करते हैं।`
+        : `ShaadiPartnerSearch is an online matrimonial platform. By using this service, you accept these Terms and Conditions.`
+    },
+    {
+      icon: <User size={20} weight="bold" className="text-primary" />,
+      title: isHindi ? '2. पात्रता मानदंड' : '2. Eligibility Criteria',
+      content: isHindi
+        ? `• पुरुष: न्यूनतम 21 वर्ष | महिला: न्यूनतम 18 वर्ष
+• वैवाहिक स्थिति: अविवाहित, तलाकशुदा, या विधवा/विधुर
+• सभी जानकारी सत्य और सही होनी चाहिए`
+        : `• Male: Minimum 21 years | Female: Minimum 18 years
+• Marital Status: Single, Divorced, or Widowed
+• All information must be true and accurate`
+    },
+    {
+      icon: <Lock size={20} weight="bold" className="text-primary" />,
+      title: isHindi ? '3. डेटा गोपनीयता' : '3. Data Privacy',
+      content: isHindi
+        ? `• आपकी जानकारी DPDP Act 2023 के अनुसार सुरक्षित रहेगी
+• संपर्क विवरण केवल स्वीकृत उपयोगकर्ताओं को दिखाया जाएगा
+• आपके पास डेटा एक्सेस, सुधार और विलोपन का अधिकार है`
+        : `• Your information is protected under DPDP Act 2023
+• Contact details shown only to approved users
+• You have rights to access, correct, and delete your data`
+    },
+    {
+      icon: <CurrencyInr size={20} weight="bold" className="text-primary" />,
+      title: isHindi ? '4. सदस्यता योजनाएं' : '4. Membership Plans',
+      content: isHindi
+        ? `• मुफ्त योजना: सीमित सुविधाएं (${freePlanChatLimit} चैट, ${freePlanContactLimit} संपर्क)
+• 6 महीने (₹${sixMonthPrice}): ${sixMonthChatLimit} चैट, ${sixMonthContactLimit} संपर्क
+• 1 साल (₹${oneYearPrice}): ${oneYearChatLimit} चैट, ${oneYearContactLimit} संपर्क
+• सभी शुल्क 18% GST सहित | रिफंड नीति लागू`
+        : `• Free Plan: Limited features (${freePlanChatLimit} chats, ${freePlanContactLimit} contacts)
+• 6 Months (₹${sixMonthPrice}): ${sixMonthChatLimit} chats, ${sixMonthContactLimit} contacts
+• 1 Year (₹${oneYearPrice}): ${oneYearChatLimit} chats, ${oneYearContactLimit} contacts
+• All charges include 18% GST | Refund policy applies`
+    },
+    {
+      icon: <Heart size={20} weight="bold" className="text-primary" />,
+      title: isHindi ? '5. रुचि और संपर्क' : '5. Interest and Contact',
+      content: isHindi
+        ? `• रुचि स्वीकार होने पर भेजने वाले का चैट स्लॉट उपयोग होता है
+• संपर्क स्वीकृति पर दोनों पक्षों का संपर्क स्लॉट उपयोग होता है
+• पेंडिंग अनुरोध ${requestExpiryDays} दिनों बाद स्वतः समाप्त
+${boostPackEnabled ? `• बूस्ट पैक: ₹${boostPackPrice} में ${boostPackInterestLimit} रुचि + ${boostPackContactLimit} संपर्क` : ''}`
+        : `• Interest acceptance uses sender's chat slot
+• Contact approval uses both parties' contact slots
+• Pending requests auto-expire after ${requestExpiryDays} days
+${boostPackEnabled ? `• Boost Pack: ₹${boostPackPrice} for ${boostPackInterestLimit} interests + ${boostPackContactLimit} contacts` : ''}`
+    },
+    {
+      icon: <Shield size={20} weight="bold" className="text-primary" />,
+      title: isHindi ? '6. सत्यापन और सुरक्षा' : '6. Verification and Safety',
+      content: isHindi
+        ? `• AI-आधारित फोटो और सेल्फी सत्यापन
+• DigiLocker/आधार सत्यापन विकल्प उपलब्ध
+• संदिग्ध प्रोफाइल रिपोर्ट/ब्लॉक करने की सुविधा
+• हम 100% प्रामाणिकता की गारंटी नहीं दे सकते`
+        : `• AI-based photo and selfie verification
+• DigiLocker/Aadhaar verification option available
+• Feature to report/block suspicious profiles
+• We cannot guarantee 100% authenticity`
+    },
+    {
+      icon: <Eye size={20} weight="bold" className="text-primary" />,
+      title: isHindi ? '7. गोपनीयता नियंत्रण' : '7. Privacy Controls',
+      content: isHindi
+        ? `• प्रोफाइल छुपाने/दिखाने का विकल्प
+• संपर्क जानकारी छुपाने का विकल्प
+• ब्लॉक किए गए उपयोगकर्ता आपको नहीं देख सकते`
+        : `• Option to hide/show profile
+• Option to hide contact information
+• Blocked users cannot see your profile`
+    },
+    {
+      icon: <Handshake size={20} weight="bold" className="text-primary" />,
+      title: isHindi ? '8. दायित्व अस्वीकरण' : '8. Liability Disclaimer',
+      content: isHindi
+        ? `• यह सेवा केवल परिचय प्रदान करती है
+• विवाह का निर्णय पूर्णतः परिवारों का है
+• प्लेटफॉर्म किसी विवाद के लिए उत्तरदायी नहीं
+• व्यक्तिगत मिलने से पहले उचित सावधानी बरतें`
+        : `• This service only provides introductions
+• Marriage decision is entirely of families
+• Platform not liable for any disputes
+• Exercise due caution before meeting in person`
+    }
+  ]
+
+  return (
+    <ScrollArea style={{ height: maxHeight }} className="pr-4">
+      <div className="space-y-4">
+        {sections.map((section, index) => (
+          <div key={index} className="space-y-2">
+            <div className="flex items-center gap-2">
+              {section.icon}
+              <h4 className="text-sm font-semibold">{section.title}</h4>
+            </div>
+            <div className="pl-7 text-xs text-muted-foreground whitespace-pre-line leading-relaxed">
+              {section.content}
+            </div>
+            {index < sections.length - 1 && <Separator className="mt-3" />}
+          </div>
+        ))}
+        
+        <div className="text-xs text-muted-foreground text-center pt-2 border-t">
+          {isHindi 
+            ? `अंतिम अपडेट: ${new Date().toLocaleDateString('hi-IN', { year: 'numeric', month: 'long', day: 'numeric' })}`
+            : `Last Updated: ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}`}
+        </div>
+      </div>
+    </ScrollArea>
+  )
+}

@@ -13,6 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { MultiSelect, MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS, OCCUPATION_PROFESSION_OPTIONS, COUNTRY_OPTIONS, EDUCATION_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, DIET_PREFERENCE_OPTIONS, DRINKING_HABIT_OPTIONS, SMOKING_HABIT_OPTIONS, getStateOptionsForCountries } from '@/components/ui/multi-select'
 import { Gear, Heart, Phone, Info, FileText, ShieldCheck, MagnifyingGlass } from '@phosphor-icons/react'
 import { toast } from 'sonner'
+import { TermsContentEmbed } from '@/components/TermsAndConditions'
 import type { Profile, PartnerPreferenceData, DietPreference, DrinkingHabit, SmokingHabit, MaritalStatus } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 
@@ -433,9 +434,29 @@ interface SettingsProps {
   language: Language
   currentProfile?: Profile
   onUpdateProfile?: (profile: Profile) => void
+  membershipSettings?: {
+    sixMonthPrice?: number
+    oneYearPrice?: number
+    sixMonthDuration?: number
+    oneYearDuration?: number
+    discountPercentage?: number
+    discountEnabled?: boolean
+    discountEndDate?: string | null
+    freePlanChatLimit?: number
+    freePlanContactLimit?: number
+    sixMonthChatLimit?: number
+    sixMonthContactLimit?: number
+    oneYearChatLimit?: number
+    oneYearContactLimit?: number
+    requestExpiryDays?: number
+    boostPackEnabled?: boolean
+    boostPackInterestLimit?: number
+    boostPackContactLimit?: number
+    boostPackPrice?: number
+  }
 }
 
-export function Settings({ open, onClose, profileId, language, currentProfile, onUpdateProfile }: SettingsProps) {
+export function Settings({ open, onClose, profileId, language, currentProfile, onUpdateProfile, membershipSettings }: SettingsProps) {
   const [preferences, setPreferences] = useKV<PartnerPreferenceData[]>('partnerPreferences', [])
   const [faqSearch, setFaqSearch] = useState('')
   
@@ -563,58 +584,6 @@ export function Settings({ open, onClose, profileId, language, currentProfile, o
     selectMultiple: '', // Removed per UX update
     selectAny: language === 'hi' ? 'चुनें' : 'Select',
     search: language === 'hi' ? 'खोजें...' : 'Search...',
-    
-    termsContent: language === 'hi' ? `
-नियम और शर्तें
-
-1. सामान्य नियम
-- यह सेवा केवल वैवाहिक उद्देश्यों के लिए है।
-- आपको 18 वर्ष (महिला) या 21 वर्ष (पुरुष) से अधिक आयु का होना चाहिए।
-- प्रोफाइल में सभी जानकारी सत्य और सही होनी चाहिए।
-
-2. गोपनीयता
-- आपकी व्यक्तिगत जानकारी सुरक्षित रहेगी।
-- संपर्क विवरण केवल स्वीकृत उपयोगकर्ताओं के साथ साझा किया जाएगा।
-- आपके डेटा को तीसरे पक्ष को नहीं बेचा जाएगा।
-
-3. सदस्यता
-- सदस्यता शुल्क वापसी योग्य नहीं है।
-- सदस्यता अवधि के दौरान सभी सुविधाएं उपलब्ध हैं।
-
-4. प्रोफाइल सत्यापन
-- सभी प्रोफाइल स्वयंसेवकों द्वारा सत्यापित किए जाते हैं।
-- गलत या अपमानजनक प्रोफाइल को हटा दिया जाएगा।
-
-5. दायित्व
-- यह सेवा केवल परिचय प्रदान करती है।
-- विवाह का निर्णय पूरी तरह से परिवारों का है।
-- प्लेटफॉर्म किसी भी विवाद के लिए जिम्मेदार नहीं है।
-    ` : `
-Terms and Conditions
-
-1. General Rules
-- This service is for matrimonial purposes only.
-- You must be 18+ (female) or 21+ (male) years of age.
-- All information in profile must be true and accurate.
-
-2. Privacy
-- Your personal information will be kept secure.
-- Contact details shared only with approved users.
-- Your data will not be sold to third parties.
-
-3. Membership
-- Membership fees are non-refundable.
-- All features available during membership period.
-
-4. Profile Verification
-- All profiles are verified by experienced professionals.
-- False or offensive profiles will be removed.
-
-5. Liability
-- This service only provides introductions.
-- Marriage decision is entirely of families.
-- Platform not responsible for any disputes.
-    `,
 
     safetyContent: language === 'hi' ? `
 ऑनलाइन सुरक्षा सुझाव
@@ -1109,13 +1078,20 @@ Online Safety Tips
 
             <TabsContent value="terms">
               <Card>
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <CardTitle>{t.termsConditions}</CardTitle>
+                  <p className="text-xs text-muted-foreground">
+                    {language === 'hi' 
+                      ? 'वही नियम और शर्तें जो पंजीकरण के समय स्वीकार की गई थीं'
+                      : 'Same Terms & Conditions agreed during registration'}
+                  </p>
                 </CardHeader>
                 <CardContent>
-                  <div className="prose prose-sm max-w-none">
-                    <pre className="whitespace-pre-wrap font-sans text-sm">{t.termsContent}</pre>
-                  </div>
+                  <TermsContentEmbed 
+                    language={language} 
+                    membershipSettings={membershipSettings}
+                    maxHeight="350px"
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
