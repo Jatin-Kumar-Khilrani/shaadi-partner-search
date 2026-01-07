@@ -1182,17 +1182,43 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
   const handleIssueClick = useCallback((filterType: string) => {
     // Map filter types to section IDs
     const filterSectionMap: Record<string, string> = {
+      // Age filters
       'age-pref': 'filter-age',
       'age-filter': 'filter-age',
+      // Religion/Community filters
       'religion-pref': 'filter-religion',
-      'education-pref': 'filter-education',
+      'religion-filter': 'filter-religion',
+      'mothertongue-pref': 'filter-religion',
+      'mothertongue-filter': 'filter-religion',
+      'manglik-filter': 'filter-religion',
+      'caste-filter': 'filter-religion',
+      // Location filters
+      'country-pref': 'filter-location',
       'country-filter': 'filter-location',
       'state-filter': 'filter-location',
       'city-filter': 'filter-location',
-      'diet-filter': 'filter-lifestyle',
+      // Education/Career filters
+      'education-pref': 'filter-education',
+      'education-filter': 'filter-education',
+      'occupation-pref': 'filter-education',
       'occupation-filter': 'filter-education',
       'employment-filter': 'filter-education',
-      'mothertongue-filter': 'filter-religion',
+      'income-filter': 'filter-education',
+      // Lifestyle filters
+      'diet-pref': 'filter-lifestyle',
+      'diet-filter': 'filter-lifestyle',
+      'drinking-filter': 'filter-lifestyle',
+      'smoking-filter': 'filter-lifestyle',
+      // Physical/Misc filters
+      'height-filter': 'filter-physical',
+      'disability-filter': 'filter-physical',
+      // Activity/Status filters
+      'readiness-filter': 'filter-activity',
+      'photo-filter': 'filter-activity',
+      'recent-filter': 'filter-activity',
+      'active-filter': 'filter-activity',
+      'online-filter': 'filter-activity',
+      'completeness-filter': 'filter-activity',
     }
     
     const sectionId = filterSectionMap[filterType] || 'filter-age'
@@ -1237,19 +1263,15 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     
     const issues: Array<{ filter: string; label: string; matchCount: number; suggestion: string }> = []
     
-    // Check each filter's impact
+    // ============ PARTNER PREFERENCES (SMART MATCHING) ============
     if (usePartnerPreferences && prefs) {
-      // Age preference impact - use current ageRange filter if set, otherwise partner preferences
+      // Age preference impact
       const effectiveAgeMin = filters.ageRange ? filters.ageRange[0] : (prefs.ageMin || 18)
       const effectiveAgeMax = filters.ageRange ? filters.ageRange[1] : (prefs.ageMax || 60)
       
       if (effectiveAgeMin !== 18 || effectiveAgeMax !== 60) {
-        const ageMatches = basePool.filter(p => {
-          if (p.age < effectiveAgeMin) return false
-          if (p.age > effectiveAgeMax) return false
-          return true
-        }).length
-        if (ageMatches < basePool.length * 0.3) {
+        const ageMatches = basePool.filter(p => p.age >= effectiveAgeMin && p.age <= effectiveAgeMax).length
+        if (ageMatches === 0 || ageMatches < basePool.length * 0.3) {
           issues.push({
             filter: 'age-pref',
             label: language === 'hi' ? 'आयु सीमा' : 'Age Range',
@@ -1259,7 +1281,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
         }
       }
       
-      // Religion preference impact - skip if 'any' is selected in filter
+      // Religion preference
       if (prefs.religion && prefs.religion.length > 0 && !isAnySelected(filters.religions)) {
         const religionMatches = basePool.filter(p => {
           const profileReligion = p.religion?.toLowerCase() || ''
@@ -1270,12 +1292,12 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             filter: 'religion-pref',
             label: language === 'hi' ? 'धर्म प्राथमिकता' : 'Religion Preference',
             matchCount: religionMatches,
-            suggestion: language === 'hi' ? 'चयनित धर्म वाले कोई प्रोफाइल नहीं' : `No profiles found for selected religion(s)`
+            suggestion: language === 'hi' ? 'चयनित धर्म वाले कोई प्रोफाइल नहीं' : 'No profiles for selected religion(s)'
           })
         }
       }
       
-      // Education preference impact - skip if 'any' is selected in filter
+      // Education preference
       if (prefs.education && prefs.education.length > 0 && !isAnySelected(filters.educationLevels)) {
         const educationMatches = basePool.filter(p => {
           const profileEducation = p.education?.toLowerCase() || ''
@@ -1286,7 +1308,70 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             filter: 'education-pref',
             label: language === 'hi' ? 'शिक्षा प्राथमिकता' : 'Education Preference',
             matchCount: educationMatches,
-            suggestion: language === 'hi' ? 'चयनित शिक्षा वाले कोई प्रोफाइल नहीं' : `No profiles match your education preference`
+            suggestion: language === 'hi' ? 'चयनित शिक्षा वाले कोई प्रोफाइल नहीं' : 'No profiles match your education preference'
+          })
+        }
+      }
+
+      // Mother tongue preference
+      if (prefs.motherTongue && prefs.motherTongue.length > 0 && !isAnySelected(filters.motherTongues)) {
+        const mtMatches = basePool.filter(p => {
+          const profileMT = p.motherTongue?.toLowerCase() || ''
+          return prefs.motherTongue!.some(mt => profileMT.includes(mt.toLowerCase()))
+        }).length
+        if (mtMatches === 0) {
+          issues.push({
+            filter: 'mothertongue-pref',
+            label: language === 'hi' ? 'मातृभाषा प्राथमिकता' : 'Mother Tongue Preference',
+            matchCount: mtMatches,
+            suggestion: language === 'hi' ? 'चयनित मातृभाषा वाले कोई प्रोफाइल नहीं' : 'No profiles for selected mother tongue(s)'
+          })
+        }
+      }
+
+      // Country preference
+      if (prefs.livingCountry && prefs.livingCountry.length > 0 && !isAnySelected(filters.countries)) {
+        const countryMatches = basePool.filter(p => {
+          const profileCountry = p.country?.toLowerCase() || ''
+          return prefs.livingCountry!.some(c => profileCountry.includes(c.toLowerCase()))
+        }).length
+        if (countryMatches === 0) {
+          issues.push({
+            filter: 'country-pref',
+            label: language === 'hi' ? 'देश प्राथमिकता' : 'Country Preference',
+            matchCount: countryMatches,
+            suggestion: language === 'hi' ? 'चयनित देश में कोई प्रोफाइल नहीं' : 'No profiles in preferred country'
+          })
+        }
+      }
+
+      // Diet preference
+      if (prefs.dietPreference && prefs.dietPreference.length > 0 && !isAnySelected(filters.dietPreferences as string[])) {
+        const dietMatches = basePool.filter(p => 
+          p.dietPreference && prefs.dietPreference!.includes(p.dietPreference)
+        ).length
+        if (dietMatches === 0) {
+          issues.push({
+            filter: 'diet-pref',
+            label: language === 'hi' ? 'आहार प्राथमिकता' : 'Diet Preference',
+            matchCount: dietMatches,
+            suggestion: language === 'hi' ? 'चयनित आहार प्राथमिकता वाले कोई प्रोफाइल नहीं' : 'No profiles match your diet preference'
+          })
+        }
+      }
+
+      // Occupation preference
+      if (prefs.occupation && prefs.occupation.length > 0 && !isAnySelected(filters.occupations)) {
+        const occMatches = basePool.filter(p => {
+          const profilePosition = p.position?.toLowerCase() || ''
+          return prefs.occupation!.some(occ => profilePosition.includes(occ.toLowerCase()))
+        }).length
+        if (occMatches === 0) {
+          issues.push({
+            filter: 'occupation-pref',
+            label: language === 'hi' ? 'व्यवसाय प्राथमिकता' : 'Occupation Preference',
+            matchCount: occMatches,
+            suggestion: language === 'hi' ? 'चयनित व्यवसाय वाले कोई प्रोफाइल नहीं' : 'No profiles match occupation preference'
           })
         }
       }
@@ -1301,13 +1386,47 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             filter: 'age-filter',
             label: language === 'hi' ? 'आयु सीमा' : 'Age Range',
             matchCount: ageMatches,
-            suggestion: language === 'hi' ? `${filters.ageRange[0]}-${filters.ageRange[1]} आयु में कोई/कम प्रोफाइल` : `Age range ${filters.ageRange[0]}-${filters.ageRange[1]} years is restrictive`
+            suggestion: language === 'hi' ? `${filters.ageRange[0]}-${filters.ageRange[1]} आयु में कोई/कम प्रोफाइल` : `Age range ${filters.ageRange[0]}-${filters.ageRange[1]} is restrictive`
           })
         }
       }
     }
     
-    // Check location filters - skip if 'any' is selected
+    // ============ MANUAL FILTERS (Always checked) ============
+    
+    // Religion filter (manual)
+    if (filters.religions && filters.religions.length > 0 && !isAnySelected(filters.religions)) {
+      const religionMatches = basePool.filter(p => {
+        const profileReligion = p.religion?.toLowerCase() || ''
+        return filters.religions!.some(r => profileReligion.includes(r.toLowerCase()))
+      }).length
+      if (religionMatches === 0) {
+        issues.push({
+          filter: 'religion-filter',
+          label: language === 'hi' ? 'धर्म फ़िल्टर' : 'Religion Filter',
+          matchCount: religionMatches,
+          suggestion: language === 'hi' ? 'चयनित धर्म वाले कोई प्रोफाइल नहीं' : 'No profiles for selected religion'
+        })
+      }
+    }
+
+    // Mother tongue filter (manual)
+    if (filters.motherTongues && filters.motherTongues.length > 0 && !isAnySelected(filters.motherTongues)) {
+      const mtMatches = basePool.filter(p => {
+        const profileMT = p.motherTongue?.toLowerCase() || ''
+        return filters.motherTongues!.some(mt => profileMT.includes(mt.toLowerCase()))
+      }).length
+      if (mtMatches === 0) {
+        issues.push({
+          filter: 'mothertongue-filter',
+          label: language === 'hi' ? 'मातृभाषा फ़िल्टर' : 'Mother Tongue Filter',
+          matchCount: mtMatches,
+          suggestion: language === 'hi' ? 'चयनित मातृभाषा वाले कोई प्रोफाइल नहीं' : 'No profiles for selected mother tongue'
+        })
+      }
+    }
+
+    // Country filter
     if (filters.countries && filters.countries.length > 0 && !isAnySelected(filters.countries)) {
       const countryMatches = basePool.filter(p => {
         const profileCountry = p.country?.toLowerCase() || ''
@@ -1322,14 +1441,305 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
         })
       }
     }
+
+    // State filter
+    if (filters.states && filters.states.length > 0 && !isAnySelected(filters.states)) {
+      const stateMatches = basePool.filter(p => {
+        const profileState = p.state?.toLowerCase() || ''
+        return filters.states!.some(s => profileState.includes(s.toLowerCase()))
+      }).length
+      if (stateMatches === 0) {
+        issues.push({
+          filter: 'state-filter',
+          label: language === 'hi' ? 'राज्य फ़िल्टर' : 'State Filter',
+          matchCount: stateMatches,
+          suggestion: language === 'hi' ? 'चयनित राज्य में कोई प्रोफाइल नहीं' : 'No profiles in selected state'
+        })
+      }
+    }
+
+    // City filter
+    if (filters.cities && filters.cities.length > 0 && !isAnySelected(filters.cities)) {
+      const cityMatches = basePool.filter(p => {
+        const profileLocation = p.location?.toLowerCase() || ''
+        return filters.cities!.some(c => profileLocation.includes(c.toLowerCase()))
+      }).length
+      if (cityMatches === 0) {
+        issues.push({
+          filter: 'city-filter',
+          label: language === 'hi' ? 'शहर फ़िल्टर' : 'City Filter',
+          matchCount: cityMatches,
+          suggestion: language === 'hi' ? 'चयनित शहर में कोई प्रोफाइल नहीं' : 'No profiles in selected city'
+        })
+      }
+    }
+    
+    // Manglik filter
+    if (filters.manglik !== undefined) {
+      const manglikMatches = basePool.filter(p => p.manglik === filters.manglik).length
+      if (manglikMatches === 0) {
+        issues.push({
+          filter: 'manglik-filter',
+          label: language === 'hi' ? 'मांगलिक फ़िल्टर' : 'Manglik Filter',
+          matchCount: manglikMatches,
+          suggestion: filters.manglik 
+            ? (language === 'hi' ? 'कोई मांगलिक प्रोफाइल नहीं मिला' : 'No Manglik profiles found')
+            : (language === 'hi' ? 'कोई गैर-मांगलिक प्रोफाइल नहीं मिला' : 'No non-Manglik profiles found')
+        })
+      }
+    }
+
+    // Education filter (manual)
+    if (filters.educationLevels && filters.educationLevels.length > 0 && !isAnySelected(filters.educationLevels)) {
+      const eduMatches = basePool.filter(p => {
+        const profileEducation = p.education?.toLowerCase() || ''
+        return filters.educationLevels!.some(edu => profileEducation === edu.toLowerCase())
+      }).length
+      if (eduMatches === 0) {
+        issues.push({
+          filter: 'education-filter',
+          label: language === 'hi' ? 'शिक्षा फ़िल्टर' : 'Education Filter',
+          matchCount: eduMatches,
+          suggestion: language === 'hi' ? 'चयनित शिक्षा वाले कोई प्रोफाइल नहीं' : 'No profiles with selected education'
+        })
+      }
+    }
+
+    // Employment status filter
+    if (filters.employmentStatuses && filters.employmentStatuses.length > 0 && !isAnySelected(filters.employmentStatuses)) {
+      const empMatches = basePool.filter(p => {
+        const profileOccupation = p.occupation?.toLowerCase() || ''
+        return filters.employmentStatuses!.some(emp => profileOccupation.includes(emp.toLowerCase()))
+      }).length
+      if (empMatches === 0) {
+        issues.push({
+          filter: 'employment-filter',
+          label: language === 'hi' ? 'रोजगार स्थिति' : 'Employment Status',
+          matchCount: empMatches,
+          suggestion: language === 'hi' ? 'चयनित रोजगार स्थिति वाले कोई प्रोफाइल नहीं' : 'No profiles with selected employment status'
+        })
+      }
+    }
+
+    // Occupation filter
+    if (filters.occupations && filters.occupations.length > 0 && !isAnySelected(filters.occupations)) {
+      const occMatches = basePool.filter(p => {
+        const profilePosition = p.position?.toLowerCase() || ''
+        return filters.occupations!.some(occ => profilePosition.includes(occ.toLowerCase()))
+      }).length
+      if (occMatches === 0) {
+        issues.push({
+          filter: 'occupation-filter',
+          label: language === 'hi' ? 'व्यवसाय फ़िल्टर' : 'Occupation Filter',
+          matchCount: occMatches,
+          suggestion: language === 'hi' ? 'चयनित व्यवसाय वाले कोई प्रोफाइल नहीं' : 'No profiles with selected occupation'
+        })
+      }
+    }
+
+    // Diet preference filter
+    if (filters.dietPreferences && filters.dietPreferences.length > 0 && !isAnySelected(filters.dietPreferences as string[])) {
+      const dietMatches = basePool.filter(p => 
+        p.dietPreference && filters.dietPreferences!.includes(p.dietPreference)
+      ).length
+      if (dietMatches === 0) {
+        issues.push({
+          filter: 'diet-filter',
+          label: language === 'hi' ? 'आहार फ़िल्टर' : 'Diet Filter',
+          matchCount: dietMatches,
+          suggestion: language === 'hi' ? 'चयनित आहार प्राथमिकता वाले कोई प्रोफाइल नहीं' : 'No profiles with selected diet preference'
+        })
+      }
+    }
+
+    // Drinking habit filter
+    if (filters.drinkingHabit) {
+      const drinkMatches = basePool.filter(p => p.drinkingHabit === filters.drinkingHabit).length
+      if (drinkMatches === 0) {
+        issues.push({
+          filter: 'drinking-filter',
+          label: language === 'hi' ? 'शराब की आदत' : 'Drinking Habit',
+          matchCount: drinkMatches,
+          suggestion: language === 'hi' ? 'चयनित शराब की आदत वाले कोई प्रोफाइल नहीं' : 'No profiles with selected drinking habit'
+        })
+      }
+    }
+
+    // Smoking habit filter
+    if (filters.smokingHabit) {
+      const smokeMatches = basePool.filter(p => p.smokingHabit === filters.smokingHabit).length
+      if (smokeMatches === 0) {
+        issues.push({
+          filter: 'smoking-filter',
+          label: language === 'hi' ? 'धूम्रपान की आदत' : 'Smoking Habit',
+          matchCount: smokeMatches,
+          suggestion: language === 'hi' ? 'चयनित धूम्रपान की आदत वाले कोई प्रोफाइल नहीं' : 'No profiles with selected smoking habit'
+        })
+      }
+    }
+
+    // Caste filter
+    if (filters.caste) {
+      const casteMatches = basePool.filter(p => 
+        p.caste?.toLowerCase().includes(filters.caste!.toLowerCase())
+      ).length
+      if (casteMatches === 0) {
+        issues.push({
+          filter: 'caste-filter',
+          label: language === 'hi' ? 'जाति फ़िल्टर' : 'Caste Filter',
+          matchCount: casteMatches,
+          suggestion: language === 'hi' ? `"${filters.caste}" जाति वाले कोई प्रोफाइल नहीं` : `No profiles with caste "${filters.caste}"`
+        })
+      }
+    }
+
+    // Disability filter
+    if (filters.disability && filters.disability !== 'any') {
+      const disabilityMatches = basePool.filter(p => p.disability === filters.disability).length
+      if (disabilityMatches === 0) {
+        issues.push({
+          filter: 'disability-filter',
+          label: language === 'hi' ? 'विकलांगता फ़िल्टर' : 'Disability Filter',
+          matchCount: disabilityMatches,
+          suggestion: language === 'hi' ? 'चयनित विकलांगता स्थिति वाले कोई प्रोफाइल नहीं' : 'No profiles with selected disability status'
+        })
+      }
+    }
+
+    // Readiness badge filter
+    if (filters.hasReadinessBadge) {
+      const readinessMatches = basePool.filter(p => p.hasReadinessBadge).length
+      if (readinessMatches === 0) {
+        issues.push({
+          filter: 'readiness-filter',
+          label: language === 'hi' ? 'तत्परता बैज' : 'Readiness Badge',
+          matchCount: readinessMatches,
+          suggestion: language === 'hi' ? 'तत्परता बैज वाले कोई प्रोफाइल नहीं' : 'No profiles have readiness badge'
+        })
+      }
+    }
+
+    // Photo filter
+    if (filters.hasPhoto) {
+      const photoMatches = basePool.filter(p => p.photos && p.photos.length > 0).length
+      if (photoMatches === 0) {
+        issues.push({
+          filter: 'photo-filter',
+          label: language === 'hi' ? 'फोटो फ़िल्टर' : 'Photo Filter',
+          matchCount: photoMatches,
+          suggestion: language === 'hi' ? 'फोटो वाले कोई प्रोफाइल नहीं' : 'No profiles with photos'
+        })
+      }
+    }
+
+    // Recently joined filter
+    if (filters.recentlyJoined) {
+      const days = filters.recentlyJoined === '7days' ? 7 : filters.recentlyJoined === '15days' ? 15 : 30
+      const recentMatches = basePool.filter(p => isWithinDays(p.createdAt, days)).length
+      if (recentMatches === 0) {
+        issues.push({
+          filter: 'recent-filter',
+          label: language === 'hi' ? 'हाल में जुड़े' : 'Recently Joined',
+          matchCount: recentMatches,
+          suggestion: language === 'hi' ? `पिछले ${days} दिनों में जुड़े कोई प्रोफाइल नहीं` : `No profiles joined in last ${days} days`
+        })
+      }
+    }
+
+    // Last active filter
+    if (filters.lastActive) {
+      const days = filters.lastActive === '7days' ? 7 : 
+                   filters.lastActive === '30days' ? 30 : 
+                   filters.lastActive === '60days' ? 60 : 90
+      const activeMatches = basePool.filter(p => {
+        const lastActive = p.lastActivityAt || p.lastLoginAt || p.updatedAt
+        return isWithinDays(lastActive, days)
+      }).length
+      if (activeMatches === 0) {
+        issues.push({
+          filter: 'active-filter',
+          label: language === 'hi' ? 'अंतिम सक्रिय' : 'Last Active',
+          matchCount: activeMatches,
+          suggestion: language === 'hi' ? `पिछले ${days} दिनों में सक्रिय कोई प्रोफाइल नहीं` : `No profiles active in last ${days} days`
+        })
+      }
+    }
+
+    // Online recently filter
+    if (filters.onlineRecently) {
+      const onlineMatches = basePool.filter(p => {
+        const lastActive = p.lastActivityAt || p.lastLoginAt
+        return isWithinDays(lastActive, 1)
+      }).length
+      if (onlineMatches === 0) {
+        issues.push({
+          filter: 'online-filter',
+          label: language === 'hi' ? 'हाल में ऑनलाइन' : 'Online Recently',
+          matchCount: onlineMatches,
+          suggestion: language === 'hi' ? 'पिछले 24 घंटों में ऑनलाइन कोई प्रोफाइल नहीं' : 'No profiles online in last 24 hours'
+        })
+      }
+    }
+
+    // Height range filter
+    if (filters.heightRange && (filters.heightRange[0] > 140 || filters.heightRange[1] < 200)) {
+      const heightMatches = basePool.filter(p => {
+        const profileHeightCm = parseHeightToCm(p.height)
+        return profileHeightCm > 0 && profileHeightCm >= filters.heightRange![0] && profileHeightCm <= filters.heightRange![1]
+      }).length
+      if (heightMatches === 0) {
+        issues.push({
+          filter: 'height-filter',
+          label: language === 'hi' ? 'ऊंचाई सीमा' : 'Height Range',
+          matchCount: heightMatches,
+          suggestion: language === 'hi' ? `${filters.heightRange[0]}-${filters.heightRange[1]} सेमी ऊंचाई में कोई प्रोफाइल नहीं` : `No profiles in ${filters.heightRange[0]}-${filters.heightRange[1]} cm height range`
+        })
+      }
+    }
+
+    // Income range filter
+    if (filters.incomeRange && (filters.incomeRange[0] > 0 || filters.incomeRange[1] < 100)) {
+      const incomeMatches = basePool.filter(p => {
+        const salaryStr = p.salary || ''
+        const salaryMatch = salaryStr.match(/(\d+)/g)
+        if (salaryMatch) {
+          const salary = parseInt(salaryMatch[0], 10)
+          return salary >= filters.incomeRange![0] && salary <= filters.incomeRange![1]
+        }
+        return filters.incomeRange![0] === 0
+      }).length
+      if (incomeMatches === 0) {
+        issues.push({
+          filter: 'income-filter',
+          label: language === 'hi' ? 'आय सीमा' : 'Income Range',
+          matchCount: incomeMatches,
+          suggestion: language === 'hi' ? `${filters.incomeRange[0]}-${filters.incomeRange[1]} लाख आय में कोई प्रोफाइल नहीं` : `No profiles in ${filters.incomeRange[0]}-${filters.incomeRange[1]} LPA income range`
+        })
+      }
+    }
+
+    // Profile completeness filter
+    if (filters.profileCompleteness && filters.profileCompleteness > 0) {
+      const completenessMatches = basePool.filter(p => 
+        getProfileCompleteness(p) >= filters.profileCompleteness!
+      ).length
+      if (completenessMatches === 0) {
+        issues.push({
+          filter: 'completeness-filter',
+          label: language === 'hi' ? 'प्रोफाइल पूर्णता' : 'Profile Completeness',
+          matchCount: completenessMatches,
+          suggestion: language === 'hi' ? `${filters.profileCompleteness}%+ पूर्ण प्रोफाइल नहीं मिले` : `No profiles with ${filters.profileCompleteness}%+ completeness`
+        })
+      }
+    }
     
     return {
       reason: issues.length > 0 ? 'filters-too-strict' : 'combined-filters',
       totalProfiles: basePool.length,
-      suggestions: issues.slice(0, 3), // Show top 3 issues
+      suggestions: issues.slice(0, 5), // Show top 5 issues
       smartMatchingOn: usePartnerPreferences && !!prefs
     }
-  }, [profiles, currentUserProfile, filteredProfiles.length, filters, usePartnerPreferences, language])
+  }, [profiles, currentUserProfile, filteredProfiles.length, filters, usePartnerPreferences, language, isWithinDays, parseHeightToCm, getProfileCompleteness])
 
   // Sort profiles based on selected option - with stable sort for consistency
   const sortedProfiles = useMemo(() => {
@@ -1491,31 +1901,59 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             <div className="flex justify-between mt-3 text-sm">
               <div className="flex items-center gap-1">
                 <Input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   min={18}
                   max={ageRange[1] - 1}
                   value={ageRange[0]}
                   onChange={(e) => {
+                    const inputVal = e.target.value
+                    // Allow empty or partial input while typing
+                    if (inputVal === '' || /^\d*$/.test(inputVal)) {
+                      const numVal = parseInt(inputVal) || 0
+                      if (numVal > 0) {
+                        setAgeRange([numVal, ageRange[1]])
+                        setFilters({ ...filters, ageRange: [numVal, ageRange[1]] })
+                      }
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Validate on blur to ensure valid range
                     const val = Math.max(18, Math.min(parseInt(e.target.value) || 18, ageRange[1] - 1))
                     setAgeRange([val, ageRange[1]])
                     setFilters({ ...filters, ageRange: [val, ageRange[1]] })
                   }}
-                  className="w-14 h-8 text-center px-1 font-medium"
+                  className="w-16 h-9 text-center px-2 font-medium"
                 />
                 <span className="text-muted-foreground">{t.years}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   min={ageRange[0] + 1}
                   max={60}
                   value={ageRange[1]}
                   onChange={(e) => {
+                    const inputVal = e.target.value
+                    // Allow empty or partial input while typing
+                    if (inputVal === '' || /^\d*$/.test(inputVal)) {
+                      const numVal = parseInt(inputVal) || 0
+                      if (numVal > 0) {
+                        setAgeRange([ageRange[0], numVal])
+                        setFilters({ ...filters, ageRange: [ageRange[0], numVal] })
+                      }
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Validate on blur to ensure valid range
                     const val = Math.min(60, Math.max(parseInt(e.target.value) || 60, ageRange[0] + 1))
                     setAgeRange([ageRange[0], val])
                     setFilters({ ...filters, ageRange: [ageRange[0], val] })
                   }}
-                  className="w-14 h-8 text-center px-1 font-medium"
+                  className="w-16 h-9 text-center px-2 font-medium"
                 />
                 <span className="text-muted-foreground">{t.years}</span>
               </div>
