@@ -1401,86 +1401,63 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[500px]">
-                  {pendingReceivedInterests.length === 0 ? (
+                  {actionablePendingInterests.length === 0 ? (
                     <Alert>
                       <AlertDescription>{t.noActivity}</AlertDescription>
                     </Alert>
                   ) : (
                     <div className="space-y-2">
-                      {pendingReceivedInterests.map((interest) => {
+                      {actionablePendingInterests.map((interest) => {
                         const profile = getProfileByProfileId(interest.fromProfileId)
                         const alreadyChatted = chatRequestsUsed.includes(interest.fromProfileId)
                         const canAccept = alreadyChatted || remainingChats > 0
-                        const isProfileDeleted = profile?.isDeleted === true
-                        const isProfileMissing = !profile
-                        const isUnavailable = isProfileDeleted || isProfileMissing
                         
                         return (
-                          <Card key={interest.id} className={`hover:shadow-md transition-shadow ${isUnavailable ? 'opacity-70 bg-gray-50 dark:bg-gray-900/50 border-gray-300' : 'border-rose-100 dark:border-rose-900/30'}`}>
+                          <Card key={interest.id} className="hover:shadow-md transition-shadow border-rose-100 dark:border-rose-900/30">
                             <CardContent className="py-2 px-3">
                               <div className="flex flex-col gap-2">
                                 <div 
-                                  className={`flex items-center justify-between ${isUnavailable ? '' : 'cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/20'} -mx-2 px-2 py-1 rounded-lg transition-colors`}
-                                  onClick={() => !isUnavailable && profile && setSelectedProfileForDetails(profile)}
-                                  title={isProfileMissing ? t.profileNotFoundInfo : isProfileDeleted ? t.profileDeletedInfo : t.clickToViewProfile}
+                                  className="flex items-center justify-between cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/20 -mx-2 px-2 py-1 rounded-lg transition-colors"
+                                  onClick={() => profile && setSelectedProfileForDetails(profile)}
+                                  title={t.clickToViewProfile}
                                 >
                                   <div className="flex items-center gap-2">
                                     {/* Profile Photo */}
                                     {profile?.photos?.[0] ? (
                                       <div 
-                                        className={`relative ${isUnavailable ? '' : 'cursor-pointer'} group`}
-                                        onClick={(e) => { if (!isUnavailable) { e.stopPropagation(); openLightbox(profile.photos || [], 0) } }}
-                                        title={isUnavailable ? (isProfileMissing ? t.profileNotFoundInfo : t.profileDeletedInfo) : (language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge')}
+                                        className="relative cursor-pointer group"
+                                        onClick={(e) => { e.stopPropagation(); openLightbox(profile.photos || [], 0) }}
+                                        title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
                                       >
-                                        <div className={`absolute -inset-0.5 ${isUnavailable ? 'bg-gray-400' : 'bg-gradient-to-tr from-rose-300 to-amber-200'} rounded-full ${isUnavailable ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'} transition-opacity`}></div>
+                                        <div className="absolute -inset-0.5 bg-gradient-to-tr from-rose-300 to-amber-200 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"></div>
                                         <img 
                                           src={profile.photos[0]} 
                                           alt={profile.fullName || ''}
-                                          className={`relative w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 ${isUnavailable ? 'grayscale' : 'group-hover:scale-105'} transition-transform`}
+                                          className="relative w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 group-hover:scale-105 transition-transform"
                                         />
-                                        {!isUnavailable && (
-                                          <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
-                                            <MagnifyingGlassPlus size={12} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                          </div>
-                                        )}
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
+                                          <MagnifyingGlassPlus size={12} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </div>
                                       </div>
                                     ) : (
-                                      <div className={`w-10 h-10 rounded-full ${isUnavailable ? 'bg-gray-200 dark:bg-gray-700' : 'bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50'} flex items-center justify-center`}>
-                                        {isProfileMissing ? (
-                                          <ProhibitInset size={18} weight="fill" className="text-gray-400" />
-                                        ) : (
-                                          <Heart size={18} weight="fill" className={isProfileDeleted ? 'text-gray-400' : 'text-rose-500'} />
-                                        )}
+                                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50 flex items-center justify-center">
+                                        <Heart size={18} weight="fill" className="text-rose-500" />
                                       </div>
                                     )}
                                     <div>
-                                      <p className={`font-medium ${isUnavailable ? 'text-gray-500 line-through' : 'text-gray-800 dark:text-gray-100 hover:text-rose-600 dark:hover:text-rose-400'} inline-flex items-center gap-1 text-sm leading-tight`}>
-                                        {isProfileMissing ? t.profileNotFound : (profile?.fullName || 'Unknown')}
+                                      <p className="font-medium text-gray-800 dark:text-gray-100 hover:text-rose-600 dark:hover:text-rose-400 inline-flex items-center gap-1 text-sm leading-tight">
+                                        {profile?.fullName || 'Unknown'}
                                         <User size={10} weight="bold" className="opacity-60" />
                                       </p>
                                       <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">{profile?.profileId || interest.fromProfileId}</p>
-                                      {!isProfileMissing && (
-                                        <p className="text-[11px] text-gray-600 dark:text-gray-300 leading-tight">
-                                          {profile?.age} {t.years} • {profile?.location}
-                                        </p>
-                                      )}
+                                      <p className="text-[11px] text-gray-600 dark:text-gray-300 leading-tight">
+                                        {profile?.age} {t.years} • {profile?.location}
+                                      </p>
                                       <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">{t.sentOn}: {formatDate(interest.createdAt)}</p>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-1.5 flex-wrap">
-                                    {isProfileMissing && (
-                                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-gray-200 text-gray-600">
-                                        <ProhibitInset size={10} className="mr-0.5" />
-                                        {t.profileNotFound}
-                                      </Badge>
-                                    )}
-                                    {isProfileDeleted && (
-                                      <Badge variant="destructive" className="text-[10px] px-1.5 py-0 bg-gray-500">
-                                        <ProhibitInset size={10} className="mr-0.5" />
-                                        {t.profileDeleted}
-                                      </Badge>
-                                    )}
-                                    {interest.status === 'pending' && !isUnavailable && (() => {
+                                    {(() => {
                                       const expiry = formatExpiryCountdown(interest.createdAt)
                                       return (
                                         <Badge 
@@ -1495,7 +1472,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
                                     {getStatusBadge(interest.status)}
                                   </div>
                                 </div>
-                                {interest.status === 'pending' && !isUnavailable && (
+                                {interest.status === 'pending' && (
                                   <>
                                     <div className="flex gap-1.5">
                                       <Button 
@@ -1546,13 +1523,6 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
                                       <p>💡 {t.interestFlowInfo} <span className="text-emerald-600 dark:text-emerald-400">• {t.revokeInfo}</span></p>
                                     </div>
                                   </>
-                                )}
-                                {/* Show message for pending interests from deleted profiles */}
-                                {interest.status === 'pending' && isProfileDeleted && (
-                                  <div className="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1.5 rounded border border-gray-200 dark:border-gray-700 text-center">
-                                    <ProhibitInset size={12} className="inline mr-1" />
-                                    {t.profileDeletedInfo}
-                                  </div>
                                 )}
                                 {interest.status === 'accepted' && (
                                   <div className="flex gap-2">
