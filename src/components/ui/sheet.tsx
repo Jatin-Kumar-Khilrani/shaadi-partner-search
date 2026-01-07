@@ -1,10 +1,23 @@
-import { ComponentProps } from "react"
+import { ComponentProps, useEffect } from "react"
 import * as SheetPrimitive from "@radix-ui/react-dialog"
 import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { cn } from "@/lib/utils"
 
 function Sheet({ modal = true, ...props }: ComponentProps<typeof SheetPrimitive.Root> & { modal?: boolean }) {
+  // When modal is false, prevent body scroll lock
+  useEffect(() => {
+    if (!modal && props.open) {
+      // Re-enable body scroll when modal is false
+      document.body.style.overflow = ''
+      document.body.style.paddingRight = ''
+      return () => {
+        document.body.style.overflow = ''
+        document.body.style.paddingRight = ''
+      }
+    }
+  }, [modal, props.open])
+  
   return <SheetPrimitive.Root data-slot="sheet" modal={modal} {...props} />
 }
 

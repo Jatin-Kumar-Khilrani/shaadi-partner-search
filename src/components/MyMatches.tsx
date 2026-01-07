@@ -447,24 +447,28 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     )
   }
 
+  // Helper to check if a filter array has 'any' selected (meaning no preference)
+  const isAnySelected = (arr: string[] | undefined) => arr?.length === 1 && arr[0] === 'any'
+  
   // Count active filters (don't count 'any' selections as active filters)
   const activeFilterCount = useMemo(() => {
     let count = 0
     if (filters.caste) count++
-    if (filters.religions && filters.religions.length > 0) count++
+    // Don't count 'any' as active filter for multi-selects
+    if (filters.religions && filters.religions.length > 0 && !isAnySelected(filters.religions)) count++
     if (filters.religion) count++ // Legacy single select
-    if (filters.motherTongues && filters.motherTongues.length > 0) count++
+    if (filters.motherTongues && filters.motherTongues.length > 0 && !isAnySelected(filters.motherTongues)) count++
     if (filters.manglik !== undefined) count++
-    if (filters.dietPreferences && filters.dietPreferences.length > 0) count++
+    if (filters.dietPreferences && filters.dietPreferences.length > 0 && !isAnySelected(filters.dietPreferences as string[])) count++
     if (filters.drinkingHabit) count++
     if (filters.smokingHabit) count++
     // Don't count 'any' as active filter
-    if (filters.educationLevels && filters.educationLevels.length > 0 && !(filters.educationLevels.length === 1 && filters.educationLevels[0] === 'any')) count++
-    if (filters.employmentStatuses && filters.employmentStatuses.length > 0 && !(filters.employmentStatuses.length === 1 && filters.employmentStatuses[0] === 'any')) count++
-    if (filters.occupations && filters.occupations.length > 0 && !(filters.occupations.length === 1 && filters.occupations[0] === 'any')) count++
-    if (filters.countries && filters.countries.length > 0) count++
-    if (filters.states && filters.states.length > 0) count++
-    if (filters.cities && filters.cities.length > 0) count++
+    if (filters.educationLevels && filters.educationLevels.length > 0 && !isAnySelected(filters.educationLevels)) count++
+    if (filters.employmentStatuses && filters.employmentStatuses.length > 0 && !isAnySelected(filters.employmentStatuses)) count++
+    if (filters.occupations && filters.occupations.length > 0 && !isAnySelected(filters.occupations)) count++
+    if (filters.countries && filters.countries.length > 0 && !isAnySelected(filters.countries)) count++
+    if (filters.states && filters.states.length > 0 && !isAnySelected(filters.states)) count++
+    if (filters.cities && filters.cities.length > 0 && !isAnySelected(filters.cities)) count++
     if (filters.hasReadinessBadge) count++
     if (filters.isVerified) count++
     if (filters.hasPhoto) count++
@@ -914,7 +918,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       if (filters.community && !profile.community?.toLowerCase().includes(filters.community.toLowerCase())) return false
       
       // Religion - now multi-select (check new array format first, then legacy single value)
-      if (filters.religions && filters.religions.length > 0) {
+      // Skip filter if 'any' is selected (means no preference)
+      if (filters.religions && filters.religions.length > 0 && !isAnySelected(filters.religions)) {
         const profileReligion = profile.religion?.toLowerCase() || ''
         if (!filters.religions.some(r => profileReligion.includes(r.toLowerCase()))) return false
       } else if (filters.religion && !profile.religion?.toLowerCase().includes(filters.religion.toLowerCase())) {
@@ -922,7 +927,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       }
       
       // Mother tongue - now multi-select
-      if (filters.motherTongues && filters.motherTongues.length > 0) {
+      // Skip filter if 'any' is selected (means no preference)
+      if (filters.motherTongues && filters.motherTongues.length > 0 && !isAnySelected(filters.motherTongues)) {
         const profileMotherTongue = profile.motherTongue?.toLowerCase() || ''
         if (!filters.motherTongues.some(mt => profileMotherTongue.includes(mt.toLowerCase()))) return false
       }
@@ -930,7 +936,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       if (filters.manglik !== undefined && profile.manglik !== filters.manglik) return false
       
       // Diet preference - now multi-select
-      if (filters.dietPreferences && filters.dietPreferences.length > 0) {
+      // Skip filter if 'any' is selected (means no preference)
+      if (filters.dietPreferences && filters.dietPreferences.length > 0 && !isAnySelected(filters.dietPreferences as string[])) {
         if (!profile.dietPreference || !filters.dietPreferences.includes(profile.dietPreference)) return false
       }
       
@@ -961,19 +968,22 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
       }
       
       // Country filter - now multi-select
-      if (filters.countries && filters.countries.length > 0) {
+      // Skip filter if 'any' is selected (means no preference)
+      if (filters.countries && filters.countries.length > 0 && !isAnySelected(filters.countries)) {
         const profileCountry = profile.country?.toLowerCase() || ''
         if (!filters.countries.some(c => profileCountry.includes(c.toLowerCase()))) return false
       }
       
       // State filter - now multi-select
-      if (filters.states && filters.states.length > 0) {
+      // Skip filter if 'any' is selected (means no preference)
+      if (filters.states && filters.states.length > 0 && !isAnySelected(filters.states)) {
         const profileState = profile.state?.toLowerCase() || ''
         if (!filters.states.some(s => profileState.includes(s.toLowerCase()))) return false
       }
       
       // City filter - now multi-select
-      if (filters.cities && filters.cities.length > 0) {
+      // Skip filter if 'any' is selected (means no preference)
+      if (filters.cities && filters.cities.length > 0 && !isAnySelected(filters.cities)) {
         const profileLocation = profile.location?.toLowerCase() || ''
         if (!filters.cities.some(c => profileLocation.includes(c.toLowerCase()))) return false
       }
@@ -1412,6 +1422,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 placeholder={t.any}
                 searchPlaceholder={language === 'hi' ? 'देश खोजें...' : 'Search country...'}
                 emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
+                showAnyOption
+                anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
               />
               {locationOptionsWithCounts.countries.length === 0 && (
                 <p className="text-xs text-muted-foreground">{t.noProfilesInLocation}</p>
@@ -1428,6 +1440,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                   placeholder={t.any}
                   searchPlaceholder={language === 'hi' ? 'राज्य खोजें...' : 'Search state...'}
                   emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
+                  showAnyOption
+                  anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                 />
               ) : (
                 <div className="h-10 px-3 py-2 text-sm text-muted-foreground bg-muted/50 rounded-md border border-dashed flex items-center">
@@ -1446,6 +1460,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                   placeholder={t.any}
                   searchPlaceholder={language === 'hi' ? 'शहर खोजें...' : 'Search city...'}
                   emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
+                  showAnyOption
+                  anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
                 />
               ) : (
                 <div className="h-10 px-3 py-2 text-sm text-muted-foreground bg-muted/50 rounded-md border border-dashed flex items-center">
@@ -1475,6 +1491,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 placeholder={t.any}
                 searchPlaceholder={language === 'hi' ? 'धर्म खोजें...' : 'Search religion...'}
                 emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
+                showAnyOption
+                anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
               />
             </div>
 
@@ -1496,6 +1514,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 placeholder={t.any}
                 searchPlaceholder={language === 'hi' ? 'मातृभाषा खोजें...' : 'Search mother tongue...'}
                 emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
+                showAnyOption
+                anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
               />
             </div>
 
@@ -1544,6 +1564,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 placeholder={t.any}
                 searchPlaceholder={language === 'hi' ? 'आहार खोजें...' : 'Search diet...'}
                 emptyText={language === 'hi' ? 'कोई परिणाम नहीं' : 'No results found'}
+                showAnyOption
+                anyOptionLabel={language === 'hi' ? 'कोई भी / कोई प्राथमिकता नहीं' : 'Any / No Preference'}
               />
             </div>
 
