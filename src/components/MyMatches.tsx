@@ -2195,10 +2195,10 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t.any} />
+                  <SelectValue placeholder={anyOptionWithCount} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="any">{t.any}</SelectItem>
+                  <SelectItem value="any">{anyOptionWithCount}</SelectItem>
                   {(dynamicFilterOptions.drinkingHabits.length > 0 ? dynamicFilterOptions.drinkingHabits : DRINKING_HABIT_OPTIONS).map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -2222,10 +2222,10 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t.any} />
+                  <SelectValue placeholder={anyOptionWithCount} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="any">{t.any}</SelectItem>
+                  <SelectItem value="any">{anyOptionWithCount}</SelectItem>
                   {(dynamicFilterOptions.smokingHabits.length > 0 ? dynamicFilterOptions.smokingHabits : SMOKING_HABIT_OPTIONS).map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -2258,10 +2258,10 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder={t.any} />
+              <SelectValue placeholder={anyOptionWithCount} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="any">{t.any}</SelectItem>
+              <SelectItem value="any">{anyOptionWithCount}</SelectItem>
               <SelectItem value="no">{t.disabilityNo}</SelectItem>
               <SelectItem value="yes">{t.disabilityYes}</SelectItem>
             </SelectContent>

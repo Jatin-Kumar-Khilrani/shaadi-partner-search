@@ -1871,7 +1871,6 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     }
 
     setMessages((current) => [...(current || []), newMessage])
-    toast.success(t.messageSent)
     setChatMessage('')
     setAdminPendingAttachments([])
     setShowChatDialog(false)

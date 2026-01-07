@@ -932,7 +932,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   }
 
   const sendMessage = () => {
-    if (!messageInput.trim() || !selectedConversation) return
+    if ((!messageInput.trim() && pendingAttachments.length === 0) || !selectedConversation) return
     if (!isAdmin && !currentUserProfile) return
     
     // Prevent double-click race condition
@@ -1050,6 +1050,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       status: 'sent',
       delivered: false,
       type: 'user-to-user',
+      attachments: pendingAttachments.length > 0 ? [...pendingAttachments] : undefined
     }
 
     if (selectedConversation === 'admin-broadcast') {
@@ -1081,6 +1082,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
 
     setMessages(current => [...(current || []), newMessage])
     setMessageInput('')
+    setPendingAttachments([])
   }
 
   const formatTime = (timestamp: string) => {
@@ -1356,7 +1358,13 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                                       : 'bg-muted rounded-bl-sm'
                                   }`}
                                 >
-                                  <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
+                                  {/* Display attachments */}
+                                  {msg.attachments && msg.attachments.length > 0 && (
+                                    <div className="space-y-2 mb-2">
+                                      {msg.attachments.map(attachment => renderAttachment(attachment, msg.fromProfileId === currentUserProfile?.profileId))}
+                                    </div>
+                                  )}
+                                  {msg.message && <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>}
                                   <p className={`text-[10px] mt-1 ${
                                     msg.fromProfileId === currentUserProfile?.profileId 
                                       ? 'text-primary-foreground/70' 
@@ -1372,15 +1380,58 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                         )
                       })()}
                     </ScrollArea>
-                    <div className="p-4 border-t">
+                    <div className="p-4 border-t space-y-3">
+                      {/* Pending attachments preview */}
+                      {pendingAttachments.length > 0 && (
+                        <div className="flex flex-wrap gap-2 p-2 bg-muted/50 rounded-lg">
+                          {pendingAttachments.map(attachment => (
+                            <div key={attachment.id} className="relative group">
+                              {attachment.type === 'image' ? (
+                                <div className="w-16 h-16 rounded-lg overflow-hidden border">
+                                  <img 
+                                    src={attachment.thumbnailUrl || attachment.url} 
+                                    alt={attachment.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-16 h-16 rounded-lg border flex flex-col items-center justify-center bg-red-50">
+                                  <FilePdf size={24} className="text-red-500" weight="fill" />
+                                  <span className="text-[8px] text-muted-foreground truncate w-14 text-center mt-1">
+                                    {attachment.name}
+                                  </span>
+                                </div>
+                              )}
+                              <button
+                                onClick={() => removeAttachment(attachment.id)}
+                                className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                aria-label="Remove attachment"
+                                title="Remove attachment"
+                              >
+                                <X size={12} weight="bold" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
+                        <Button 
+                          type="button"
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => fileInputRef.current?.click()}
+                          title={language === 'hi' ? 'फाइल जोड़ें' : 'Add file'}
+                        >
+                          <Paperclip size={20} />
+                        </Button>
                         <Input
                           value={messageInput}
                           onChange={(e) => setMessageInput(e.target.value)}
+                          onPaste={handlePaste}
                           placeholder={language === 'hi' ? 'संदेश लिखें...' : 'Type a message...'}
                           className="flex-1"
                         />
-                        <Button type="submit" disabled={!messageInput.trim()}>
+                        <Button type="submit" disabled={!messageInput.trim() && pendingAttachments.length === 0}>
                           <PaperPlaneTilt size={20} />
                         </Button>
                       </form>
@@ -1692,7 +1743,6 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                             setMessages([...(messages || []), newMsg])
                             setMessageInput('')
                             setPendingAttachments([])
-                            toast.success(language === 'hi' ? 'संदेश भेजा गया' : 'Message sent')
                           }
                         }}
                       />
@@ -1715,7 +1765,6 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                             setMessages([...(messages || []), newMsg])
                             setMessageInput('')
                             setPendingAttachments([])
-                            toast.success(language === 'hi' ? 'संदेश भेजा गया' : 'Message sent')
                           }
                         }} 
                         size="icon"
@@ -2065,8 +2114,50 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                   </ScrollArea>
                   <Separator />
                   {isChatAllowed || isAdmin ? (
-                    <div className="p-4">
+                    <div className="p-4 space-y-3">
+                      {/* Pending attachments preview */}
+                      {pendingAttachments.length > 0 && (
+                        <div className="flex flex-wrap gap-2 p-2 bg-muted/50 rounded-lg">
+                          {pendingAttachments.map(attachment => (
+                            <div key={attachment.id} className="relative group">
+                              {attachment.type === 'image' ? (
+                                <div className="w-16 h-16 rounded-lg overflow-hidden border">
+                                  <img 
+                                    src={attachment.thumbnailUrl || attachment.url} 
+                                    alt={attachment.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-16 h-16 rounded-lg border flex flex-col items-center justify-center bg-red-50">
+                                  <FilePdf size={24} className="text-red-500" weight="fill" />
+                                  <span className="text-[8px] text-muted-foreground truncate w-14 text-center mt-1">
+                                    {attachment.name}
+                                  </span>
+                                </div>
+                              )}
+                              <button
+                                onClick={() => removeAttachment(attachment.id)}
+                                className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                aria-label="Remove attachment"
+                                title="Remove attachment"
+                              >
+                                <X size={12} weight="bold" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <div className="flex gap-2">
+                        {/* Attachment button */}
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => fileInputRef.current?.click()}
+                          title={language === 'hi' ? 'फाइल जोड़ें' : 'Add file'}
+                        >
+                          <Paperclip size={20} />
+                        </Button>
                         {/* Emoji picker button */}
                         <Popover>
                           <PopoverTrigger asChild>
@@ -2090,8 +2181,9 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                           value={messageInput}
                           onChange={(e) => setMessageInput(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                          onPaste={handlePaste}
                         />
-                        <Button onClick={sendMessage} size="icon">
+                        <Button onClick={sendMessage} size="icon" disabled={!messageInput.trim() && pendingAttachments.length === 0}>
                           <PaperPlaneTilt size={20} weight="fill" />
                         </Button>
                       </div>
