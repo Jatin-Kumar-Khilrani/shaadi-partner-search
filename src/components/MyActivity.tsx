@@ -64,10 +64,13 @@ interface MyActivityProps {
   membershipSettings?: MembershipSettings
   setProfiles?: (newValue: Profile[] | ((oldValue?: Profile[] | undefined) => Profile[])) => void
   initialTab?: string | null
+  initialAcceptedSubTab?: 'you-accepted' | 'they-accepted' | null
+  initialDeclinedSubTab?: 'you-declined' | 'they-declined' | 'blocked' | null
+  initialContactSubTab?: 'sent-requests' | 'received-requests' | null
   onTabNavigated?: () => void
 }
 
-export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: _onViewProfile, onNavigateToChat, membershipPlan, membershipSettings, setProfiles, initialTab, onTabNavigated }: MyActivityProps) {
+export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: _onViewProfile, onNavigateToChat, membershipPlan, membershipSettings, setProfiles, initialTab, initialAcceptedSubTab, initialDeclinedSubTab, initialContactSubTab, onTabNavigated }: MyActivityProps) {
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests, setContactRequests] = useKV<ContactRequest[]>('contactRequests', [])
   const [_messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
@@ -77,15 +80,28 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
   
   // State for tab navigation
   const [activeTab, setActiveTab] = useState<string>('received-interests')
+  const [acceptedSubTab, setAcceptedSubTab] = useState<'you-accepted' | 'they-accepted'>('you-accepted')
+  const [declinedSubTab, setDeclinedSubTab] = useState<'you-declined' | 'they-declined' | 'blocked'>('you-declined')
+  const [contactSubTab, setContactSubTab] = useState<'sent-requests' | 'received-requests'>('sent-requests')
   
   // Effect to handle initial tab navigation from notifications
   useEffect(() => {
     if (initialTab) {
       setActiveTab(initialTab)
+      // Set subtabs based on navigation source
+      if (initialTab === 'accepted-interests' && initialAcceptedSubTab) {
+        setAcceptedSubTab(initialAcceptedSubTab)
+      }
+      if (initialTab === 'declined-interests' && initialDeclinedSubTab) {
+        setDeclinedSubTab(initialDeclinedSubTab)
+      }
+      if (initialTab === 'contact-requests' && initialContactSubTab) {
+        setContactSubTab(initialContactSubTab)
+      }
       // Notify parent that we've handled the tab navigation
       onTabNavigated?.()
     }
-  }, [initialTab, onTabNavigated])
+  }, [initialTab, initialAcceptedSubTab, initialDeclinedSubTab, initialContactSubTab, onTabNavigated])
   
   // State for dialogs
   const [interestToDecline, setInterestToDecline] = useState<string | null>(null)
@@ -1580,7 +1596,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
                 <CardTitle>{t.acceptedInterests}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="you-accepted">
+                <Tabs value={acceptedSubTab} onValueChange={(v) => setAcceptedSubTab(v as 'you-accepted' | 'they-accepted')}>
                   <TabsList className="grid w-full grid-cols-2 mb-4">
                     <TabsTrigger value="you-accepted" className="relative">
                       {t.youAccepted}
@@ -1887,7 +1903,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
                 <CardTitle>{t.declinedInterests}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="you-declined">
+                <Tabs value={declinedSubTab} onValueChange={(v) => setDeclinedSubTab(v as 'you-declined' | 'they-declined' | 'blocked')}>
                   <TabsList className="grid w-full grid-cols-3 mb-4">
                     <TabsTrigger value="you-declined" className="relative">
                       {t.youDeclined}
@@ -2403,7 +2419,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
                 </div>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="sent-requests">
+                <Tabs value={contactSubTab} onValueChange={(v) => setContactSubTab(v as 'sent-requests' | 'received-requests')}>
                   <TabsList className="grid w-full grid-cols-2 mb-4">
                     <TabsTrigger value="sent-requests">{t.sentRequests}</TabsTrigger>
                     <TabsTrigger value="received-requests">{t.receivedRequests}</TabsTrigger>

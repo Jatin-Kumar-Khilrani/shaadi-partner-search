@@ -157,6 +157,9 @@ function App() {
   const [currentView, setCurrentView] = useState<View>('home')
   const [chatTargetProfileId, setChatTargetProfileId] = useState<string | null>(null)
   const [activityTab, setActivityTab] = useState<string | null>(null)
+  const [activityAcceptedSubTab, setActivityAcceptedSubTab] = useState<'you-accepted' | 'they-accepted' | null>(null)
+  const [activityDeclinedSubTab, setActivityDeclinedSubTab] = useState<'you-declined' | 'they-declined' | 'blocked' | null>(null)
+  const [activityContactSubTab, setActivityContactSubTab] = useState<'sent-requests' | 'received-requests' | null>(null)
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({})
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [showRegistration, setShowRegistration] = useState(false)
@@ -1127,16 +1130,29 @@ function App() {
                                         setCurrentView('my-activity')
                                       } else if (notif.type === 'interest_accepted') {
                                         setActivityTab('accepted-interests')
+                                        setActivityAcceptedSubTab('they-accepted')
                                         setCurrentView('my-activity')
                                       } else if (notif.type === 'interest_declined') {
-                                        // When your sent interest was declined
-                                        setActivityTab('sent-interests')
+                                        // When your sent interest was declined - go to They Declined tab
+                                        setActivityTab('declined-interests')
+                                        setActivityDeclinedSubTab('they-declined')
                                         setCurrentView('my-activity')
                                       } else if (notif.type === 'interest_expired') {
                                         // Your sent interest expired
                                         setActivityTab('sent-interests')
                                         setCurrentView('my-activity')
+                                      } else if (notif.type === 'contact_request_received') {
+                                        // Someone requested YOUR contact - go to Received Requests
+                                        setActivityTab('contact-requests')
+                                        setActivityContactSubTab('received-requests')
+                                        setCurrentView('my-activity')
+                                      } else if (notif.type === 'contact_accepted' || notif.type === 'contact_declined') {
+                                        // Your request was accepted/declined - go to Sent Requests
+                                        setActivityTab('contact-requests')
+                                        setActivityContactSubTab('sent-requests')
+                                        setCurrentView('my-activity')
                                       } else if (notif.type.includes('contact')) {
+                                        // Other contact notifications
                                         setActivityTab('contact-requests')
                                         setCurrentView('my-activity')
                                       } else if (notif.type === 'profile_viewed') {
@@ -1977,7 +1993,15 @@ function App() {
               setCurrentView('chat')
             }}
             initialTab={activityTab}
-            onTabNavigated={() => setActivityTab(null)}
+            initialAcceptedSubTab={activityAcceptedSubTab}
+            initialDeclinedSubTab={activityDeclinedSubTab}
+            initialContactSubTab={activityContactSubTab}
+            onTabNavigated={() => { 
+              setActivityTab(null)
+              setActivityAcceptedSubTab(null)
+              setActivityDeclinedSubTab(null)
+              setActivityContactSubTab(null)
+            }}
           />
         )}
 
