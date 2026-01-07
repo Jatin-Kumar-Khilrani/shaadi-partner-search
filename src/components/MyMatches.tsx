@@ -468,7 +468,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     if (filters.hasReadinessBadge) count++
     if (filters.isVerified) count++
     if (filters.hasPhoto) count++
-    if (filters.disability) count++
+    if (filters.disability && filters.disability !== 'any') count++
     if (filters.ageRange && (filters.ageRange[0] !== 18 || filters.ageRange[1] !== 60)) count++
     // New filters
     if (filters.recentlyJoined) count++
@@ -1497,7 +1497,14 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
           
           <Select
             value={filters.disability || ''}
-            onValueChange={(value) => setFilters({ ...filters, disability: value || undefined })}
+            onValueChange={(value) => {
+              if (value === 'any') {
+                const { disability: _disability, ...rest } = filters
+                setFilters(rest)
+              } else {
+                setFilters({ ...filters, disability: value || undefined })
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder={t.any} />
