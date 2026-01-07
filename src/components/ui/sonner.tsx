@@ -10,6 +10,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       closeButton={true}
+      expand={true}
+      visibleToasts={5}
+      gap={8}
+      offset={16}
+      duration={4000}
       style={
         {
           "--normal-bg": "var(--popover)",
