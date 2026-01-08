@@ -2563,86 +2563,230 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     <CaretDown size={12} className="ml-1.5" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="min-w-[280px] p-2">
-                                  <div className="grid grid-cols-2 gap-2">
-                                    {/* Face Verification */}
-                                    <div className={`flex items-center gap-2 p-2 rounded border cursor-pointer hover:shadow-sm transition-all ${
-                                      profile.photoVerified === true ? 'bg-green-50 border-green-400' : 
-                                      profile.photoVerified === false ? 'bg-red-50 border-red-300' : 
-                                      'bg-background border-amber-300 hover:border-amber-400'
-                                    }`}
-                                      onClick={() => profile.selfieUrl && profile.photos?.length ? handleFaceVerification(profile) : null}
-                                      title={!profile.selfieUrl || !profile.photos?.length ? (language === 'hi' ? 'सेल्फी या फोटो नहीं' : 'No selfie or photos') : ''}
-                                    >
-                                      <ScanSmiley size={16} className={
-                                        profile.photoVerified === true ? 'text-green-600' : 
-                                        profile.photoVerified === false ? 'text-red-500' : 'text-amber-500'
-                                      } />
-                                      <span className="text-xs font-medium">{t.faceVerification}</span>
+                                <DropdownMenuContent align="start" className="min-w-[320px] p-3">
+                                  {/* Verification Flow Header */}
+                                  <div className="text-xs font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                                    <ShieldCheck size={14} />
+                                    {language === 'hi' ? 'सत्यापन प्रवाह' : 'Verification Flow'}
+                                  </div>
+                                  
+                                  {/* Step 1: Face Verification */}
+                                  <div className={`flex items-center gap-3 p-2.5 rounded-lg border-2 mb-2 cursor-pointer transition-all ${
+                                    profile.photoVerified === true ? 'bg-green-50 border-green-400' : 
+                                    profile.photoVerified === false ? 'bg-red-50 border-red-400' : 
+                                    'bg-amber-50/50 border-amber-300 hover:border-amber-400 hover:bg-amber-50'
+                                  }`}
+                                    onClick={() => profile.selfieUrl && profile.photos?.length ? handleFaceVerification(profile) : null}
+                                  >
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                      profile.photoVerified === true ? 'bg-green-500 text-white' : 
+                                      profile.photoVerified === false ? 'bg-red-500 text-white' : 
+                                      'bg-amber-400 text-white'
+                                    }`}>
+                                      {profile.photoVerified === true ? '✓' : '1'}
                                     </div>
-                                    
-                                    {/* ID Proof Verification */}
-                                    <div className={`flex items-center gap-2 p-2 rounded border cursor-pointer hover:shadow-sm transition-all ${
-                                      profile.idProofVerified ? 'bg-green-50 border-green-400' : 
-                                      profile.idProofUrl ? 'bg-background border-amber-300 hover:border-amber-400' : 
-                                      'bg-muted/50 border-gray-200 opacity-60'
-                                    }`}
-                                      onClick={() => profile.idProofUrl ? (setIdProofViewProfile(profile), setShowIdProofViewDialog(true)) : null}
-                                      title={!profile.idProofUrl ? (language === 'hi' ? 'पहचान प्रमाण अपलोड नहीं' : 'ID proof not uploaded') : ''}
-                                    >
-                                      <IdentificationCard size={16} className={
-                                        profile.idProofVerified ? 'text-green-600' : 
-                                        profile.idProofUrl ? 'text-amber-500' : 'text-gray-400'
-                                      } />
-                                      <span className="text-xs font-medium">{t.idProofVerification}</span>
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <ScanSmiley size={16} className={
+                                          profile.photoVerified === true ? 'text-green-600' : 
+                                          profile.photoVerified === false ? 'text-red-500' : 'text-amber-600'
+                                        } />
+                                        <span className="text-sm font-medium">{t.faceVerification}</span>
+                                      </div>
+                                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                                        {profile.photoVerified === true 
+                                          ? (language === 'hi' ? 'सत्यापित ✓' : 'Verified ✓')
+                                          : profile.photoVerified === false 
+                                            ? (language === 'hi' ? 'असत्यापित ✗' : 'Not Verified ✗')
+                                            : (language === 'hi' ? 'सेल्फी और फोटो मिलान करें' : 'Match selfie with photos')}
+                                      </p>
                                     </div>
-                                    
-                                    {/* Payment Verification */}
-                                    <div className={`flex items-center gap-2 p-2 rounded border cursor-pointer hover:shadow-sm transition-all ${
-                                      profile.membershipPlan === 'free' ? 'bg-muted/50 border-gray-200' :
+                                  </div>
+                                  
+                                  {/* Connector Line */}
+                                  <div className="flex items-center justify-center my-1">
+                                    <div className={`w-0.5 h-3 ${profile.photoVerified === true ? 'bg-green-400' : 'bg-gray-300'}`} />
+                                  </div>
+                                  
+                                  {/* Step 2: ID Verification */}
+                                  <div className={`flex items-center gap-3 p-2.5 rounded-lg border-2 mb-2 cursor-pointer transition-all ${
+                                    !profile.photoVerified ? 'opacity-50 cursor-not-allowed bg-muted/50 border-gray-200' :
+                                    profile.idProofVerified ? 'bg-green-50 border-green-400' : 
+                                    profile.idProofUrl ? 'bg-amber-50/50 border-amber-300 hover:border-amber-400 hover:bg-amber-50' : 
+                                    'bg-muted/50 border-gray-200 opacity-60'
+                                  }`}
+                                    onClick={() => profile.photoVerified && profile.idProofUrl ? (setIdProofViewProfile(profile), setShowIdProofViewDialog(true)) : null}
+                                  >
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                      profile.idProofVerified ? 'bg-green-500 text-white' : 
+                                      profile.photoVerified && profile.idProofUrl ? 'bg-amber-400 text-white' : 
+                                      'bg-gray-300 text-gray-500'
+                                    }`}>
+                                      {profile.idProofVerified ? '✓' : '2'}
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <IdentificationCard size={16} className={
+                                          profile.idProofVerified ? 'text-green-600' : 
+                                          profile.photoVerified && profile.idProofUrl ? 'text-amber-600' : 'text-gray-400'
+                                        } />
+                                        <span className="text-sm font-medium">{t.idProofVerification}</span>
+                                      </div>
+                                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                                        {profile.idProofVerified 
+                                          ? (language === 'hi' ? 'सत्यापित ✓' : 'Verified ✓')
+                                          : !profile.photoVerified 
+                                            ? (language === 'hi' ? 'पहले चेहरा सत्यापित करें' : 'Verify face first')
+                                            : !profile.idProofUrl 
+                                              ? (language === 'hi' ? 'ID प्रूफ अपलोड नहीं' : 'ID proof not uploaded')
+                                              : (language === 'hi' ? 'पहचान प्रमाण सत्यापित करें' : 'Verify ID proof')}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Connector Line */}
+                                  <div className="flex items-center justify-center my-1">
+                                    <div className={`w-0.5 h-3 ${profile.idProofVerified ? 'bg-green-400' : 'bg-gray-300'}`} />
+                                  </div>
+                                  
+                                  {/* Step 3: Return for Payment / Payment Verification */}
+                                  {profile.membershipPlan === 'free' ? (
+                                    <div className="flex items-center gap-3 p-2.5 rounded-lg border-2 bg-gray-50 border-gray-200">
+                                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-gray-300 text-gray-500">
+                                        3
+                                      </div>
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <CurrencyInr size={16} className="text-gray-400" />
+                                          <span className="text-sm font-medium text-gray-500">{language === 'hi' ? 'भुगतान' : 'Payment'}</span>
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                                          {language === 'hi' ? 'फ्री प्लान - भुगतान आवश्यक नहीं' : 'Free plan - No payment required'}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ) : profile.returnedForPayment && !profile.paymentScreenshotUrl ? (
+                                    <div className="flex items-center gap-3 p-2.5 rounded-lg border-2 bg-blue-50 border-blue-300">
+                                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-blue-500 text-white animate-pulse">
+                                        3
+                                      </div>
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <CreditCard size={16} className="text-blue-600" />
+                                          <span className="text-sm font-medium text-blue-700">{language === 'hi' ? 'भुगतान प्रतीक्षित' : 'Awaiting Payment'}</span>
+                                        </div>
+                                        <p className="text-[10px] text-blue-600 mt-0.5">
+                                          {language === 'hi' ? 'उपयोगकर्ता को भुगतान लिंक भेजा गया' : 'User notified to upload payment'}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ) : profile.paymentScreenshotUrl ? (
+                                    <div className={`flex items-center gap-3 p-2.5 rounded-lg border-2 cursor-pointer transition-all ${
                                       profile.paymentStatus === 'verified' ? 'bg-green-50 border-green-400' : 
-                                      profile.paymentStatus === 'rejected' ? 'bg-red-50 border-red-300' : 
-                                      profile.paymentScreenshotUrl ? 'bg-background border-amber-300 hover:border-amber-400' : 
-                                      'bg-muted/50 border-gray-200 opacity-60'
+                                      profile.paymentStatus === 'rejected' ? 'bg-red-50 border-red-400' : 
+                                      'bg-amber-50/50 border-amber-300 hover:border-amber-400 hover:bg-amber-50'
                                     }`}
-                                      onClick={() => profile.membershipPlan !== 'free' && profile.paymentScreenshotUrl ? 
-                                        (setPaymentViewProfile(profile), setPaymentRejectionReason(''), setShowPaymentViewDialog(true)) : null}
-                                      title={profile.membershipPlan === 'free' ? (language === 'hi' ? 'फ्री प्लान' : 'Free plan') : 
-                                             !profile.paymentScreenshotUrl ? (language === 'hi' ? 'स्क्रीनशॉट नहीं' : 'No screenshot') : ''}
+                                      onClick={() => (setPaymentViewProfile(profile), setPaymentRejectionReason(''), setShowPaymentViewDialog(true))}
                                     >
-                                      <CurrencyInr size={16} className={
-                                        profile.membershipPlan === 'free' ? 'text-gray-400' :
-                                        profile.paymentStatus === 'verified' ? 'text-green-600' : 
-                                        profile.paymentStatus === 'rejected' ? 'text-red-500' : 
-                                        profile.paymentScreenshotUrl ? 'text-amber-500' : 'text-gray-400'
-                                      } />
-                                      <span className="text-xs font-medium">{language === 'hi' ? 'भुगतान' : 'Payment'}</span>
+                                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                        profile.paymentStatus === 'verified' ? 'bg-green-500 text-white' : 
+                                        profile.paymentStatus === 'rejected' ? 'bg-red-500 text-white' : 
+                                        'bg-amber-400 text-white'
+                                      }`}>
+                                        {profile.paymentStatus === 'verified' ? '✓' : profile.paymentStatus === 'rejected' ? '✗' : '3'}
+                                      </div>
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <CurrencyInr size={16} className={
+                                            profile.paymentStatus === 'verified' ? 'text-green-600' : 
+                                            profile.paymentStatus === 'rejected' ? 'text-red-500' : 'text-amber-600'
+                                          } />
+                                          <span className="text-sm font-medium">{language === 'hi' ? 'भुगतान सत्यापन' : 'Payment Verification'}</span>
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                                          {profile.paymentStatus === 'verified' 
+                                            ? (language === 'hi' ? 'भुगतान सत्यापित ✓' : 'Payment Verified ✓')
+                                            : profile.paymentStatus === 'rejected' 
+                                              ? (language === 'hi' ? 'भुगतान अस्वीकृत ✗' : 'Payment Rejected ✗')
+                                              : (language === 'hi' ? 'स्क्रीनशॉट सत्यापित करें' : 'Verify screenshot')}
+                                        </p>
+                                      </div>
                                     </div>
-                                    
-                                    {/* AI Review */}
-                                    <div className={`flex items-center gap-2 p-2 rounded border cursor-pointer hover:shadow-sm transition-all ${
-                                      selectedProfile?.id === profile.id && aiSuggestions.length > 0 ? 'bg-blue-50 border-blue-400' : 
-                                      'bg-background border-gray-200 hover:border-blue-300'
-                                    }`}
-                                      onClick={() => !isLoadingAI && handleGetAISuggestions(profile)}
+                                  ) : profile.photoVerified === true && profile.idProofVerified ? (
+                                    <div 
+                                      className="flex items-center gap-3 p-2.5 rounded-lg border-2 border-dashed border-green-500 bg-green-50 cursor-pointer hover:bg-green-100 transition-all"
+                                      onClick={() => handleReturnForPayment(profile.id)}
                                     >
-                                      <Robot size={16} className={
-                                        isLoadingAI && selectedProfile?.id === profile.id ? 'text-blue-500 animate-pulse' :
-                                        selectedProfile?.id === profile.id && aiSuggestions.length > 0 ? 'text-blue-600' : 'text-gray-500'
-                                      } />
-                                      <span className="text-xs font-medium">{t.aiReview}</span>
+                                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-green-500 text-white">
+                                        →
+                                      </div>
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <CreditCard size={16} className="text-green-600" />
+                                          <span className="text-sm font-semibold text-green-700">{t.returnForPayment}</span>
+                                        </div>
+                                        <p className="text-[10px] text-green-600 mt-0.5">
+                                          {language === 'hi' ? 'चेहरा और ID सत्यापित। भुगतान लिंक भेजें' : 'Face & ID verified. Send payment link'}
+                                        </p>
+                                      </div>
                                     </div>
+                                  ) : (
+                                    <div className="flex items-center gap-3 p-2.5 rounded-lg border-2 bg-muted/50 border-gray-200 opacity-50">
+                                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-gray-300 text-gray-500">
+                                        3
+                                      </div>
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <CurrencyInr size={16} className="text-gray-400" />
+                                          <span className="text-sm font-medium text-gray-500">{language === 'hi' ? 'भुगतान' : 'Payment'}</span>
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                                          {language === 'hi' ? 'पहले चेहरा और ID सत्यापित करें' : 'Verify face & ID first'}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  <Separator className="my-3" />
+                                  
+                                  {/* AI Review - Optional Tool */}
+                                  <div className={`flex items-center gap-2 p-2 rounded border cursor-pointer hover:shadow-sm transition-all ${
+                                    selectedProfile?.id === profile.id && aiSuggestions.length > 0 ? 'bg-blue-50 border-blue-400' : 
+                                    'bg-background border-gray-200 hover:border-blue-300'
+                                  }`}
+                                    onClick={() => !isLoadingAI && handleGetAISuggestions(profile)}
+                                  >
+                                    <Robot size={16} className={
+                                      isLoadingAI && selectedProfile?.id === profile.id ? 'text-blue-500 animate-pulse' :
+                                      selectedProfile?.id === profile.id && aiSuggestions.length > 0 ? 'text-blue-600' : 'text-gray-500'
+                                    } />
+                                    <span className="text-xs font-medium">{t.aiReview}</span>
+                                    <span className="text-[10px] text-muted-foreground ml-auto">{language === 'hi' ? 'वैकल्पिक' : 'Optional'}</span>
                                   </div>
                                   
                                   {/* AI Suggestions Display */}
                                   {selectedProfile?.id === profile.id && aiSuggestions.length > 0 && (
-                                    <Alert className="mt-2 bg-blue-50 border-blue-200 py-2">
+                                    <Alert className="mt-2 bg-blue-50 border-blue-200 py-2 relative">
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setAiSuggestions([]);
+                                          setSelectedProfile(null);
+                                        }}
+                                        className="absolute top-1 right-1 p-0.5 rounded hover:bg-blue-200 transition-colors"
+                                        title={language === 'hi' ? 'बंद करें' : 'Close'}
+                                      >
+                                        <X size={12} className="text-blue-600" />
+                                      </button>
                                       <Robot size={12} className="text-blue-600" />
                                       <AlertDescription>
-                                        <div className="font-semibold text-[10px] mb-1 text-blue-700">{t.aiSuggestions}:</div>
-                                        <ul className="space-y-0 text-[10px] text-blue-800">
+                                        <div className="font-semibold text-[10px] mb-1 text-blue-700 pr-4">{t.aiSuggestions}:</div>
+                                        <ul className="space-y-0.5 text-[10px] text-blue-800">
                                           {aiSuggestions.map((suggestion, idx) => (
-                                            <li key={idx}>• {suggestion}</li>
+                                            <li key={idx} className="flex items-start gap-1">
+                                              <span className="text-blue-500 mt-0.5">•</span>
+                                              <span>{suggestion}</span>
+                                            </li>
                                           ))}
                                         </ul>
                                       </AlertDescription>
@@ -2675,8 +2819,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     <ArrowCounterClockwise size={14} className="mr-2" />
                                     {t.returnToEdit}
                                   </DropdownMenuItem>
-                                  {/* Return for Payment Only - only show if face and ID are verified */}
-                                  {profile.faceVerified && profile.idProofVerified && (
+                                  {/* Return for Payment Only - only show if face (photoVerified) and ID are verified */}
+                                  {profile.photoVerified === true && profile.idProofVerified && (
                                     <DropdownMenuItem 
                                       onClick={() => handleReturnForPayment(profile.id)}
                                       className="text-green-600 focus:text-green-600 focus:bg-green-50"

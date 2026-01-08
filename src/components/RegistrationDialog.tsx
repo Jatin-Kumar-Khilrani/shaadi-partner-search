@@ -4195,7 +4195,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       
                       {/* Show verification status in payment-only mode */}
                       <div className="flex flex-wrap gap-2 mb-3">
-                        {editProfile?.faceVerified && (
+                        {editProfile?.photoVerified === true && (
                           <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
                             <CheckCircle size={12} weight="fill" />
                             {language === 'hi' ? 'चेहरा सत्यापित' : 'Face Verified'}
