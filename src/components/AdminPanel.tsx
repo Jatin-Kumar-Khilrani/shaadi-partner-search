@@ -5756,7 +5756,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
 
           {/* Membership Settings Tab */}
           <TabsContent value="membership">
-            <div className="space-y-6">
+            <div className="space-y-6" onKeyDown={(e) => e.stopPropagation()}>
               {/* Default Plan Settings */}
               <Card>
                 <CardHeader>
@@ -5781,6 +5781,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Input 
                           type="number" 
                           value={localMembershipSettings.sixMonthPrice}
+                          onKeyDown={(e) => e.stopPropagation()}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
                             sixMonthPrice: parseInt(e.target.value) || 0
@@ -5792,6 +5793,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Input 
                           type="number" 
                           value={localMembershipSettings.sixMonthDuration}
+                          onKeyDown={(e) => e.stopPropagation()}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
                             sixMonthDuration: parseInt(e.target.value) || 6
@@ -5811,6 +5813,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Input 
                           type="number" 
                           value={localMembershipSettings.oneYearPrice}
+                          onKeyDown={(e) => e.stopPropagation()}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
                             oneYearPrice: parseInt(e.target.value) || 0
@@ -5822,6 +5825,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Input 
                           type="number" 
                           value={localMembershipSettings.oneYearDuration}
+                          onKeyDown={(e) => e.stopPropagation()}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
                             oneYearDuration: parseInt(e.target.value) || 12

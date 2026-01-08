@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Checkbox } from '@/components/ui/checkbox'
-import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, ArrowDown, FloppyDisk, Sparkle, Warning, SpinnerGap, Gift, ShieldCheck, IdentificationCard, ArrowCounterClockwise, Upload } from '@phosphor-icons/react'
+import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, ArrowDown, FloppyDisk, Sparkle, Warning, SpinnerGap, Gift, ShieldCheck, IdentificationCard, ArrowCounterClockwise, Upload, Rocket } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { logger } from '@/lib/logger'
 import { sendRegistrationEmailOtp, sendRegistrationMobileOtp } from '@/lib/notificationService'
@@ -299,6 +299,11 @@ interface MembershipSettings {
   ifscCode: string
   accountHolderName: string
   qrCodeImage: string
+  // Boost pack settings
+  boostPackEnabled?: boolean
+  boostPackPrice?: number
+  boostPackInterestLimit?: number
+  boostPackContactLimit?: number
 }
 
 interface RegistrationDialogProps {
@@ -648,6 +653,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             setFaceCoverageValid(parsed.faceCoverageValid)
           }
         }
+        // Restore ID proof from draft
+        if (parsed.idProofPreview) {
+          setIdProofPreview(parsed.idProofPreview)
+        }
+        if (parsed.idProofType) {
+          setIdProofType(parsed.idProofType)
+        }
         // Also restore verification states if saved
         if (parsed.emailVerified) {
           setEmailVerified(parsed.emailVerified)
@@ -682,6 +694,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         photos,
         selfiePreview,
         faceCoverageValid,
+        // Save ID proof data
+        idProofPreview,
+        idProofType,
         // Also save verification states
         emailVerified,
         mobileVerified,
@@ -3542,24 +3557,39 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   {/* In edit mode (for regular users), show existing ID proof info (read-only) */}
                   {isEditMode && !isAdminMode && editProfile?.idProofType && (
                     <div className="border-2 border-gray-300 bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
-                      <div className="flex items-center gap-3">
-                        <ShieldCheck size={24} weight="fill" className="text-green-600" />
-                        <div>
-                          <p className="font-medium text-gray-700 dark:text-gray-300">
-                            {language === 'hi' ? 'पहचान प्रमाण:' : 'ID Proof:'} {{
-                              'aadhaar': language === 'hi' ? 'आधार कार्ड' : 'Aadhaar Card',
-                              'pan': language === 'hi' ? 'पैन कार्ड' : 'PAN Card',
-                              'driving-license': language === 'hi' ? 'ड्राइविंग लाइसेंस' : 'Driving License',
-                              'passport': language === 'hi' ? 'पासपोर्ट' : 'Passport',
-                              'voter-id': language === 'hi' ? 'मतदाता पहचान पत्र' : 'Voter ID'
-                            }[editProfile.idProofType] || editProfile.idProofType}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {editProfile.idProofVerified 
-                              ? (language === 'hi' ? '✅ सत्यापित' : '✅ Verified')
-                              : (language === 'hi' ? '⏳ सत्यापन लंबित' : '⏳ Verification pending')}
-                          </p>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <ShieldCheck size={24} weight="fill" className="text-green-600" />
+                          <div>
+                            <p className="font-medium text-gray-700 dark:text-gray-300">
+                              {language === 'hi' ? 'पहचान प्रमाण:' : 'ID Proof:'} {{
+                                'aadhaar': language === 'hi' ? 'आधार कार्ड' : 'Aadhaar Card',
+                                'pan': language === 'hi' ? 'पैन कार्ड' : 'PAN Card',
+                                'driving-license': language === 'hi' ? 'ड्राइविंग लाइसेंस' : 'Driving License',
+                                'passport': language === 'hi' ? 'पासपोर्ट' : 'Passport',
+                                'voter-id': language === 'hi' ? 'मतदाता पहचान पत्र' : 'Voter ID'
+                              }[editProfile.idProofType] || editProfile.idProofType}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {editProfile.idProofVerified 
+                                ? (language === 'hi' ? '✅ सत्यापित' : '✅ Verified')
+                                : (language === 'hi' ? '⏳ सत्यापन लंबित' : '⏳ Verification pending')}
+                            </p>
+                          </div>
                         </div>
+                        {/* Show ID proof image preview (read-only) */}
+                        {editProfile.idProofUrl && (
+                          <div className="border rounded-lg overflow-hidden bg-white dark:bg-gray-800">
+                            <img 
+                              src={editProfile.idProofUrl} 
+                              alt="ID Proof" 
+                              className="max-h-48 w-full object-contain"
+                            />
+                            <p className="text-xs text-center text-muted-foreground py-2 bg-gray-100 dark:bg-gray-700">
+                              {language === 'hi' ? 'आपका अपलोड किया गया पहचान प्रमाण (केवल देखने के लिए)' : 'Your uploaded ID proof (view only)'}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -4150,6 +4180,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                     <CheckCircle size={16} weight="fill" className="text-amber-500" />
                                     {language === 'hi' ? '✨ विवाह तैयारी मूल्यांकन (AI-संचालित)' : '✨ Marriage Readiness Assessment (AI-powered)'}
                                   </li>
+                                  {membershipSettings?.boostPackEnabled && (
+                                    <li className="flex items-center gap-2 pt-2 border-t border-dashed mt-2">
+                                      <Rocket size={16} weight="fill" className="text-purple-500" />
+                                      <span className="text-purple-600 dark:text-purple-400 font-medium">
+                                        {language === 'hi' 
+                                          ? `🚀 बूस्ट पैक उपलब्ध: ₹${membershipSettings?.boostPackPrice || 100} में +${membershipSettings?.boostPackInterestLimit || 10} रुचि व +${membershipSettings?.boostPackContactLimit || 10} संपर्क`
+                                          : `🚀 Boost Pack available: ₹${membershipSettings?.boostPackPrice || 100} for +${membershipSettings?.boostPackInterestLimit || 10} interests & +${membershipSettings?.boostPackContactLimit || 10} contacts`}
+                                      </span>
+                                    </li>
+                                  )}
                                 </ul>
                               </div>
                             </div>
@@ -4211,6 +4251,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                     <CheckCircle size={16} weight="fill" className="text-amber-500" />
                                     {language === 'hi' ? '✨ विवाह तैयारी मूल्यांकन (AI-संचालित)' : '✨ Marriage Readiness Assessment (AI-powered)'}
                                   </li>
+                                  {membershipSettings?.boostPackEnabled && (
+                                    <li className="flex items-center gap-2 pt-2 border-t border-dashed mt-2">
+                                      <Rocket size={16} weight="fill" className="text-purple-500" />
+                                      <span className="text-purple-600 dark:text-purple-400 font-medium">
+                                        {language === 'hi' 
+                                          ? `🚀 बूस्ट पैक उपलब्ध: ₹${membershipSettings?.boostPackPrice || 100} में +${membershipSettings?.boostPackInterestLimit || 10} रुचि व +${membershipSettings?.boostPackContactLimit || 10} संपर्क`
+                                          : `🚀 Boost Pack available: ₹${membershipSettings?.boostPackPrice || 100} for +${membershipSettings?.boostPackInterestLimit || 10} interests & +${membershipSettings?.boostPackContactLimit || 10} contacts`}
+                                      </span>
+                                    </li>
+                                  )}
                                 </ul>
                               </div>
                             </div>
