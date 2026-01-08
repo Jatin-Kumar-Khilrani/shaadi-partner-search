@@ -872,20 +872,27 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     }
 
     if (isAdmin) {
-      const [profileId1, profileId2] = convId.split('-')
-      return messages.filter(m => 
-        m.type === 'user-to-user' &&
-        ((m.fromProfileId === profileId1 && m.toProfileId === profileId2) ||
-         (m.fromProfileId === profileId2 && m.toProfileId === profileId1))
-      )
+      // For admin viewing user-to-user chats
+      return messages.filter(m => {
+        if (m.type !== 'user-to-user') return false
+        if (!m.fromProfileId || !m.toProfileId) return false
+        
+        const msgConvId = [m.fromProfileId, m.toProfileId].sort().join('-')
+        return msgConvId === convId
+      })
     }
 
     const [profileId1, profileId2] = convId.split('-')
-    return messages.filter(m => 
-      m.type === 'user-to-user' &&
-      ((m.fromProfileId === profileId1 && m.toProfileId === profileId2) ||
-       (m.fromProfileId === profileId2 && m.toProfileId === profileId1))
-    )
+    // Filter messages that belong to this specific conversation
+    // Ensure both fromProfileId and toProfileId are valid and match exactly
+    return messages.filter(m => {
+      if (m.type !== 'user-to-user') return false
+      if (!m.fromProfileId || !m.toProfileId) return false
+      
+      // Create the conversation ID from the message's participants
+      const msgConvId = [m.fromProfileId, m.toProfileId].sort().join('-')
+      return msgConvId === convId
+    })
   }
 
   // Clear chat history (admin only) - removes all messages but keeps conversation in list
