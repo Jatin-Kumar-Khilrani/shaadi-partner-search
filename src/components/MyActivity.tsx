@@ -601,14 +601,16 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
        i.status === 'declined' &&
        !hasBlockedCurrentUser(i.fromProfileId === currentUserProfile?.profileId ? i.toProfileId : i.fromProfileId)
   ) || []
-  // Filter contact requests - exclude if the other party has blocked current user
+  // Filter contact requests - exclude if blocked in either direction
+  // When current user blocks someone, their contact requests should not show (auto-revoked)
+  // When someone blocks current user, their contact requests should also not show
   const sentContactRequests = contactRequests?.filter(r => 
     r.fromUserId === loggedInUserId && 
-    !hasBlockedCurrentUser(r.toProfileId || '')
+    !isBlockedEitherWay(r.toProfileId || '')
   ) || []
   const receivedContactRequests = contactRequests?.filter(r => 
     r.toUserId === loggedInUserId && 
-    !hasBlockedCurrentUser(r.fromProfileId)
+    !isBlockedEitherWay(r.fromProfileId)
   ) || []
   // Filter for pending contact requests (for badge count)
   const pendingContactRequests = receivedContactRequests.filter(r => r.status === 'pending')
@@ -910,18 +912,41 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
       )
     )
     
-    // Also auto-decline any pending contact requests from blocked profile
+    // Auto-decline pending contact requests AND auto-revoke approved contact requests from blocked profile
+    // This ensures the blocked user can no longer view the current user's contact details
     setContactRequests((current) =>
-      (current || []).map(r =>
-        (r.fromProfileId === profileIdToBlock && r.status === 'pending')
-          ? { 
+      (current || []).map(r => {
+        // Handle contact requests FROM the blocked profile (they requested, we received)
+        if (r.fromProfileId === profileIdToBlock) {
+          if (r.status === 'pending') {
+            return { 
               ...r, 
               status: 'declined' as const, 
               declinedAt: new Date().toISOString(),
               autoDeclinedDueToInterest: true 
             }
-          : r
-      )
+          }
+          if (r.status === 'approved') {
+            return {
+              ...r,
+              status: 'revoked' as const,
+              revokedAt: new Date().toISOString(),
+              autoRevokedDueToBlock: true
+            }
+          }
+        }
+        // Handle contact requests TO the blocked profile (we sent, they received and may have approved)
+        // When we block someone, they should also lose access to our contact if they approved our request
+        if (r.toProfileId === profileIdToBlock && r.status === 'approved') {
+          return {
+            ...r,
+            status: 'revoked' as const,
+            revokedAt: new Date().toISOString(),
+            autoRevokedDueToBlock: true
+          }
+        }
+        return r
+      })
     )
 
     // Create block record with report information for admin review

@@ -2022,6 +2022,7 @@ function App() {
             membershipSettings={membershipSettings || defaultMembershipSettings}
             setProfiles={setProfiles}
             initialChatProfileId={chatTargetProfileId}
+            onUpgrade={() => setShowSettings(true)}
           />
         )}
 

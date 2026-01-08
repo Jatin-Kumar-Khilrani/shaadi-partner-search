@@ -454,6 +454,8 @@ export interface ContactRequest {
   revokedBy?: 'sender' | 'receiver'   // Who revoked after approval
   // Auto-decline linked to interest decline
   autoDeclinedDueToInterest?: boolean  // True if auto-declined when interest was declined
+  // Auto-revoke linked to blocking
+  autoRevokedDueToBlock?: boolean  // True if auto-revoked when profile was blocked
 }
 
 export interface PartnerPreferenceData {

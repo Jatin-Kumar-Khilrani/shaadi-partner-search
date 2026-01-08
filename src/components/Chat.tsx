@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks, X, Warning, ShieldWarning, Prohibit, MagnifyingGlassPlus, Paperclip, Image as ImageIcon, FilePdf, DownloadSimple, Smiley, Trash } from '@phosphor-icons/react'
+import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks, X, Warning, ShieldWarning, Prohibit, MagnifyingGlassPlus, Paperclip, Image as ImageIcon, FilePdf, DownloadSimple, Smiley, Trash, Rocket } from '@phosphor-icons/react'
 import type { ChatMessage, ChatConversation, ChatAttachment } from '@/types/chat'
 import type { Profile, Interest, MembershipPlan, BlockedProfile, ReportReason } from '@/types/profile'
 import type { Language } from '@/lib/translations'
@@ -54,6 +54,7 @@ interface ChatProps {
   membershipSettings?: MembershipSettings
   setProfiles?: (newValue: Profile[] | ((oldValue?: Profile[] | undefined) => Profile[])) => void
   initialChatProfileId?: string | null // Profile ID to auto-select for chat
+  onUpgrade?: () => void // Callback to open Settings for upgrade
 }
 
 // Default limits if settings not provided
@@ -68,7 +69,7 @@ const DEFAULT_SETTINGS: MembershipSettings = {
   freePlanChatDurationMonths: 6
 }
 
-export function Chat({ currentUserProfile, profiles, language, isAdmin = false, shouldBlur = false, membershipPlan, membershipSettings, setProfiles, initialChatProfileId }: ChatProps) {
+export function Chat({ currentUserProfile, profiles, language, isAdmin = false, shouldBlur = false, membershipPlan, membershipSettings, setProfiles, initialChatProfileId, onUpgrade }: ChatProps) {
   const [messages, setMessages, refreshMessages, messagesLoaded] = useKV<ChatMessage[]>('chatMessages', [])
   const [interests, _setInterests] = useKV<Interest[]>('interests', [])
   const [blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
@@ -207,6 +208,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       ? 'यह आपकी अंतिम चैट थी!' 
       : 'This was your last chat!',
     remainingChats: language === 'hi' ? 'शेष चैट' : 'Chats Left',
+    getMoreChats: language === 'hi' ? 'अधिक चैट प्राप्त करें' : 'Get more chats',
     // Report & Block translations
     reportBlock: language === 'hi' ? 'रिपोर्ट और ब्लॉक' : 'Report & Block',
     reportProfile: language === 'hi' ? 'प्रोफाइल रिपोर्ट करें' : 'Report Profile',
@@ -1294,6 +1296,17 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                 <ChatCircle size={16} className="mr-1" />
                 {t.remainingChats}: {remainingChats}/{chatLimit}
               </Badge>
+              {onUpgrade && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={onUpgrade}
+                  className="h-7 text-xs gap-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200"
+                >
+                  <Rocket size={14} weight="fill" />
+                  {t.getMoreChats}
+                </Button>
+              )}
             </div>
           )}
         </div>
