@@ -133,19 +133,25 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   // Get settings with defaults
   const settings = { ...DEFAULT_SETTINGS, ...membershipSettings }
 
-  // Get chat limit based on current plan
+  // Get boost credits from profile
+  const boostInterestsRemaining = currentUserProfile?.boostInterestsRemaining || 0
+
+  // Get chat limit based on current plan + boost credits
   const getChatLimit = (): number => {
-    if (!membershipPlan || membershipPlan === 'free') {
-      return settings.freePlanChatLimit
-    } else if (membershipPlan === '6-month') {
-      return settings.sixMonthChatLimit
+    let baseLimit = settings.freePlanChatLimit
+    if (membershipPlan === '6-month') {
+      baseLimit = settings.sixMonthChatLimit
     } else if (membershipPlan === '1-year') {
-      return settings.oneYearChatLimit
+      baseLimit = settings.oneYearChatLimit
     }
-    return settings.freePlanChatLimit
+    // Add boost credits to extend the limit
+    return baseLimit + boostInterestsRemaining
   }
 
   const chatLimit = getChatLimit()
+  const baseChatLimit = membershipPlan === '1-year' ? settings.oneYearChatLimit 
+    : membershipPlan === '6-month' ? settings.sixMonthChatLimit 
+    : settings.freePlanChatLimit
   
   // Calculate actual profiles chatted with from messages (retroactive counting)
   // This counts unique non-admin profiles the user has SENT messages to
@@ -836,10 +842,18 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       setMessages(updatedMessages)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedConversation, currentUserProfile, isAdmin])
+  }, [selectedConversation, currentUserProfile, isAdmin, messages])
 
+  // Scroll to bottom when conversation is selected or messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (!selectedConversation) return
+    
+    // Use setTimeout to ensure DOM has fully rendered before scrolling
+    const timeoutId = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 100)
+    
+    return () => clearTimeout(timeoutId)
   }, [selectedConversation, messages])
 
   const getConversationMessages = (convId: string) => {

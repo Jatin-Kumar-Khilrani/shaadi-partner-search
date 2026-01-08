@@ -56,16 +56,19 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
   // Get settings with defaults
   const settings = { ...DEFAULT_SETTINGS, ...membershipSettings }
 
-  // Get contact view limit based on current plan
+  // Get boost credits from profile
+  const boostContactsRemaining = currentUserProfile?.boostContactsRemaining || 0
+
+  // Get contact view limit based on current plan + boost credits
   const getContactLimit = (): number => {
-    if (!membershipPlan || membershipPlan === 'free') {
-      return settings.freePlanContactLimit
-    } else if (membershipPlan === '6-month') {
-      return settings.sixMonthContactLimit
+    let baseLimit = settings.freePlanContactLimit
+    if (membershipPlan === '6-month') {
+      baseLimit = settings.sixMonthContactLimit
     } else if (membershipPlan === '1-year') {
-      return settings.oneYearContactLimit
+      baseLimit = settings.oneYearContactLimit
     }
-    return settings.freePlanContactLimit
+    // Add boost credits to extend the limit
+    return baseLimit + boostContactsRemaining
   }
 
   const contactLimit = getContactLimit()

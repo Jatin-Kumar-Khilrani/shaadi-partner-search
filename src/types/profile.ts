@@ -295,6 +295,9 @@ export interface Profile {
   boostPacksPurchased?: BoostPackPurchase[]  // Boost pack purchase history
   boostInterestsRemaining?: number  // Remaining interests from boost packs
   boostContactsRemaining?: number   // Remaining contacts from boost packs
+  // Per-profile boost pack overrides (admin-controlled)
+  boostPackDisabled?: boolean       // Disable boost pack for this specific user
+  customBoostPackPrice?: number     // Custom price override for this user (null = use global)
   // Payment verification for paid plans
   paymentScreenshotUrl?: string  // URL to payment screenshot (legacy single)
   paymentScreenshotUrls?: string[]  // Multiple payment screenshot URLs

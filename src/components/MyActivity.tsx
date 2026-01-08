@@ -130,28 +130,32 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
   // Get settings with defaults
   const settings = { ...DEFAULT_SETTINGS, ...membershipSettings }
 
-  // Get chat limit based on current plan
+  // Get boost credits from profile
+  const boostInterestsRemaining = currentUserProfile?.boostInterestsRemaining || 0
+  const boostContactsRemaining = currentUserProfile?.boostContactsRemaining || 0
+
+  // Get chat limit based on current plan + boost credits
   const getChatLimit = (): number => {
-    if (!membershipPlan || membershipPlan === 'free') {
-      return settings.freePlanChatLimit
-    } else if (membershipPlan === '6-month') {
-      return settings.sixMonthChatLimit
+    let baseLimit = settings.freePlanChatLimit
+    if (membershipPlan === '6-month') {
+      baseLimit = settings.sixMonthChatLimit
     } else if (membershipPlan === '1-year') {
-      return settings.oneYearChatLimit
+      baseLimit = settings.oneYearChatLimit
     }
-    return settings.freePlanChatLimit
+    // Add boost credits to extend the limit
+    return baseLimit + boostInterestsRemaining
   }
 
-  // Get contact limit based on current plan
+  // Get contact limit based on current plan + boost credits
   const getContactLimit = (): number => {
-    if (!membershipPlan || membershipPlan === 'free') {
-      return settings.freePlanContactLimit
-    } else if (membershipPlan === '6-month') {
-      return settings.sixMonthContactLimit
+    let baseLimit = settings.freePlanContactLimit
+    if (membershipPlan === '6-month') {
+      baseLimit = settings.sixMonthContactLimit
     } else if (membershipPlan === '1-year') {
-      return settings.oneYearContactLimit
+      baseLimit = settings.oneYearContactLimit
     }
-    return settings.freePlanContactLimit
+    // Add boost credits to extend the limit
+    return baseLimit + boostContactsRemaining
   }
 
   const chatLimit = getChatLimit()
@@ -315,11 +319,14 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
   // Get request expiry days from settings
   const requestExpiryDays = membershipSettings?.requestExpiryDays || DEFAULT_SETTINGS.requestExpiryDays || 15
   
-  // Get boost pack settings
-  const boostPackEnabled = settings.boostPackEnabled ?? true
+  // Get boost pack settings (with per-profile overrides)
+  const globalBoostPackEnabled = settings.boostPackEnabled ?? true
+  const profileBoostPackDisabled = currentUserProfile?.boostPackDisabled ?? false
+  const boostPackEnabled = globalBoostPackEnabled && !profileBoostPackDisabled
   const boostPackInterestLimit = settings.boostPackInterestLimit ?? 10
   const boostPackContactLimit = settings.boostPackContactLimit ?? 10
-  const boostPackPrice = settings.boostPackPrice ?? 100
+  // Use custom price if set for this profile, otherwise use global price
+  const boostPackPrice = currentUserProfile?.customBoostPackPrice ?? settings.boostPackPrice ?? 100
   const upiId = settings.upiId || ''
   const qrCodeImage = settings.qrCodeImage || ''
 
@@ -621,11 +628,13 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
     const senderAlreadyUsedSlot = senderChatUsed.includes(acceptorProfileId)
 
     if (!senderAlreadyUsedSlot && setProfiles) {
-      // Check sender's chat limit
+      // Check sender's chat limit (base plan + boost credits)
       const senderPlan = senderProfile.membershipPlan || 'free'
-      const senderChatLimit = senderPlan === '1-year' ? settings.oneYearChatLimit 
+      const senderBaseLimit = senderPlan === '1-year' ? settings.oneYearChatLimit 
         : senderPlan === '6-month' ? settings.sixMonthChatLimit 
         : settings.freePlanChatLimit
+      const senderBoostCredits = senderProfile.boostInterestsRemaining || 0
+      const senderChatLimit = senderBaseLimit + senderBoostCredits
 
       if (senderChatUsed.length >= senderChatLimit) {
         toast.error(
@@ -2262,8 +2271,8 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
                     <Badge variant="secondary" className="text-xs">
                       {t.chatsRemaining}: {Math.max(0, chatLimit - chatRequestsUsed.length)}/{chatLimit}
                     </Badge>
-                    {/* Show boost pack button when limits exhausted */}
-                    {boostPackEnabled && chatLimit - chatRequestsUsed.length <= 0 && !hasPendingBoostPack && (
+                    {/* Show boost pack button - users can purchase anytime */}
+                    {boostPackEnabled && !hasPendingBoostPack && (
                       <Button 
                         size="sm" 
                         variant="outline"
@@ -2431,8 +2440,8 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
                     <Badge variant="secondary" className="text-xs">
                       {t.contactsRemaining}: {Math.max(0, contactLimit - contactViewsUsed.length)}/{contactLimit}
                     </Badge>
-                    {/* Show boost pack button when limits exhausted */}
-                    {boostPackEnabled && contactLimit - contactViewsUsed.length <= 0 && !hasPendingBoostPack && (
+                    {/* Show boost pack button - users can purchase anytime */}
+                    {boostPackEnabled && !hasPendingBoostPack && (
                       <Button 
                         size="sm" 
                         variant="outline"

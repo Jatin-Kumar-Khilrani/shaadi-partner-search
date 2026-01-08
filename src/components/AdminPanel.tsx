@@ -589,11 +589,24 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [editMembershipDialog, setEditMembershipDialog] = useState<Profile | null>(null)
   const [returnToEditDialog, setReturnToEditDialog] = useState<Profile | null>(null)
   const [returnToEditReason, setReturnToEditReason] = useState('')
-  const [membershipEditData, setMembershipEditData] = useState<{plan: string, customAmount: number, discountAmount: number, expiryDate: string}>({
+  const [membershipEditData, setMembershipEditData] = useState<{
+    plan: string, 
+    customAmount: number, 
+    discountAmount: number, 
+    expiryDate: string,
+    boostInterestsRemaining: number,
+    boostContactsRemaining: number,
+    boostPackDisabled: boolean,
+    customBoostPackPrice: number | null
+  }>({
     plan: '',
     customAmount: 0,
     discountAmount: 0,
-    expiryDate: ''
+    expiryDate: '',
+    boostInterestsRemaining: 0,
+    boostContactsRemaining: 0,
+    boostPackDisabled: false,
+    customBoostPackPrice: null
   })
   const [serviceFormData, setServiceFormData] = useState<Partial<WeddingService>>({
     category: 'venue',
@@ -2163,7 +2176,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 const pendingPaymentsCount = profiles?.filter(p => 
                   p.membershipPlan && 
                   p.membershipPlan !== 'free' && 
-                  p.paymentScreenshotUrl && 
+                  (p.paymentScreenshotUrl || (p.paymentScreenshotUrls && p.paymentScreenshotUrls.length > 0)) && 
                   (p.paymentStatus === 'pending' || !p.paymentStatus) &&
                   !p.isDeleted
                 ).length || 0
@@ -2723,7 +2736,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                         </p>
                                       </div>
                                     </div>
-                                  ) : profile.returnedForPayment && !profile.paymentScreenshotUrl ? (
+                                  ) : profile.returnedForPayment && !profile.paymentScreenshotUrl && !(profile.paymentScreenshotUrls && profile.paymentScreenshotUrls.length > 0) ? (
                                     (() => {
                                       const deadline = profile.returnedForPaymentDeadline ? new Date(profile.returnedForPaymentDeadline) : null
                                       const now = new Date()
@@ -2789,7 +2802,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                         </div>
                                       )
                                     })()
-                                  ) : profile.paymentScreenshotUrl ? (
+                                  ) : (profile.paymentScreenshotUrl || (profile.paymentScreenshotUrls && profile.paymentScreenshotUrls.length > 0)) ? (
                                     <div className={`flex items-center gap-3 p-2.5 rounded-lg border-2 cursor-pointer transition-all ${
                                       profile.paymentStatus === 'verified' ? 'bg-green-50 border-green-400' : 
                                       profile.paymentStatus === 'rejected' ? 'bg-red-50 border-red-400' : 
@@ -3757,7 +3770,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   const pendingPayments = profiles?.filter(p => 
                     p.membershipPlan && 
                     p.membershipPlan !== 'free' && 
-                    p.paymentScreenshotUrl && 
+                    (p.paymentScreenshotUrl || (p.paymentScreenshotUrls && p.paymentScreenshotUrls.length > 0)) && 
                     (p.paymentStatus === 'pending' || !p.paymentStatus) &&
                     !p.isDeleted
                   ) || []
@@ -3795,9 +3808,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                                   {/* Payment Screenshot Thumbnail */}
                                   <div className="shrink-0 flex items-start gap-3">
-                                    {profile.paymentScreenshotUrl && (
+                                    {(profile.paymentScreenshotUrl || (profile.paymentScreenshotUrls && profile.paymentScreenshotUrls.length > 0)) && (
                                       <img 
-                                        src={profile.paymentScreenshotUrl} 
+                                        src={profile.paymentScreenshotUrls?.[0] || profile.paymentScreenshotUrl} 
                                         alt="Payment Screenshot"
                                         className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border-2 border-amber-400 cursor-pointer hover:opacity-80 transition-opacity"
                                         onClick={() => {
@@ -5796,7 +5809,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           onKeyDown={(e) => e.stopPropagation()}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
-                            sixMonthPrice: parseInt(e.target.value) || 0
+                            sixMonthPrice: e.target.value === '' ? 0 : parseInt(e.target.value)
                           }))}
                         />
                       </div>
@@ -5808,7 +5821,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           onKeyDown={(e) => e.stopPropagation()}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
-                            sixMonthDuration: parseInt(e.target.value) || 6
+                            sixMonthDuration: e.target.value === '' ? 0 : parseInt(e.target.value)
                           }))}
                         />
                       </div>
@@ -5828,7 +5841,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           onKeyDown={(e) => e.stopPropagation()}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
-                            oneYearPrice: parseInt(e.target.value) || 0
+                            oneYearPrice: e.target.value === '' ? 0 : parseInt(e.target.value)
                           }))}
                         />
                       </div>
@@ -5840,7 +5853,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           onKeyDown={(e) => e.stopPropagation()}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
-                            oneYearDuration: parseInt(e.target.value) || 12
+                            oneYearDuration: e.target.value === '' ? 0 : parseInt(e.target.value)
                           }))}
                         />
                       </div>
@@ -5873,7 +5886,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           value={localMembershipSettings.discountPercentage}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
-                            discountPercentage: parseInt(e.target.value) || 0
+                            discountPercentage: e.target.value === '' ? 0 : parseInt(e.target.value)
                           }))}
                           disabled={!localMembershipSettings.discountEnabled}
                         />
@@ -5913,7 +5926,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             value={localMembershipSettings.freePlanChatLimit}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              freePlanChatLimit: parseInt(e.target.value) || 0
+                              freePlanChatLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
                             }))}
                           />
                         </div>
@@ -5925,7 +5938,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             value={localMembershipSettings.freePlanContactLimit}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              freePlanContactLimit: parseInt(e.target.value) || 0
+                              freePlanContactLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
                             }))}
                           />
                           <p className="text-xs text-muted-foreground">{language === 'hi' ? '0 = कोई संपर्क नहीं' : '0 = No contacts'}</p>
@@ -5945,7 +5958,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             value={localMembershipSettings.sixMonthChatLimit}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              sixMonthChatLimit: parseInt(e.target.value) || 0
+                              sixMonthChatLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
                             }))}
                           />
                         </div>
@@ -5957,7 +5970,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             value={localMembershipSettings.sixMonthContactLimit}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              sixMonthContactLimit: parseInt(e.target.value) || 0
+                              sixMonthContactLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
                             }))}
                           />
                         </div>
@@ -5976,7 +5989,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             value={localMembershipSettings.oneYearChatLimit}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              oneYearChatLimit: parseInt(e.target.value) || 0
+                              oneYearChatLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
                             }))}
                           />
                         </div>
@@ -5988,7 +6001,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             value={localMembershipSettings.oneYearContactLimit}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              oneYearContactLimit: parseInt(e.target.value) || 0
+                              oneYearContactLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
                             }))}
                           />
                         </div>
@@ -6025,10 +6038,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             type="number" 
                             min="7"
                             max="365"
-                            value={localMembershipSettings.inactivityDays || 30}
+                            value={localMembershipSettings.inactivityDays || ''}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              inactivityDays: parseInt(e.target.value) || 30
+                              inactivityDays: e.target.value === '' ? 0 : parseInt(e.target.value)
                             }))}
                           />
                           <p className="text-xs text-muted-foreground">
@@ -6048,10 +6061,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             type="number" 
                             min="1"
                             max="24"
-                            value={localMembershipSettings.freePlanChatDurationMonths || 6}
+                            value={localMembershipSettings.freePlanChatDurationMonths || ''}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              freePlanChatDurationMonths: parseInt(e.target.value) || 6
+                              freePlanChatDurationMonths: e.target.value === '' ? 0 : parseInt(e.target.value)
                             }))}
                           />
                           <p className="text-xs text-muted-foreground">
@@ -6071,10 +6084,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             type="number" 
                             min="3"
                             max="90"
-                            value={localMembershipSettings.requestExpiryDays || 15}
+                            value={localMembershipSettings.requestExpiryDays || ''}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              requestExpiryDays: parseInt(e.target.value) || 15
+                              requestExpiryDays: e.target.value === '' ? 0 : parseInt(e.target.value)
                             }))}
                           />
                           <p className="text-xs text-muted-foreground">
@@ -6112,10 +6125,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               type="number" 
                               min="5"
                               max="100"
-                              value={localMembershipSettings.boostPackInterestLimit || 10}
+                              value={localMembershipSettings.boostPackInterestLimit || ''}
                               onChange={(e) => setLocalMembershipSettings(prev => ({
                                 ...prev,
-                                boostPackInterestLimit: parseInt(e.target.value) || 10
+                                boostPackInterestLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
                               }))}
                               disabled={!localMembershipSettings.boostPackEnabled}
                             />
@@ -6126,10 +6139,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               type="number" 
                               min="5"
                               max="100"
-                              value={localMembershipSettings.boostPackContactLimit || 10}
+                              value={localMembershipSettings.boostPackContactLimit || ''}
                               onChange={(e) => setLocalMembershipSettings(prev => ({
                                 ...prev,
-                                boostPackContactLimit: parseInt(e.target.value) || 10
+                                boostPackContactLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
                               }))}
                               disabled={!localMembershipSettings.boostPackEnabled}
                             />
@@ -6140,10 +6153,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               type="number" 
                               min="50"
                               max="1000"
-                              value={localMembershipSettings.boostPackPrice || 100}
+                              value={localMembershipSettings.boostPackPrice || ''}
                               onChange={(e) => setLocalMembershipSettings(prev => ({
                                 ...prev,
-                                boostPackPrice: parseInt(e.target.value) || 100
+                                boostPackPrice: e.target.value === '' ? 0 : parseInt(e.target.value)
                               }))}
                               disabled={!localMembershipSettings.boostPackEnabled}
                             />
@@ -6168,10 +6181,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               type="number" 
                               min="1"
                               max="30"
-                              value={localMembershipSettings.paymentDeadlineDays || 7}
+                              value={localMembershipSettings.paymentDeadlineDays || ''}
                               onChange={(e) => setLocalMembershipSettings(prev => ({
                                 ...prev,
-                                paymentDeadlineDays: parseInt(e.target.value) || 7
+                                paymentDeadlineDays: e.target.value === '' ? 0 : parseInt(e.target.value)
                               }))}
                             />
                           </div>
@@ -6453,12 +6466,14 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-auto max-h-[400px]">
-                    <Table className="min-w-[800px]">
+                    <Table className="min-w-[1000px]">
                       <TableHeader>
                         <TableRow>
                           <TableHead className="whitespace-nowrap">{t.name}</TableHead>
                           <TableHead className="whitespace-nowrap">{t.profileId}</TableHead>
                           <TableHead className="whitespace-nowrap">{t.membershipPlan}</TableHead>
+                          <TableHead className="whitespace-nowrap">{language === 'hi' ? 'रुचि' : 'Interests'}</TableHead>
+                          <TableHead className="whitespace-nowrap">{language === 'hi' ? 'संपर्क' : 'Contacts'}</TableHead>
                           <TableHead className="whitespace-nowrap">{t.membershipExpiry}</TableHead>
                           <TableHead className="whitespace-nowrap">{t.status}</TableHead>
                           <TableHead className="whitespace-nowrap">{t.actions}</TableHead>
@@ -6473,9 +6488,45 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             new Date(profile.membershipExpiry!) > new Date()
                           const isActive = hasMembership && !isExpired && !isExpiringSoon
                           
+                          // Calculate interests and contacts used/remaining
+                          const interestsUsed = profile.chatRequestsUsed?.length || 0
+                          const contactsUsed = profile.contactViewsUsed?.length || 0
+                          const boostInterests = profile.boostInterestsRemaining || 0
+                          const boostContacts = profile.boostContactsRemaining || 0
+                          const hasBoostOverrides = profile.boostPackDisabled || profile.customBoostPackPrice !== undefined
+                          
+                          // Get plan limits
+                          const getPlanInterestLimit = () => {
+                            if (profile.membershipPlan === '1-year') return membershipSettings?.oneYearChatLimit || 50
+                            if (profile.membershipPlan === '6-month') return membershipSettings?.sixMonthChatLimit || 30
+                            return membershipSettings?.freePlanChatLimit || 10
+                          }
+                          const getPlanContactLimit = () => {
+                            if (profile.membershipPlan === '1-year') return membershipSettings?.oneYearContactLimit || 50
+                            if (profile.membershipPlan === '6-month') return membershipSettings?.sixMonthContactLimit || 30
+                            return membershipSettings?.freePlanContactLimit || 0
+                          }
+                          
+                          const planInterestLimit = getPlanInterestLimit()
+                          const planContactLimit = getPlanContactLimit()
+                          const totalInterestLimit = planInterestLimit + boostInterests
+                          const totalContactLimit = planContactLimit + boostContacts
+                          const interestsRemaining = Math.max(0, totalInterestLimit - interestsUsed)
+                          const contactsRemaining = Math.max(0, totalContactLimit - contactsUsed)
+                          
                           return (
-                            <TableRow key={profile.id}>
-                              <TableCell className="font-medium">{profile.fullName}</TableCell>
+                            <TableRow key={profile.id} className={hasBoostOverrides ? 'bg-purple-50/30 dark:bg-purple-900/10' : ''}>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-1">
+                                  {profile.fullName}
+                                  {profile.boostPackDisabled && (
+                                    <span title={language === 'hi' ? 'बूस्ट पैक अक्षम' : 'Boost Pack Disabled'} className="text-red-500 text-xs">🚫</span>
+                                  )}
+                                  {profile.customBoostPackPrice !== undefined && (
+                                    <span title={`${language === 'hi' ? 'कस्टम कीमत' : 'Custom Price'}: ₹${profile.customBoostPackPrice}`} className="text-purple-500 text-xs">💲</span>
+                                  )}
+                                </div>
+                              </TableCell>
                               <TableCell className="font-mono text-sm">{profile.profileId}</TableCell>
                               <TableCell>
                                 <Badge variant="outline">
@@ -6483,6 +6534,26 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                    profile.membershipPlan === '1-year' ? t.oneYearPlan : 
                                    profile.membershipPlan === 'free' ? (language === 'hi' ? 'फ्री' : 'Free') : '-'}
                                 </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col gap-0.5">
+                                  <span className={`text-sm font-medium ${interestsRemaining <= 3 ? 'text-red-600' : interestsRemaining <= 10 ? 'text-amber-600' : 'text-green-600'}`}>
+                                    {interestsUsed}/{totalInterestLimit}
+                                  </span>
+                                  {boostInterests > 0 && (
+                                    <span className="text-xs text-purple-600">+{boostInterests} 🚀</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col gap-0.5">
+                                  <span className={`text-sm font-medium ${contactsRemaining <= 3 ? 'text-red-600' : contactsRemaining <= 10 ? 'text-amber-600' : 'text-green-600'}`}>
+                                    {contactsUsed}/{totalContactLimit}
+                                  </span>
+                                  {boostContacts > 0 && (
+                                    <span className="text-xs text-purple-600">+{boostContacts} 🚀</span>
+                                  )}
+                                </div>
                               </TableCell>
                               <TableCell>
                                 {profile.membershipExpiry ? formatDateDDMMYYYY(profile.membershipExpiry) : '-'}
@@ -6510,7 +6581,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                       plan: profile.membershipPlan || '',
                                       customAmount: 0,
                                       discountAmount: 0,
-                                      expiryDate: profile.membershipExpiry || ''
+                                      expiryDate: profile.membershipExpiry || '',
+                                      boostInterestsRemaining: profile.boostInterestsRemaining || 0,
+                                      boostContactsRemaining: profile.boostContactsRemaining || 0,
+                                      boostPackDisabled: profile.boostPackDisabled || false,
+                                      customBoostPackPrice: profile.customBoostPackPrice ?? null
                                     })
                                   }}
                                 >
@@ -7377,6 +7452,202 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 onChange={(e) => setMembershipEditData(prev => ({...prev, expiryDate: e.target.value}))}
               />
             </div>
+
+            {/* Boost Credits Section */}
+            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+              <h4 className="font-semibold flex items-center gap-2 mb-3 text-purple-700 dark:text-purple-300">
+                <Rocket size={18} />
+                {language === 'hi' ? '🚀 बूस्ट क्रेडिट' : '🚀 Boost Credits'}
+              </h4>
+              
+              {/* Current Usage Display */}
+              {editMembershipDialog && (
+                <div className="mb-4 p-2 bg-white dark:bg-gray-800 rounded text-sm">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-muted-foreground">{language === 'hi' ? 'रुचि भेजी:' : 'Interests Sent:'}</span>
+                      <span className="ml-2 font-medium">{editMembershipDialog.chatRequestsUsed?.length || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">{language === 'hi' ? 'संपर्क देखे:' : 'Contacts Viewed:'}</span>
+                      <span className="ml-2 font-medium">{editMembershipDialog.contactViewsUsed?.length || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4">
+                {/* Boost Interests */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-purple-600 dark:text-purple-400">
+                    {language === 'hi' ? 'बूस्ट रुचि क्रेडिट' : 'Boost Interest Credits'}
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setMembershipEditData(prev => ({
+                        ...prev, 
+                        boostInterestsRemaining: Math.max(0, prev.boostInterestsRemaining - 1)
+                      }))}
+                    >
+                      -
+                    </Button>
+                    <Input 
+                      type="number" 
+                      min="0"
+                      className="w-20 text-center"
+                      value={membershipEditData.boostInterestsRemaining}
+                      onChange={(e) => setMembershipEditData(prev => ({
+                        ...prev, 
+                        boostInterestsRemaining: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value))
+                      }))}
+                    />
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setMembershipEditData(prev => ({
+                        ...prev, 
+                        boostInterestsRemaining: prev.boostInterestsRemaining + 1
+                      }))}
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Boost Contacts */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-purple-600 dark:text-purple-400">
+                    {language === 'hi' ? 'बूस्ट संपर्क क्रेडिट' : 'Boost Contact Credits'}
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setMembershipEditData(prev => ({
+                        ...prev, 
+                        boostContactsRemaining: Math.max(0, prev.boostContactsRemaining - 1)
+                      }))}
+                    >
+                      -
+                    </Button>
+                    <Input 
+                      type="number" 
+                      min="0"
+                      className="w-20 text-center"
+                      value={membershipEditData.boostContactsRemaining}
+                      onChange={(e) => setMembershipEditData(prev => ({
+                        ...prev, 
+                        boostContactsRemaining: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value))
+                      }))}
+                    />
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setMembershipEditData(prev => ({
+                        ...prev, 
+                        boostContactsRemaining: prev.boostContactsRemaining + 1
+                      }))}
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Quick Add Boost Pack */}
+              <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-700">
+                <Button 
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="w-full bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-800 dark:hover:bg-purple-700 dark:text-purple-200"
+                  onClick={() => setMembershipEditData(prev => ({
+                    ...prev, 
+                    boostInterestsRemaining: prev.boostInterestsRemaining + (membershipSettings?.boostPackInterestLimit || 10),
+                    boostContactsRemaining: prev.boostContactsRemaining + (membershipSettings?.boostPackContactLimit || 10)
+                  }))}
+                >
+                  <Rocket size={14} className="mr-1" />
+                  {language === 'hi' 
+                    ? `+${membershipSettings?.boostPackInterestLimit || 10} रुचि, +${membershipSettings?.boostPackContactLimit || 10} संपर्क जोड़ें`
+                    : `Add +${membershipSettings?.boostPackInterestLimit || 10} Interests, +${membershipSettings?.boostPackContactLimit || 10} Contacts`}
+                </Button>
+                <p className="text-xs text-center text-muted-foreground mt-1">
+                  {language === 'hi' ? 'बूस्ट पैक पेमेंट वेरीफाई करने के बाद यहां से क्रेडिट जोड़ें' : 'Add credits here after verifying boost pack payment'}
+                </p>
+              </div>
+              
+              {/* Per-Profile Boost Pack Settings */}
+              <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-700 space-y-3">
+                <h5 className="text-xs font-medium text-purple-600 dark:text-purple-300">
+                  {language === 'hi' ? 'इस प्रोफाइल के लिए बूस्ट पैक सेटिंग्स' : 'Boost Pack Settings for this Profile'}
+                </h5>
+                
+                {/* Disable Boost Pack for this user */}
+                <div className="flex items-center justify-between gap-2 p-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="boostPackDisabledProfile"
+                      checked={membershipEditData.boostPackDisabled}
+                      onChange={(e) => setMembershipEditData(prev => ({
+                        ...prev,
+                        boostPackDisabled: e.target.checked
+                      }))}
+                      className="h-4 w-4 rounded border-red-300"
+                    />
+                    <Label htmlFor="boostPackDisabledProfile" className="text-xs font-medium text-red-700 dark:text-red-300">
+                      {language === 'hi' ? 'इस यूजर के लिए बूस्ट पैक अक्षम करें' : 'Disable Boost Pack for this user'}
+                    </Label>
+                  </div>
+                </div>
+                
+                {/* Custom Price for this user */}
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs whitespace-nowrap">
+                    {language === 'hi' ? 'कस्टम कीमत (₹):' : 'Custom Price (₹):'}
+                  </Label>
+                  <Input 
+                    type="number"
+                    min="0"
+                    placeholder={`${language === 'hi' ? 'डिफ़ॉल्ट' : 'Default'}: ₹${membershipSettings?.boostPackPrice || 100}`}
+                    value={membershipEditData.customBoostPackPrice ?? ''}
+                    onChange={(e) => setMembershipEditData(prev => ({
+                      ...prev,
+                      customBoostPackPrice: e.target.value === '' ? null : parseInt(e.target.value)
+                    }))}
+                    className="w-32 h-8 text-xs"
+                    disabled={membershipEditData.boostPackDisabled}
+                  />
+                  {membershipEditData.customBoostPackPrice !== null && (
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setMembershipEditData(prev => ({ ...prev, customBoostPackPrice: null }))}
+                    >
+                      {language === 'hi' ? 'रीसेट' : 'Reset'}
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {language === 'hi' 
+                    ? 'खाली छोड़ें तो ग्लोबल कीमत लागू होगी। कस्टम कीमत सेट करें या 0 लिखें फ्री बूस्ट पैक के लिए।'
+                    : 'Leave empty for global price. Set custom price or 0 for free boost packs.'}
+                </p>
+              </div>
+            </div>
           </div>
           
           <div className="flex justify-end gap-2">
@@ -7391,7 +7662,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       ? { 
                           ...p, 
                           membershipPlan: membershipEditData.plan as any,
-                          membershipExpiry: membershipEditData.expiryDate
+                          membershipExpiry: membershipEditData.expiryDate,
+                          boostInterestsRemaining: membershipEditData.boostInterestsRemaining,
+                          boostContactsRemaining: membershipEditData.boostContactsRemaining,
+                          boostPackDisabled: membershipEditData.boostPackDisabled,
+                          customBoostPackPrice: membershipEditData.customBoostPackPrice ?? undefined
                         }
                       : p
                   )
@@ -9553,7 +9828,7 @@ ShaadiPartnerSearch Team
 
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-2">
-                {paymentViewProfile.paymentStatus !== 'verified' && paymentViewProfile.paymentScreenshotUrl && (
+                {paymentViewProfile.paymentStatus !== 'verified' && (paymentViewProfile.paymentScreenshotUrl || (paymentViewProfile.paymentScreenshotUrls && paymentViewProfile.paymentScreenshotUrls.length > 0)) && (
                   <Button 
                     size="sm"
                     className="bg-green-600 hover:bg-green-700"
@@ -9593,7 +9868,7 @@ ShaadiPartnerSearch Team
                     {language === 'hi' ? 'भुगतान सत्यापित करें और सदस्यता सक्रिय करें' : 'Verify Payment & Activate Membership'}
                   </Button>
                 )}
-                {paymentViewProfile.paymentStatus !== 'verified' && paymentViewProfile.paymentScreenshotUrl && (
+                {paymentViewProfile.paymentStatus !== 'verified' && (paymentViewProfile.paymentScreenshotUrl || (paymentViewProfile.paymentScreenshotUrls && paymentViewProfile.paymentScreenshotUrls.length > 0)) && (
                   <Button 
                     variant="destructive"
                     size="sm"
