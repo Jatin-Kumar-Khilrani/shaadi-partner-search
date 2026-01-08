@@ -794,6 +794,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     editReasonPlaceholder: language === 'hi' ? 'उपयोगकर्ता को बताएं कि क्या संपादित/पूर्ण करना है...' : 'Tell user what to edit/complete...',
     sendForEdit: language === 'hi' ? 'संपादन के लिए भेजें' : 'Send for Edit',
     profileReturnedForEdit: language === 'hi' ? 'प्रोफाइल संपादन के लिए वापस भेजी गई!' : 'Profile sent back for editing!',
+    // Return for Payment Only
+    returnForPayment: language === 'hi' ? 'भुगतान के लिए वापस करें' : 'Return for Payment',
+    returnForPaymentDesc: language === 'hi' ? 'चेहरा और ID सत्यापित है। उपयोगकर्ता को केवल भुगतान स्क्रीनशॉट अपलोड करने के लिए वापस भेजें।' : 'Face & ID verified. Send back to user to upload payment screenshot only.',
+    profileReturnedForPayment: language === 'hi' ? 'प्रोफाइल भुगतान के लिए वापस भेजी गई!' : 'Profile sent back for payment!',
     adminEditProfile: language === 'hi' ? 'एडमिन द्वारा संपादित करें' : 'Admin Edit Profile',
     adminEditDesc: language === 'hi' ? 'उपयोगकर्ता की प्रोफाइल को सीधे संपादित करें (नाम, DOB, ईमेल, मोबाइल सहित)' : 'Directly edit user profile (including Name, DOB, Email, Mobile)',
     saveChanges: language === 'hi' ? 'बदलाव सहेजें' : 'Save Changes',
@@ -1355,6 +1359,30 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     toast.success(reason ? t.profileReturnedForEdit : t.movedToPending)
     setReturnToEditDialog(null)
     setReturnToEditReason('')
+  }
+
+  // Handle Return for Payment Only (after face and ID verification)
+  const handleReturnForPayment = (profileId: string) => {
+    setProfiles((current) => 
+      (current || []).map(p => 
+        p.id === profileId 
+          ? { 
+              ...p, 
+              status: 'pending' as const,
+              returnedForPayment: true,
+              returnedForPaymentAt: new Date().toISOString(),
+              // Keep face and ID verification status
+              faceVerified: p.faceVerified,
+              idProofVerified: p.idProofVerified,
+              // Clear regular edit mode flags
+              returnedForEdit: false,
+              editReason: undefined
+            }
+          : p
+      )
+    )
+    toast.success(t.profileReturnedForPayment)
+    setSelectedProfile(null)
   }
 
   const handleBlock = (profile: Profile) => {
@@ -2273,6 +2301,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                       {language === 'hi' ? 'संपादन हेतु लौटाया' : 'Returned for Edit'}
                                     </Badge>
                                   )}
+                                  {profile.returnedForPayment && (
+                                    <Badge variant="outline" className="text-green-600 border-green-400 bg-green-50 shrink-0">
+                                      {language === 'hi' ? 'भुगतान हेतु लौटाया' : 'Returned for Payment'}
+                                    </Badge>
+                                  )}
                                   {profile.isBlocked && <Badge variant="destructive" className="shrink-0">{t.blocked}</Badge>}
                                   {/* Membership Plan Badge */}
                                   {profile.membershipPlan && (
@@ -2384,6 +2417,21 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                             {language === 'hi' ? 'संपादन कारण:' : 'Edit Reason:'}
                                           </span>{' '}
                                           {profile.editReason}
+                                        </AlertDescription>
+                                      </Alert>
+                                    )}
+                                    {/* Returned for Payment Alert */}
+                                    {profile.returnedForPayment && (
+                                      <Alert className="mb-2 bg-green-50 border-green-300 dark:bg-green-950/30 dark:border-green-800">
+                                        <CreditCard size={16} className="text-green-600" />
+                                        <AlertDescription className="text-sm">
+                                          <span className="font-semibold text-green-700 dark:text-green-300">
+                                            {language === 'hi' ? 'भुगतान स्क्रीनशॉट प्रतीक्षित' : 'Awaiting Payment Screenshot'}
+                                          </span>
+                                          <br />
+                                          <span className="text-xs text-muted-foreground">
+                                            {language === 'hi' ? 'चेहरा और ID सत्यापित। उपयोगकर्ता को भुगतान अपलोड करना है।' : 'Face & ID verified. User needs to upload payment.'}
+                                          </span>
                                         </AlertDescription>
                                       </Alert>
                                     )}
@@ -2627,6 +2675,16 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     <ArrowCounterClockwise size={14} className="mr-2" />
                                     {t.returnToEdit}
                                   </DropdownMenuItem>
+                                  {/* Return for Payment Only - only show if face and ID are verified */}
+                                  {profile.faceVerified && profile.idProofVerified && (
+                                    <DropdownMenuItem 
+                                      onClick={() => handleReturnForPayment(profile.id)}
+                                      className="text-green-600 focus:text-green-600 focus:bg-green-50"
+                                    >
+                                      <CreditCard size={14} className="mr-2" />
+                                      {t.returnForPayment}
+                                    </DropdownMenuItem>
+                                  )}
                                   <DropdownMenuItem 
                                     onClick={() => handleOpenAdminEdit(profile)}
                                     className="text-purple-600 focus:text-purple-600 focus:bg-purple-50"

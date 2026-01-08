@@ -499,6 +499,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
   const STORAGE_KEY = 'registration_draft'
   const isEditMode = !!editProfile
+  
+  // Payment-only mode: when admin has verified face/ID and returned profile for payment
+  // In this mode, only step 7 (membership/payment) is accessible, other steps are frozen
+  const isPaymentOnlyMode = isEditMode && editProfile?.returnedForPayment === true
 
   // Load edit profile data when in edit mode
   useEffect(() => {
@@ -591,11 +595,22 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         setIdProofType(editProfile.idProofType)
       }
       
+      // Load payment screenshot if exists
+      if (editProfile.paymentScreenshotUrl) {
+        setPaymentScreenshotPreview(editProfile.paymentScreenshotUrl)
+      }
+      
       // Skip verification for edit mode
       setEmailVerified(true)
       setMobileVerified(true)
       setTermsAccepted(true)
-      setStep(1)
+      
+      // If returned for payment, jump directly to step 7 (membership/payment)
+      if (editProfile.returnedForPayment) {
+        setStep(7)
+      } else {
+        setStep(1)
+      }
     }
   }, [editProfile, open])
 
@@ -1114,6 +1129,75 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
+    // Payment-only mode: only validate payment screenshot
+    if (isPaymentOnlyMode) {
+      if (!paymentScreenshotPreview) {
+        toast.error(
+          language === 'hi' 
+            ? 'कृपया भुगतान स्क्रीनशॉट अपलोड करें' 
+            : 'Please upload payment screenshot'
+        )
+        return
+      }
+      
+      // Handle payment-only submission
+      setIsSubmitting(true)
+      try {
+        let uploadedPaymentScreenshotUrl = paymentScreenshotPreview || ''
+        
+        // Upload payment screenshot to blob storage if we have a file
+        if (_paymentScreenshotFile) {
+          try {
+            // Use the already statically imported uploadPhoto
+            const result = await uploadPhoto(editProfile?.profileId || 'unknown', _paymentScreenshotFile)
+            uploadedPaymentScreenshotUrl = result.cdnUrl
+          } catch (uploadErr) {
+            logger.warn('Failed to upload payment to blob, using base64:', uploadErr)
+            // Fallback to base64 already set above
+          }
+        }
+        
+        // Create updated profile with payment data
+        const updatedProfile: Partial<Profile> = {
+          ...editProfile,
+          paymentScreenshotUrl: uploadedPaymentScreenshotUrl,
+          paymentStatus: 'pending',
+          paymentUploadedAt: new Date().toISOString(),
+          returnedForPayment: false, // Clear the returned for payment flag
+          returnedForPaymentAt: undefined
+        }
+        
+        // Update profile in storage
+        const existingProfilesData = localStorage.getItem('pendingProfiles')
+        const storedProfiles: Profile[] = existingProfilesData ? JSON.parse(existingProfilesData) : []
+        const profileIndex = storedProfiles.findIndex(p => p.id === editProfile?.id || p.profileId === editProfile?.profileId)
+        
+        if (profileIndex !== -1) {
+          storedProfiles[profileIndex] = { ...storedProfiles[profileIndex], ...updatedProfile } as Profile
+          localStorage.setItem('pendingProfiles', JSON.stringify(storedProfiles))
+        }
+        
+        toast.success(
+          language === 'hi' 
+            ? 'भुगतान स्क्रीनशॉट सफलतापूर्वक अपलोड किया गया! व्यवस्थापक जल्द ही सत्यापित करेगा।' 
+            : 'Payment screenshot uploaded successfully! Admin will verify soon.'
+        )
+        
+        onClose()
+        return
+      } catch (err) {
+        logger.error('Payment submission error:', err)
+        toast.error(
+          language === 'hi' 
+            ? 'भुगतान अपलोड करने में त्रुटि हुई। कृपया पुनः प्रयास करें।' 
+            : 'Error uploading payment. Please try again.'
+        )
+      } finally {
+        setIsSubmitting(false)
+      }
+      return
+    }
+    
     // Admin mode has relaxed validation - only require basic fields
     const requiredFields = isAdminMode 
       ? (formData.fullName && formData.gender)
@@ -1856,6 +1940,27 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-1 min-h-0">
+          {/* Payment Only Mode Alert */}
+          {isPaymentOnlyMode && (
+            <Alert className="mb-4 bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-700">
+              <ShieldCheck size={18} className="text-amber-600" />
+              <AlertDescription className="text-amber-800 dark:text-amber-200">
+                <p className="font-medium">
+                  {language === 'hi' 
+                    ? '✅ आपकी प्रोफाइल सत्यापित हो गई है! अब भुगतान करें।'
+                    : '✅ Your profile has been verified! Please complete the payment.'}
+                </p>
+                <p className="text-sm mt-1">
+                  {language === 'hi'
+                    ? 'आपके चेहरे और पहचान प्रमाण की जांच हो गई है। कृपया QR कोड या बैंक विवरण से भुगतान करें और स्क्रीनशॉट अपलोड करें।'
+                    : 'Your face and ID proof have been verified. Please make payment via QR code or bank transfer and upload the screenshot.'}
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Step indicators - hide in payment-only mode */}
+          {!isPaymentOnlyMode && (
           <div className="flex items-center justify-center gap-1 md:gap-2 mb-6">
             {(isAdminMode ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6, 7]).map((s) => {
               const isCompleted = s < step || (s === 3 && emailVerified && mobileVerified)
@@ -1870,7 +1975,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 4: { en: 'Photos', hi: 'फ़ोटो' },
                 5: { en: 'About Yourself & Family', hi: 'अपने और परिवार के बारे में' },
                 6: { en: 'Partner Preferences', hi: 'साथी वरीयताएँ' },
-                7: { en: 'Membership Plan', hi: 'सदस्यता योजना' },
+                7: { en: 'Membership & Payment', hi: 'सदस्यता और भुगतान' },
               }
               const stepName = stepNames[s] || { en: `Step ${s}`, hi: `चरण ${s}` }
               
@@ -1900,7 +2005,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               )
             })}
           </div>
+          )}
 
+          {!isPaymentOnlyMode && (
           <Alert className="mb-4">
             <Info size={18} />
             <AlertDescription>
@@ -1911,9 +2018,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               {step === 4 && (language === 'hi' ? 'अपनी फ़ोटो और लाइव सेल्फी अपलोड करें। चेहरा फ्रेम का 50% होना चाहिए।' : 'Upload your photos and capture a live selfie. Face must cover 50% of frame.')}
               {step === 5 && (language === 'hi' ? 'अपने बारे में और परिवार की जानकारी दें। यह आवश्यक है।' : 'Tell us about yourself and your family. This is required.')}
               {step === 6 && (language === 'hi' ? 'अपने साथी की अपेक्षाएं बताएं - यह आपको बेहतर मैच खोजने में मदद करेगा।' : 'Tell us your partner preferences - this will help find better matches for you.')}
-              {step === 7 && t.registration.step5}
+              {step === 7 && (language === 'hi' 
+                ? 'अपनी सदस्यता योजना चुनें, नियम व शर्तें स्वीकार करें, और भुगतान करें।' 
+                : 'Choose your membership plan, accept Terms & Conditions, and make payment.')}
             </AlertDescription>
           </Alert>
+          )}
 
           <Card>
             <CardContent className="pt-6">
@@ -4070,8 +4180,54 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
                 </RadioGroup>
 
-                {/* Payment Section - Only for paid plans */}
-                {formData.membershipPlan && formData.membershipPlan !== 'free' && (
+                {/* Terms and Conditions - Always shown before Payment (unless in payment-only mode) */}
+                {!isPaymentOnlyMode && (
+                  <div className="border rounded-lg p-4 bg-muted/20">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="terms-step7"
+                        checked={termsAccepted}
+                        onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <label htmlFor="terms-step7" className="text-sm cursor-pointer">
+                          {language === 'hi' 
+                            ? 'मैंने ' 
+                            : 'I have read and agree to the '}
+                          <Button 
+                            type="button" 
+                            variant="link" 
+                            className="p-0 h-auto text-primary underline font-semibold"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              setShowTerms(true)
+                            }}
+                          >
+                            {language === 'hi' ? 'नियम और शर्तें' : 'Terms and Conditions'}
+                          </Button>
+                          {language === 'hi' 
+                            ? ' पढ़ लिया है और मैं इनसे सहमत हूं।' 
+                            : '.'}
+                        </label>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {language === 'hi' 
+                            ? 'पंजीकरण करके आप हमारी गोपनीयता नीति और सेवा शर्तों को स्वीकार करते हैं।' 
+                            : 'By registering, you accept our Privacy Policy and Service Terms.'}
+                        </p>
+                      </div>
+                    </div>
+                    {!termsAccepted && formData.membershipPlan && (
+                      <p className="text-xs text-amber-600 flex items-center gap-1 mt-2 pl-7">
+                        <Warning size={14} />
+                        {language === 'hi' ? 'कृपया आगे बढ़ने के लिए नियम और शर्तें स्वीकार करें' : 'Please accept Terms and Conditions to proceed'}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Payment Section - For paid plans OR when returned for payment */}
+                {((formData.membershipPlan && formData.membershipPlan !== 'free') || isPaymentOnlyMode) && (
                   <Card className="border-2 border-primary/30 bg-primary/5">
                     <CardContent className="pt-6 space-y-4">
                       <div className="flex items-center gap-2 mb-2">
@@ -4080,6 +4236,24 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           {language === 'hi' ? 'भुगतान विवरण' : 'Payment Details'}
                         </h4>
                       </div>
+                      
+                      {/* Show verification status in payment-only mode */}
+                      {isPaymentOnlyMode && (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {editProfile?.faceVerified && (
+                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
+                              <CheckCircle size={12} weight="fill" />
+                              {language === 'hi' ? 'चेहरा सत्यापित' : 'Face Verified'}
+                            </span>
+                          )}
+                          {editProfile?.idProofVerified && (
+                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
+                              <CheckCircle size={12} weight="fill" />
+                              {language === 'hi' ? 'पहचान प्रमाण सत्यापित' : 'ID Verified'}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       
                       <Alert className="bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-800">
                         <Info size={18} className="text-amber-600" />
@@ -4256,51 +4430,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </Card>
                 )}
 
-                {/* Terms and Conditions Checkbox */}
-                <div className="border rounded-lg p-4 bg-muted/20">
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      id="terms"
-                      checked={termsAccepted}
-                      onCheckedChange={(checked) => setTermsAccepted(checked === true)}
-                      className="mt-1"
-                    />
-                    <div className="flex-1">
-                      <label htmlFor="terms" className="text-sm cursor-pointer">
-                        {language === 'hi' 
-                          ? 'मैंने ' 
-                          : 'I have read and agree to the '}
-                        <Button 
-                          type="button" 
-                          variant="link" 
-                          className="p-0 h-auto text-primary underline font-semibold"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            setShowTerms(true)
-                          }}
-                        >
-                          {language === 'hi' ? 'नियम और शर्तें' : 'Terms and Conditions'}
-                        </Button>
-                        {language === 'hi' 
-                          ? ' पढ़ लिया है और मैं इनसे सहमत हूं।' 
-                          : '.'}
-                      </label>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {language === 'hi' 
-                          ? 'पंजीकरण करके आप हमारी गोपनीयता नीति और सेवा शर्तों को स्वीकार करते हैं।' 
-                          : 'By registering, you accept our Privacy Policy and Service Terms.'}
-                      </p>
-                    </div>
-                  </div>
-                  {!termsAccepted && formData.membershipPlan && (
-                    <p className="text-xs text-amber-600 flex items-center gap-1 mt-2 pl-7">
-                      <Warning size={14} />
-                      {language === 'hi' ? 'कृपया आगे बढ़ने के लिए नियम और शर्तें स्वीकार करें' : 'Please accept Terms and Conditions to proceed'}
-                    </p>
-                  )}
-                </div>
-
                 {/* Inactivity Notice */}
+                {!isPaymentOnlyMode && (
                 <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-700">
                   <Warning size={18} className="text-amber-600" />
                   <AlertDescription className="text-amber-800 dark:text-amber-200">
@@ -4314,13 +4445,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     </p>
                   </AlertDescription>
                 </Alert>
+                )}
 
+                {!isPaymentOnlyMode && (
                 <Alert>
                   <Info size={18} />
                   <AlertDescription>
                     {t.registration.verificationNote}
                   </AlertDescription>
                 </Alert>
+                )}
               </div>
             )}
           </CardContent>
@@ -4342,7 +4476,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
         <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t min-h-[60px] flex-shrink-0">
           <div className="flex items-center gap-2 flex-shrink-0">
-            {step > 1 && !showVerification && (
+            {/* No back button in payment-only mode */}
+            {step > 1 && !showVerification && !isPaymentOnlyMode && (
               <Button variant="outline" onClick={prevStep} size="sm" className="text-sm">
                 {t.registration.back}
               </Button>
@@ -4366,6 +4501,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           </div>
           
           <div className="flex flex-wrap items-center gap-2 justify-end flex-1 min-w-0">
+            {/* Hide reset/save in payment-only mode */}
+            {!isPaymentOnlyMode && (
+            <>
             <Button 
               variant="ghost"
               size="sm"
@@ -4385,8 +4523,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               <FloppyDisk size={16} />
               <span className="hidden sm:inline text-sm">{language === 'hi' ? 'सेव' : 'Save'}</span>
             </Button>
+            </>
+            )}
             
-            {step < (isAdminMode ? 7 : 7) && !showVerification && !(isAdminMode && step === 6) ? (
+            {step < (isAdminMode ? 7 : 7) && !showVerification && !(isAdminMode && step === 6) && !isPaymentOnlyMode ? (
               <Button 
                 size="sm"
                 onClick={nextStep}
@@ -4424,20 +4564,22 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               >
                 {t.registration.next}
               </Button>
-            ) : (step === 7 || (isAdminMode && step === 6)) ? (
+            ) : (step === 7 || (isAdminMode && step === 6) || isPaymentOnlyMode) ? (
               <Button 
                 size="sm" 
                 onClick={handleSubmit} 
                 disabled={
                   isAdminMode 
                     ? isSubmitting // Admin mode: only check if submitting
-                    : (
-                        !termsAccepted || 
-                        !formData.membershipPlan || 
-                        isSubmitting ||
-                        // Require payment screenshot for paid plans
-                        (formData.membershipPlan !== 'free' && !paymentScreenshotPreview)
-                      )
+                    : isPaymentOnlyMode
+                      ? (isSubmitting || !paymentScreenshotPreview) // Payment-only mode: just need screenshot
+                      : (
+                          !termsAccepted || 
+                          !formData.membershipPlan || 
+                          isSubmitting ||
+                          // Require payment screenshot for paid plans
+                          (formData.membershipPlan !== 'free' && !paymentScreenshotPreview)
+                        )
                 }
               >
                 {isSubmitting ? (
@@ -4448,7 +4590,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 ) : (
                   isAdminMode 
                     ? (language === 'hi' ? 'बदलाव सेव करें' : 'Save Changes')
-                    : (isEditMode ? t.registration.updateProfile : t.registration.submit)
+                    : isPaymentOnlyMode
+                      ? (language === 'hi' ? 'भुगतान सबमिट करें' : 'Submit Payment')
+                      : (isEditMode ? t.registration.updateProfile : t.registration.submit)
                 )}
               </Button>
             ) : null}

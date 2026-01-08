@@ -432,21 +432,34 @@ Grace Period:
       icon: <Shield size={24} weight="bold" className="text-primary" />,
       title: isHindi ? '8. सत्यापन और सुरक्षा' : '8. Verification and Safety',
       content: isHindi
-        ? `सत्यापन प्रक्रिया:
-• सभी प्रोफाइल मैन्युअल समीक्षा से गुजरती हैं
-• AI-आधारित फोटो सत्यापन
-• लाइव सेल्फी मिलान
-• संपर्क विवरण OTP सत्यापन
+        ? `पंजीकरण और सत्यापन प्रक्रिया:
 
-स्वयंसेवक सत्यापन (वैकल्पिक):
-• परिवार की पृष्ठभूमि सत्यापन
-• व्यवसाय/नौकरी सत्यापन
-• आय सत्यापन (दस्तावेज़ के साथ)
+चरण 1: प्रोफाइल पंजीकरण
+• सभी व्यक्तिगत जानकारी, फोटो, सेल्फी और ID प्रूफ अपलोड करें
+• नियम और शर्तें स्वीकार करें
+• प्रोफाइल "लंबित" स्थिति में जमा होती है
 
-सुरक्षा उपाय:
-• संदिग्ध प्रोफाइल की रिपोर्टिंग सुविधा
-• अनुचित व्यवहार पर तत्काल ब्लॉक
-• गोपनीयता सेटिंग्स - ईमेल/फोन छुपाने का विकल्प
+चरण 2: चेहरा सत्यापन (व्यवस्थापक द्वारा)
+• AI-आधारित फोटो और सेल्फी मिलान
+• व्यवस्थापक प्रोफाइल फोटो और सेल्फी की तुलना करते हैं
+• सफल होने पर "चेहरा सत्यापित" बैज
+
+चरण 3: ID प्रूफ सत्यापन (व्यवस्थापक द्वारा)
+• पहचान प्रमाण का सत्यापन (आधार, पैन, पासपोर्ट, DL)
+• नाम और जन्म तिथि का मिलान
+• सफल होने पर "ID सत्यापित" बैज
+
+चरण 4: भुगतान (पेड प्लान के लिए)
+• चेहरा और ID सत्यापन के बाद ही भुगतान का विकल्प
+• व्यवस्थापक प्रोफाइल को "भुगतान के लिए वापस" भेजते हैं
+• आप QR कोड या बैंक विवरण से भुगतान करें
+• भुगतान स्क्रीनशॉट अपलोड करें
+• अन्य सभी फ़ील्ड्स लॉक/जमी रहती हैं
+
+चरण 5: भुगतान सत्यापन और सदस्यता सक्रियण
+• व्यवस्थापक भुगतान स्क्रीनशॉट सत्यापित करते हैं
+• भुगतान सत्यापन पर सदस्यता सक्रिय
+• प्रोफाइल "स्वीकृत" स्थिति में
 
 डिजिलॉकर/आधार सत्यापन:
 • नाम और जन्म तिथि सत्यापन के लिए पहचान प्रमाण
@@ -454,26 +467,49 @@ Grace Period:
 • व्यवस्थापक द्वारा मैन्युअल सत्यापन
 • सत्यापित प्रोफाइल पर "डिजिलॉकर सत्यापित" बैज
 
+सुरक्षा उपाय:
+• संदिग्ध प्रोफाइल की रिपोर्टिंग सुविधा
+• अनुचित व्यवहार पर तत्काल ब्लॉक
+• गोपनीयता सेटिंग्स - ईमेल/फोन छुपाने का विकल्प
+
 अस्वीकरण:
 • हम प्रोफाइल की 100% प्रामाणिकता की गारंटी नहीं दे सकते
 • व्यक्तिगत मिलने से पहले उचित सावधानी बरतें
 • वित्तीय लेनदेन से बचें`
-        : `Verification Process:
-• All profiles undergo manual review
-• AI-based photo verification
-• Live selfie matching
-• Contact details OTP verification
+        : `Registration and Verification Process:
+
+Step 1: Profile Registration
+• Fill all personal details, upload photos, selfie, and ID proof
+• Accept Terms and Conditions
+• Profile is submitted in "Pending" status
+
+Step 2: Face Verification (by Admin)
+• AI-based photo and selfie matching
+• Admin compares profile photos with selfie
+• On success: "Face Verified" badge
+
+Step 3: ID Proof Verification (by Admin)
+• Identity document verification (Aadhaar, PAN, Passport, DL)
+• Name and date of birth matching
+• On success: "ID Verified" badge
+
+Step 4: Payment (for Paid Plans)
+• Payment option available ONLY after face and ID verification
+• Admin sends profile "Return for Payment"
+• Pay via QR code or bank transfer
+• Upload payment screenshot
+• All other fields remain locked/frozen
+
+Step 5: Payment Verification and Membership Activation
+• Admin verifies payment screenshot
+• Membership activated on payment verification
+• Profile moves to "Approved" status
 
 DigiLocker/Aadhaar Verification:
 • ID proof for name and date of birth verification
 • Supported documents: Aadhaar, PAN Card, Driving License, Passport
 • Manual verification by admin
 • "DigiLocker Verified" badge on verified profiles
-
-Enhanced Verification (Optional):
-• Family background verification
-• Business/Job verification
-• Income verification (with documents)
 
 Safety Measures:
 • Suspicious profile reporting feature

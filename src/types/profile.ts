@@ -205,6 +205,13 @@ export interface Profile {
   returnedForEdit?: boolean
   editReason?: string
   returnedAt?: string
+  // Return for payment step only (face/ID verified, need payment)
+  returnedForPayment?: boolean  // When true, only payment step is editable
+  returnedForPaymentAt?: string
+  // Verification status tracking for admin workflow
+  faceVerified?: boolean
+  faceVerifiedAt?: string
+  faceVerifiedBy?: string  // Admin who verified
   // Last login tracking
   lastLoginAt?: string
   // Account status based on inactivity (deactivated after 1 month of inactivity)
