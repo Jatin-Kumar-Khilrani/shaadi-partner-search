@@ -2000,12 +2000,25 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
             ) : (() => {
               const conv = conversations.find(c => c.id === selectedConversation)
               const otherProfileId = getOtherProfileIdFromConversation(selectedConversation)
-              const chatProfile = getConversationProfile(conv!)
+              
+              // Handle case where conversation doesn't exist yet (e.g., after unblocking)
+              // Create a temporary profile lookup from the selectedConversation ID
+              const chatProfile = conv ? getConversationProfile(conv) : (
+                otherProfileId ? profiles.find(p => p.profileId === otherProfileId) : undefined
+              )
               const isAdminChat = selectedConversation.startsWith('admin-') || selectedConversation === 'admin-broadcast'
               const isChatAllowed = isAdmin || 
                                    selectedConversation.startsWith('admin-') || 
                                    selectedConversation === 'admin-broadcast' ||
                                    (otherProfileId && canChatWith(otherProfileId))
+
+              // Helper function to get conversation title when conv might be undefined
+              const getChatTitle = () => {
+                if (conv) return getConversationTitle(conv)
+                if (isAdminChat) return t.admin
+                if (chatProfile) return chatProfile.fullName || otherProfileId || ''
+                return otherProfileId || ''
+              }
 
               return (
                 <>
@@ -2045,7 +2058,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                       )}
                       <div className="flex-1">
                         <CardTitle className="text-base flex items-center gap-2">
-                          {getConversationTitle(conv!)}
+                          {getChatTitle()}
                           {chatProfile?.status === 'verified' && (
                             <span className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
                               <Check size={10} weight="bold" className="text-white" />
