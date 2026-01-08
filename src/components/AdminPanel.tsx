@@ -2426,23 +2426,35 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     {/* Payment Screenshot (for paid plans) */}
                                     {profile.membershipPlan && profile.membershipPlan !== 'free' && (
                                       <div className="space-y-1">
-                                        <p className="text-xs text-muted-foreground font-medium">
+                                        <p className="text-xs text-muted-foreground font-medium flex items-center gap-1">
                                           {language === 'hi' ? 'भुगतान' : 'Payment'}
+                                          {(profile.paymentScreenshotUrls?.length || 0) > 1 && (
+                                            <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                                              {profile.paymentScreenshotUrls?.length}
+                                            </Badge>
+                                          )}
                                         </p>
-                                        {profile.paymentScreenshotUrl ? (
-                                          <img 
-                                            src={profile.paymentScreenshotUrl} 
-                                            alt="Payment Screenshot"
-                                            className={`w-14 h-14 object-cover rounded-md border-2 cursor-pointer hover:opacity-80 transition-opacity ${
-                                              profile.paymentStatus === 'verified' ? 'border-green-500' : 
-                                              profile.paymentStatus === 'rejected' ? 'border-red-500' : 'border-amber-400'
-                                            }`}
-                                            onClick={() => {
-                                              setPaymentViewProfile(profile)
-                                              setShowPaymentViewDialog(true)
-                                            }}
-                                            title={language === 'hi' ? 'भुगतान सत्यापित करें' : 'Verify Payment'}
-                                          />
+                                        {(profile.paymentScreenshotUrls?.length || 0) > 0 || profile.paymentScreenshotUrl ? (
+                                          <div className="relative">
+                                            <img 
+                                              src={profile.paymentScreenshotUrls?.[0] || profile.paymentScreenshotUrl!} 
+                                              alt="Payment Screenshot"
+                                              className={`w-14 h-14 object-cover rounded-md border-2 cursor-pointer hover:opacity-80 transition-opacity ${
+                                                profile.paymentStatus === 'verified' ? 'border-green-500' : 
+                                                profile.paymentStatus === 'rejected' ? 'border-red-500' : 'border-amber-400'
+                                              }`}
+                                              onClick={() => {
+                                                setPaymentViewProfile(profile)
+                                                setShowPaymentViewDialog(true)
+                                              }}
+                                              title={language === 'hi' ? 'भुगतान सत्यापित करें' : 'Verify Payment'}
+                                            />
+                                            {(profile.paymentScreenshotUrls?.length || 0) > 1 && (
+                                              <span className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-[10px] px-1 rounded-full">
+                                                +{(profile.paymentScreenshotUrls?.length || 1) - 1}
+                                              </span>
+                                            )}
+                                          </div>
                                         ) : (
                                           <div className="w-14 h-14 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground text-center p-1">
                                             {language === 'hi' ? 'नहीं' : 'None'}
@@ -9446,32 +9458,59 @@ ShaadiPartnerSearch Team
                 </div>
               </div>
 
-              {/* Payment Screenshot */}
+              {/* Payment Screenshot(s) */}
               <div className="border rounded-lg p-3">
                 <Label className="text-sm font-medium flex items-center gap-2 mb-2">
                   <Receipt size={16} />
-                  {language === 'hi' ? 'भुगतान स्क्रीनशॉट' : 'Payment Screenshot'}
+                  {language === 'hi' ? 'भुगतान स्क्रीनशॉट' : 'Payment Screenshot(s)'}
+                  {(paymentViewProfile.paymentScreenshotUrls?.length || (paymentViewProfile.paymentScreenshotUrl ? 1 : 0)) > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {paymentViewProfile.paymentScreenshotUrls?.length || 1}
+                    </Badge>
+                  )}
                 </Label>
-                <div className="bg-muted/20 rounded-lg p-2 flex items-center justify-center min-h-[300px]">
-                  {paymentViewProfile.paymentScreenshotUrl ? (
-                    <img 
-                      src={paymentViewProfile.paymentScreenshotUrl} 
-                      alt="Payment Screenshot"
-                      className="max-h-[400px] object-contain rounded cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => openLightbox([paymentViewProfile.paymentScreenshotUrl!], 0)}
-                    />
+                <div className="bg-muted/20 rounded-lg p-2 min-h-[200px]">
+                  {/* Display multiple screenshots or single screenshot */}
+                  {paymentViewProfile.paymentScreenshotUrls && paymentViewProfile.paymentScreenshotUrls.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {paymentViewProfile.paymentScreenshotUrls.map((url, index) => (
+                        <div key={index} className="relative group">
+                          <img 
+                            src={url} 
+                            alt={`Payment Screenshot ${index + 1}`}
+                            className="w-full h-32 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity border"
+                            onClick={() => openLightbox(paymentViewProfile.paymentScreenshotUrls!, index)}
+                          />
+                          <span className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+                            #{index + 1}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : paymentViewProfile.paymentScreenshotUrl ? (
+                    <div className="flex items-center justify-center">
+                      <img 
+                        src={paymentViewProfile.paymentScreenshotUrl} 
+                        alt="Payment Screenshot"
+                        className="max-h-[300px] object-contain rounded cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => openLightbox([paymentViewProfile.paymentScreenshotUrl!], 0)}
+                      />
+                    </div>
                   ) : (
-                    <div className="text-muted-foreground text-sm text-center p-4">
+                    <div className="text-muted-foreground text-sm text-center p-4 flex items-center justify-center min-h-[150px]">
                       {language === 'hi' ? 'भुगतान स्क्रीनशॉट अपलोड नहीं किया' : 'Payment screenshot not uploaded'}
                     </div>
                   )}
                 </div>
-                {paymentViewProfile.paymentScreenshotUrl && (
+                {(paymentViewProfile.paymentScreenshotUrls?.length || paymentViewProfile.paymentScreenshotUrl) && (
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     className="w-full mt-2"
-                    onClick={() => openLightbox([paymentViewProfile.paymentScreenshotUrl!], 0)}
+                    onClick={() => openLightbox(
+                      paymentViewProfile.paymentScreenshotUrls || [paymentViewProfile.paymentScreenshotUrl!], 
+                      0
+                    )}
                   >
                     <Eye size={14} className="mr-1" />
                     {language === 'hi' ? 'बड़ा करके देखें' : 'View Full Size'}

@@ -370,9 +370,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   // Custom city input when user selects "Other City"
   const [customCity, setCustomCity] = useState('')
   
-  // Payment screenshot state for paid plans
-  const [_paymentScreenshotFile, setPaymentScreenshotFile] = useState<File | null>(null)
-  const [paymentScreenshotPreview, setPaymentScreenshotPreview] = useState<string | null>(null)
+  // Payment screenshot state for paid plans - supports multiple screenshots
+  const [paymentScreenshotPreviews, setPaymentScreenshotPreviews] = useState<string[]>([])
+  const [paymentScreenshotFiles, setPaymentScreenshotFiles] = useState<File[]>([])
   
   // DigiLocker verification state (OAuth flow - no Aadhaar number input)
   const [_digilockerVerifying, _setDigilockerVerifying] = useState(false)
@@ -600,9 +600,11 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         setIdProofType(editProfile.idProofType)
       }
       
-      // Load payment screenshot if exists
-      if (editProfile.paymentScreenshotUrl) {
-        setPaymentScreenshotPreview(editProfile.paymentScreenshotUrl)
+      // Load payment screenshots if exists (support both single URL and array)
+      if (editProfile.paymentScreenshotUrls && editProfile.paymentScreenshotUrls.length > 0) {
+        setPaymentScreenshotPreviews(editProfile.paymentScreenshotUrls)
+      } else if (editProfile.paymentScreenshotUrl) {
+        setPaymentScreenshotPreviews([editProfile.paymentScreenshotUrl])
       }
       
       // Skip verification for edit mode
@@ -1146,7 +1148,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const handleSubmit = async () => {
     // Payment-only mode: only validate payment screenshot
     if (isPaymentOnlyMode) {
-      if (!paymentScreenshotPreview) {
+      if (paymentScreenshotPreviews.length === 0) {
         toast.error(
           language === 'hi' 
             ? 'कृपया भुगतान स्क्रीनशॉट अपलोड करें' 
@@ -1158,24 +1160,33 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       // Handle payment-only submission
       setIsSubmitting(true)
       try {
-        let uploadedPaymentScreenshotUrl = paymentScreenshotPreview || ''
-        
-        // Upload payment screenshot to blob storage if we have a file
-        if (_paymentScreenshotFile) {
-          try {
-            // Use the already statically imported uploadPhoto
-            const result = await uploadPhoto(editProfile?.profileId || 'unknown', _paymentScreenshotFile)
-            uploadedPaymentScreenshotUrl = result.cdnUrl
-          } catch (uploadErr) {
-            logger.warn('Failed to upload payment to blob, using base64:', uploadErr)
-            // Fallback to base64 already set above
+        // Upload all payment screenshots to blob storage
+        const uploadedPaymentUrls: string[] = []
+        for (let i = 0; i < paymentScreenshotPreviews.length; i++) {
+          const preview = paymentScreenshotPreviews[i]
+          const file = paymentScreenshotFiles[i]
+          
+          if (file) {
+            try {
+              const result = await uploadPhoto(editProfile?.profileId || 'unknown', file)
+              uploadedPaymentUrls.push(result.cdnUrl)
+            } catch (uploadErr) {
+              logger.warn('Failed to upload payment to blob, using base64:', uploadErr)
+              uploadedPaymentUrls.push(preview) // Fallback to base64
+            }
+          } else if (preview.startsWith('https://')) {
+            // Already uploaded URL
+            uploadedPaymentUrls.push(preview)
+          } else {
+            uploadedPaymentUrls.push(preview) // Fallback to base64
           }
         }
         
         // Create updated profile with payment data
         const updatedProfile: Partial<Profile> = {
           ...editProfile,
-          paymentScreenshotUrl: uploadedPaymentScreenshotUrl,
+          paymentScreenshotUrl: uploadedPaymentUrls[0], // Keep first for backwards compatibility
+          paymentScreenshotUrls: uploadedPaymentUrls, // Store all URLs
           paymentStatus: 'pending',
           paymentUploadedAt: new Date().toISOString(),
           returnedForPayment: false, // Clear the returned for payment flag
@@ -1307,7 +1318,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     let photoUrls: string[] = []
     let uploadedSelfieUrl: string | undefined = selfiePreview || undefined
     let uploadedIdProofUrl: string | undefined = idProofPreview || undefined
-    let uploadedPaymentScreenshotUrl: string | undefined = paymentScreenshotPreview || undefined
+    let uploadedPaymentScreenshotUrls: string[] = [...paymentScreenshotPreviews]
 
     try {
       const blobAvailable = await isBlobStorageAvailable()
@@ -1356,16 +1367,27 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           }
         }
 
-        // Upload payment screenshot if it's base64
-        if (paymentScreenshotPreview && !paymentScreenshotPreview.startsWith('https://')) {
-          try {
-            const paymentFile = dataUrlToFile(paymentScreenshotPreview, 'payment-screenshot.jpg')
-            const { cdnUrl } = await uploadPhoto(tempProfileId, paymentFile)
-            uploadedPaymentScreenshotUrl = cdnUrl
-          } catch (err) {
-            logger.warn('Failed to upload payment screenshot:', err)
+        // Upload all payment screenshots that are base64
+        const paymentUploadPromises = paymentScreenshotPreviews.map(async (preview, index) => {
+          if (preview.startsWith('https://')) {
+            return preview // Already uploaded
           }
-        }
+          try {
+            const file = paymentScreenshotFiles[index]
+            if (file) {
+              const { cdnUrl } = await uploadPhoto(tempProfileId, file)
+              return cdnUrl
+            } else {
+              const paymentFile = dataUrlToFile(preview, `payment-screenshot-${index}.jpg`)
+              const { cdnUrl } = await uploadPhoto(tempProfileId, paymentFile)
+              return cdnUrl
+            }
+          } catch (err) {
+            logger.warn(`Failed to upload payment screenshot ${index}:`, err)
+            return preview // Fallback to base64
+          }
+        })
+        uploadedPaymentScreenshotUrls = await Promise.all(paymentUploadPromises)
       } else {
         // Fallback: use base64 (not recommended for production)
         photoUrls = photos.map(p => p.preview)
@@ -1439,12 +1461,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       registrationLocation: isEditMode && editProfile?.registrationLocation ? editProfile.registrationLocation : (registrationGeoLocation || undefined),
       // Payment data for paid plans
       ...(formData.membershipPlan && formData.membershipPlan !== 'free' ? {
-        paymentScreenshotUrl: uploadedPaymentScreenshotUrl || undefined,
-        paymentStatus: uploadedPaymentScreenshotUrl ? 'pending' : undefined,
+        paymentScreenshotUrl: uploadedPaymentScreenshotUrls[0] || undefined, // Keep first for backwards compatibility
+        paymentScreenshotUrls: uploadedPaymentScreenshotUrls.length > 0 ? uploadedPaymentScreenshotUrls : undefined, // Store all
+        paymentStatus: uploadedPaymentScreenshotUrls.length > 0 ? 'pending' : undefined,
         paymentAmount: formData.membershipPlan === '6-month' 
           ? (membershipSettings?.sixMonthPrice || 500) 
           : (membershipSettings?.oneYearPrice || 900),
-        paymentUploadedAt: uploadedPaymentScreenshotUrl ? new Date().toISOString() : undefined
+        paymentUploadedAt: uploadedPaymentScreenshotUrls.length > 0 ? new Date().toISOString() : undefined
       } : {
         paymentStatus: 'not-required' as const
       }),
@@ -4393,81 +4416,102 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
                       <Separator />
 
-                      {/* Upload Payment Screenshot */}
+                      {/* Upload Payment Screenshot - Multiple */}
                       <div className="space-y-3">
                         <Label className="text-base font-semibold flex items-center gap-2">
                           <Upload size={18} />
-                          {language === 'hi' ? 'भुगतान स्क्रीनशॉट अपलोड करें *' : 'Upload Payment Screenshot *'}
+                          {language === 'hi' ? 'भुगतान स्क्रीनशॉट अपलोड करें *' : 'Upload Payment Screenshot(s) *'}
                         </Label>
                         <p className="text-sm text-muted-foreground">
                           {language === 'hi' 
-                            ? 'भुगतान करने के बाद, कृपया भुगतान स्क्रीनशॉट अपलोड करें। एडमिन द्वारा सत्यापन के बाद आपकी सदस्यता सक्रिय हो जाएगी।'
-                            : 'After making payment, please upload the payment screenshot. Your membership will be activated after admin verification.'}
+                            ? 'भुगतान करने के बाद, कृपया भुगतान स्क्रीनशॉट अपलोड करें। यदि आपने कई भुगतान किए हैं, तो सभी स्क्रीनशॉट अपलोड करें। एडमिन द्वारा सत्यापन के बाद आपकी सदस्यता सक्रिय हो जाएगी।'
+                            : 'After making payment, please upload the payment screenshot(s). If you made multiple payments, upload all screenshots. Your membership will be activated after admin verification.'}
                         </p>
                         
-                        {paymentScreenshotPreview ? (
-                          <div className="relative inline-block">
-                            <img 
-                              src={paymentScreenshotPreview} 
-                              alt="Payment Screenshot" 
-                              className="max-w-[200px] max-h-[200px] object-contain rounded-lg border cursor-pointer"
-                              onClick={() => openLightbox([paymentScreenshotPreview], 0)}
-                            />
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="icon"
-                              className="absolute -top-2 -right-2 h-6 w-6"
-                              onClick={() => {
-                                setPaymentScreenshotFile(null)
-                                setPaymentScreenshotPreview(null)
-                              }}
-                            >
-                              <X size={14} />
-                            </Button>
-                            <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                              <CheckCircle size={14} weight="fill" />
-                              {language === 'hi' ? 'स्क्रीनशॉट अपलोड हो गया' : 'Screenshot uploaded'}
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-3">
-                            <label className="flex-1">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0]
-                                  if (file) {
-                                    setPaymentScreenshotFile(file)
-                                    const reader = new FileReader()
-                                    reader.onloadend = () => {
-                                      setPaymentScreenshotPreview(reader.result as string)
-                                    }
-                                    reader.readAsDataURL(file)
-                                  }
-                                }}
-                              />
-                              <div className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
-                                <Upload size={32} className="mx-auto mb-2 text-muted-foreground" />
-                                <p className="text-sm font-medium">
-                                  {language === 'hi' ? 'क्लिक करें या फ़ाइल खींचें' : 'Click or drag file'}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  PNG, JPG {language === 'hi' ? 'अधिकतम' : 'max'} 5MB
+                        {/* Show uploaded screenshots */}
+                        {paymentScreenshotPreviews.length > 0 && (
+                          <div className="flex flex-wrap gap-3">
+                            {paymentScreenshotPreviews.map((preview, index) => (
+                              <div key={index} className="relative inline-block">
+                                <img 
+                                  src={preview} 
+                                  alt={`Payment Screenshot ${index + 1}`}
+                                  className="w-[120px] h-[120px] object-cover rounded-lg border cursor-pointer"
+                                  onClick={() => openLightbox(paymentScreenshotPreviews, index)}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="icon"
+                                  className="absolute -top-2 -right-2 h-6 w-6"
+                                  onClick={() => {
+                                    setPaymentScreenshotPreviews(prev => prev.filter((_, i) => i !== index))
+                                    setPaymentScreenshotFiles(prev => prev.filter((_, i) => i !== index))
+                                  }}
+                                >
+                                  <X size={14} />
+                                </Button>
+                                <p className="text-xs text-center text-muted-foreground mt-1">
+                                  #{index + 1}
                                 </p>
                               </div>
-                            </label>
+                            ))}
                           </div>
                         )}
                         
-                        {!paymentScreenshotPreview && (
+                        {/* Add more screenshots button */}
+                        <div className="flex items-center gap-3">
+                          <label className="flex-1">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="hidden"
+                              onChange={(e) => {
+                                const files = e.target.files
+                                if (files) {
+                                  Array.from(files).forEach((file) => {
+                                    setPaymentScreenshotFiles(prev => [...prev, file])
+                                    const reader = new FileReader()
+                                    reader.onloadend = () => {
+                                      setPaymentScreenshotPreviews(prev => [...prev, reader.result as string])
+                                    }
+                                    reader.readAsDataURL(file)
+                                  })
+                                }
+                                // Reset input to allow selecting same file again
+                                e.target.value = ''
+                              }}
+                            />
+                            <div className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                              <Upload size={24} className="mx-auto mb-2 text-muted-foreground" />
+                              <p className="text-sm font-medium">
+                                {paymentScreenshotPreviews.length > 0
+                                  ? (language === 'hi' ? 'और स्क्रीनशॉट जोड़ें' : 'Add more screenshots')
+                                  : (language === 'hi' ? 'क्लिक करें या फ़ाइल खींचें' : 'Click or drag file')}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                PNG, JPG {language === 'hi' ? 'अधिकतम' : 'max'} 5MB {language === 'hi' ? 'प्रति फ़ाइल' : 'per file'}
+                              </p>
+                            </div>
+                          </label>
+                        </div>
+                        
+                        {paymentScreenshotPreviews.length > 0 && (
+                          <p className="text-xs text-green-600 flex items-center gap-1">
+                            <CheckCircle size={14} weight="fill" />
+                            {language === 'hi' 
+                              ? `${paymentScreenshotPreviews.length} स्क्रीनशॉट अपलोड हो गए` 
+                              : `${paymentScreenshotPreviews.length} screenshot(s) uploaded`}
+                          </p>
+                        )}
+                        
+                        {paymentScreenshotPreviews.length === 0 && (
                           <p className="text-xs text-amber-600 flex items-center gap-1">
                             <Warning size={14} />
                             {language === 'hi' 
-                              ? 'पंजीकरण पूरा करने के लिए भुगतान स्क्रीनशॉट अपलोड करना आवश्यक है'
-                              : 'Payment screenshot is required to complete registration'}
+                              ? 'पंजीकरण पूरा करने के लिए कम से कम एक भुगतान स्क्रीनशॉट अपलोड करना आवश्यक है'
+                              : 'At least one payment screenshot is required to complete registration'}
                           </p>
                         )}
                       </div>
@@ -4679,13 +4723,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   isAdminMode 
                     ? isSubmitting // Admin mode: only check if submitting
                     : isPaymentOnlyMode
-                      ? (isSubmitting || !paymentScreenshotPreview) // Payment-only mode: just need screenshot
+                      ? (isSubmitting || paymentScreenshotPreviews.length === 0) // Payment-only mode: need at least one screenshot
                       : (
                           !termsAccepted || 
                           !formData.membershipPlan || 
                           isSubmitting ||
                           // Require payment screenshot for paid plans
-                          (formData.membershipPlan !== 'free' && !paymentScreenshotPreview)
+                          (formData.membershipPlan !== 'free' && paymentScreenshotPreviews.length === 0)
                         )
                 }
               >

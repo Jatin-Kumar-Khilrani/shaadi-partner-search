@@ -10,9 +10,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import { useKV } from '@/hooks/useKV'
 import { Eye, Heart, ChatCircle, Check, X, MagnifyingGlassPlus, ProhibitInset, Phone, Envelope as EnvelopeIcon, User, Clock, ArrowCounterClockwise, Warning, Rocket, UploadSimple, CurrencyInr } from '@phosphor-icons/react'
-import type { Interest, ContactRequest, Profile, BlockedProfile, MembershipPlan, DeclinedProfile, UserNotification } from '@/types/profile'
+import type { Interest, ContactRequest, Profile, BlockedProfile, MembershipPlan, DeclinedProfile, UserNotification, ReportReason } from '@/types/profile'
 import type { ChatMessage } from '@/types/chat'
 import type { Language } from '@/lib/translations'
 import { toast } from 'sonner'
@@ -106,6 +108,8 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
   // State for dialogs
   const [interestToDecline, setInterestToDecline] = useState<string | null>(null)
   const [interestToBlock, setInterestToBlock] = useState<{ interestId: string, profileId: string } | null>(null)
+  const [reportReason, setReportReason] = useState<ReportReason | ''>('')
+  const [reportDescription, setReportDescription] = useState('')
   const [viewContactProfile, setViewContactProfile] = useState<Profile | null>(null)
   const [selectedProfileForDetails, setSelectedProfileForDetails] = useState<Profile | null>(null)
   const [_profileToReconsider, setProfileToReconsider] = useState<{ profileId: string, type: 'interest' | 'contact' | 'block' } | null>(null)
@@ -182,10 +186,10 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
     accept: language === 'hi' ? 'स्वीकार करें' : 'Accept',
     decline: language === 'hi' ? 'अस्वीकार करें' : 'Decline',
     withdraw: language === 'hi' ? 'वापस लें' : 'Withdraw',
-    block: language === 'hi' ? 'ब्लॉक करें' : 'Block',
+    block: language === 'hi' ? 'रिपोर्ट और ब्लॉक करें' : 'Report & Block',
     blockTooltip: language === 'hi' 
-      ? 'इस प्रोफाइल को ब्लॉक करें - वे आपको दोबारा नहीं दिखेंगे' 
-      : 'Block this profile - they won\'t appear in your matches again',
+      ? 'इस प्रोफाइल को रिपोर्ट और ब्लॉक करें' 
+      : 'Report and block this profile',
     cancel: language === 'hi' ? 'रद्द करें' : 'Cancel',
     revoke: language === 'hi' ? 'वापस लें' : 'Revoke',
     sentRequests: language === 'hi' ? 'भेजे गए अनुरोध' : 'Sent Requests',
@@ -203,8 +207,18 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
     notProvided: language === 'hi' ? 'उपलब्ध नहीं' : 'Not Provided',
     close: language === 'hi' ? 'बंद करें' : 'Close',
     confirmDecline: language === 'hi' ? 'क्या आप वाकई इस रुचि को अस्वीकार करना चाहते हैं?' : 'Are you sure you want to decline this interest?',
-    confirmBlock: language === 'hi' ? 'क्या आप वाकई इस प्रोफाइल को ब्लॉक करना चाहते हैं?' : 'Are you sure you want to block this profile?',
-    blockWarning: language === 'hi' ? 'ब्लॉक करने के बाद, यह प्रोफाइल आपको फिर से नहीं दिखेगी और वे आपकी प्रोफाइल भी नहीं देख पाएंगे।' : 'After blocking, this profile will not be shown to you again and they will not be able to see your profile either.',
+    confirmBlock: language === 'hi' ? 'रिपोर्ट और ब्लॉक करें' : 'Report & Block Profile',
+    blockWarning: language === 'hi' ? 'ब्लॉक करने के बाद, यह प्रोफाइल आपको फिर से नहीं दिखेगी। रिपोर्ट एडमिन को भेजी जाएगी।' : 'After blocking, this profile will not be shown to you. Report will be sent to admin for review.',
+    reportReason: language === 'hi' ? 'रिपोर्ट का कारण' : 'Report Reason',
+    reportDescription: language === 'hi' ? 'विवरण (वैकल्पिक)' : 'Description (optional)',
+    selectReason: language === 'hi' ? 'कारण चुनें' : 'Select a reason',
+    inappropriateMessages: language === 'hi' ? 'अनुचित संदेश' : 'Inappropriate messages',
+    fakeProfile: language === 'hi' ? 'नकली प्रोफाइल' : 'Fake profile',
+    harassment: language === 'hi' ? 'उत्पीड़न' : 'Harassment',
+    spam: language === 'hi' ? 'स्पैम' : 'Spam',
+    offensiveContent: language === 'hi' ? 'आपत्तिजनक सामग्री' : 'Offensive content',
+    otherReason: language === 'hi' ? 'अन्य' : 'Other',
+    reportSentToAdmin: language === 'hi' ? 'रिपोर्ट एडमिन को भेजी गई' : 'Report sent to admin',
     confirm: language === 'hi' ? 'पुष्टि करें' : 'Confirm',
     profileBlocked: language === 'hi' ? 'प्रोफाइल ब्लॉक की गई' : 'Profile blocked',
     sentOn: language === 'hi' ? 'भेजा गया' : 'Sent on',
@@ -866,16 +880,31 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
       )
     )
 
+    // Create block record with report information for admin review
     const newBlock: BlockedProfile = {
       id: `block-${Date.now()}`,
       blockerProfileId: currentUserProfile.profileId,
       blockedProfileId: profileIdToBlock,
       createdAt: new Date().toISOString(),
+      // Include report details for admin
+      reportedToAdmin: reportReason !== '',
+      reportReason: reportReason || undefined,
+      reportDescription: reportDescription || undefined,
     }
 
     setBlockedProfiles(current => [...(current || []), newBlock])
     setInterestToBlock(null)
-    toast.success(t.profileBlocked)
+    // Reset report fields
+    setReportReason('')
+    setReportDescription('')
+    // Show appropriate toast based on whether report was included
+    if (reportReason) {
+      toast.success(t.profileBlocked, {
+        description: t.reportSentToAdmin
+      })
+    } else {
+      toast.success(t.profileBlocked)
+    }
   }
 
   // Handler to reconsider a declined/revoked profile - restores to previous state
@@ -2877,28 +2906,83 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Block Confirmation Dialog */}
-      <AlertDialog open={!!interestToBlock} onOpenChange={(open) => !open && setInterestToBlock(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t.block}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t.confirmBlock}
-              <br /><br />
+      {/* Report & Block Dialog */}
+      <Dialog open={!!interestToBlock} onOpenChange={(open) => {
+        if (!open) {
+          setInterestToBlock(null)
+          setReportReason('')
+          setReportDescription('')
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <ProhibitInset size={24} weight="fill" />
+              {t.block}
+            </DialogTitle>
+            <DialogDescription>
               {t.blockWarning}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-            <AlertDialogAction 
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Report Reason Selection */}
+            <div className="space-y-2">
+              <Label>{t.reportReason}</Label>
+              <Select value={reportReason} onValueChange={(value: ReportReason | '') => setReportReason(value as ReportReason)}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t.selectReason} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inappropriate-messages">{t.inappropriateMessages}</SelectItem>
+                  <SelectItem value="fake-profile">{t.fakeProfile}</SelectItem>
+                  <SelectItem value="harassment">{t.harassment}</SelectItem>
+                  <SelectItem value="spam">{t.spam}</SelectItem>
+                  <SelectItem value="offensive-content">{t.offensiveContent}</SelectItem>
+                  <SelectItem value="other">{t.otherReason}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Report Description */}
+            <div className="space-y-2">
+              <Label>{t.reportDescription}</Label>
+              <Textarea
+                value={reportDescription}
+                onChange={(e) => setReportDescription(e.target.value)}
+                placeholder={language === 'hi' ? 'अधिक जानकारी दें...' : 'Provide more details...'}
+                rows={3}
+              />
+            </div>
+
+            <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950/30">
+              <Warning size={18} className="text-amber-600" />
+              <AlertDescription className="text-amber-700 dark:text-amber-300 text-sm">
+                {language === 'hi' 
+                  ? 'रिपोर्ट चुनने पर यह एडमिन को समीक्षा के लिए भेजी जाएगी।' 
+                  : 'If you select a report reason, it will be sent to admin for review.'}
+              </AlertDescription>
+            </Alert>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => {
+              setInterestToBlock(null)
+              setReportReason('')
+              setReportDescription('')
+            }}>
+              {t.cancel}
+            </Button>
+            <Button 
+              variant="destructive"
               onClick={() => interestToBlock && handleBlockProfile(interestToBlock.interestId, interestToBlock.profileId)}
-              className="bg-destructive hover:bg-destructive/90"
             >
-              {t.confirm}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              <ProhibitInset size={18} className="mr-2" />
+              {t.block}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* View Contact Dialog */}
       <Dialog open={!!viewContactProfile} onOpenChange={(open) => !open && setViewContactProfile(null)}>

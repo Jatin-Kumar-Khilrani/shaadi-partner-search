@@ -296,7 +296,8 @@ export interface Profile {
   boostInterestsRemaining?: number  // Remaining interests from boost packs
   boostContactsRemaining?: number   // Remaining contacts from boost packs
   // Payment verification for paid plans
-  paymentScreenshotUrl?: string  // URL to payment screenshot
+  paymentScreenshotUrl?: string  // URL to payment screenshot (legacy single)
+  paymentScreenshotUrls?: string[]  // Multiple payment screenshot URLs
   paymentStatus?: 'not-required' | 'pending' | 'verified' | 'rejected'
   paymentAmount?: number  // Amount paid
   paymentVerifiedAt?: string
