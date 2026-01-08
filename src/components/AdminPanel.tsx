@@ -5817,11 +5817,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Label>{t.price} (₹)</Label>
                         <Input 
                           type="number" 
-                          value={localMembershipSettings.sixMonthPrice}
+                          value={localMembershipSettings.sixMonthPrice || ''}
                           onKeyDown={(e) => e.stopPropagation()}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
-                            sixMonthPrice: e.target.value === '' ? 0 : parseInt(e.target.value)
+                            sixMonthPrice: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                           }))}
                         />
                       </div>
@@ -5829,11 +5829,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Label>{t.duration}</Label>
                         <Input 
                           type="number" 
-                          value={localMembershipSettings.sixMonthDuration}
+                          value={localMembershipSettings.sixMonthDuration || ''}
                           onKeyDown={(e) => e.stopPropagation()}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
-                            sixMonthDuration: e.target.value === '' ? 0 : parseInt(e.target.value)
+                            sixMonthDuration: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                           }))}
                         />
                       </div>
@@ -5849,11 +5849,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Label>{t.price} (₹)</Label>
                         <Input 
                           type="number" 
-                          value={localMembershipSettings.oneYearPrice}
+                          value={localMembershipSettings.oneYearPrice || ''}
                           onKeyDown={(e) => e.stopPropagation()}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
-                            oneYearPrice: e.target.value === '' ? 0 : parseInt(e.target.value)
+                            oneYearPrice: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                           }))}
                         />
                       </div>
@@ -5861,11 +5861,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         <Label>{t.duration}</Label>
                         <Input 
                           type="number" 
-                          value={localMembershipSettings.oneYearDuration}
+                          value={localMembershipSettings.oneYearDuration || ''}
                           onKeyDown={(e) => e.stopPropagation()}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
-                            oneYearDuration: e.target.value === '' ? 0 : parseInt(e.target.value)
+                            oneYearDuration: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                           }))}
                         />
                       </div>
@@ -5895,10 +5895,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           type="number" 
                           min="0"
                           max="100"
-                          value={localMembershipSettings.discountPercentage}
+                          value={localMembershipSettings.discountPercentage || ''}
                           onChange={(e) => setLocalMembershipSettings(prev => ({
                             ...prev,
-                            discountPercentage: e.target.value === '' ? 0 : parseInt(e.target.value)
+                            discountPercentage: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                           }))}
                           disabled={!localMembershipSettings.discountEnabled}
                         />
@@ -5935,10 +5935,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <Input 
                             type="number" 
                             min="0"
-                            value={localMembershipSettings.freePlanChatLimit}
+                            value={localMembershipSettings.freePlanChatLimit || ''}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              freePlanChatLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
+                              freePlanChatLimit: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                             }))}
                           />
                         </div>
@@ -5947,10 +5947,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <Input 
                             type="number" 
                             min="0"
-                            value={localMembershipSettings.freePlanContactLimit}
+                            value={localMembershipSettings.freePlanContactLimit || ''}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              freePlanContactLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
+                              freePlanContactLimit: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                             }))}
                           />
                           <p className="text-xs text-muted-foreground">{language === 'hi' ? '0 = कोई संपर्क नहीं' : '0 = No contacts'}</p>
@@ -5967,10 +5967,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <Input 
                             type="number" 
                             min="0"
-                            value={localMembershipSettings.sixMonthChatLimit}
+                            value={localMembershipSettings.sixMonthChatLimit || ''}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              sixMonthChatLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
+                              sixMonthChatLimit: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                             }))}
                           />
                         </div>
@@ -5979,10 +5979,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <Input 
                             type="number" 
                             min="0"
-                            value={localMembershipSettings.sixMonthContactLimit}
+                            value={localMembershipSettings.sixMonthContactLimit || ''}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              sixMonthContactLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
+                              sixMonthContactLimit: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                             }))}
                           />
                         </div>
@@ -5998,10 +5998,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <Input 
                             type="number" 
                             min="0"
-                            value={localMembershipSettings.oneYearChatLimit}
+                            value={localMembershipSettings.oneYearChatLimit || ''}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              oneYearChatLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
+                              oneYearChatLimit: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                             }))}
                           />
                         </div>
@@ -6010,10 +6010,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <Input 
                             type="number" 
                             min="0"
-                            value={localMembershipSettings.oneYearContactLimit}
+                            value={localMembershipSettings.oneYearContactLimit || ''}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              oneYearContactLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
+                              oneYearContactLimit: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                             }))}
                           />
                         </div>
@@ -6053,7 +6053,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             value={localMembershipSettings.inactivityDays || ''}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              inactivityDays: e.target.value === '' ? 0 : parseInt(e.target.value)
+                              inactivityDays: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                             }))}
                           />
                           <p className="text-xs text-muted-foreground">
@@ -6076,7 +6076,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             value={localMembershipSettings.freePlanChatDurationMonths || ''}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              freePlanChatDurationMonths: e.target.value === '' ? 0 : parseInt(e.target.value)
+                              freePlanChatDurationMonths: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                             }))}
                           />
                           <p className="text-xs text-muted-foreground">
@@ -6099,7 +6099,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             value={localMembershipSettings.requestExpiryDays || ''}
                             onChange={(e) => setLocalMembershipSettings(prev => ({
                               ...prev,
-                              requestExpiryDays: e.target.value === '' ? 0 : parseInt(e.target.value)
+                              requestExpiryDays: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                             }))}
                           />
                           <p className="text-xs text-muted-foreground">
@@ -6140,7 +6140,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               value={localMembershipSettings.boostPackInterestLimit || ''}
                               onChange={(e) => setLocalMembershipSettings(prev => ({
                                 ...prev,
-                                boostPackInterestLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
+                                boostPackInterestLimit: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                               }))}
                               disabled={!localMembershipSettings.boostPackEnabled}
                             />
@@ -6154,7 +6154,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               value={localMembershipSettings.boostPackContactLimit || ''}
                               onChange={(e) => setLocalMembershipSettings(prev => ({
                                 ...prev,
-                                boostPackContactLimit: e.target.value === '' ? 0 : parseInt(e.target.value)
+                                boostPackContactLimit: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                               }))}
                               disabled={!localMembershipSettings.boostPackEnabled}
                             />
@@ -6168,7 +6168,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               value={localMembershipSettings.boostPackPrice || ''}
                               onChange={(e) => setLocalMembershipSettings(prev => ({
                                 ...prev,
-                                boostPackPrice: e.target.value === '' ? 0 : parseInt(e.target.value)
+                                boostPackPrice: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                               }))}
                               disabled={!localMembershipSettings.boostPackEnabled}
                             />
@@ -6196,7 +6196,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               value={localMembershipSettings.paymentDeadlineDays || ''}
                               onChange={(e) => setLocalMembershipSettings(prev => ({
                                 ...prev,
-                                paymentDeadlineDays: e.target.value === '' ? 0 : parseInt(e.target.value)
+                                paymentDeadlineDays: e.target.value === '' ? 0 : parseInt(e.target.value) || 0
                               }))}
                             />
                           </div>
@@ -7370,7 +7370,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
 
       {/* Edit Membership Dialog */}
       <Dialog open={!!editMembershipDialog} onOpenChange={() => setEditMembershipDialog(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CurrencyInr size={24} />
@@ -7405,7 +7405,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 <Label>{t.customAmount} (₹) *</Label>
                 <Input 
                   type="number" 
-                  value={membershipEditData.customAmount}
+                  value={membershipEditData.customAmount || ''}
                   onChange={(e) => setMembershipEditData(prev => ({...prev, customAmount: parseInt(e.target.value) || 0}))}
                   placeholder={language === 'hi' ? 'कस्टम राशि दर्ज करें' : 'Enter custom amount'}
                 />
@@ -7416,7 +7416,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               <Label>{t.discountAmount} (₹)</Label>
               <Input 
                 type="number" 
-                value={membershipEditData.discountAmount}
+                value={membershipEditData.discountAmount || ''}
                 onChange={(e) => setMembershipEditData(prev => ({...prev, discountAmount: parseInt(e.target.value) || 0}))}
                 placeholder={language === 'hi' ? 'छूट राशि दर्ज करें' : 'Enter discount amount'}
               />
@@ -7511,10 +7511,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       type="number" 
                       min="0"
                       className="w-20 text-center"
-                      value={membershipEditData.boostInterestsRemaining}
+                      value={membershipEditData.boostInterestsRemaining || ''}
                       onChange={(e) => setMembershipEditData(prev => ({
                         ...prev, 
-                        boostInterestsRemaining: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value))
+                        boostInterestsRemaining: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0)
                       }))}
                     />
                     <Button 
@@ -7554,10 +7554,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       type="number" 
                       min="0"
                       className="w-20 text-center"
-                      value={membershipEditData.boostContactsRemaining}
+                      value={membershipEditData.boostContactsRemaining || ''}
                       onChange={(e) => setMembershipEditData(prev => ({
                         ...prev, 
-                        boostContactsRemaining: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value))
+                        boostContactsRemaining: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0)
                       }))}
                     />
                     <Button 
@@ -8258,7 +8258,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 <Label>{t.originalAmount} (₹)</Label>
                 <Input 
                   type="number"
-                  value={paymentFormData.amount}
+                  value={paymentFormData.amount || ''}
                   onChange={(e) => setPaymentFormData(prev => ({...prev, amount: parseInt(e.target.value) || 0}))}
                 />
               </div>
@@ -8267,7 +8267,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 <Label>{t.discountAmount} (₹)</Label>
                 <Input 
                   type="number"
-                  value={paymentFormData.discountAmount}
+                  value={paymentFormData.discountAmount || ''}
                   onChange={(e) => setPaymentFormData(prev => ({...prev, discountAmount: parseInt(e.target.value) || 0}))}
                 />
               </div>
@@ -8986,7 +8986,7 @@ ShaadiPartnerSearch Team
                 <Label>{t.refundAmount} (₹) *</Label>
                 <Input 
                   type="number"
-                  value={refundFormData.refundAmount}
+                  value={refundFormData.refundAmount || ''}
                   onChange={(e) => setRefundFormData(prev => ({...prev, refundAmount: parseInt(e.target.value) || 0}))}
                   max={selectedTransaction.finalAmount}
                 />

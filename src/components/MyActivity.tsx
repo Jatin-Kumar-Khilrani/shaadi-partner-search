@@ -559,6 +559,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
   // Filter sent interests - exclude if the other party has blocked current user
   const sentInterests = interests?.filter(i => 
     i.fromProfileId === currentUserProfile?.profileId && 
+    !isProfileDeleted(i.toProfileId) &&
     !hasBlockedCurrentUser(i.toProfileId)
   ) || []
   

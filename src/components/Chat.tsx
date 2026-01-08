@@ -759,21 +759,9 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       
       // Check if the other profile exists (not deleted)
       const otherProfile = profiles.find(p => p.profileId === otherProfileId)
-      if (!otherProfile) {
-        // Profile was deleted - don't show conversation unless there are recent messages
-        const recentThresholdDays = 30
-        const conversationMessages = messages?.filter(m => {
-          // Derive conversation ID from message participants
-          const msgConvId = [m.fromProfileId, m.toProfileId].sort().join('-')
-          return msgConvId === conv.id && m.fromProfileId !== currentUserProfile?.profileId
-        }) || []
-        const hasRecentMessages = conversationMessages.some(m => {
-          const msgDate = new Date(m.createdAt || '')
-          const daysSinceMsg = (Date.now() - msgDate.getTime()) / (1000 * 60 * 60 * 24)
-          return daysSinceMsg < recentThresholdDays
-        })
-        // Only hide old conversations with deleted profiles
-        if (!hasRecentMessages) return false
+      if (!otherProfile || otherProfile.isDeleted) {
+        // Profile was deleted - don't show conversation at all
+        return false
       }
       
       // Check both directions of blocking
@@ -852,7 +840,21 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     
     // Use setTimeout to ensure DOM has fully rendered before scrolling
     const timeoutId = setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      // Scroll only within the messages container (parent of messagesEndRef)
+      // Find the nearest scrollable parent (ScrollArea viewport) and scroll it
+      const element = messagesEndRef.current
+      if (element) {
+        const scrollParent = element.closest('[data-radix-scroll-area-viewport]') as HTMLElement
+        if (scrollParent) {
+          scrollParent.scrollTop = scrollParent.scrollHeight
+        } else {
+          // Fallback: scroll within nearest scrollable ancestor
+          const parent = element.parentElement
+          if (parent) {
+            parent.scrollTop = parent.scrollHeight
+          }
+        }
+      }
     }, 100)
     
     return () => clearTimeout(timeoutId)
