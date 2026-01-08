@@ -1959,6 +1959,7 @@ function App() {
                       language={language}
                       isLoggedIn={!!loggedInUser}
                       shouldBlur={currentMembershipStatus.shouldBlur}
+                      onUpgrade={() => setShowSettings(true)}
                     />
                   ))}
                 </div>
@@ -1981,6 +1982,7 @@ function App() {
             language={language}
             membershipPlan={currentUserProfile?.membershipPlan}
             profileStatus={currentUserProfile?.status}
+            onUpgrade={() => setShowSettings(true)}
           />
         )}
 
@@ -2132,6 +2134,7 @@ function App() {
         membershipPlan={currentUserProfile?.membershipPlan}
         membershipSettings={membershipSettings || defaultMembershipSettings}
         setProfiles={setProfiles}
+        onUpgrade={() => setShowSettings(true)}
       />
 
       <RegistrationDialog

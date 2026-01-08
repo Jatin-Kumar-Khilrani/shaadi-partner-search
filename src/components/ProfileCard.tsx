@@ -33,9 +33,11 @@ interface ProfileCardProps {
   onReconsider?: (profileId: string) => void
   // New prop for interaction status
   interactionStatus?: ProfileInteractionStatus
+  // Callback to navigate to upgrade/settings
+  onUpgrade?: () => void
 }
 
-export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedIn = false, shouldBlur = false, membershipPlan, isDeclinedByMe = false, isDeclinedByThem = false, onReconsider, interactionStatus }: ProfileCardProps) {
+export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedIn = false, shouldBlur = false, membershipPlan, isDeclinedByMe = false, isDeclinedByThem = false, onReconsider, interactionStatus, onUpgrade }: ProfileCardProps) {
   
   // Lightbox for photo zoom
   const { lightboxState, openLightbox, closeLightbox } = useLightbox()
@@ -313,12 +315,27 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
 
         {/* Upgrade prompt for free/pending users */}
         {shouldBlur && (
-          <div className="mx-3 mb-1 px-2 py-1.5 bg-gradient-to-r from-rose-100 to-amber-100 dark:from-rose-900/40 dark:to-amber-900/40 border border-rose-200 dark:border-rose-800/50 rounded-md">
+          <div 
+            className="mx-3 mb-1 px-2 py-1.5 bg-gradient-to-r from-rose-100 to-amber-100 dark:from-rose-900/40 dark:to-amber-900/40 border border-rose-200 dark:border-rose-800/50 rounded-md cursor-pointer hover:from-rose-200 hover:to-amber-200 dark:hover:from-rose-900/60 dark:hover:to-amber-900/60 transition-all"
+            onClick={(e) => {
+              e.stopPropagation()
+              onUpgrade?.()
+            }}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                e.stopPropagation()
+                onUpgrade?.()
+              }
+            }}
+          >
             <div className="flex items-center gap-1.5 text-rose-700 dark:text-rose-300 text-[10px] font-medium">
               <Crown size={12} weight="fill" className="shrink-0 text-amber-500" />
-              <span className="line-clamp-1">
+              <span className="line-clamp-1 underline underline-offset-2">
                 {language === 'hi' 
-                  ? 'अपग्रेड करें' 
+                  ? 'अपग्रेड करें विवरण देखने के लिए' 
                   : 'Upgrade to view details'}
               </span>
             </div>

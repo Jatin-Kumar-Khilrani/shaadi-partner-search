@@ -44,9 +44,11 @@ interface ProfileDetailDialogProps {
   membershipPlan?: MembershipPlan
   membershipSettings?: MembershipSettings
   setProfiles?: (newValue: Profile[] | ((oldValue?: Profile[] | undefined) => Profile[])) => void
+  // Callback to navigate to upgrade/settings
+  onUpgrade?: () => void
 }
 
-export function ProfileDetailDialog({ profile, open, onClose, language, currentUserProfile, isLoggedIn = false, isAdmin = false, shouldBlur = false, membershipPlan, membershipSettings, setProfiles }: ProfileDetailDialogProps) {
+export function ProfileDetailDialog({ profile, open, onClose, language, currentUserProfile, isLoggedIn = false, isAdmin = false, shouldBlur = false, membershipPlan, membershipSettings, setProfiles, onUpgrade }: ProfileDetailDialogProps) {
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests, setContactRequests] = useKV<ContactRequest[]>('contactRequests', [])
   const [userNotifications, setUserNotifications] = useKV<UserNotification[]>('userNotifications', [])
@@ -1129,11 +1131,14 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                   "{profile.bio}"
                 </p>
                 {blurContent && (
-                  <p className="text-xs text-amber-600 mt-3 font-medium">
+                  <button 
+                    onClick={onUpgrade}
+                    className="text-xs text-amber-600 mt-3 font-medium hover:text-amber-700 underline underline-offset-2 cursor-pointer transition-colors"
+                  >
                     {language === 'hi' 
                       ? 'पूर्ण विवरण देखने के लिए प्रीमियम योजना में अपग्रेड करें' 
                       : 'Upgrade to Premium plan to view full details'}
-                  </p>
+                  </button>
                 )}
               </section>
             </>
@@ -1179,11 +1184,14 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                     <p className="text-muted-foreground">+91 98XXX XXXXX</p>
                     <p className="text-muted-foreground">example@email.com</p>
                   </div>
-                  <p className="text-sm text-amber-600">
+                  <button 
+                    onClick={onUpgrade}
+                    className="text-sm text-amber-600 hover:text-amber-700 underline underline-offset-2 cursor-pointer transition-colors font-medium"
+                  >
                     {language === 'hi' 
                       ? 'संपर्क विवरण देखने के लिए प्रीमियम योजना में अपग्रेड करें' 
                       : 'Upgrade to Premium plan to view contact details'}
-                  </p>
+                  </button>
                 </div>
               ) : (
                 <>
@@ -1192,11 +1200,14 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                   </p>
                   {contactLimit === 0 ? (
                     <div className="text-center py-4">
-                      <p className="text-sm text-amber-600 mb-3">
+                      <button 
+                        onClick={onUpgrade}
+                        className="text-sm text-amber-600 hover:text-amber-700 underline underline-offset-2 cursor-pointer transition-colors font-medium mb-3"
+                      >
                         {language === 'hi' 
                           ? 'मुफ्त प्लान में संपर्क अनुरोध उपलब्ध नहीं है। पेड प्लान में अपग्रेड करें।' 
                           : 'Contact requests not available on Free plan. Upgrade to a paid plan.'}
-                      </p>
+                      </button>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>

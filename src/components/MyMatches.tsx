@@ -55,6 +55,7 @@ interface MyMatchesProps {
   language: Language
   membershipPlan?: MembershipPlan
   profileStatus?: ProfileStatus
+  onUpgrade?: () => void
 }
 
 // Local storage key for saved filter drafts
@@ -63,7 +64,7 @@ const FILTER_DRAFT_KEY = 'myMatches_filterDraft'
 // Sort options for profiles
 type SortOption = 'newest' | 'age-asc' | 'age-desc' | 'name-asc' | 'compatibility'
 
-export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, membershipPlan, profileStatus }: MyMatchesProps) {
+export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, membershipPlan, profileStatus, onUpgrade }: MyMatchesProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFiltersInternal] = useState<ExtendedFilters>({})
   const [showFilters, setShowFilters] = useState(false)
@@ -2786,6 +2787,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                     isDeclinedByThem={status.isDeclinedByThem}
                     onReconsider={handleReconsiderProfile}
                     interactionStatus={status.interactionStatus}
+                    onUpgrade={onUpgrade}
                   />
                 )
               })}
