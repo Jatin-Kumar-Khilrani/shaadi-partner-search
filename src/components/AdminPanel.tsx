@@ -1300,7 +1300,14 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     setProfiles((current) => 
       (current || []).map(p => 
         p.id === profileId 
-          ? { ...p, status: 'verified' as const, verifiedAt: new Date().toISOString() }
+          ? { 
+              ...p, 
+              status: 'verified' as const, 
+              verifiedAt: new Date().toISOString(),
+              // Clear returnedForPayment flag so user can edit normally after approval
+              returnedForPayment: false,
+              returnedForPaymentAt: undefined
+            }
           : p
       )
     )
@@ -3769,7 +3776,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                                   paymentAmount: profile.paymentAmount || (profile.membershipPlan === '1-year' ? (membershipSettings?.oneYearPrice || 900) : (membershipSettings?.sixMonthPrice || 500)),
                                                   hasMembership: true,
                                                   membershipStartDate: now.toISOString(),
-                                                  membershipEndDate: expiryDate.toISOString()
+                                                  membershipEndDate: expiryDate.toISOString(),
+                                                  // Clear returnedForPayment so user can edit normally
+                                                  returnedForPayment: false,
+                                                  returnedForPaymentAt: undefined
                                                 } 
                                               : p
                                           )
@@ -9250,7 +9260,10 @@ ShaadiPartnerSearch Team
                                 paymentAmount: paymentViewProfile.paymentAmount || (paymentViewProfile.membershipPlan === '1-year' ? (membershipSettings?.oneYearPrice || 900) : (membershipSettings?.sixMonthPrice || 500)),
                                 hasMembership: true,
                                 membershipStartDate: now.toISOString(),
-                                membershipEndDate: expiryDate.toISOString()
+                                membershipEndDate: expiryDate.toISOString(),
+                                // Clear returnedForPayment so user can edit normally
+                                returnedForPayment: false,
+                                returnedForPaymentAt: undefined
                               } 
                             : p
                         )

@@ -1959,13 +1959,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             </Alert>
           )}
           
-          {/* Step indicators - hide in payment-only mode */}
-          {!isPaymentOnlyMode && (
+          {/* Step indicators - always show, highlight step 7 in payment mode */}
           <div className="flex items-center justify-center gap-1 md:gap-2 mb-6">
             {(isAdminMode ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6, 7]).map((s) => {
-              const isCompleted = s < step || (s === 3 && emailVerified && mobileVerified)
+              const isCompleted = s < step || (s === 3 && emailVerified && mobileVerified) || (isPaymentOnlyMode && s <= 7)
               const isCurrent = s === step
-              const canClick = isCompleted && !showVerification // Can click on completed steps
+              const isPaymentStep = s === 7 && isPaymentOnlyMode
+              const canClick = (isCompleted && !showVerification) || isPaymentOnlyMode // Can click on completed steps, or any step in payment mode
               
               // Step names for tooltips
               const stepNames: Record<number, { en: string; hi: string }> = {
@@ -1987,6 +1987,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     disabled={!canClick}
                     className={`relative w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center font-bold transition-all text-xs md:text-sm border-0 ${
                       isCurrent ? 'bg-primary text-primary-foreground scale-110' :
+                      isPaymentStep ? 'bg-amber-500 text-white cursor-pointer hover:scale-110 ring-2 ring-amber-300 animate-pulse' :
                       isCompleted ? 'bg-teal text-teal-foreground cursor-pointer hover:scale-110 hover:ring-2 hover:ring-teal/50' : 'bg-muted text-muted-foreground cursor-default'
                     }`}
                     title={canClick ? (language === 'hi' ? `${stepName.hi} पर जाएं` : `Go to ${stepName.en}`) : ''}
@@ -2005,9 +2006,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               )
             })}
           </div>
-          )}
 
-          {!isPaymentOnlyMode && (
+          {/* Step description alert - show different content based on mode */}
+          {!isPaymentOnlyMode ? (
           <Alert className="mb-4">
             <Info size={18} />
             <AlertDescription>
@@ -2021,6 +2022,20 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               {step === 7 && (language === 'hi' 
                 ? 'अपनी सदस्यता योजना चुनें, नियम व शर्तें स्वीकार करें, और भुगतान करें।' 
                 : 'Choose your membership plan, accept Terms & Conditions, and make payment.')}
+            </AlertDescription>
+          </Alert>
+          ) : (
+          /* Payment mode: show step info but with reminder about payment */
+          <Alert className={step === 7 ? 'mb-4' : 'mb-4 border-amber-300 bg-amber-50'}>
+            <Info size={18} className={step !== 7 ? 'text-amber-600' : ''} />
+            <AlertDescription className={step !== 7 ? 'text-amber-800' : ''}>
+              {step === 7 
+                ? (language === 'hi' 
+                    ? 'कृपया भुगतान QR कोड स्कैन करें या बैंक विवरण का उपयोग करें और स्क्रीनशॉट अपलोड करें।' 
+                    : 'Please scan QR code or use bank details to pay and upload the screenshot.')
+                : (language === 'hi'
+                    ? '⚠️ यह केवल देखने के लिए है। भुगतान पूरा करने के लिए चरण 7 पर जाएं।'
+                    : '⚠️ This is view-only. Go to Step 7 to complete payment.')}
             </AlertDescription>
           </Alert>
           )}
@@ -4482,8 +4497,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
         <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t min-h-[60px] flex-shrink-0">
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* No back button in payment-only mode */}
-            {step > 1 && !showVerification && !isPaymentOnlyMode && (
+            {/* Back button - works in payment mode too for navigation */}
+            {step > 1 && !showVerification && (
               <Button variant="outline" onClick={prevStep} size="sm" className="text-sm">
                 {t.registration.back}
               </Button>
@@ -4532,7 +4547,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             </>
             )}
             
-            {step < (isAdminMode ? 7 : 7) && !showVerification && !(isAdminMode && step === 6) && !isPaymentOnlyMode ? (
+            {step < (isAdminMode ? 7 : 7) && !showVerification && !(isAdminMode && step === 6) ? (
+              isPaymentOnlyMode ? (
+                <Button 
+                  size="sm"
+                  variant="outline"
+                  onClick={nextStep}
+                >
+                  {t.registration.next}
+                </Button>
+              ) : (
               <Button 
                 size="sm"
                 onClick={nextStep}
@@ -4570,7 +4594,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               >
                 {t.registration.next}
               </Button>
-            ) : (step === 7 || (isAdminMode && step === 6) || isPaymentOnlyMode) ? (
+              )
+            ) : (step === 7 || (isAdminMode && step === 6)) ? (
               <Button 
                 size="sm" 
                 onClick={handleSubmit} 

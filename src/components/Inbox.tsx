@@ -130,8 +130,14 @@ export function Inbox({ loggedInUserId, profiles, language, onNavigateToChat, me
     clickToViewProfile: language === 'hi' ? 'प्रोफाइल देखने के लिए क्लिक करें' : 'Click to view profile',
   }
 
+  // Helper to check if a profile is deleted
+  const isProfileDeleted = (profileId: string) => {
+    const profile = profiles.find(p => p.profileId === profileId)
+    return profile?.isDeleted === true
+  }
+  
   const receivedInterests = interests?.filter(
-    i => i.toProfileId === currentUserProfile?.profileId && i.status === 'pending'
+    i => i.toProfileId === currentUserProfile?.profileId && i.status === 'pending' && !isProfileDeleted(i.fromProfileId)
   ) || []
 
   const acceptedInterests = interests?.filter(

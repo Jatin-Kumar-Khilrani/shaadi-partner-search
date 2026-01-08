@@ -511,13 +511,17 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
   const remainingChats = Math.max(0, chatLimit - chatRequestsUsed.length)
   
   const sentInterests = interests?.filter(i => i.fromProfileId === currentUserProfile?.profileId) || []
-  const receivedInterests = interests?.filter(i => i.toProfileId === currentUserProfile?.profileId) || []
   
   // Helper to check if a profile is deleted
   const isProfileDeleted = (profileId: string) => {
     const profile = profiles.find(p => p.profileId === profileId)
     return profile?.isDeleted === true
   }
+  
+  // Filter out interests from deleted profiles
+  const receivedInterests = interests?.filter(i => 
+    i.toProfileId === currentUserProfile?.profileId && !isProfileDeleted(i.fromProfileId)
+  ) || []
   
   // Filter for pending received interests (for badge count)
   // Exclude interests from deleted profiles - they shouldn't count as actionable
