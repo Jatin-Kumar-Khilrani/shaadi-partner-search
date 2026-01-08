@@ -27,7 +27,7 @@ import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 import { RegistrationDialog } from '@/components/RegistrationDialog'
 import { toast } from 'sonner'
-import { formatDateDDMMYYYY } from '@/lib/utils'
+import { formatDateDDMMYYYY, formatEducation, formatOccupation } from '@/lib/utils'
 import { verifyPhotosWithVision, type PhotoVerificationResult } from '@/lib/visionPhotoVerification'
 
 // Emoji categories for WhatsApp-like picker (admin)
@@ -1316,18 +1316,30 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
 
   const handleApprove = (profileId: string) => {
     setProfiles((current) => 
-      (current || []).map(p => 
-        p.id === profileId 
-          ? { 
-              ...p, 
-              status: 'verified' as const, 
-              verifiedAt: new Date().toISOString(),
-              // Clear returnedForPayment flag so user can edit normally after approval
-              returnedForPayment: false,
-              returnedForPaymentAt: undefined
-            }
-          : p
-      )
+      (current || []).map(p => {
+        if (p.id !== profileId) return p
+        
+        // Calculate trust level based on verification status
+        // Level 1: Mobile verified (base)
+        // Level 3: ID verified (idProofVerified)
+        // Level 5: Video/Face verified (photoVerified with face match)
+        let trustLevel = p.trustLevel || 1
+        if (p.idProofVerified && p.photoVerified === true) {
+          trustLevel = 5 // Both ID and Face verified
+        } else if (p.idProofVerified) {
+          trustLevel = 3 // Only ID verified
+        }
+        
+        return { 
+          ...p, 
+          status: 'verified' as const, 
+          verifiedAt: new Date().toISOString(),
+          trustLevel,
+          // Clear returnedForPayment flag so user can edit normally after approval
+          returnedForPayment: false,
+          returnedForPaymentAt: undefined
+        }
+      })
     )
     toast.success(t.approveSuccess)
     setSelectedProfile(null)
@@ -2512,8 +2524,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                       <div className="truncate">{t.age}: {profile.age}</div>
                                       <div className="truncate">{profile.gender === 'male' ? (language === 'hi' ? 'पुरुष' : 'Male') : (language === 'hi' ? 'महिला' : 'Female')}</div>
                                       <div className="truncate">{t.location}: {profile.location}</div>
-                                      <div className="truncate">{t.education}: {profile.education}</div>
-                                      <div className="col-span-2 truncate">{t.occupation}: {profile.occupation}</div>
+                                      <div className="truncate">{t.education}: {formatEducation(profile.education, language)}</div>
+                                      <div className="col-span-2 truncate">{t.occupation}: {formatOccupation(profile.occupation, language)}</div>
                                       <div className="col-span-2 truncate">{t.email}: {profile.email}</div>
                                       <div className="col-span-2 truncate">{t.mobile}: {profile.mobile}</div>
                                       <div className="col-span-2 flex items-center gap-2 flex-wrap">
