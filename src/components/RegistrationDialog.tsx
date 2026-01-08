@@ -4180,54 +4180,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
                 </RadioGroup>
 
-                {/* Terms and Conditions - Always shown before Payment (unless in payment-only mode) */}
-                {!isPaymentOnlyMode && (
-                  <div className="border rounded-lg p-4 bg-muted/20">
-                    <div className="flex items-start gap-3">
-                      <Checkbox
-                        id="terms-step7"
-                        checked={termsAccepted}
-                        onCheckedChange={(checked) => setTermsAccepted(checked === true)}
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
-                        <label htmlFor="terms-step7" className="text-sm cursor-pointer">
-                          {language === 'hi' 
-                            ? 'मैंने ' 
-                            : 'I have read and agree to the '}
-                          <Button 
-                            type="button" 
-                            variant="link" 
-                            className="p-0 h-auto text-primary underline font-semibold"
-                            onClick={(e) => {
-                              e.preventDefault()
-                              setShowTerms(true)
-                            }}
-                          >
-                            {language === 'hi' ? 'नियम और शर्तें' : 'Terms and Conditions'}
-                          </Button>
-                          {language === 'hi' 
-                            ? ' पढ़ लिया है और मैं इनसे सहमत हूं।' 
-                            : '.'}
-                        </label>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {language === 'hi' 
-                            ? 'पंजीकरण करके आप हमारी गोपनीयता नीति और सेवा शर्तों को स्वीकार करते हैं।' 
-                            : 'By registering, you accept our Privacy Policy and Service Terms.'}
-                        </p>
-                      </div>
-                    </div>
-                    {!termsAccepted && formData.membershipPlan && (
-                      <p className="text-xs text-amber-600 flex items-center gap-1 mt-2 pl-7">
-                        <Warning size={14} />
-                        {language === 'hi' ? 'कृपया आगे बढ़ने के लिए नियम और शर्तें स्वीकार करें' : 'Please accept Terms and Conditions to proceed'}
-                      </p>
-                    )}
-                  </div>
-                )}
 
-                {/* Payment Section - For paid plans OR when returned for payment */}
-                {((formData.membershipPlan && formData.membershipPlan !== 'free') || isPaymentOnlyMode) && (
+
+                {/* Payment Section - ONLY shown when admin has returned profile for payment (after face & ID verification) */}
+                {isPaymentOnlyMode && (
                   <Card className="border-2 border-primary/30 bg-primary/5">
                     <CardContent className="pt-6 space-y-4">
                       <div className="flex items-center gap-2 mb-2">
@@ -4238,22 +4194,20 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       </div>
                       
                       {/* Show verification status in payment-only mode */}
-                      {isPaymentOnlyMode && (
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {editProfile?.faceVerified && (
-                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
-                              <CheckCircle size={12} weight="fill" />
-                              {language === 'hi' ? 'चेहरा सत्यापित' : 'Face Verified'}
-                            </span>
-                          )}
-                          {editProfile?.idProofVerified && (
-                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
-                              <CheckCircle size={12} weight="fill" />
-                              {language === 'hi' ? 'पहचान प्रमाण सत्यापित' : 'ID Verified'}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {editProfile?.faceVerified && (
+                          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
+                            <CheckCircle size={12} weight="fill" />
+                            {language === 'hi' ? 'चेहरा सत्यापित' : 'Face Verified'}
+                          </span>
+                        )}
+                        {editProfile?.idProofVerified && (
+                          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
+                            <CheckCircle size={12} weight="fill" />
+                            {language === 'hi' ? 'पहचान प्रमाण सत्यापित' : 'ID Verified'}
+                          </span>
+                        )}
+                      </div>
                       
                       <Alert className="bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-800">
                         <Info size={18} className="text-amber-600" />
@@ -4447,13 +4401,65 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 </Alert>
                 )}
 
+                {/* Verification Process Note */}
                 {!isPaymentOnlyMode && (
-                <Alert>
-                  <Info size={18} />
-                  <AlertDescription>
-                    {t.registration.verificationNote}
+                <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-700">
+                  <Info size={18} className="text-blue-600" />
+                  <AlertDescription className="text-blue-800 dark:text-blue-200">
+                    <p className="font-medium mb-1">
+                      {language === 'hi' ? 'सत्यापन प्रक्रिया' : 'Verification Process'}
+                    </p>
+                    <p className="text-sm">
+                      {t.registration.verificationNote}
+                    </p>
                   </AlertDescription>
                 </Alert>
+                )}
+
+                {/* Terms and Conditions - After Inactivity Policy and Verification Note */}
+                {!isPaymentOnlyMode && (
+                  <div className="border rounded-lg p-4 bg-muted/20">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="terms-step7"
+                        checked={termsAccepted}
+                        onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <label htmlFor="terms-step7" className="text-sm cursor-pointer">
+                          {language === 'hi' 
+                            ? 'मैंने ' 
+                            : 'I have read and agree to the '}
+                          <Button 
+                            type="button" 
+                            variant="link" 
+                            className="p-0 h-auto text-primary underline font-semibold"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              setShowTerms(true)
+                            }}
+                          >
+                            {language === 'hi' ? 'नियम और शर्तें' : 'Terms and Conditions'}
+                          </Button>
+                          {language === 'hi' 
+                            ? ' पढ़ लिया है और मैं इनसे सहमत हूं।' 
+                            : '.'}
+                        </label>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {language === 'hi' 
+                            ? 'पंजीकरण करके आप हमारी गोपनीयता नीति और सेवा शर्तों को स्वीकार करते हैं।' 
+                            : 'By registering, you accept our Privacy Policy and Service Terms.'}
+                        </p>
+                      </div>
+                    </div>
+                    {!termsAccepted && formData.membershipPlan && (
+                      <p className="text-xs text-amber-600 flex items-center gap-1 mt-2 pl-7">
+                        <Warning size={14} />
+                        {language === 'hi' ? 'कृपया आगे बढ़ने के लिए नियम और शर्तें स्वीकार करें' : 'Please accept Terms and Conditions to proceed'}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             )}
