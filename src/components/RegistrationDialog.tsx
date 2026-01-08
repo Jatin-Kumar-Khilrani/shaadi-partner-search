@@ -1942,21 +1942,47 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         <div className="flex-1 overflow-y-auto px-1 min-h-0">
           {/* Payment Only Mode Alert */}
           {isPaymentOnlyMode && (
-            <Alert className="mb-4 bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-700">
-              <ShieldCheck size={18} className="text-amber-600" />
-              <AlertDescription className="text-amber-800 dark:text-amber-200">
-                <p className="font-medium">
-                  {language === 'hi' 
-                    ? '✅ आपकी प्रोफाइल सत्यापित हो गई है! अब भुगतान करें।'
-                    : '✅ Your profile has been verified! Please complete the payment.'}
-                </p>
-                <p className="text-sm mt-1">
-                  {language === 'hi'
-                    ? 'आपके चेहरे और पहचान प्रमाण की जांच हो गई है। कृपया QR कोड या बैंक विवरण से भुगतान करें और स्क्रीनशॉट अपलोड करें।'
-                    : 'Your face and ID proof have been verified. Please make payment via QR code or bank transfer and upload the screenshot.'}
-                </p>
-              </AlertDescription>
-            </Alert>
+            (() => {
+              const deadline = editProfile?.returnedForPaymentDeadline ? new Date(editProfile.returnedForPaymentDeadline) : null
+              const now = new Date()
+              const daysLeft = deadline ? Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0
+              const isUrgent = daysLeft <= 2
+              const isExpired = daysLeft <= 0
+              
+              return (
+                <Alert className={`mb-4 ${isExpired ? 'bg-red-50 border-red-300 dark:bg-red-950/30 dark:border-red-700' : isUrgent ? 'bg-orange-50 border-orange-300 dark:bg-orange-950/30 dark:border-orange-700' : 'bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-700'}`}>
+                  <ShieldCheck size={18} className={isExpired ? 'text-red-600' : isUrgent ? 'text-orange-600' : 'text-amber-600'} />
+                  <AlertDescription className={isExpired ? 'text-red-800 dark:text-red-200' : isUrgent ? 'text-orange-800 dark:text-orange-200' : 'text-amber-800 dark:text-amber-200'}>
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <p className="font-medium">
+                        {language === 'hi' 
+                          ? '✅ आपकी प्रोफाइल सत्यापित हो गई है! अब भुगतान करें।'
+                          : '✅ Your profile has been verified! Please complete the payment.'}
+                      </p>
+                      {deadline && !isExpired && (
+                        <span className={`text-xs font-bold px-2 py-1 rounded ${isUrgent ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                          ⏰ {daysLeft} {language === 'hi' ? 'दिन बाकी' : 'days left'}
+                        </span>
+                      )}
+                      {isExpired && (
+                        <span className="text-xs font-bold px-2 py-1 rounded bg-red-100 text-red-700">
+                          ⚠️ {language === 'hi' ? 'समयसीमा समाप्त' : 'Deadline Expired'}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm mt-1">
+                      {isExpired
+                        ? (language === 'hi'
+                            ? 'भुगतान की समयसीमा समाप्त हो गई है। कृपया जल्द से जल्द भुगतान करें या व्यवस्थापक से संपर्क करें।'
+                            : 'Payment deadline has expired. Please complete payment ASAP or contact admin.')
+                        : (language === 'hi'
+                            ? 'आपके चेहरे और पहचान प्रमाण की जांच हो गई है। कृपया QR कोड या बैंक विवरण से भुगतान करें और स्क्रीनशॉट अपलोड करें।'
+                            : 'Your face and ID proof have been verified. Please make payment via QR code or bank transfer and upload the screenshot.')}
+                    </p>
+                  </AlertDescription>
+                </Alert>
+              )
+            })()
           )}
           
           {/* Step indicators - always show, highlight step 7 in payment mode */}

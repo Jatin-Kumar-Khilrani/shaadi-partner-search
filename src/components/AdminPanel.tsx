@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, CaretLeft, CaretRight, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User as UserIcon, CreditCard, Upload, ShieldWarning, Prohibit, Warning, Heart, Gift, Trophy, Confetti, MagnifyingGlass, Paperclip, Image as ImageIcon, Smiley } from '@phosphor-icons/react'
+import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, CaretLeft, CaretRight, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User as UserIcon, CreditCard, Upload, ShieldWarning, Prohibit, Warning, Heart, Gift, Trophy, Confetti, MagnifyingGlass, Paperclip, Image as ImageIcon, Smiley, Rocket } from '@phosphor-icons/react'
 import type { Profile, WeddingService, PaymentTransaction, BlockedProfile, ReportReason, SuccessStory, UserNotification } from '@/types/profile'
 import type { User } from '@/types/user'
 import type { ChatMessage, ChatAttachment } from '@/types/chat'
@@ -141,6 +141,8 @@ interface MembershipSettings {
   boostPackInterestLimit: number  // Number of additional interests per boost pack (default: 10)
   boostPackContactLimit: number   // Number of additional contacts per boost pack (default: 10)
   boostPackPrice: number          // Price per boost pack in rupees (default: 100)
+  // Payment deadline settings
+  paymentDeadlineDays: number     // Days given to user to complete payment after admin returns for payment (default: 7)
   // Payment details
   upiId: string                   // UPI ID for payments
   bankName: string                // Bank name
@@ -476,6 +478,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     boostPackInterestLimit: 10,
     boostPackContactLimit: 10,
     boostPackPrice: 100,
+    // Payment deadline settings
+    paymentDeadlineDays: 7,
     // Default payment details
     upiId: '',
     bankName: '',
@@ -507,6 +511,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     boostPackInterestLimit: 10,
     boostPackContactLimit: 10,
     boostPackPrice: 100,
+    paymentDeadlineDays: 7,
     upiId: '',
     bankName: '',
     accountNumber: '',
@@ -1369,7 +1374,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   }
 
   // Handle Return for Payment Only (after face and ID verification)
-  const handleReturnForPayment = (profileId: string) => {
+  const handleReturnForPayment = (profileId: string, isExtension: boolean = false) => {
+    const deadlineDays = membershipSettings?.paymentDeadlineDays || 7
+    const deadline = new Date()
+    deadline.setDate(deadline.getDate() + deadlineDays)
+    
     setProfiles((current) => 
       (current || []).map(p => 
         p.id === profileId 
@@ -1378,6 +1387,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               status: 'pending' as const,
               returnedForPayment: true,
               returnedForPaymentAt: new Date().toISOString(),
+              returnedForPaymentDeadline: deadline.toISOString(),
+              paymentDeadlineExtendedCount: isExtension ? ((p.paymentDeadlineExtendedCount || 0) + 1) : (p.paymentDeadlineExtendedCount || 0),
               // Keep face and ID verification status
               faceVerified: p.faceVerified,
               idProofVerified: p.idProofVerified,
@@ -1388,7 +1399,35 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
           : p
       )
     )
-    toast.success(t.profileReturnedForPayment)
+    toast.success(isExtension 
+      ? (language === 'hi' ? `भुगतान समयसीमा ${deadlineDays} दिन बढ़ा दी गई!` : `Payment deadline extended by ${deadlineDays} days!`)
+      : t.profileReturnedForPayment
+    )
+    setSelectedProfile(null)
+  }
+  
+  // Handle Degrade to Free Plan (when payment deadline expires)
+  const handleDegradeToFree = (profileId: string) => {
+    setProfiles((current) => 
+      (current || []).map(p => 
+        p.id === profileId 
+          ? { 
+              ...p, 
+              status: 'verified' as const,
+              verifiedAt: new Date().toISOString(),
+              membershipPlan: 'free',
+              returnedForPayment: false,
+              returnedForPaymentAt: undefined,
+              returnedForPaymentDeadline: undefined,
+              paymentStatus: 'not-required' as const,
+              // Keep face and ID verification status
+              faceVerified: p.faceVerified,
+              idProofVerified: p.idProofVerified
+            }
+          : p
+      )
+    )
+    toast.success(language === 'hi' ? 'प्रोफाइल फ्री प्लान में बदली और प्रकाशित!' : 'Profile degraded to Free plan and published!')
     setSelectedProfile(null)
   }
 
@@ -2673,20 +2712,71 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                       </div>
                                     </div>
                                   ) : profile.returnedForPayment && !profile.paymentScreenshotUrl ? (
-                                    <div className="flex items-center gap-3 p-2.5 rounded-lg border-2 bg-blue-50 border-blue-300">
-                                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-blue-500 text-white animate-pulse">
-                                        3
-                                      </div>
-                                      <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                          <CreditCard size={16} className="text-blue-600" />
-                                          <span className="text-sm font-medium text-blue-700">{language === 'hi' ? 'भुगतान प्रतीक्षित' : 'Awaiting Payment'}</span>
+                                    (() => {
+                                      const deadline = profile.returnedForPaymentDeadline ? new Date(profile.returnedForPaymentDeadline) : null
+                                      const now = new Date()
+                                      const isExpired = deadline ? now > deadline : false
+                                      const daysLeft = deadline ? Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0
+                                      
+                                      return isExpired ? (
+                                        <div className="flex flex-col gap-2 p-2.5 rounded-lg border-2 bg-red-50 border-red-400">
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-red-500 text-white">
+                                              !
+                                            </div>
+                                            <div className="flex-1">
+                                              <div className="flex items-center gap-2">
+                                                <CreditCard size={16} className="text-red-600" />
+                                                <span className="text-sm font-medium text-red-700">{language === 'hi' ? 'समयसीमा समाप्त' : 'Deadline Expired'}</span>
+                                              </div>
+                                              <p className="text-[10px] text-red-600 mt-0.5">
+                                                {language === 'hi' 
+                                                  ? `भुगतान नहीं मिला। ${profile.paymentDeadlineExtendedCount || 0} बार बढ़ाया गया।`
+                                                  : `No payment received. Extended ${profile.paymentDeadlineExtendedCount || 0} time(s).`}
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <div className="flex gap-2 ml-9">
+                                            <Button 
+                                              size="sm" 
+                                              variant="outline"
+                                              className="h-7 text-xs border-blue-400 text-blue-600 hover:bg-blue-50"
+                                              onClick={() => handleReturnForPayment(profile.id, true)}
+                                            >
+                                              {language === 'hi' ? 'समय बढ़ाएं' : 'Extend'}
+                                            </Button>
+                                            <Button 
+                                              size="sm"
+                                              variant="outline" 
+                                              className="h-7 text-xs border-green-400 text-green-600 hover:bg-green-50"
+                                              onClick={() => handleDegradeToFree(profile.id)}
+                                            >
+                                              {language === 'hi' ? 'फ्री में प्रकाशित' : 'Publish as Free'}
+                                            </Button>
+                                          </div>
                                         </div>
-                                        <p className="text-[10px] text-blue-600 mt-0.5">
-                                          {language === 'hi' ? 'उपयोगकर्ता को भुगतान लिंक भेजा गया' : 'User notified to upload payment'}
-                                        </p>
-                                      </div>
-                                    </div>
+                                      ) : (
+                                        <div className="flex items-center gap-3 p-2.5 rounded-lg border-2 bg-blue-50 border-blue-300">
+                                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-blue-500 text-white animate-pulse">
+                                            3
+                                          </div>
+                                          <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                              <CreditCard size={16} className="text-blue-600" />
+                                              <span className="text-sm font-medium text-blue-700">{language === 'hi' ? 'भुगतान प्रतीक्षित' : 'Awaiting Payment'}</span>
+                                              {daysLeft > 0 && (
+                                                <Badge variant="outline" className={`text-[10px] ${daysLeft <= 2 ? 'border-red-400 text-red-600' : 'border-blue-400 text-blue-600'}`}>
+                                                  {daysLeft} {language === 'hi' ? 'दिन बाकी' : 'days left'}
+                                                </Badge>
+                                              )}
+                                            </div>
+                                            <p className="text-[10px] text-blue-600 mt-0.5">
+                                              {language === 'hi' ? 'उपयोगकर्ता को भुगतान लिंक भेजा गया' : 'User notified to upload payment'}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      )
+                                    })()
                                   ) : profile.paymentScreenshotUrl ? (
                                     <div className={`flex items-center gap-3 p-2.5 rounded-lg border-2 cursor-pointer transition-all ${
                                       profile.paymentStatus === 'verified' ? 'bg-green-50 border-green-400' : 
@@ -4017,6 +4107,161 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                             </CardContent>
                           </Card>
                         ))}
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Pending Boost Pack Verification Section */}
+                {(() => {
+                  // Find all profiles with pending boost pack purchases
+                  const profilesWithPendingBoostPacks = profiles?.filter(p => 
+                    p.boostPacksPurchased?.some(bp => bp.status === 'pending') && !p.isDeleted
+                  ) || []
+                  
+                  const totalPendingBoostPacks = profilesWithPendingBoostPacks.reduce((count, p) => 
+                    count + (p.boostPacksPurchased?.filter(bp => bp.status === 'pending').length || 0), 0
+                  )
+
+                  if (totalPendingBoostPacks === 0) return null
+
+                  return (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <Rocket size={20} className="text-purple-600" />
+                        {language === 'hi' ? 'बूस्ट पैक सत्यापन लंबित' : 'Pending Boost Pack Verification'}
+                        <Badge variant="secondary" className="bg-purple-500 text-white">{totalPendingBoostPacks}</Badge>
+                      </h3>
+
+                      <div className="space-y-3">
+                        {profilesWithPendingBoostPacks.map(profile => {
+                          const pendingBoostPacks = profile.boostPacksPurchased?.filter(bp => bp.status === 'pending') || []
+                          
+                          return pendingBoostPacks.map(boostPack => (
+                            <Card key={boostPack.id} className="border-purple-300 bg-purple-50/50 dark:bg-purple-900/10 overflow-hidden">
+                              <CardContent className="p-3 sm:p-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                                  {/* Payment Screenshot Thumbnail */}
+                                  <div className="shrink-0 flex items-start gap-3">
+                                    {boostPack.paymentScreenshotUrl && (
+                                      <img 
+                                        src={boostPack.paymentScreenshotUrl} 
+                                        alt="Boost Pack Payment"
+                                        className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border-2 border-purple-400 cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={() => openLightbox([boostPack.paymentScreenshotUrl], 0)}
+                                      />
+                                    )}
+                                    {/* Mobile: Show name next to image */}
+                                    <div className="sm:hidden flex-1 min-w-0">
+                                      <h4 className="font-bold truncate">{profile.fullName}</h4>
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        <Badge variant="outline" className="text-xs">{profile.profileId}</Badge>
+                                        <Badge className="text-xs bg-purple-500 text-white">
+                                          <Rocket size={10} className="mr-1" />
+                                          {language === 'hi' ? 'बूस्ट पैक' : 'Boost Pack'}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Profile Info - Desktop */}
+                                  <div className="flex-1 min-w-0 hidden sm:block">
+                                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                                      <h4 className="font-bold">{profile.fullName}</h4>
+                                      <Badge variant="outline" className="text-xs">{profile.profileId}</Badge>
+                                      <Badge className="bg-purple-500 text-white">
+                                        <Rocket size={12} className="mr-1" />
+                                        {language === 'hi' ? 'बूस्ट पैक' : 'Boost Pack'}
+                                      </Badge>
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      <span>{language === 'hi' ? 'राशि:' : 'Amount:'} </span>
+                                      <span className="font-semibold text-foreground">₹{boostPack.amountPaid}</span>
+                                      <span className="mx-2">|</span>
+                                      <span>{language === 'hi' ? 'क्रेडिट:' : 'Credits:'} </span>
+                                      <span className="text-pink-600">{boostPack.interestCredits} {language === 'hi' ? 'रुचि' : 'interests'}</span>
+                                      <span> + </span>
+                                      <span className="text-teal-600">{boostPack.contactCredits} {language === 'hi' ? 'संपर्क' : 'contacts'}</span>
+                                      <span className="mx-2">|</span>
+                                      <span>{language === 'hi' ? 'अपलोड:' : 'Uploaded:'} </span>
+                                      <span>{formatDateDDMMYYYY(boostPack.purchasedAt)}</span>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Amount info - Mobile only */}
+                                  <div className="sm:hidden text-sm text-muted-foreground">
+                                    <span>{language === 'hi' ? 'राशि:' : 'Amount:'} </span>
+                                    <span className="font-semibold text-foreground">₹{boostPack.amountPaid}</span>
+                                    <span className="mx-2">|</span>
+                                    <span className="text-pink-600">{boostPack.interestCredits}</span>
+                                    <span> + </span>
+                                    <span className="text-teal-600">{boostPack.contactCredits}</span>
+                                  </div>
+
+                                  {/* Actions */}
+                                  <div className="flex gap-2 sm:shrink-0">
+                                    <Button 
+                                      size="sm"
+                                      className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700"
+                                      onClick={() => {
+                                        const now = new Date().toISOString()
+                                        
+                                        setProfiles((current) => 
+                                          (current || []).map(p => 
+                                            p.id === profile.id 
+                                              ? { 
+                                                  ...p, 
+                                                  boostPacksPurchased: p.boostPacksPurchased?.map(bp => 
+                                                    bp.id === boostPack.id 
+                                                      ? { ...bp, status: 'verified' as const, verifiedAt: now, verifiedBy: 'Admin' }
+                                                      : bp
+                                                  ),
+                                                  // Add boost pack credits to remaining
+                                                  boostInterestsRemaining: (p.boostInterestsRemaining || 0) + boostPack.interestCredits,
+                                                  boostContactsRemaining: (p.boostContactsRemaining || 0) + boostPack.contactCredits
+                                                } 
+                                              : p
+                                          )
+                                        )
+                                        toast.success(language === 'hi' ? 'बूस्ट पैक सत्यापित! क्रेडिट जोड़े गए।' : 'Boost Pack verified! Credits added.')
+                                      }}
+                                    >
+                                      <CheckCircle size={16} className="mr-1" />
+                                      {language === 'hi' ? 'सत्यापित करें' : 'Verify'}
+                                    </Button>
+                                    <Button 
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => {
+                                        const reason = prompt(language === 'hi' ? 'अस्वीकार करने का कारण:' : 'Rejection reason:')
+                                        if (reason) {
+                                          setProfiles((current) => 
+                                            (current || []).map(p => 
+                                              p.id === profile.id 
+                                                ? { 
+                                                    ...p, 
+                                                    boostPacksPurchased: p.boostPacksPurchased?.map(bp => 
+                                                      bp.id === boostPack.id 
+                                                        ? { ...bp, status: 'rejected' as const, rejectionReason: reason }
+                                                        : bp
+                                                    )
+                                                  } 
+                                                : p
+                                            )
+                                          )
+                                          toast.success(language === 'hi' ? 'बूस्ट पैक अस्वीकृत।' : 'Boost Pack rejected.')
+                                        }
+                                      }}
+                                    >
+                                      <XCircle size={16} className="mr-1" />
+                                      {language === 'hi' ? 'अस्वीकार' : 'Reject'}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))
+                        })}
                       </div>
                     </div>
                   )
@@ -5892,6 +6137,33 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           {language === 'hi' 
                             ? `जब यूजर की सीमा खत्म हो जाए, वे ₹${localMembershipSettings.boostPackPrice || 100} में ${localMembershipSettings.boostPackInterestLimit || 10} रुचि + ${localMembershipSettings.boostPackContactLimit || 10} संपर्क अनुरोध खरीद सकते हैं। भुगतान स्क्रीनशॉट अपलोड करना होगा।`
                             : `When users exhaust their limits, they can buy ${localMembershipSettings.boostPackInterestLimit || 10} interests + ${localMembershipSettings.boostPackContactLimit || 10} contacts for ₹${localMembershipSettings.boostPackPrice || 100}. Payment screenshot upload required.`}
+                        </p>
+                      </div>
+                      
+                      {/* Payment Deadline Settings */}
+                      <div className="space-y-3 p-3 border rounded-lg bg-orange-50 dark:bg-orange-900/20">
+                        <h5 className="font-medium text-sm text-orange-600 dark:text-orange-300">
+                          {language === 'hi' ? '⏰ भुगतान समयसीमा सेटिंग' : '⏰ Payment Deadline Settings'}
+                        </h5>
+                        <div className="flex items-center gap-3">
+                          <div className="space-y-1 flex-1">
+                            <Label className="text-xs">{language === 'hi' ? 'भुगतान की समयसीमा (दिन)' : 'Payment Deadline (days)'}</Label>
+                            <Input 
+                              type="number" 
+                              min="1"
+                              max="30"
+                              value={localMembershipSettings.paymentDeadlineDays || 7}
+                              onChange={(e) => setLocalMembershipSettings(prev => ({
+                                ...prev,
+                                paymentDeadlineDays: parseInt(e.target.value) || 7
+                              }))}
+                            />
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {language === 'hi' 
+                            ? 'जब एडमिन "भुगतान के लिए वापस" करता है, यूजर के पास इतने दिन होंगे भुगतान करने के लिए। समय समाप्त होने पर एडमिन समय बढ़ा सकता है या प्रोफाइल को फ्री प्लान में प्रकाशित कर सकता है।'
+                            : 'When admin uses "Return for Payment", user gets these many days to complete payment. After expiry, admin can extend deadline or publish as Free plan.'}
                         </p>
                       </div>
                     </div>

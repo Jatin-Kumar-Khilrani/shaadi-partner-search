@@ -1219,6 +1219,51 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onDeletePr
           </DialogContent>
         </Dialog>
 
+        {/* Upgrade to Premium Section for Free Users */}
+        {isFreePlan && profile.status === 'verified' && (
+          <Alert className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border-amber-400 dark:from-amber-950/30 dark:to-orange-950/30">
+            <CurrencyInr size={20} weight="fill" className="text-amber-600" />
+            <AlertTitle className="font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-2">
+              {language === 'hi' ? '✨ प्रीमियम में अपग्रेड करें' : '✨ Upgrade to Premium'}
+            </AlertTitle>
+            <AlertDescription className="text-amber-700 dark:text-amber-300">
+              <div className="space-y-3">
+                <p>
+                  {language === 'hi' 
+                    ? 'आप वर्तमान में मुफ्त योजना पर हैं। प्रीमियम सुविधाओं को अनलॉक करें:'
+                    : 'You are currently on the Free plan. Unlock premium features:'}
+                </p>
+                <ul className="text-sm space-y-1 ml-4 list-disc">
+                  <li>{language === 'hi' ? 'असीमित संपर्क विवरण देखें' : 'Unlimited contact details viewing'}</li>
+                  <li>{language === 'hi' ? 'असीमित रुचि भेजें' : 'Unlimited interest sending'}</li>
+                  <li>{language === 'hi' ? 'बिना वॉटरमार्क के बायोडाटा डाउनलोड करें' : 'Download biodata without watermark'}</li>
+                  <li>{language === 'hi' ? 'प्राथमिकता प्रोफाइल दृश्यता' : 'Priority profile visibility'}</li>
+                </ul>
+                <div className="flex items-center gap-3 mt-3">
+                  <div className="flex gap-2">
+                    <Badge variant="outline" className="bg-white dark:bg-amber-900/50">
+                      {language === 'hi' ? '6 महीने' : '6 Months'}: ₹{pricing.sixMonth}
+                    </Badge>
+                    <Badge variant="outline" className="bg-white dark:bg-amber-900/50 border-green-500">
+                      {language === 'hi' ? '1 वर्ष' : '1 Year'}: ₹{pricing.oneYear}
+                      <span className="ml-1 text-green-600">{language === 'hi' ? '(बचत!)' : '(Save!)'}</span>
+                    </Badge>
+                  </div>
+                </div>
+                {onEdit && (
+                  <Button 
+                    onClick={handleEditClick}
+                    className="mt-3 gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                  >
+                    <ArrowUp size={20} weight="bold" />
+                    {language === 'hi' ? 'अभी अपग्रेड करें' : 'Upgrade Now'}
+                  </Button>
+                )}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-1">
             <Card>

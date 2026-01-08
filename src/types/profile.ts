@@ -208,6 +208,8 @@ export interface Profile {
   // Return for payment step only (face/ID verified, need payment)
   returnedForPayment?: boolean  // When true, only payment step is editable
   returnedForPaymentAt?: string
+  returnedForPaymentDeadline?: string  // ISO date when payment deadline expires
+  paymentDeadlineExtendedCount?: number  // Number of times deadline was extended
   // Verification status tracking for admin workflow
   faceVerified?: boolean
   faceVerifiedAt?: string
