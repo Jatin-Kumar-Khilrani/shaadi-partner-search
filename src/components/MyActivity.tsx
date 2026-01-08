@@ -76,7 +76,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
   const [interests, setInterests] = useKV<Interest[]>('interests', [])
   const [contactRequests, setContactRequests] = useKV<ContactRequest[]>('contactRequests', [])
   const [_messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
-  const [_blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
+  const [blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [_declinedProfiles, setDeclinedProfiles] = useKV<DeclinedProfile[]>('declinedProfiles', [])
   const [, setUserNotifications] = useKV<UserNotification[]>('userNotifications', [])
   
@@ -531,17 +531,42 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
 
   const remainingChats = Math.max(0, chatLimit - chatRequestsUsed.length)
   
-  const sentInterests = interests?.filter(i => i.fromProfileId === currentUserProfile?.profileId) || []
-  
   // Helper to check if a profile is deleted
   const isProfileDeleted = (profileId: string) => {
     const profile = profiles.find(p => p.profileId === profileId)
     return profile?.isDeleted === true
   }
   
-  // Filter out interests from deleted profiles
+  // Helper to check if another profile has blocked the current user
+  // If A blocks B, B should not see anything from A (interests, contacts, profile)
+  const hasBlockedCurrentUser = (otherProfileId: string) => {
+    if (!currentUserProfile || !blockedProfiles) return false
+    // Check if the other profile has blocked the current user
+    return blockedProfiles.some(
+      b => b.blockerProfileId === otherProfileId && b.blockedProfileId === currentUserProfile.profileId
+    )
+  }
+  
+  // Helper to check if there's any blocking relationship (either direction)
+  const isBlockedEitherWay = (otherProfileId: string) => {
+    if (!currentUserProfile || !blockedProfiles) return false
+    return blockedProfiles.some(
+      b => (b.blockerProfileId === currentUserProfile.profileId && b.blockedProfileId === otherProfileId) ||
+           (b.blockerProfileId === otherProfileId && b.blockedProfileId === currentUserProfile.profileId)
+    )
+  }
+  
+  // Filter sent interests - exclude if the other party has blocked current user
+  const sentInterests = interests?.filter(i => 
+    i.fromProfileId === currentUserProfile?.profileId && 
+    !hasBlockedCurrentUser(i.toProfileId)
+  ) || []
+  
+  // Filter out interests from deleted profiles AND from profiles that have blocked current user
   const receivedInterests = interests?.filter(i => 
-    i.toProfileId === currentUserProfile?.profileId && !isProfileDeleted(i.fromProfileId)
+    i.toProfileId === currentUserProfile?.profileId && 
+    !isProfileDeleted(i.fromProfileId) &&
+    !hasBlockedCurrentUser(i.fromProfileId)
   ) || []
   
   // Filter for pending received interests (for badge count)
@@ -555,26 +580,36 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
   const theyAcceptedInterests = sentInterests.filter(i => i.status === 'accepted' || i.status === 'revoked') // I sent, they accepted (may be revoked later)
   // Declined interests split: "You Declined" vs "They Declined"
   // You Declined = I received interest and declined it OR I sent interest and withdrew it
+  // Filter out if the other party has blocked current user
   const youDeclinedInterests = interests?.filter(
     i => i.status === 'declined' && (
-      (i.toProfileId === currentUserProfile?.profileId && i.declinedBy === 'receiver') || // I received, I declined
-      (i.fromProfileId === currentUserProfile?.profileId && i.declinedBy === 'sender') // I sent, I withdrew
+      (i.toProfileId === currentUserProfile?.profileId && i.declinedBy === 'receiver' && !hasBlockedCurrentUser(i.fromProfileId)) || // I received, I declined
+      (i.fromProfileId === currentUserProfile?.profileId && i.declinedBy === 'sender' && !hasBlockedCurrentUser(i.toProfileId)) // I sent, I withdrew
     )
   ) || []
   // They Declined = They received my interest and declined OR They sent interest and withdrew
+  // Filter out if the other party has blocked current user
   const theyDeclinedInterests = interests?.filter(
     i => i.status === 'declined' && (
-      (i.fromProfileId === currentUserProfile?.profileId && i.declinedBy === 'receiver') || // I sent, they declined
-      (i.toProfileId === currentUserProfile?.profileId && i.declinedBy === 'sender') // They sent to me, they withdrew
+      (i.fromProfileId === currentUserProfile?.profileId && i.declinedBy === 'receiver' && !hasBlockedCurrentUser(i.toProfileId)) || // I sent, they declined
+      (i.toProfileId === currentUserProfile?.profileId && i.declinedBy === 'sender' && !hasBlockedCurrentUser(i.fromProfileId)) // They sent to me, they withdrew
     )
   ) || []
-  // Declined interests count for tab badge
+  // Declined interests count for tab badge - also filter blocked
   const declinedInterests = interests?.filter(
     i => (i.toProfileId === currentUserProfile?.profileId || i.fromProfileId === currentUserProfile?.profileId) && 
-       i.status === 'declined'
+       i.status === 'declined' &&
+       !hasBlockedCurrentUser(i.fromProfileId === currentUserProfile?.profileId ? i.toProfileId : i.fromProfileId)
   ) || []
-  const sentContactRequests = contactRequests?.filter(r => r.fromUserId === loggedInUserId) || []
-  const receivedContactRequests = contactRequests?.filter(r => r.toUserId === loggedInUserId) || []
+  // Filter contact requests - exclude if the other party has blocked current user
+  const sentContactRequests = contactRequests?.filter(r => 
+    r.fromUserId === loggedInUserId && 
+    !hasBlockedCurrentUser(r.toProfileId || '')
+  ) || []
+  const receivedContactRequests = contactRequests?.filter(r => 
+    r.toUserId === loggedInUserId && 
+    !hasBlockedCurrentUser(r.fromProfileId)
+  ) || []
   // Filter for pending contact requests (for badge count)
   const pendingContactRequests = receivedContactRequests.filter(r => r.status === 'pending')
   // NEW pending contact requests (not yet viewed by receiver) - only these show in badge
