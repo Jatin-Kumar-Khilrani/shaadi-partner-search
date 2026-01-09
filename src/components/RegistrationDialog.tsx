@@ -3144,7 +3144,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 <div className="space-y-3">
                   <Label className="flex items-center gap-2">
                     <Image size={20} weight="bold" />
-                    {language === 'hi' ? 'फोटो अपलोड करें (1-3 फोटो अनिवार्य)' : 'Upload Photos (1-3 photos required)'} *
+                    {language === 'hi' ? 'फोटो अपलोड करें (न्यूनतम 1, अधिकतम 3 फोटो)' : 'Upload Photos (minimum 1, maximum 3 photos)'} *
                   </Label>
                   
                   <Alert className="bg-amber-50 border-amber-300 dark:bg-amber-950/20 dark:border-amber-700">
@@ -3155,6 +3155,28 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                         : '⏰ Please upload recent photographs. Photos should not be more than 6 months old.'}
                     </AlertDescription>
                   </Alert>
+                  
+                  {/* Photo count status */}
+                  {photos.length === 0 && (
+                    <Alert className="bg-red-50 border-red-300 dark:bg-red-950/20 dark:border-red-700">
+                      <Warning size={16} className="text-red-600" />
+                      <AlertDescription className="text-red-700 dark:text-red-400 text-sm font-medium">
+                        {language === 'hi' 
+                          ? '📸 कम से कम 1 फोटो अपलोड करना अनिवार्य है'
+                          : '📸 At least 1 photo is required'}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  {photos.length >= 3 && (
+                    <Alert className="bg-green-50 border-green-300 dark:bg-green-950/20 dark:border-green-700">
+                      <CheckCircle size={16} weight="fill" className="text-green-600" />
+                      <AlertDescription className="text-green-700 dark:text-green-400 text-sm">
+                        {language === 'hi' 
+                          ? '✅ अधिकतम फोटो सीमा (3) पूरी हो गई'
+                          : '✅ Maximum photo limit (3) reached'}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   
                   <div className="grid grid-cols-3 gap-3">
                     {/* Existing Photos */}
@@ -3740,7 +3762,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </p>
                 </div>
 
-                {/* Age Range */}
+                {/* Age Range - Partner age based on user gender: Female user = Male partner (min 21), Male user = Female partner (min 18) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>{language === 'hi' ? 'न्यूनतम आयु' : 'Minimum Age'}</Label>
@@ -3757,11 +3779,17 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     >
                       <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'चुनें' : 'Select'} /></SelectTrigger>
                       <SelectContent className="z-[9999] max-h-60" position="popper">
-                        {Array.from({ length: 43 }, (_, i) => 18 + i).map(age => (
+                        {/* If user is female, partner (male) min age is 21. If user is male, partner (female) min age is 18 */}
+                        {Array.from({ length: formData.gender === 'female' ? 40 : 43 }, (_, i) => (formData.gender === 'female' ? 21 : 18) + i).map(age => (
                           <SelectItem key={age} value={age.toString()}>{age} {language === 'hi' ? 'वर्ष' : 'years'}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {formData.gender === 'female' 
+                        ? (language === 'hi' ? '(पुरुष साथी के लिए न्यूनतम 21 वर्ष)' : '(Minimum 21 years for male partner)')
+                        : (language === 'hi' ? '(महिला साथी के लिए न्यूनतम 18 वर्ष)' : '(Minimum 18 years for female partner)')}
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label>{language === 'hi' ? 'अधिकतम आयु' : 'Maximum Age'}</Label>
@@ -3771,7 +3799,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     >
                       <SelectTrigger><SelectValue placeholder={language === 'hi' ? 'चुनें' : 'Select'} /></SelectTrigger>
                       <SelectContent className="z-[9999] max-h-60" position="popper">
-                        {Array.from({ length: 43 }, (_, i) => 18 + i)
+                        {/* Max age must be >= min age. Start from partner min age based on gender */}
+                        {Array.from({ length: formData.gender === 'female' ? 40 : 43 }, (_, i) => (formData.gender === 'female' ? 21 : 18) + i)
                           .filter(age => !formData.partnerAgeMin || age >= formData.partnerAgeMin)
                           .map(age => (
                             <SelectItem key={age} value={age.toString()}>{age} {language === 'hi' ? 'वर्ष' : 'years'}</SelectItem>
@@ -4341,6 +4370,23 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </div>
                 </RadioGroup>
 
+                {/* Payment Flow Info for Paid Plans - shown during initial registration */}
+                {!isPaymentOnlyMode && formData.membershipPlan && formData.membershipPlan !== 'free' && (
+                  <Alert className="bg-blue-50 border-blue-300 dark:bg-blue-950/20 dark:border-blue-700">
+                    <Info size={18} className="text-blue-600" />
+                    <AlertDescription className="text-blue-800 dark:text-blue-200">
+                      <p className="font-medium mb-1">
+                        {language === 'hi' ? '💳 भुगतान प्रक्रिया' : '💳 Payment Process'}
+                      </p>
+                      <ol className="text-sm list-decimal list-inside space-y-1">
+                        <li>{language === 'hi' ? 'प्रोफाइल सबमिट करने के बाद, एडमिन आपकी पहचान और फोटो सत्यापित करेंगे।' : 'After submitting profile, admin will verify your ID and photos.'}</li>
+                        <li>{language === 'hi' ? 'सत्यापन के बाद, आपको भुगतान के लिए सूचना मिलेगी।' : 'After verification, you will be notified for payment.'}</li>
+                        <li>{language === 'hi' ? 'UPI/बैंक ट्रांसफर से भुगतान करें और रसीद अपलोड करें।' : 'Pay via UPI/Bank transfer and upload receipt.'}</li>
+                        <li>{language === 'hi' ? 'भुगतान सत्यापन के बाद आपकी प्रोफाइल सक्रिय हो जाएगी।' : 'Your profile will be activated after payment verification.'}</li>
+                      </ol>
+                    </AlertDescription>
+                  </Alert>
+                )}
 
 
                 {/* Payment Section - ONLY shown when admin has returned profile for payment (after face & ID verification) */}
@@ -4789,9 +4835,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       : (
                           !termsAccepted || 
                           !formData.membershipPlan || 
-                          isSubmitting ||
-                          // Require payment screenshot for paid plans
-                          (formData.membershipPlan !== 'free' && paymentScreenshotPreviews.length === 0)
+                          isSubmitting
+                          // Note: Payment screenshot NOT required during initial registration
+                          // For paid plans, admin will verify ID/face first, then return profile for payment
                         )
                 }
               >
@@ -4838,20 +4884,24 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           open={showPhotoCamera}
           onClose={() => setShowPhotoCamera(false)}
           onCapture={(imageDataUrl) => {
-            // Convert data URL to File and add to photos
+            // Convert data URL to File and add to photos (max 3 total)
+            if (photos.length >= 3) return // Enforce 3 photo limit
             fetch(imageDataUrl)
               .then(res => res.blob())
               .then(blob => {
                 const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' })
-                setPhotos(prev => [...prev, { file, preview: imageDataUrl }])
+                setPhotos(prev => {
+                  if (prev.length >= 3) return prev // Double-check limit
+                  return [...prev, { file, preview: imageDataUrl }]
+                })
               })
           }}
           language={language}
           title={language === 'hi' ? 'प्रोफाइल फोटो कैप्चर करें' : 'Capture Profile Photo'}
-          description={language === 'hi' ? 'अपनी प्रोफाइल फोटो कैमरे से लें' : 'Take profile photos using camera'}
+          description={language === 'hi' ? 'अधिकतम 3 फोटो अपलोड करें (कम से कम 1 आवश्यक)' : 'Maximum 3 photos allowed (minimum 1 required)'}
           preferBackCamera={false}
           multiple={true}
-          maxPhotos={5}
+          maxPhotos={3}
           existingPhotosCount={photos.length}
         />
         

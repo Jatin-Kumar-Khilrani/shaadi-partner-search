@@ -248,11 +248,11 @@ export function MultiSelect({
           </CommandList>
         </Command>
         {(selectedOptions.length > 0 || isAnySelected) && (
-          <div className="p-2 border-t">
+          <div className="sticky bottom-0 p-2 border-t bg-background shadow-[0_-2px_4px_rgba(0,0,0,0.1)]">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="w-full text-xs"
+              className="w-full text-xs bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/30"
               onClick={() => onValueChange([])}
             >
               Clear all
