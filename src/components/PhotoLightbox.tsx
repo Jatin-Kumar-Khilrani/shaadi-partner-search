@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { X, ArrowLeft, ArrowRight } from '@phosphor-icons/react'
@@ -12,6 +12,13 @@ interface PhotoLightboxProps {
 
 export function PhotoLightbox({ photos, initialIndex = 0, open, onClose }: PhotoLightboxProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
+
+  // Reset currentIndex when dialog opens or photos/initialIndex change
+  useEffect(() => {
+    if (open) {
+      setCurrentIndex(initialIndex)
+    }
+  }, [open, initialIndex, photos])
 
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1))
