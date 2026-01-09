@@ -4,12 +4,13 @@ import { logger } from '@/lib/logger'
 import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
-import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise, CaretDown, User as UserIcon, Trophy, Brain, Sparkle, ChartLine, Target, Robot, ArrowRight, Bell, Check } from '@phosphor-icons/react'
+import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise, CaretDown, User as UserIcon, Trophy, Brain, Sparkle, ChartLine, Target, Robot, ArrowRight, Bell, Check, Crown, Star, CreditCard } from '@phosphor-icons/react'
 import { HeroSearch } from '@/components/HeroSearch'
 import { ProfileCard } from '@/components/ProfileCard'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
@@ -164,8 +165,10 @@ function App() {
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
   const [showRegistration, setShowRegistration] = useState(false)
   const [profileToEdit, setProfileToEdit] = useState<Profile | null>(null)
+  const [registrationInitialStep, setRegistrationInitialStep] = useState<number | undefined>(undefined)
   const [showLogin, setShowLogin] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [language, setLanguage] = useState<Language>('hi')
 
@@ -999,6 +1002,7 @@ function App() {
                   // Get icon for notification type
                   const getNotificationIcon = (type: string) => {
                     if (type === 'admin_message') return <Bell size={16} weight="fill" className="text-orange-500" />
+                    if (type === 'payment_required') return <CreditCard size={16} weight="fill" className="text-amber-500" />
                     if (type.includes('interest_received')) return <Heart size={16} weight="fill" className="text-pink-500" />
                     if (type.includes('interest_accepted')) return <Check size={16} className="text-green-500" />
                     if (type.includes('interest_declined')) return <SignOut size={16} className="text-red-500" />
@@ -1122,7 +1126,14 @@ function App() {
                                     onClick={() => {
                                       handleMarkAsRead(notif.id)
                                       // Navigate to appropriate tab based on notification type
-                                      if (notif.type === 'admin_message') {
+                                      if (notif.type === 'payment_required') {
+                                        // Open registration dialog at step 8 (payment details)
+                                        if (currentUserProfile) {
+                                          setRegistrationInitialStep(8)
+                                          setProfileToEdit(currentUserProfile)
+                                          setShowRegistration(true)
+                                        }
+                                      } else if (notif.type === 'admin_message') {
                                         // Navigate to chat with admin
                                         setChatTargetProfileId('admin')
                                         setCurrentView('chat')
@@ -1959,7 +1970,7 @@ function App() {
                       language={language}
                       isLoggedIn={!!loggedInUser}
                       shouldBlur={currentMembershipStatus.shouldBlur}
-                      onUpgrade={() => setShowSettings(true)}
+                      onUpgrade={() => setShowUpgradeDialog(true)}
                     />
                   ))}
                 </div>
@@ -1982,7 +1993,7 @@ function App() {
             language={language}
             membershipPlan={currentUserProfile?.membershipPlan}
             profileStatus={currentUserProfile?.status}
-            onUpgrade={() => setShowSettings(true)}
+            onUpgrade={() => setShowUpgradeDialog(true)}
           />
         )}
 
@@ -2032,6 +2043,13 @@ function App() {
             profiles={profiles || []}
             language={language}
             onEdit={handleEditProfile}
+            onUpgradeNow={() => {
+              if (currentUserProfile) {
+                setRegistrationInitialStep(7)
+                setProfileToEdit(currentUserProfile)
+                setShowRegistration(true)
+              }
+            }}
             onDeleteProfile={handleDeleteProfile}
             membershipSettings={membershipSettings || defaultMembershipSettings}
             onNavigateHome={() => setCurrentView('home')}
@@ -2135,7 +2153,7 @@ function App() {
         membershipPlan={currentUserProfile?.membershipPlan}
         membershipSettings={membershipSettings || defaultMembershipSettings}
         setProfiles={setProfiles}
-        onUpgrade={() => setShowSettings(true)}
+        onUpgrade={() => setShowUpgradeDialog(true)}
       />
 
       <RegistrationDialog
@@ -2143,12 +2161,14 @@ function App() {
         onClose={() => {
           setShowRegistration(false)
           setProfileToEdit(null)
+          setRegistrationInitialStep(undefined)
         }}
         onSubmit={profileToEdit ? handleUpdateProfile : handleRegisterProfile}
         language={language}
         existingProfiles={profiles}
         editProfile={profileToEdit}
         membershipSettings={membershipSettings || defaultMembershipSettings}
+        initialStep={registrationInitialStep}
       />
 
       <LoginDialog
@@ -2187,6 +2207,99 @@ function App() {
           }}
         />
       )}
+
+      {/* Upgrade Membership Dialog */}
+      <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown size={24} weight="fill" className="text-amber-500" />
+              {language === 'hi' ? 'प्रीमियम अपग्रेड' : 'Upgrade to Premium'}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'hi' 
+                ? 'पूर्ण प्रोफाइल विवरण और संपर्क जानकारी देखने के लिए अपग्रेड करें' 
+                : 'Upgrade your membership to view full profile details and contact information'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* 6 Month Plan */}
+            <div className="p-4 border-2 border-rose-200 dark:border-rose-800 rounded-lg bg-rose-50 dark:bg-rose-950/30">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-rose-800 dark:text-rose-200 flex items-center gap-2">
+                  <Star size={18} weight="fill" className="text-rose-500" />
+                  {language === 'hi' ? '6 महीने का प्लान' : '6 Month Plan'}
+                </h4>
+                <span className="text-lg font-bold text-rose-700 dark:text-rose-300">
+                  ₹{membershipSettings?.sixMonthPrice || 500}
+                </span>
+              </div>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• {membershipSettings?.sixMonthChatLimit || 50} {language === 'hi' ? 'रुचि अनुरोध' : 'Interest Requests'}</li>
+                <li>• {membershipSettings?.sixMonthContactLimit || 20} {language === 'hi' ? 'संपर्क देखें' : 'Contact Views'}</li>
+                <li>• {language === 'hi' ? 'पूर्ण प्रोफाइल दृश्यता' : 'Full Profile Visibility'}</li>
+              </ul>
+            </div>
+
+            {/* 1 Year Plan */}
+            <div className="p-4 border-2 border-amber-300 dark:border-amber-700 rounded-lg bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 relative overflow-hidden">
+              <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-semibold">
+                {language === 'hi' ? 'सबसे लोकप्रिय' : 'BEST VALUE'}
+              </div>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-2">
+                  <Crown size={18} weight="fill" className="text-amber-500" />
+                  {language === 'hi' ? '1 साल का प्लान' : '1 Year Plan'}
+                </h4>
+                <span className="text-lg font-bold text-amber-700 dark:text-amber-300">
+                  ₹{membershipSettings?.oneYearPrice || 900}
+                </span>
+              </div>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• {membershipSettings?.oneYearChatLimit || 120} {language === 'hi' ? 'रुचि अनुरोध' : 'Interest Requests'}</li>
+                <li>• {membershipSettings?.oneYearContactLimit || 50} {language === 'hi' ? 'संपर्क देखें' : 'Contact Views'}</li>
+                <li>• {language === 'hi' ? 'पूर्ण प्रोफाइल दृश्यता' : 'Full Profile Visibility'}</li>
+                <li>• {language === 'hi' ? 'प्राथमिकता सहायता' : 'Priority Support'}</li>
+              </ul>
+            </div>
+
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800 text-sm">
+              <p className="text-blue-700 dark:text-blue-300">
+                {language === 'hi' 
+                  ? '💡 अपग्रेड करने के लिए, अपनी प्रोफाइल संपादित करें और नया प्लान चुनें, फिर भुगतान स्क्रीनशॉट अपलोड करें।' 
+                  : '💡 To upgrade, edit your profile and select a new plan, then upload payment screenshot.'}
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowUpgradeDialog(false)}
+            >
+              {language === 'hi' ? 'बाद में' : 'Later'}
+            </Button>
+            <Button
+              onClick={() => {
+                setShowUpgradeDialog(false)
+                // Navigate to edit profile 
+                if (currentUserProfile) {
+                  setProfileToEdit(currentUserProfile)
+                  setShowRegistration(true)
+                } else {
+                  // Not logged in - show registration
+                  setShowRegistration(true)
+                }
+              }}
+              className="gap-2 bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600"
+            >
+              <Crown size={18} weight="fill" />
+              {language === 'hi' ? 'अभी अपग्रेड करें' : 'Upgrade Now'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AdminLoginDialog
         open={showAdminLogin}

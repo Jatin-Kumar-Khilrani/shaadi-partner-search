@@ -43,6 +43,7 @@ interface MyProfileProps {
   profiles?: Profile[]  // All profiles for partner selection
   language: Language
   onEdit?: () => void
+  onUpgradeNow?: () => void  // Opens edit dialog directly at membership plan step
   onDeleteProfile?: (profileId: string, deletionData?: ProfileDeletionData) => void
   onUpdateProfile?: (updatedProfile: Partial<Profile>) => void
   membershipSettings?: MembershipSettings
@@ -52,7 +53,7 @@ interface MyProfileProps {
   onNavigateChat?: () => void
 }
 
-export function MyProfile({ profile, profiles = [], language, onEdit, onDeleteProfile, onUpdateProfile, membershipSettings, onNavigateHome, onNavigateActivity, onNavigateInbox, onNavigateChat }: MyProfileProps) {
+export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeNow, onDeleteProfile, onUpdateProfile, membershipSettings, onNavigateHome, onNavigateActivity, onNavigateInbox, onNavigateChat }: MyProfileProps) {
   // Get interests from KV store for accepted interests selection
   const [interests] = useKV<Interest[]>('interests', [])
   
@@ -1292,9 +1293,9 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onDeletePr
                     </Badge>
                   </div>
                 </div>
-                {onEdit && (
+                {onUpgradeNow && (
                   <Button 
-                    onClick={handleEditClick}
+                    onClick={onUpgradeNow}
                     className="mt-3 gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
                   >
                     <ArrowUp size={20} weight="bold" />

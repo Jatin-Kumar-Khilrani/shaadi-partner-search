@@ -715,7 +715,7 @@ export interface ConversationStarter {
 export interface UserNotification {
   id: string
   recipientProfileId: string
-  type: 'interest_received' | 'interest_accepted' | 'interest_declined' | 'contact_request_received' | 'contact_accepted' | 'contact_declined' | 'message_received' | 'profile_viewed' | 'interest_expired' | 'contact_expired' | 'admin_message'
+  type: 'interest_received' | 'interest_accepted' | 'interest_declined' | 'contact_request_received' | 'contact_accepted' | 'contact_declined' | 'message_received' | 'profile_viewed' | 'interest_expired' | 'contact_expired' | 'admin_message' | 'payment_required'
   title: string
   titleHi: string
   description: string
@@ -724,4 +724,5 @@ export interface UserNotification {
   senderName?: string
   isRead: boolean
   createdAt: string
+  actionUrl?: string  // Optional URL or action identifier for navigating on click
 }

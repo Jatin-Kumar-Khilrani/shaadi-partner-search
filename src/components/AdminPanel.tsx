@@ -1456,6 +1456,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     const deadline = new Date()
     deadline.setDate(deadline.getDate() + deadlineDays)
     
+    // Get the profile to get the profileId for notification
+    const targetProfile = profiles?.find(p => p.id === profileId)
+    
     setProfiles((current) => 
       (current || []).map(p => 
         p.id === profileId 
@@ -1476,6 +1479,28 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
           : p
       )
     )
+    
+    // Create notification for the user to upload payment
+    if (targetProfile) {
+      const notification: UserNotification = {
+        id: `payment_${profileId}_${Date.now()}`,
+        recipientProfileId: targetProfile.profileId,
+        type: 'payment_required',
+        title: isExtension ? 'Payment Deadline Extended' : 'Payment Required',
+        titleHi: isExtension ? 'भुगतान समयसीमा बढ़ाई गई' : 'भुगतान आवश्यक',
+        description: isExtension 
+          ? `Your payment deadline has been extended by ${deadlineDays} days. Please upload your payment screenshot.`
+          : `Your profile has been verified! Please upload your payment screenshot within ${deadlineDays} days to complete registration.`,
+        descriptionHi: isExtension
+          ? `आपकी भुगतान समयसीमा ${deadlineDays} दिन बढ़ा दी गई है। कृपया अपना भुगतान स्क्रीनशॉट अपलोड करें।`
+          : `आपकी प्रोफाइल सत्यापित हो गई है! पंजीकरण पूरा करने के लिए कृपया ${deadlineDays} दिनों के भीतर अपना भुगतान स्क्रीनशॉट अपलोड करें।`,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        actionUrl: 'upload_payment'  // Action identifier for navigation
+      }
+      setUserNotifications(current => [...(current || []), notification])
+    }
+    
     toast.success(isExtension 
       ? (language === 'hi' ? `भुगतान समयसीमा ${deadlineDays} दिन बढ़ा दी गई!` : `Payment deadline extended by ${deadlineDays} days!`)
       : t.profileReturnedForPayment

@@ -316,9 +316,10 @@ interface RegistrationDialogProps {
   editProfile?: Profile | null
   membershipSettings?: MembershipSettings
   isAdminMode?: boolean  // Admin mode: skip payment, allow all field edits
+  initialStep?: number   // Initial step to start at (1-7), useful for upgrade flows
 }
 
-export function RegistrationDialog({ open, onClose, onSubmit, language, existingProfiles = [], editProfile = null, membershipSettings, isAdminMode = false }: RegistrationDialogProps) {
+export function RegistrationDialog({ open, onClose, onSubmit, language, existingProfiles = [], editProfile = null, membershipSettings, isAdminMode = false, initialStep }: RegistrationDialogProps) {
   const t = useTranslation(language)
   const [step, setStep] = useState(1)
   const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([])
@@ -618,14 +619,17 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       setMobileVerified(true)
       setTermsAccepted(true)
       
-      // If returned for payment, jump directly to step 7 (membership/payment)
+      // If returned for payment, jump directly to step 8 (payment details only)
+      // Or use initialStep if provided (for upgrade flows)
       if (editProfile.returnedForPayment) {
-        setStep(7)
+        setStep(8)
+      } else if (initialStep) {
+        setStep(initialStep)
       } else {
         setStep(1)
       }
     }
-  }, [editProfile, open])
+  }, [editProfile, open, initialStep])
 
   // Load saved draft when dialog opens (only for new registration, not edit mode)
   useEffect(() => {
@@ -2033,13 +2037,22 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             })()
           )}
           
-          {/* Step indicators - always show, highlight step 7 in payment mode */}
+          {/* Step indicators - hide in payment-only mode, show only Step 8 */}
+          {isPaymentOnlyMode ? (
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <div className="flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-900/30 rounded-full">
+                <CurrencyInr size={20} weight="bold" className="text-amber-600" />
+                <span className="font-semibold text-amber-800 dark:text-amber-200">
+                  {language === 'hi' ? 'चरण 8: भुगतान विवरण' : 'Step 8: Payment Details'}
+                </span>
+              </div>
+            </div>
+          ) : (
           <div className="flex items-center justify-center gap-1 md:gap-2 mb-6">
             {(isAdminMode ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6, 7]).map((s) => {
-              const isCompleted = s < step || (s === 3 && emailVerified && mobileVerified) || (isPaymentOnlyMode && s <= 7)
+              const isCompleted = s < step || (s === 3 && emailVerified && mobileVerified)
               const isCurrent = s === step
-              const isPaymentStep = s === 7 && isPaymentOnlyMode
-              const canClick = (isCompleted && !showVerification) || isPaymentOnlyMode // Can click on completed steps, or any step in payment mode
+              const canClick = (isCompleted && !showVerification) // Can click on completed steps
               
               // Step names for tooltips
               const stepNames: Record<number, { en: string; hi: string }> = {
@@ -2049,7 +2062,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 4: { en: 'Photos', hi: 'फ़ोटो' },
                 5: { en: 'About Yourself & Family', hi: 'अपने और परिवार के बारे में' },
                 6: { en: 'Partner Preferences', hi: 'साथी वरीयताएँ' },
-                7: { en: 'Membership & Payment', hi: 'सदस्यता और भुगतान' },
+                7: { en: 'Choose Membership Plan', hi: 'सदस्यता योजना चुनें' },
               }
               const stepName = stepNames[s] || { en: `Step ${s}`, hi: `चरण ${s}` }
               
@@ -2061,7 +2074,6 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     disabled={!canClick}
                     className={`relative w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center font-bold transition-all text-xs md:text-sm border-0 ${
                       isCurrent ? 'bg-primary text-primary-foreground scale-110' :
-                      isPaymentStep ? 'bg-amber-500 text-white cursor-pointer hover:scale-110 ring-2 ring-amber-300 animate-pulse' :
                       isCompleted ? 'bg-teal text-teal-foreground cursor-pointer hover:scale-110 hover:ring-2 hover:ring-teal/50' : 'bg-muted text-muted-foreground cursor-default'
                     }`}
                     title={canClick ? (language === 'hi' ? `${stepName.hi} पर जाएं` : `Go to ${stepName.en}`) : ''}
@@ -2080,9 +2092,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               )
             })}
           </div>
+          )}
 
           {/* Step description alert - show different content based on mode */}
-          {!isPaymentOnlyMode ? (
+          {!isPaymentOnlyMode && (
           <Alert className="mb-4">
             <Info size={18} />
             <AlertDescription>
@@ -2094,22 +2107,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               {step === 5 && (language === 'hi' ? 'अपने बारे में और परिवार की जानकारी दें। यह आवश्यक है।' : 'Tell us about yourself and your family. This is required.')}
               {step === 6 && (language === 'hi' ? 'अपने साथी की अपेक्षाएं बताएं - यह आपको बेहतर मैच खोजने में मदद करेगा।' : 'Tell us your partner preferences - this will help find better matches for you.')}
               {step === 7 && (language === 'hi' 
-                ? 'अपनी सदस्यता योजना चुनें, नियम व शर्तें स्वीकार करें, और भुगतान करें।' 
-                : 'Choose your membership plan, accept Terms & Conditions, and make payment.')}
-            </AlertDescription>
-          </Alert>
-          ) : (
-          /* Payment mode: show step info but with reminder about payment */
-          <Alert className={step === 7 ? 'mb-4' : 'mb-4 border-amber-300 bg-amber-50'}>
-            <Info size={18} className={step !== 7 ? 'text-amber-600' : ''} />
-            <AlertDescription className={step !== 7 ? 'text-amber-800' : ''}>
-              {step === 7 
-                ? (language === 'hi' 
-                    ? 'कृपया भुगतान QR कोड स्कैन करें या बैंक विवरण का उपयोग करें और स्क्रीनशॉट अपलोड करें।' 
-                    : 'Please scan QR code or use bank details to pay and upload the screenshot.')
-                : (language === 'hi'
-                    ? '⚠️ यह केवल देखने के लिए है। भुगतान पूरा करने के लिए चरण 7 पर जाएं।'
-                    : '⚠️ This is view-only. Go to Step 7 to complete payment.')}
+                ? 'अपनी सदस्यता योजना चुनें और नियम व शर्तें स्वीकार करें।' 
+                : 'Choose your membership plan and accept Terms & Conditions.')}
             </AlertDescription>
           </Alert>
           )}
@@ -4392,247 +4391,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                   </Alert>
                 )}
 
-
-                {/* Payment Section - ONLY shown when admin has returned profile for payment (after face & ID verification) */}
-                {isPaymentOnlyMode && (
-                  <Card className="border-2 border-primary/30 bg-primary/5">
-                    <CardContent className="pt-6 space-y-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <CurrencyInr size={24} weight="bold" className="text-primary" />
-                        <h4 className="font-bold text-lg">
-                          {language === 'hi' ? 'भुगतान विवरण' : 'Payment Details'}
-                        </h4>
-                      </div>
-                      
-                      {/* Show verification status in payment-only mode */}
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {editProfile?.photoVerified === true && (
-                          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
-                            <CheckCircle size={12} weight="fill" />
-                            {language === 'hi' ? 'चेहरा सत्यापित' : 'Face Verified'}
-                          </span>
-                        )}
-                        {editProfile?.idProofVerified && (
-                          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
-                            <CheckCircle size={12} weight="fill" />
-                            {language === 'hi' ? 'पहचान प्रमाण सत्यापित' : 'ID Verified'}
-                          </span>
-                        )}
-                      </div>
-                      
-                      <Alert className="bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-800">
-                        <Info size={18} className="text-amber-600" />
-                        <AlertDescription className="text-amber-800 dark:text-amber-200">
-                          <strong>
-                            {language === 'hi' 
-                              ? `कुल राशि: ₹${formData.membershipPlan === '6-month' ? (membershipSettings?.sixMonthPrice || 500) : (membershipSettings?.oneYearPrice || 900)}`
-                              : `Total Amount: ₹${formData.membershipPlan === '6-month' ? (membershipSettings?.sixMonthPrice || 500) : (membershipSettings?.oneYearPrice || 900)}`}
-                          </strong>
-                          <span className="ml-2 text-sm">
-                            ({formData.membershipPlan === '6-month' 
-                              ? (language === 'hi' ? '6 महीने' : '6 months') 
-                              : (language === 'hi' ? '1 वर्ष' : '1 year')})
-                          </span>
-                        </AlertDescription>
-                      </Alert>
-
-                      {/* Payment Methods */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* UPI Details */}
-                        <div className="p-4 border rounded-lg bg-white dark:bg-background">
-                          <h5 className="font-semibold mb-2 flex items-center gap-2">
-                            📱 {language === 'hi' ? 'UPI से भुगतान करें' : 'Pay via UPI'}
-                          </h5>
-                          <div className="space-y-2 text-sm">
-                            {membershipSettings?.upiId ? (
-                              <>
-                                <p 
-                                  className="font-mono bg-muted p-2 rounded text-center select-all cursor-pointer hover:bg-muted/80"
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(membershipSettings.upiId)
-                                    toast.success(language === 'hi' ? 'UPI ID कॉपी हुई!' : 'UPI ID copied!')
-                                  }}
-                                >
-                                  {membershipSettings.upiId}
-                                </p>
-                                <p className="text-muted-foreground text-xs text-center">
-                                  {language === 'hi' ? 'UPI ID कॉपी करने के लिए क्लिक करें' : 'Click to copy UPI ID'}
-                                </p>
-                              </>
-                            ) : (
-                              <p className="text-muted-foreground text-center py-2">
-                                {language === 'hi' ? 'UPI विवरण जल्द उपलब्ध होगा' : 'UPI details coming soon'}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Bank Details */}
-                        <div className="p-4 border rounded-lg bg-white dark:bg-background">
-                          <h5 className="font-semibold mb-2 flex items-center gap-2">
-                            🏦 {language === 'hi' ? 'बैंक ट्रांसफर' : 'Bank Transfer'}
-                          </h5>
-                          {membershipSettings?.bankName && membershipSettings?.accountNumber ? (
-                            <div className="space-y-1 text-sm">
-                              <p><span className="text-muted-foreground">{language === 'hi' ? 'बैंक:' : 'Bank:'}</span> {membershipSettings.bankName}</p>
-                              <p><span className="text-muted-foreground">{language === 'hi' ? 'खाता नं:' : 'A/C:'}</span> {membershipSettings.accountNumber}</p>
-                              {membershipSettings.ifscCode && (
-                                <p><span className="text-muted-foreground">IFSC:</span> {membershipSettings.ifscCode}</p>
-                              )}
-                              {membershipSettings.accountHolderName && (
-                                <p><span className="text-muted-foreground">{language === 'hi' ? 'नाम:' : 'Name:'}</span> {membershipSettings.accountHolderName}</p>
-                              )}
-                            </div>
-                          ) : (
-                            <p className="text-muted-foreground text-center py-2 text-sm">
-                              {language === 'hi' ? 'बैंक विवरण जल्द उपलब्ध होगा' : 'Bank details coming soon'}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* QR Code */}
-                      <div className="flex justify-center p-4">
-                        <div className="text-center">
-                          {membershipSettings?.qrCodeImage ? (
-                            <img 
-                              src={membershipSettings.qrCodeImage} 
-                              alt="Payment QR Code" 
-                              className="w-40 h-40 object-contain border rounded-lg mx-auto mb-2"
-                            />
-                          ) : (
-                            <div className="w-32 h-32 bg-muted border-2 border-dashed rounded-lg flex items-center justify-center mx-auto mb-2">
-                              <span className="text-4xl">📲</span>
-                            </div>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            {language === 'hi' ? 'QR कोड स्कैन करें' : 'Scan QR Code'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      {/* Upload Payment Screenshot - Multiple */}
-                      <div className="space-y-3">
-                        <Label className="text-base font-semibold flex items-center gap-2">
-                          <Upload size={18} />
-                          {language === 'hi' ? 'भुगतान स्क्रीनशॉट अपलोड करें *' : 'Upload Payment Screenshot(s) *'}
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          {language === 'hi' 
-                            ? 'भुगतान करने के बाद, कृपया भुगतान स्क्रीनशॉट अपलोड करें। यदि आपने कई भुगतान किए हैं, तो सभी स्क्रीनशॉट अपलोड करें। एडमिन द्वारा सत्यापन के बाद आपकी सदस्यता सक्रिय हो जाएगी।'
-                            : 'After making payment, please upload the payment screenshot(s). If you made multiple payments, upload all screenshots. Your membership will be activated after admin verification.'}
-                        </p>
-                        
-                        {/* Show uploaded screenshots */}
-                        {paymentScreenshotPreviews.length > 0 && (
-                          <div className="flex flex-wrap gap-3">
-                            {paymentScreenshotPreviews.map((preview, index) => (
-                              <div key={index} className="relative inline-block">
-                                <img 
-                                  src={preview} 
-                                  alt={`Payment Screenshot ${index + 1}`}
-                                  className="w-[120px] h-[120px] object-cover rounded-lg border cursor-pointer"
-                                  onClick={() => openLightbox(paymentScreenshotPreviews, index)}
-                                />
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  size="icon"
-                                  className="absolute -top-2 -right-2 h-6 w-6"
-                                  onClick={() => {
-                                    setPaymentScreenshotPreviews(prev => prev.filter((_, i) => i !== index))
-                                    setPaymentScreenshotFiles(prev => prev.filter((_, i) => i !== index))
-                                  }}
-                                >
-                                  <X size={14} />
-                                </Button>
-                                <p className="text-xs text-center text-muted-foreground mt-1">
-                                  #{index + 1}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {/* Add screenshots - Camera and File options */}
-                        <div className="grid grid-cols-2 gap-3">
-                          {/* Camera Capture Option */}
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="h-auto py-4 flex flex-col items-center gap-2 border-2 border-dashed hover:border-primary hover:bg-primary/5"
-                            onClick={() => setShowPaymentCamera(true)}
-                          >
-                            <Camera size={28} weight="light" className="text-primary" />
-                            <span className="text-sm font-medium">
-                              {language === 'hi' ? 'कैमरा से कैप्चर करें' : 'Capture from Camera'}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {language === 'hi' ? 'रसीद की फोटो लें' : 'Take photo of receipt'}
-                            </span>
-                          </Button>
-                          
-                          {/* File Upload Option */}
-                          <label className="cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              className="hidden"
-                              onChange={(e) => {
-                                const files = e.target.files
-                                if (files) {
-                                  Array.from(files).forEach((file) => {
-                                    setPaymentScreenshotFiles(prev => [...prev, file])
-                                    const reader = new FileReader()
-                                    reader.onloadend = () => {
-                                      setPaymentScreenshotPreviews(prev => [...prev, reader.result as string])
-                                    }
-                                    reader.readAsDataURL(file)
-                                  })
-                                }
-                                // Reset input to allow selecting same file again
-                                e.target.value = ''
-                              }}
-                            />
-                            <div className="h-full py-4 flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg hover:border-primary hover:bg-primary/5 transition-colors">
-                              <Upload size={28} weight="light" className="text-muted-foreground" />
-                              <span className="text-sm font-medium">
-                                {language === 'hi' ? 'गैलरी से अपलोड करें' : 'Upload from Gallery'}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {language === 'hi' ? 'स्क्रीनशॉट चुनें' : 'Select screenshot'}
-                              </span>
-                            </div>
-                          </label>
-                        </div>
-                        
-                        {paymentScreenshotPreviews.length > 0 && (
-                          <p className="text-xs text-green-600 flex items-center gap-1">
-                            <CheckCircle size={14} weight="fill" />
-                            {language === 'hi' 
-                              ? `${paymentScreenshotPreviews.length} स्क्रीनशॉट अपलोड हो गए` 
-                              : `${paymentScreenshotPreviews.length} screenshot(s) uploaded`}
-                          </p>
-                        )}
-                        
-                        {paymentScreenshotPreviews.length === 0 && (
-                          <p className="text-xs text-amber-600 flex items-center gap-1">
-                            <Warning size={14} />
-                            {language === 'hi' 
-                              ? 'पंजीकरण पूरा करने के लिए कम से कम एक भुगतान स्क्रीनशॉट अपलोड करना आवश्यक है'
-                              : 'At least one payment screenshot is required to complete registration'}
-                          </p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
                 {/* Inactivity Notice */}
-                {!isPaymentOnlyMode && (
                 <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-700">
                   <Warning size={18} className="text-amber-600" />
                   <AlertDescription className="text-amber-800 dark:text-amber-200">
@@ -4646,7 +4405,6 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     </p>
                   </AlertDescription>
                 </Alert>
-                )}
 
                 {/* Verification Process Note */}
                 {!isPaymentOnlyMode && (
@@ -4710,6 +4468,280 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 )}
               </div>
             )}
+
+            {/* Step 8 - Payment Details (Only shown when admin returns profile for payment) */}
+            {step === 8 && (
+              <div className="space-y-6">
+                {/* Payment Deadline Alert */}
+                {(() => {
+                  const deadline = editProfile?.returnedForPaymentDeadline ? new Date(editProfile.returnedForPaymentDeadline) : null
+                  const now = new Date()
+                  const isExpired = deadline ? now > deadline : false
+                  const daysLeft = deadline ? Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null
+                  
+                  return (
+                    <Alert className={isExpired ? 'bg-red-50 border-red-300 dark:bg-red-950/30 dark:border-red-800' : 'bg-green-50 border-green-300 dark:bg-green-950/30 dark:border-green-800'}>
+                      <Info size={18} className={isExpired ? 'text-red-600' : 'text-green-600'} />
+                      <AlertDescription className={isExpired ? 'text-red-800 dark:text-red-200' : 'text-green-800 dark:text-green-200'}>
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span className="font-semibold">
+                            {isExpired
+                              ? (language === 'hi' ? '⚠️ भुगतान की समयसीमा समाप्त!' : '⚠️ Payment Deadline Expired!')
+                              : (language === 'hi' ? '✅ सत्यापन पूर्ण' : '✅ Verification Complete')}
+                          </span>
+                          {!isExpired && daysLeft !== null && (
+                            <span className="text-xs font-bold px-2 py-1 rounded bg-amber-100 text-amber-700">
+                              {language === 'hi' ? `${daysLeft} दिन बाकी` : `${daysLeft} days left`}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm">
+                          {isExpired
+                            ? (language === 'hi'
+                                ? 'भुगतान की समयसीमा समाप्त हो गई है। कृपया जल्द से जल्द भुगतान करें या व्यवस्थापक से संपर्क करें।'
+                                : 'Payment deadline has expired. Please complete payment ASAP or contact admin.')
+                            : (language === 'hi'
+                                ? 'आपके चेहरे और पहचान प्रमाण की जांच हो गई है। कृपया नीचे दिए गए विवरण से भुगतान करें और स्क्रीनशॉट अपलोड करें।'
+                                : 'Your face and ID proof have been verified. Please make payment using the details below and upload the screenshot.')}
+                        </p>
+                      </AlertDescription>
+                    </Alert>
+                  )
+                })()}
+
+                {/* Payment Details Card */}
+                <Card className="border-2 border-primary/30 bg-primary/5">
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CurrencyInr size={24} weight="bold" className="text-primary" />
+                      <h4 className="font-bold text-lg">
+                        {language === 'hi' ? 'भुगतान विवरण' : 'Payment Details'}
+                      </h4>
+                    </div>
+                    
+                    {/* Show verification status */}
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {editProfile?.photoVerified === true && (
+                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
+                          <CheckCircle size={12} weight="fill" />
+                          {language === 'hi' ? 'चेहरा सत्यापित' : 'Face Verified'}
+                        </span>
+                      )}
+                      {editProfile?.idProofVerified && (
+                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
+                          <CheckCircle size={12} weight="fill" />
+                          {language === 'hi' ? 'पहचान प्रमाण सत्यापित' : 'ID Verified'}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Amount Alert */}
+                    <Alert className="bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-800">
+                      <Info size={18} className="text-amber-600" />
+                      <AlertDescription className="text-amber-800 dark:text-amber-200">
+                        <strong>
+                          {language === 'hi' 
+                            ? `कुल राशि: ₹${formData.membershipPlan === '6-month' ? (membershipSettings?.sixMonthPrice || 500) : (membershipSettings?.oneYearPrice || 900)}`
+                            : `Total Amount: ₹${formData.membershipPlan === '6-month' ? (membershipSettings?.sixMonthPrice || 500) : (membershipSettings?.oneYearPrice || 900)}`}
+                        </strong>
+                        <span className="ml-2 text-sm">
+                          ({formData.membershipPlan === '6-month' 
+                            ? (language === 'hi' ? '6 महीने' : '6 months') 
+                            : (language === 'hi' ? '1 वर्ष' : '1 year')})
+                        </span>
+                      </AlertDescription>
+                    </Alert>
+
+                    {/* Payment Methods */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* UPI Details */}
+                      <div className="p-4 border rounded-lg bg-white dark:bg-background">
+                        <h5 className="font-semibold mb-2 flex items-center gap-2">
+                          📱 {language === 'hi' ? 'UPI से भुगतान करें' : 'Pay via UPI'}
+                        </h5>
+                        <div className="space-y-2 text-sm">
+                          {membershipSettings?.upiId ? (
+                            <>
+                              <p 
+                                className="font-mono bg-muted p-2 rounded text-center select-all cursor-pointer hover:bg-muted/80"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(membershipSettings.upiId)
+                                  toast.success(language === 'hi' ? 'UPI ID कॉपी हुई!' : 'UPI ID copied!')
+                                }}
+                              >
+                                {membershipSettings.upiId}
+                              </p>
+                              <p className="text-muted-foreground text-xs text-center">
+                                {language === 'hi' ? 'UPI ID कॉपी करने के लिए क्लिक करें' : 'Click to copy UPI ID'}
+                              </p>
+                            </>
+                          ) : (
+                            <p className="text-muted-foreground text-center py-2">
+                              {language === 'hi' ? 'UPI विवरण जल्द उपलब्ध होगा' : 'UPI details coming soon'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Bank Details */}
+                      <div className="p-4 border rounded-lg bg-white dark:bg-background">
+                        <h5 className="font-semibold mb-2 flex items-center gap-2">
+                          🏦 {language === 'hi' ? 'बैंक ट्रांसफर' : 'Bank Transfer'}
+                        </h5>
+                        {membershipSettings?.bankName && membershipSettings?.accountNumber ? (
+                          <div className="space-y-1 text-sm">
+                            <p><span className="text-muted-foreground">{language === 'hi' ? 'बैंक:' : 'Bank:'}</span> {membershipSettings.bankName}</p>
+                            <p><span className="text-muted-foreground">{language === 'hi' ? 'खाता नं:' : 'A/C:'}</span> {membershipSettings.accountNumber}</p>
+                            {membershipSettings.ifscCode && (
+                              <p><span className="text-muted-foreground">IFSC:</span> {membershipSettings.ifscCode}</p>
+                            )}
+                            {membershipSettings.accountHolderName && (
+                              <p><span className="text-muted-foreground">{language === 'hi' ? 'नाम:' : 'Name:'}</span> {membershipSettings.accountHolderName}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground text-center py-2 text-sm">
+                            {language === 'hi' ? 'बैंक विवरण जल्द उपलब्ध होगा' : 'Bank details coming soon'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* QR Code */}
+                    <div className="flex justify-center p-4">
+                      <div className="text-center">
+                        {membershipSettings?.qrCodeImage ? (
+                          <img 
+                            src={membershipSettings.qrCodeImage} 
+                            alt="Payment QR Code" 
+                            className="w-40 h-40 object-contain border rounded-lg mx-auto mb-2"
+                          />
+                        ) : (
+                          <div className="w-32 h-32 bg-muted border-2 border-dashed rounded-lg flex items-center justify-center mx-auto mb-2">
+                            <span className="text-4xl">📲</span>
+                          </div>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {language === 'hi' ? 'QR कोड स्कैन करें' : 'Scan QR Code'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Upload Payment Screenshot */}
+                    <div className="space-y-3">
+                      <Label className="text-base font-semibold flex items-center gap-2">
+                        <Upload size={18} />
+                        {language === 'hi' ? 'भुगतान स्क्रीनशॉट अपलोड करें *' : 'Upload Payment Screenshot(s) *'}
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'hi' 
+                          ? 'भुगतान करने के बाद, कृपया भुगतान स्क्रीनशॉट अपलोड करें। एडमिन द्वारा सत्यापन के बाद आपकी सदस्यता सक्रिय हो जाएगी।'
+                          : 'After making payment, please upload the payment screenshot. Your membership will be activated after admin verification.'}
+                      </p>
+                      
+                      {/* Show uploaded screenshots */}
+                      {paymentScreenshotPreviews.length > 0 && (
+                        <div className="flex flex-wrap gap-3">
+                          {paymentScreenshotPreviews.map((preview, index) => (
+                            <div key={index} className="relative inline-block">
+                              <img 
+                                src={preview} 
+                                alt={`Payment Screenshot ${index + 1}`}
+                                className="w-[120px] h-[120px] object-cover rounded-lg border cursor-pointer"
+                                onClick={() => openLightbox(paymentScreenshotPreviews, index)}
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="icon"
+                                className="absolute -top-2 -right-2 h-6 w-6"
+                                onClick={() => {
+                                  setPaymentScreenshotPreviews(prev => prev.filter((_, i) => i !== index))
+                                  setPaymentScreenshotFiles(prev => prev.filter((_, i) => i !== index))
+                                }}
+                              >
+                                <X size={12} />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Upload Buttons */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-auto py-4 flex flex-col items-center gap-2"
+                          onClick={() => setShowPaymentCamera(true)}
+                        >
+                          <Camera size={28} weight="light" className="text-primary" />
+                          <span className="text-sm font-medium">
+                            {language === 'hi' ? 'कैमरा से कैप्चर करें' : 'Capture from Camera'}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {language === 'hi' ? 'रसीद की फोटो लें' : 'Take photo of receipt'}
+                          </span>
+                        </Button>
+                        
+                        {/* File Upload Option */}
+                        <label className="cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => {
+                              const files = e.target.files
+                              if (files) {
+                                Array.from(files).forEach((file) => {
+                                  setPaymentScreenshotFiles(prev => [...prev, file])
+                                  const reader = new FileReader()
+                                  reader.onloadend = () => {
+                                    setPaymentScreenshotPreviews(prev => [...prev, reader.result as string])
+                                  }
+                                  reader.readAsDataURL(file)
+                                })
+                              }
+                              e.target.value = ''
+                            }}
+                          />
+                          <div className="h-full py-4 flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg hover:border-primary hover:bg-primary/5 transition-colors">
+                            <Upload size={28} weight="light" className="text-muted-foreground" />
+                            <span className="text-sm font-medium">
+                              {language === 'hi' ? 'गैलरी से अपलोड करें' : 'Upload from Gallery'}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {language === 'hi' ? 'स्क्रीनशॉट चुनें' : 'Select screenshot'}
+                            </span>
+                          </div>
+                        </label>
+                      </div>
+                      
+                      {paymentScreenshotPreviews.length > 0 && (
+                        <p className="text-xs text-green-600 flex items-center gap-1">
+                          <CheckCircle size={14} weight="fill" />
+                          {language === 'hi' 
+                            ? `${paymentScreenshotPreviews.length} स्क्रीनशॉट अपलोड हो गए` 
+                            : `${paymentScreenshotPreviews.length} screenshot(s) uploaded`}
+                        </p>
+                      )}
+                      
+                      {paymentScreenshotPreviews.length === 0 && (
+                        <p className="text-xs text-amber-600 flex items-center gap-1">
+                          <Warning size={14} />
+                          {language === 'hi' 
+                            ? 'पंजीकरण पूरा करने के लिए कम से कम एक भुगतान स्क्रीनशॉट अपलोड करना आवश्यक है'
+                            : 'At least one payment screenshot is required to complete registration'}
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </CardContent>
         </Card>
         </div>
@@ -4729,8 +4761,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
         <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t min-h-[60px] flex-shrink-0">
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Back button - works in payment mode too for navigation */}
-            {step > 1 && !showVerification && (
+            {/* Back button - hide in payment-only mode (step 8) since user can only submit payment */}
+            {step > 1 && !showVerification && !isPaymentOnlyMode && (
               <Button variant="outline" onClick={prevStep} size="sm" className="text-sm">
                 {t.registration.back}
               </Button>
@@ -4834,9 +4866,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 disabled={
                   isAdminMode 
                     ? isSubmitting // Admin mode: only check if submitting
-                    : isPaymentOnlyMode
-                      ? (isSubmitting || paymentScreenshotPreviews.length === 0) // Payment-only mode: need at least one screenshot
-                      : (
+                    : (
                           !termsAccepted || 
                           !formData.membershipPlan || 
                           isSubmitting
@@ -4853,9 +4883,27 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 ) : (
                   isAdminMode 
                     ? (language === 'hi' ? 'बदलाव सेव करें' : 'Save Changes')
-                    : isPaymentOnlyMode
-                      ? (language === 'hi' ? 'भुगतान सबमिट करें' : 'Submit Payment')
-                      : (isEditMode ? t.registration.updateProfile : t.registration.submit)
+                    : (isEditMode ? t.registration.updateProfile : t.registration.submit)
+                )}
+              </Button>
+            ) : step === 8 ? (
+              /* Step 8: Payment submission only */
+              <Button 
+                size="sm" 
+                onClick={handleSubmit} 
+                disabled={isSubmitting || paymentScreenshotPreviews.length === 0}
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+              >
+                {isSubmitting ? (
+                  <>
+                    <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />
+                    {language === 'hi' ? 'अपलोड हो रहा है...' : 'Uploading...'}
+                  </>
+                ) : (
+                  <>
+                    <CurrencyInr size={16} className="mr-1" />
+                    {language === 'hi' ? 'भुगतान सबमिट करें' : 'Submit Payment'}
+                  </>
                 )}
               </Button>
             ) : null}
