@@ -469,3 +469,147 @@ export async function analyzeFaceCoverage(_imageBase64: string): Promise<{
       : 'Please ensure your face covers at least 50% of the frame'
   }
 }
+
+/**
+ * Summarize a chat conversation using Azure OpenAI
+ * This is used by admin to get a quick summary of user conversations
+ */
+export interface ChatSummaryParams {
+  messages: Array<{
+    from: string
+    message: string
+    timestamp: string
+    location?: { latitude: number; longitude: number }
+  }>
+  userName: string
+  language: 'hi' | 'en'
+}
+
+export interface ChatSummaryResult {
+  summary: string
+  keyTopics: string[]
+  sentiment: 'positive' | 'neutral' | 'negative' | 'mixed'
+  actionItems: string[]
+  success: boolean
+  message?: string
+}
+
+export async function summarizeChatConversation(params: ChatSummaryParams): Promise<ChatSummaryResult> {
+  const { messages, userName, language } = params
+  const config = getConfig()
+
+  // If no API key or no messages, return demo
+  if (!config.apiKey || messages.length === 0) {
+    return generateDemoChatSummary(params)
+  }
+
+  const chatHistory = messages.map(m => 
+    `[${new Date(m.timestamp).toLocaleString()}] ${m.from}: ${m.message}${m.location ? ` 📍` : ''}`
+  ).join('\n')
+
+  const systemPrompt = language === 'hi'
+    ? `आप एक चैट विश्लेषक हैं। उपयोगकर्ता की चैट का संक्षिप्त विश्लेषण प्रदान करें। JSON प्रारूप में उत्तर दें:
+{
+  "summary": "चैट का 2-3 वाक्यों में सारांश",
+  "keyTopics": ["मुख्य विषय 1", "मुख्य विषय 2"],
+  "sentiment": "positive/neutral/negative/mixed",
+  "actionItems": ["यदि कोई कार्रवाई आवश्यक हो"]
+}`
+    : `You are a chat analyst. Provide a brief analysis of the user's chat conversation. Respond in JSON format:
+{
+  "summary": "2-3 sentence summary of the chat",
+  "keyTopics": ["key topic 1", "key topic 2"],
+  "sentiment": "positive/neutral/negative/mixed",
+  "actionItems": ["any action items if needed"]
+}`
+
+  const userPrompt = language === 'hi'
+    ? `कृपया ${userName} के साथ निम्नलिखित चैट का विश्लेषण करें:\n\n${chatHistory}`
+    : `Please analyze the following chat conversation with ${userName}:\n\n${chatHistory}`
+
+  try {
+    const response = await fetch(`${config.endpoint}openai/deployments/${config.deployment}/chat/completions?api-version=2024-08-01-preview`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': config.apiKey
+      },
+      body: JSON.stringify({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        max_tokens: 500,
+        temperature: 0.3,
+        response_format: { type: 'json_object' }
+      })
+    })
+
+    if (!response.ok) {
+      logger.error('Azure OpenAI chat summary error:', await response.text())
+      return generateDemoChatSummary(params)
+    }
+
+    const data = await response.json()
+    const content = data.choices?.[0]?.message?.content?.trim()
+
+    if (content) {
+      try {
+        const parsed = JSON.parse(content)
+        return {
+          summary: parsed.summary || 'No summary available',
+          keyTopics: parsed.keyTopics || [],
+          sentiment: parsed.sentiment || 'neutral',
+          actionItems: parsed.actionItems || [],
+          success: true
+        }
+      } catch {
+        return {
+          summary: content,
+          keyTopics: [],
+          sentiment: 'neutral',
+          actionItems: [],
+          success: true
+        }
+      }
+    }
+
+    return generateDemoChatSummary(params)
+  } catch (error) {
+    logger.error('Chat summary error:', error)
+    return generateDemoChatSummary(params)
+  }
+}
+
+function generateDemoChatSummary(params: ChatSummaryParams): ChatSummaryResult {
+  const { messages, userName, language } = params
+  
+  if (messages.length === 0) {
+    return {
+      summary: language === 'hi' ? 'कोई संदेश नहीं' : 'No messages to summarize',
+      keyTopics: [],
+      sentiment: 'neutral',
+      actionItems: [],
+      success: true,
+      message: 'Demo mode'
+    }
+  }
+
+  const messageCount = messages.length
+  const hasLocation = messages.some(m => m.location)
+  
+  return {
+    summary: language === 'hi' 
+      ? `${userName} के साथ ${messageCount} संदेश हुए। ${hasLocation ? 'उपयोगकर्ता ने स्थान साझा किया।' : ''}`
+      : `Conversation with ${userName} contains ${messageCount} messages. ${hasLocation ? 'User shared location.' : ''}`,
+    keyTopics: language === 'hi' 
+      ? ['सहायता अनुरोध', 'खाता प्रश्न'] 
+      : ['Support request', 'Account inquiry'],
+    sentiment: 'neutral',
+    actionItems: language === 'hi' 
+      ? ['उपयोगकर्ता की समस्या का समाधान करें'] 
+      : ['Resolve user query'],
+    success: true,
+    message: 'Demo mode - AI not configured'
+  }
+}

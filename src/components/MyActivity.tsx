@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useKV } from '@/hooks/useKV'
-import { Eye, Heart, ChatCircle, Check, X, MagnifyingGlassPlus, ProhibitInset, Phone, Envelope as EnvelopeIcon, User, Clock, ArrowCounterClockwise, Warning, Rocket, UploadSimple, CurrencyInr } from '@phosphor-icons/react'
+import { Eye, Heart, ChatCircle, Check, X, MagnifyingGlassPlus, ProhibitInset, Phone, Envelope as EnvelopeIcon, User, Clock, ArrowCounterClockwise, Warning, Rocket, UploadSimple, CurrencyInr, Camera, ArrowUp } from '@phosphor-icons/react'
 import type { Interest, ContactRequest, Profile, BlockedProfile, MembershipPlan, DeclinedProfile, UserNotification, ReportReason } from '@/types/profile'
 import type { ChatMessage } from '@/types/chat'
 import type { Language } from '@/lib/translations'
@@ -21,6 +21,7 @@ import { toast } from 'sonner'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
 import { formatDateDDMMYYYY } from '@/lib/utils'
+import { CameraCapture } from '@/components/ui/CameraCapture'
 
 // Membership settings interface for plan limits
 interface MembershipSettings {
@@ -121,6 +122,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
   const [showBoostPackDialog, setShowBoostPackDialog] = useState(false)
   const [boostPackScreenshot, setBoostPackScreenshot] = useState<string | null>(null)
   const [isSubmittingBoostPack, setIsSubmittingBoostPack] = useState(false)
+  const [showBoostCamera, setShowBoostCamera] = useState(false)
   
   // Lightbox for photo zoom
   const { lightboxState, openLightbox, closeLightbox } = useLightbox()
@@ -3178,39 +3180,96 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
 
             {/* Screenshot upload */}
             <div className="space-y-2">
-              <Label htmlFor="boost-screenshot" className="text-sm font-medium">
+              <Label className="text-sm font-medium">
                 {t.uploadPaymentScreenshot}
               </Label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="file"
-                  id="boost-screenshot"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                      const reader = new FileReader()
-                      reader.onloadend = () => {
-                        setBoostPackScreenshot(reader.result as string)
-                      }
-                      reader.readAsDataURL(file)
-                    }
-                  }}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => document.getElementById('boost-screenshot')?.click()}
-                  className="flex-1"
-                >
-                  <UploadSimple size={16} className="mr-2" />
-                  {boostPackScreenshot ? (language === 'hi' ? 'स्क्रीनशॉट बदलें' : 'Change Screenshot') : t.uploadPaymentScreenshot}
-                </Button>
-              </div>
-              {boostPackScreenshot && (
-                <div className="mt-2">
+              
+              {boostPackScreenshot ? (
+                <div className="space-y-2">
                   <img src={boostPackScreenshot} alt="Payment screenshot" className="w-full max-h-40 object-contain rounded border" />
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowBoostCamera(true)}
+                    >
+                      <Camera size={16} className="mr-1" />
+                      {language === 'hi' ? 'कैमरा' : 'Camera'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('boost-screenshot')?.click()}
+                    >
+                      {language === 'hi' ? 'गैलरी' : 'Gallery'}
+                    </Button>
+                  </div>
+                  <input
+                    type="file"
+                    id="boost-screenshot"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        const reader = new FileReader()
+                        reader.onloadend = () => {
+                          setBoostPackScreenshot(reader.result as string)
+                        }
+                        reader.readAsDataURL(file)
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Camera Capture Option */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-auto py-4 flex flex-col items-center gap-2 border-2 border-dashed hover:border-purple-500 hover:bg-purple-50"
+                    onClick={() => setShowBoostCamera(true)}
+                  >
+                    <Camera size={28} weight="light" className="text-purple-600" />
+                    <span className="text-sm font-medium">
+                      {language === 'hi' ? 'कैमरा से कैप्चर करें' : 'Capture from Camera'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {language === 'hi' ? 'रसीद की फोटो लें' : 'Take photo of receipt'}
+                    </span>
+                  </Button>
+                  
+                  {/* File Upload Option */}
+                  <div 
+                    onClick={() => document.getElementById('boost-screenshot-gallery')?.click()}
+                    className="h-auto py-4 flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg cursor-pointer hover:border-purple-500 hover:bg-purple-50 transition-colors"
+                  >
+                    <ArrowUp size={28} weight="light" className="text-muted-foreground" />
+                    <span className="text-sm font-medium">
+                      {language === 'hi' ? 'गैलरी से अपलोड करें' : 'Upload from Gallery'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {language === 'hi' ? 'स्क्रीनशॉट चुनें' : 'Select screenshot'}
+                    </span>
+                  </div>
+                  <input
+                    type="file"
+                    id="boost-screenshot-gallery"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        const reader = new FileReader()
+                        reader.onloadend = () => {
+                          setBoostPackScreenshot(reader.result as string)
+                        }
+                        reader.readAsDataURL(file)
+                      }
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -3234,6 +3293,18 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Camera Capture for Boost Pack Payment */}
+      <CameraCapture
+        open={showBoostCamera}
+        onClose={() => setShowBoostCamera(false)}
+        onCapture={(imageDataUrl) => {
+          setBoostPackScreenshot(imageDataUrl)
+        }}
+        language={language}
+        title={language === 'hi' ? 'भुगतान रसीद कैप्चर करें' : 'Capture Payment Receipt'}
+        preferBackCamera={true}
+      />
     </section>
   )
 }

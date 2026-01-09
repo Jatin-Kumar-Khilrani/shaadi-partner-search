@@ -24,6 +24,7 @@ import type { Profile, Interest, ProfileDeletionReason, ProfileDeletionData, Suc
 import type { Language } from '@/lib/translations'
 import { BiodataGenerator } from './BiodataGenerator'
 import { PhotoLightbox } from './PhotoLightbox'
+import { CameraCapture } from '@/components/ui/CameraCapture'
 
 // Membership settings interface for pricing
 interface MembershipSettings {
@@ -98,6 +99,7 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onDeletePr
   const [renewalPlan, setRenewalPlan] = useState<'6-month' | '1-year'>('6-month')
   const [_renewalPaymentFile, setRenewalPaymentFile] = useState<File | null>(null)
   const [renewalPaymentPreview, setRenewalPaymentPreview] = useState<string | null>(null)
+  const [showRenewalCamera, setShowRenewalCamera] = useState(false)
   const renewalFileInputRef = useRef<HTMLInputElement>(null)
 
   const t = {
@@ -1138,30 +1140,70 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onDeletePr
                     }
                   }}
                 />
-                <div 
-                  onClick={() => renewalFileInputRef.current?.click()}
-                  className="border-2 border-dashed rounded-lg p-4 cursor-pointer hover:border-primary transition-colors text-center"
-                >
-                  {renewalPaymentPreview ? (
-                    <div className="space-y-2">
-                      <img 
-                        src={renewalPaymentPreview} 
-                        alt="Payment Screenshot"
-                        className="max-h-48 mx-auto rounded-lg object-contain"
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        {language === 'hi' ? 'दूसरी छवि चुनने के लिए क्लिक करें' : 'Click to select another image'}
-                      </p>
+                
+                {renewalPaymentPreview ? (
+                  <div className="border-2 border-dashed rounded-lg p-4 text-center space-y-2">
+                    <img 
+                      src={renewalPaymentPreview} 
+                      alt="Payment Screenshot"
+                      className="max-h-48 mx-auto rounded-lg object-contain"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'hi' ? 'दूसरी छवि चुनने के लिए नीचे क्लिक करें' : 'Click below to select another image'}
+                    </p>
+                    <div className="flex gap-2 justify-center">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowRenewalCamera(true)}
+                      >
+                        <Camera size={16} className="mr-1" />
+                        {language === 'hi' ? 'कैमरा' : 'Camera'}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => renewalFileInputRef.current?.click()}
+                      >
+                        {language === 'hi' ? 'गैलरी' : 'Gallery'}
+                      </Button>
                     </div>
-                  ) : (
-                    <div className="py-4">
-                      <Camera size={32} className="mx-auto text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        {language === 'hi' ? 'स्क्रीनशॉट अपलोड करने के लिए क्लिक करें' : 'Click to upload screenshot'}
-                      </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Camera Capture Option */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-auto py-4 flex flex-col items-center gap-2 border-2 border-dashed hover:border-primary hover:bg-primary/5"
+                      onClick={() => setShowRenewalCamera(true)}
+                    >
+                      <Camera size={28} weight="light" className="text-primary" />
+                      <span className="text-sm font-medium">
+                        {language === 'hi' ? 'कैमरा से कैप्चर करें' : 'Capture from Camera'}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {language === 'hi' ? 'रसीद की फोटो लें' : 'Take photo of receipt'}
+                      </span>
+                    </Button>
+                    
+                    {/* File Upload Option */}
+                    <div 
+                      onClick={() => renewalFileInputRef.current?.click()}
+                      className="h-auto py-4 flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                    >
+                      <ArrowUp size={28} weight="light" className="text-muted-foreground" />
+                      <span className="text-sm font-medium">
+                        {language === 'hi' ? 'गैलरी से अपलोड करें' : 'Upload from Gallery'}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {language === 'hi' ? 'स्क्रीनशॉट चुनें' : 'Select screenshot'}
+                      </span>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* Submit Button */}
@@ -1817,6 +1859,25 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onDeletePr
           onClose={() => setShowPhotoLightbox(false)}
         />
       )}
+
+      {/* Camera Capture for Renewal Payment */}
+      <CameraCapture
+        open={showRenewalCamera}
+        onClose={() => setShowRenewalCamera(false)}
+        onCapture={(imageDataUrl) => {
+          setRenewalPaymentPreview(imageDataUrl)
+          // Convert data URL to File for upload
+          fetch(imageDataUrl)
+            .then(res => res.blob())
+            .then(blob => {
+              const file = new File([blob], `renewal_payment_${Date.now()}.jpg`, { type: 'image/jpeg' })
+              setRenewalPaymentFile(file)
+            })
+        }}
+        language={language}
+        title={language === 'hi' ? 'भुगतान रसीद कैप्चर करें' : 'Capture Payment Receipt'}
+        preferBackCamera={true}
+      />
     </div>
   )
 }

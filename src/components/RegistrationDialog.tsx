@@ -24,6 +24,7 @@ import { generateBio, type BioGenerationParams } from '@/lib/aiFoundryService'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 import { TermsAndConditions } from '@/components/TermsAndConditions'
 import { uploadPhoto, isBlobStorageAvailable, dataUrlToFile } from '@/lib/blobService'
+import { CameraCapture } from '@/components/ui/CameraCapture'
 
 // Country code to phone length mapping - comprehensive list
 const COUNTRY_PHONE_LENGTHS: Record<string, { min: number; max: number; display: string; flag: string; name: string }> = {
@@ -373,6 +374,11 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   // Payment screenshot state for paid plans - supports multiple screenshots
   const [paymentScreenshotPreviews, setPaymentScreenshotPreviews] = useState<string[]>([])
   const [paymentScreenshotFiles, setPaymentScreenshotFiles] = useState<File[]>([])
+  
+  // Camera capture dialogs for ID proof, photos, and payment screenshots
+  const [showIdProofCamera, setShowIdProofCamera] = useState(false)
+  const [showPhotoCamera, setShowPhotoCamera] = useState(false)
+  const [showPaymentCamera, setShowPaymentCamera] = useState(false)
   
   // DigiLocker verification state (OAuth flow - no Aadhaar number input)
   const [_digilockerVerifying, _setDigilockerVerifying] = useState(false)
@@ -3206,24 +3212,40 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                       </div>
                     ))}
                     
-                    {/* Add Photo Slot */}
+                    {/* Add Photo Slot - Camera and File options */}
                     {photos.length < 3 && (
-                      <label className="border-2 border-dashed border-border rounded-lg aspect-square flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors">
-                        <Image size={32} weight="light" className="text-muted-foreground/50 mb-2" />
-                        <span className="text-xs text-muted-foreground">
-                          {language === 'hi' ? 'फोटो जोड़ें' : 'Add Photo'}
+                      <div className="border-2 border-dashed border-border rounded-lg aspect-square flex flex-col items-center justify-center gap-2 p-2">
+                        <span className="text-xs text-muted-foreground font-medium">
+                          {language === 'hi' ? 'फोटो जोड़ें' : 'Add Photo'} ({photos.length}/3)
                         </span>
-                        <span className="text-xs text-muted-foreground">
-                          ({photos.length}/3)
-                        </span>
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={handlePhotoChange}
-                          className="hidden"
-                          multiple
-                        />
-                      </label>
+                        <div className="flex gap-2">
+                          {/* Camera Option */}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-10 w-10 p-0"
+                            onClick={() => setShowPhotoCamera(true)}
+                            title={language === 'hi' ? 'कैमरा से' : 'From Camera'}
+                          >
+                            <Camera size={18} className="text-primary" />
+                          </Button>
+                          
+                          {/* File Upload Option */}
+                          <label className="cursor-pointer">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={handlePhotoChange}
+                              className="hidden"
+                              multiple
+                            />
+                            <div className="h-10 w-10 flex items-center justify-center border rounded-md hover:bg-accent transition-colors" title={language === 'hi' ? 'गैलरी से' : 'From Gallery'}>
+                              <Image size={18} className="text-muted-foreground" />
+                            </div>
+                          </label>
+                        </div>
+                      </div>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -3536,33 +3558,58 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                             </div>
                           </div>
                         ) : (
-                          <label className="cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0]
-                                if (file) {
-                                  setIdProofFile(file)
-                                  const reader = new FileReader()
-                                  reader.onload = (event) => {
-                                    setIdProofPreview(event.target?.result as string)
-                                  }
-                                  reader.readAsDataURL(file)
-                                }
-                              }}
-                            />
-                            <div className="space-y-2">
-                              <Upload size={40} weight="light" className="mx-auto text-muted-foreground/50" />
-                              <p className="text-sm text-muted-foreground">
-                                {language === 'hi' ? 'पहचान पत्र की फोटो अपलोड करने के लिए क्लिक करें' : 'Click to upload ID proof photo'}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {language === 'hi' ? 'नाम और जन्म तिथि स्पष्ट दिखनी चाहिए' : 'Name and DOB must be clearly visible'}
-                              </p>
+                          <div className="space-y-4">
+                            {/* Two options: Camera capture or File upload */}
+                            <div className="grid grid-cols-2 gap-3">
+                              {/* Camera Capture Option */}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="h-auto py-4 flex flex-col items-center gap-2 border-2 border-dashed hover:border-primary hover:bg-primary/5"
+                                onClick={() => setShowIdProofCamera(true)}
+                              >
+                                <Camera size={32} weight="light" className="text-primary" />
+                                <span className="text-sm font-medium">
+                                  {language === 'hi' ? 'कैमरा से कैप्चर करें' : 'Capture from Camera'}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {language === 'hi' ? 'मोबाइल के लिए अनुशंसित' : 'Recommended for mobile'}
+                                </span>
+                              </Button>
+                              
+                              {/* File Upload Option */}
+                              <label className="cursor-pointer">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0]
+                                    if (file) {
+                                      setIdProofFile(file)
+                                      const reader = new FileReader()
+                                      reader.onload = (event) => {
+                                        setIdProofPreview(event.target?.result as string)
+                                      }
+                                      reader.readAsDataURL(file)
+                                    }
+                                  }}
+                                />
+                                <div className="h-full py-4 flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg hover:border-primary hover:bg-primary/5 transition-colors">
+                                  <Upload size={32} weight="light" className="text-muted-foreground" />
+                                  <span className="text-sm font-medium">
+                                    {language === 'hi' ? 'गैलरी से अपलोड करें' : 'Upload from Gallery'}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {language === 'hi' ? 'फ़ाइल चुनें' : 'Select file'}
+                                  </span>
+                                </div>
+                              </label>
                             </div>
-                          </label>
+                            <p className="text-xs text-center text-muted-foreground">
+                              {language === 'hi' ? 'नाम और जन्म तिथि स्पष्ट दिखनी चाहिए' : 'Name and DOB must be clearly visible'}
+                            </p>
+                          </div>
                         )}
                       </div>
 
@@ -4459,9 +4506,26 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           </div>
                         )}
                         
-                        {/* Add more screenshots button */}
-                        <div className="flex items-center gap-3">
-                          <label className="flex-1">
+                        {/* Add screenshots - Camera and File options */}
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Camera Capture Option */}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-auto py-4 flex flex-col items-center gap-2 border-2 border-dashed hover:border-primary hover:bg-primary/5"
+                            onClick={() => setShowPaymentCamera(true)}
+                          >
+                            <Camera size={28} weight="light" className="text-primary" />
+                            <span className="text-sm font-medium">
+                              {language === 'hi' ? 'कैमरा से कैप्चर करें' : 'Capture from Camera'}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {language === 'hi' ? 'रसीद की फोटो लें' : 'Take photo of receipt'}
+                            </span>
+                          </Button>
+                          
+                          {/* File Upload Option */}
+                          <label className="cursor-pointer">
                             <input
                               type="file"
                               accept="image/*"
@@ -4483,16 +4547,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                 e.target.value = ''
                               }}
                             />
-                            <div className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
-                              <Upload size={24} className="mx-auto mb-2 text-muted-foreground" />
-                              <p className="text-sm font-medium">
-                                {paymentScreenshotPreviews.length > 0
-                                  ? (language === 'hi' ? 'और स्क्रीनशॉट जोड़ें' : 'Add more screenshots')
-                                  : (language === 'hi' ? 'क्लिक करें या फ़ाइल खींचें' : 'Click or drag file')}
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                PNG, JPG {language === 'hi' ? 'अधिकतम' : 'max'} 5MB {language === 'hi' ? 'प्रति फ़ाइल' : 'per file'}
-                              </p>
+                            <div className="h-full py-4 flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg hover:border-primary hover:bg-primary/5 transition-colors">
+                              <Upload size={28} weight="light" className="text-muted-foreground" />
+                              <span className="text-sm font-medium">
+                                {language === 'hi' ? 'गैलरी से अपलोड करें' : 'Upload from Gallery'}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {language === 'hi' ? 'स्क्रीनशॉट चुनें' : 'Select screenshot'}
+                              </span>
                             </div>
                           </label>
                         </div>
@@ -4756,6 +4818,57 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           initialIndex={lightboxState.initialIndex}
           open={lightboxState.open}
           onClose={closeLightbox}
+        />
+        
+        {/* Camera Capture for ID Proof */}
+        <CameraCapture
+          open={showIdProofCamera}
+          onClose={() => setShowIdProofCamera(false)}
+          onCapture={(imageDataUrl) => {
+            setIdProofPreview(imageDataUrl)
+          }}
+          language={language}
+          title={language === 'hi' ? 'पहचान पत्र कैप्चर करें' : 'Capture ID Proof'}
+          description={language === 'hi' ? 'अपने पहचान पत्र की स्पष्ट फोटो लें' : 'Take a clear photo of your ID document'}
+          preferBackCamera={true}
+        />
+        
+        {/* Camera Capture for Profile Photos */}
+        <CameraCapture
+          open={showPhotoCamera}
+          onClose={() => setShowPhotoCamera(false)}
+          onCapture={(imageDataUrl) => {
+            // Convert data URL to File and add to photos
+            fetch(imageDataUrl)
+              .then(res => res.blob())
+              .then(blob => {
+                const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' })
+                setPhotos(prev => [...prev, { file, preview: imageDataUrl }])
+              })
+          }}
+          language={language}
+          title={language === 'hi' ? 'प्रोफाइल फोटो कैप्चर करें' : 'Capture Profile Photo'}
+          description={language === 'hi' ? 'अपनी प्रोफाइल फोटो कैमरे से लें' : 'Take profile photos using camera'}
+          preferBackCamera={false}
+          multiple={true}
+          maxPhotos={5}
+          existingPhotosCount={photos.length}
+        />
+        
+        {/* Camera Capture for Payment Screenshot */}
+        <CameraCapture
+          open={showPaymentCamera}
+          onClose={() => setShowPaymentCamera(false)}
+          onCapture={(imageDataUrl) => {
+            setPaymentScreenshotPreviews(prev => [...prev, imageDataUrl])
+          }}
+          language={language}
+          title={language === 'hi' ? 'भुगतान रसीद कैप्चर करें' : 'Capture Payment Receipt'}
+          description={language === 'hi' ? 'भुगतान की रसीद या स्क्रीनशॉट की फोटो लें' : 'Take a photo of payment receipt or screenshot'}
+          preferBackCamera={true}
+          multiple={true}
+          maxPhotos={5}
+          existingPhotosCount={paymentScreenshotPreviews.length}
         />
       </DialogContent>
 

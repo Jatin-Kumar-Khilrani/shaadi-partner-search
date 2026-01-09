@@ -27,6 +27,13 @@ export interface ChatMessage {
   isSystemMessage?: boolean // Flag for system-generated messages (e.g., interest accepted notification)
   // Attachment support for file/image sharing (like WhatsApp)
   attachments?: ChatAttachment[]
+  // Location data for admin visibility (user location when chatting with admin)
+  location?: {
+    latitude: number
+    longitude: number
+    accuracy?: number
+    timestamp: string
+  }
 }
 
 export interface ChatConversation {
@@ -39,3 +46,35 @@ export interface ChatConversation {
   timestamp?: string
   createdAt?: string
 }
+
+// Defect tracking for admin bug reporting
+export interface Defect {
+  id: string
+  title: string
+  description: string
+  status: 'open' | 'in-progress' | 'fixed' | 'wont-fix'
+  priority: 'low' | 'medium' | 'high' | 'critical'
+  category: 'bug' | 'ui' | 'feature' | 'performance' | 'security' | 'other'
+  reportedBy: string  // Admin user ID
+  reportedAt: string
+  updatedAt: string
+  fixedAt?: string
+  fixedBy?: string
+  // Attached conversation context
+  attachedConversation?: {
+    userProfileId: string
+    userName: string
+    messages: ChatMessage[]
+    capturedAt: string
+  }
+  // Additional attachments/screenshots
+  attachments?: ChatAttachment[]
+  // Notes/comments from admin
+  notes?: {
+    id: string
+    text: string
+    addedBy: string
+    addedAt: string
+  }[]
+}
+

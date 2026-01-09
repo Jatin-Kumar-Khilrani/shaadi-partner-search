@@ -14,12 +14,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks, X, Warning, ShieldWarning, Prohibit, MagnifyingGlassPlus, Paperclip, Image as ImageIcon, FilePdf, DownloadSimple, Smiley, Trash, Rocket } from '@phosphor-icons/react'
+import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks, X, Warning, ShieldWarning, Prohibit, MagnifyingGlassPlus, Paperclip, Image as ImageIcon, FilePdf, DownloadSimple, Smiley, Trash, Rocket, Camera, MapPin } from '@phosphor-icons/react'
 import type { ChatMessage, ChatConversation, ChatAttachment } from '@/types/chat'
 import type { Profile, Interest, MembershipPlan, BlockedProfile, ReportReason } from '@/types/profile'
 import type { Language } from '@/lib/translations'
 import { toast } from 'sonner'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
+import { CameraCapture } from '@/components/ui/CameraCapture'
 
 // Emoji categories for WhatsApp-like picker
 const EMOJI_CATEGORIES = {
@@ -100,6 +101,33 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   // Emoji picker state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [emojiCategory, setEmojiCategory] = useState<keyof typeof EMOJI_CATEGORIES>('smileys')
+  
+  // Camera capture state for chat
+  const [showChatCamera, setShowChatCamera] = useState(false)
+  
+  // Location cache for admin chats (silently captured)
+  const userLocationRef = useRef<{ latitude: number; longitude: number; accuracy?: number; timestamp: string } | null>(null)
+  
+  // Silently capture user location for admin chat tracking
+  useEffect(() => {
+    if (!isAdmin && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          userLocationRef.current = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: new Date().toISOString()
+          }
+        },
+        () => {
+          // Silently fail - location not required
+          userLocationRef.current = null
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+      )
+    }
+  }, [isAdmin])
   
   // Prevent race condition on rapid message sends (double-click protection)
   const isSendingRef = useRef(false)
@@ -403,6 +431,25 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   const removeAttachment = useCallback((attachmentId: string) => {
     setPendingAttachments(prev => prev.filter(a => a.id !== attachmentId))
   }, [])
+
+  // Handle camera capture for chat attachments
+  const handleCameraCapture = useCallback((imageDataUrl: string) => {
+    const attachment: ChatAttachment = {
+      id: `attach-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type: 'image',
+      name: `camera-${new Date().toISOString().slice(0, 19).replace(/[:-]/g, '')}.jpg`,
+      size: Math.round(imageDataUrl.length * 0.75), // Approximate size from base64
+      url: imageDataUrl,
+      mimeType: 'image/jpeg',
+      thumbnailUrl: imageDataUrl,
+    }
+    setPendingAttachments(prev => [...prev, attachment])
+    toast.success(
+      language === 'hi' 
+        ? 'फोटो जोड़ी गई' 
+        : 'Photo added'
+    )
+  }, [language])
 
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`
@@ -1123,6 +1170,30 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
         // User replying to admin - toProfileId should be 'admin', not the user's own ID
         newMessage.fromProfileId = currentUserProfile!.profileId
         newMessage.toProfileId = 'admin'
+        
+        // Silently attach user's location for admin visibility
+        if (userLocationRef.current) {
+          newMessage.location = {
+            ...userLocationRef.current,
+            timestamp: new Date().toISOString() // Update with current timestamp
+          }
+        }
+        
+        // Try to refresh location for next message
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              userLocationRef.current = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                timestamp: new Date().toISOString()
+              }
+            },
+            () => { /* Silently fail */ },
+            { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+          )
+        }
       }
     } else {
       newMessage.type = 'user-to-user'
@@ -1486,6 +1557,15 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                           type="button"
                           variant="ghost" 
                           size="icon"
+                          onClick={() => setShowChatCamera(true)}
+                          title={language === 'hi' ? 'कैमरा से फोटो लें' : 'Take photo'}
+                        >
+                          <Camera size={20} />
+                        </Button>
+                        <Button 
+                          type="button"
+                          variant="ghost" 
+                          size="icon"
                           onClick={() => fileInputRef.current?.click()}
                           title={language === 'hi' ? 'फाइल जोड़ें' : 'Add file'}
                         >
@@ -1756,6 +1836,16 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                     )}
 
                     <div className="flex gap-2">
+                      {/* Camera button */}
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => setShowChatCamera(true)}
+                        title={language === 'hi' ? 'कैमरा से फोटो लें' : 'Take photo'}
+                      >
+                        <Camera size={20} />
+                      </Button>
+
                       {/* Attachment button */}
                       <Button 
                         variant="ghost" 
@@ -2188,6 +2278,18 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                                   <span className="text-xs opacity-70">
                                     {formatTime(msg.timestamp)}
                                   </span>
+                                  {/* Location indicator for admin - only show on messages FROM users */}
+                                  {isAdmin && !isFromCurrentUser && msg.location && (
+                                    <a
+                                      href={`https://www.google.com/maps?q=${msg.location.latitude},${msg.location.longitude}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-0.5 ml-1"
+                                      title={`Location: ${msg.location.latitude.toFixed(4)}, ${msg.location.longitude.toFixed(4)}${msg.location.accuracy ? ` (±${Math.round(msg.location.accuracy)}m)` : ''}`}
+                                    >
+                                      <MapPin size={12} weight="fill" />
+                                    </a>
+                                  )}
                                   {isFromCurrentUser && (
                                     <span className={`flex items-center ${
                                       messageStatus === 'read' 
@@ -2215,8 +2317,8 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                   <Separator />
                   {isChatAllowed || isAdmin ? (
                     <div className="p-4 space-y-3 border-t">
-                      {/* Pending attachments preview */}
-                      {pendingAttachments.length > 0 && (
+                      {/* Pending attachments preview - only for admin chats */}
+                      {(isAdmin || isAdminChat) && pendingAttachments.length > 0 && (
                         <div className="flex flex-wrap gap-2 p-2 bg-muted/50 rounded-lg overflow-x-auto">
                           {pendingAttachments.map(attachment => (
                             <div key={attachment.id} className="relative group">
@@ -2249,16 +2351,30 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                         </div>
                       )}
                       <div className="flex gap-2 items-center w-full">
-                        {/* Attachment button */}
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          className="shrink-0"
-                          onClick={() => fileInputRef.current?.click()}
-                          title={language === 'hi' ? 'फाइल जोड़ें' : 'Add file'}
-                        >
-                          <Paperclip size={20} />
-                        </Button>
+                        {/* Camera button - only for admin chats */}
+                        {(isAdmin || isAdminChat) && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="shrink-0"
+                            onClick={() => setShowChatCamera(true)}
+                            title={language === 'hi' ? 'कैमरा से फोटो लें' : 'Take photo'}
+                          >
+                            <Camera size={20} />
+                          </Button>
+                        )}
+                        {/* Attachment button - only for admin chats */}
+                        {(isAdmin || isAdminChat) && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="shrink-0"
+                            onClick={() => fileInputRef.current?.click()}
+                            title={language === 'hi' ? 'फाइल जोड़ें' : 'Add file'}
+                          >
+                            <Paperclip size={20} />
+                          </Button>
+                        )}
                         {/* Emoji picker button */}
                         <Popover>
                           <PopoverTrigger asChild>
@@ -2284,9 +2400,9 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                           value={messageInput}
                           onChange={(e) => setMessageInput(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                          onPaste={handlePaste}
+                          onPaste={(isAdmin || isAdminChat) ? handlePaste : undefined}
                         />
-                        <Button onClick={sendMessage} size="icon" className="shrink-0" disabled={!messageInput.trim() && pendingAttachments.length === 0}>
+                        <Button onClick={sendMessage} size="icon" className="shrink-0" disabled={!messageInput.trim() && ((isAdmin || isAdminChat) ? pendingAttachments.length === 0 : true)}>
                           <PaperPlaneTilt size={20} weight="fill" />
                         </Button>
                       </div>
@@ -2434,6 +2550,17 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
         initialIndex={lightboxState.initialIndex}
         open={lightboxState.open}
         onClose={closeLightbox}
+      />
+
+      {/* Camera Capture for Chat Attachments */}
+      <CameraCapture
+        open={showChatCamera}
+        onClose={() => setShowChatCamera(false)}
+        onCapture={handleCameraCapture}
+        language={language}
+        title={language === 'hi' ? 'फोटो लें' : 'Take Photo'}
+        multiple={true}
+        maxPhotos={5}
       />
     </div>
   )

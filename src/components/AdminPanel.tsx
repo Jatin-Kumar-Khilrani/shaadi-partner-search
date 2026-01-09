@@ -18,10 +18,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, CaretLeft, CaretRight, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User as UserIcon, CreditCard, Upload, ShieldWarning, Prohibit, Warning, Heart, Gift, Trophy, Confetti, MagnifyingGlass, Paperclip, Image as ImageIcon, Smiley, Rocket } from '@phosphor-icons/react'
+import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, CaretLeft, CaretRight, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User as UserIcon, CreditCard, Upload, ShieldWarning, Prohibit, Warning, Heart, Gift, Trophy, Confetti, MagnifyingGlass, Paperclip, Image as ImageIcon, Smiley, Rocket, Bug, Note, ClipboardText, Wrench } from '@phosphor-icons/react'
 import type { Profile, WeddingService, PaymentTransaction, BlockedProfile, ReportReason, SuccessStory, UserNotification } from '@/types/profile'
 import type { User } from '@/types/user'
-import type { ChatMessage, ChatAttachment } from '@/types/chat'
+import type { ChatMessage, ChatAttachment, Defect } from '@/types/chat'
 import { Chat } from '@/components/Chat'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
@@ -29,6 +29,7 @@ import { RegistrationDialog } from '@/components/RegistrationDialog'
 import { toast } from 'sonner'
 import { formatDateDDMMYYYY, formatEducation, formatOccupation } from '@/lib/utils'
 import { verifyPhotosWithVision, type PhotoVerificationResult } from '@/lib/visionPhotoVerification'
+import { summarizeChatConversation, type ChatSummaryResult } from '@/lib/aiFoundryService'
 
 // Emoji categories for WhatsApp-like picker (admin)
 const ADMIN_EMOJI_CATEGORIES = {
@@ -572,6 +573,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [showAdminEmojiPicker, setShowAdminEmojiPicker] = useState(false)
   const [adminEmojiCategory, setAdminEmojiCategory] = useState<keyof typeof ADMIN_EMOJI_CATEGORIES>('smileys')
   
+  // AI Chat Summary state (secret feature)
+  const [chatSummary, setChatSummary] = useState<ChatSummaryResult | null>(null)
+  const [isLoadingChatSummary, setIsLoadingChatSummary] = useState(false)
+  
   // Broadcast message attachment state
   const [broadcastAttachments, setBroadcastAttachments] = useState<ChatAttachment[]>([])
   const broadcastFileInputRef = useRef<HTMLInputElement>(null)
@@ -692,6 +697,24 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   
   // Delete transaction confirmation dialog state
   const [showDeleteTransactionDialog, setShowDeleteTransactionDialog] = useState<PaymentTransaction | null>(null)
+  
+  // Defect Tracking state
+  const [defects, setDefects] = useKV<Defect[]>('adminDefects', [])
+  const [showDefectDialog, setShowDefectDialog] = useState(false)
+  const [editingDefect, setEditingDefect] = useState<Defect | null>(null)
+  const [showDefectsPanel, setShowDefectsPanel] = useState(false)
+  const [defectFormData, setDefectFormData] = useState<{
+    title: string
+    description: string
+    priority: 'low' | 'medium' | 'high' | 'critical'
+    category: 'bug' | 'ui' | 'feature' | 'performance' | 'security' | 'other'
+  }>({
+    title: '',
+    description: '',
+    priority: 'medium',
+    category: 'bug'
+  })
+  const [defectStatusFilter, setDefectStatusFilter] = useState<'all' | 'open' | 'in-progress' | 'fixed' | 'wont-fix'>('all')
   
   // Success Story CRUD state
   const [showSuccessStoryDialog, setShowSuccessStoryDialog] = useState(false)
@@ -897,6 +920,35 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     broadcastMessage: language === 'hi' ? 'संदेश प्रसारित करें' : 'Broadcast Message',
     selectProfilesToMessage: language === 'hi' ? 'संदेश भेजने के लिए प्रोफाइल चुनें' : 'Select profiles to message',
     broadcastSuccess: language === 'hi' ? 'संदेश सभी चयनित प्रोफाइलों को भेजा गया!' : 'Message sent to all selected profiles!',
+    // Defect tracking translations
+    defects: language === 'hi' ? 'दोष' : 'Defects',
+    defectTracking: language === 'hi' ? 'दोष ट्रैकिंग' : 'Defect Tracking',
+    lodgeDefect: language === 'hi' ? 'दोष दर्ज करें' : 'Lodge Defect',
+    defectTitle: language === 'hi' ? 'शीर्षक' : 'Title',
+    defectDescription: language === 'hi' ? 'विवरण' : 'Description',
+    defectPriority: language === 'hi' ? 'प्राथमिकता' : 'Priority',
+    defectCategory: language === 'hi' ? 'श्रेणी' : 'Category',
+    defectStatus: language === 'hi' ? 'स्थिति' : 'Status',
+    defectOpen: language === 'hi' ? 'खुला' : 'Open',
+    defectInProgress: language === 'hi' ? 'प्रगति में' : 'In Progress',
+    defectFixed: language === 'hi' ? 'ठीक किया गया' : 'Fixed',
+    defectWontFix: language === 'hi' ? 'ठीक नहीं करेंगे' : 'Won\'t Fix',
+    defectLow: language === 'hi' ? 'कम' : 'Low',
+    defectMedium: language === 'hi' ? 'मध्यम' : 'Medium',
+    defectHigh: language === 'hi' ? 'उच्च' : 'High',
+    defectCritical: language === 'hi' ? 'गंभीर' : 'Critical',
+    defectBug: language === 'hi' ? 'बग' : 'Bug',
+    defectUI: language === 'hi' ? 'यूआई' : 'UI',
+    defectFeature: language === 'hi' ? 'सुविधा' : 'Feature',
+    defectPerformance: language === 'hi' ? 'प्रदर्शन' : 'Performance',
+    defectSecurity: language === 'hi' ? 'सुरक्षा' : 'Security',
+    defectOther: language === 'hi' ? 'अन्य' : 'Other',
+    attachConversation: language === 'hi' ? 'वार्तालाप संलग्न करें' : 'Attach Conversation',
+    conversationAttached: language === 'hi' ? 'वार्तालाप संलग्न' : 'Conversation Attached',
+    defectCreated: language === 'hi' ? 'दोष दर्ज किया गया!' : 'Defect logged!',
+    defectUpdated: language === 'hi' ? 'दोष अपडेट किया गया!' : 'Defect updated!',
+    markAsFixed: language === 'hi' ? 'ठीक किया के रूप में चिह्नित करें' : 'Mark as Fixed',
+    noDefects: language === 'hi' ? 'कोई दोष नहीं' : 'No defects',
     deletedProfiles: language === 'hi' ? 'हटाई गई प्रोफाइल' : 'Deleted Profiles',
     noDeletedProfiles: language === 'hi' ? 'कोई हटाई गई प्रोफाइल नहीं।' : 'No deleted profiles.',
     deletedAt: language === 'hi' ? 'हटाने की तिथि' : 'Deleted At',
@@ -1583,26 +1635,31 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     
     const timestamp = new Date().toISOString()
     
-    const newMessages: ChatMessage[] = broadcastProfiles.map(profileId => ({
-      id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      fromProfileId: 'admin',
-      fromUserId: 'admin',
-      toProfileId: profileId,
-      message: broadcastMessage,
-      timestamp: timestamp,
-      createdAt: timestamp,
-      type: 'admin-to-user' as const,
-      read: false,
-      status: 'sent' as const,
-      attachments: broadcastAttachments.length > 0 ? [...broadcastAttachments] : undefined
-    }))
+    // broadcastProfiles contains internal IDs (p.id), we need to convert to profileId for messages
+    const newMessages: ChatMessage[] = broadcastProfiles.map(internalId => {
+      const profile = profiles?.find(p => p.id === internalId)
+      const userProfileId = profile?.profileId || internalId
+      return {
+        id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        fromProfileId: 'admin',
+        fromUserId: 'admin',
+        toProfileId: userProfileId,
+        message: broadcastMessage,
+        timestamp: timestamp,
+        createdAt: timestamp,
+        type: 'admin-to-user' as const,
+        read: false,
+        status: 'sent' as const,
+        attachments: broadcastAttachments.length > 0 ? [...broadcastAttachments] : undefined
+      }
+    })
     
     // Create notifications for each recipient
-    const newNotifications: UserNotification[] = broadcastProfiles.map(profileId => {
-      const profile = profiles?.find(p => p.id === profileId)
+    const newNotifications: UserNotification[] = broadcastProfiles.map(internalId => {
+      const profile = profiles?.find(p => p.id === internalId)
       return {
         id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        recipientProfileId: profile?.profileId || profileId,
+        recipientProfileId: profile?.profileId || internalId,
         type: 'admin_message' as const,
         title: 'New message from Admin',
         titleHi: 'एडमिन से नया संदेश',
@@ -1623,6 +1680,114 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     setBroadcastProfiles([])
     setBroadcastAttachments([])
   }
+
+  // Defect tracking handlers
+  const handleLodgeDefectFromChat = () => {
+    // Lodge a new defect with the current chat conversation attached
+    if (!selectedProfile) return
+    
+    const profileMessages = messages?.filter(m => 
+      m.type === 'admin-to-user' && 
+      (m.toProfileId === selectedProfile?.profileId || m.fromProfileId === selectedProfile?.profileId)
+    ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) || []
+    
+    setEditingDefect({
+      id: '',
+      title: '',
+      description: '',
+      status: 'open',
+      priority: 'medium',
+      category: 'bug',
+      reportedBy: 'admin',
+      reportedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      attachedConversation: {
+        userProfileId: selectedProfile.profileId || '',
+        userName: selectedProfile.fullName || '',
+        messages: profileMessages,
+        capturedAt: new Date().toISOString()
+      }
+    })
+    setDefectFormData({
+      title: '',
+      description: '',
+      priority: 'medium',
+      category: 'bug'
+    })
+    setShowDefectDialog(true)
+  }
+  
+  const handleSaveDefect = () => {
+    if (!defectFormData.title.trim()) {
+      toast.error(language === 'hi' ? 'शीर्षक आवश्यक है' : 'Title is required')
+      return
+    }
+    
+    const timestamp = new Date().toISOString()
+    
+    if (editingDefect && editingDefect.id) {
+      // Update existing defect
+      setDefects((current) => (current || []).map(d => 
+        d.id === editingDefect.id 
+          ? { 
+              ...d, 
+              title: defectFormData.title,
+              description: defectFormData.description,
+              priority: defectFormData.priority,
+              category: defectFormData.category,
+              updatedAt: timestamp
+            }
+          : d
+      ))
+      toast.success(t.defectUpdated)
+    } else {
+      // Create new defect
+      const newDefect: Defect = {
+        id: `defect-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: defectFormData.title,
+        description: defectFormData.description,
+        status: 'open',
+        priority: defectFormData.priority,
+        category: defectFormData.category,
+        reportedBy: 'admin',
+        reportedAt: timestamp,
+        updatedAt: timestamp,
+        attachedConversation: editingDefect?.attachedConversation,
+        notes: []
+      }
+      setDefects((current) => [...(current || []), newDefect])
+      toast.success(t.defectCreated)
+    }
+    
+    setShowDefectDialog(false)
+    setEditingDefect(null)
+    setDefectFormData({ title: '', description: '', priority: 'medium', category: 'bug' })
+  }
+  
+  const handleUpdateDefectStatus = (defectId: string, status: Defect['status']) => {
+    const timestamp = new Date().toISOString()
+    setDefects((current) => (current || []).map(d => 
+      d.id === defectId 
+        ? { 
+            ...d, 
+            status,
+            updatedAt: timestamp,
+            fixedAt: status === 'fixed' ? timestamp : d.fixedAt,
+            fixedBy: status === 'fixed' ? 'admin' : d.fixedBy
+          }
+        : d
+    ))
+    toast.success(t.defectUpdated)
+  }
+  
+  const handleDeleteDefect = (defectId: string) => {
+    setDefects((current) => (current || []).filter(d => d.id !== defectId))
+    toast.success(language === 'hi' ? 'दोष हटा दिया गया' : 'Defect deleted')
+  }
+  
+  const filteredDefects = defects?.filter(d => 
+    defectStatusFilter === 'all' ? true : d.status === defectStatusFilter
+  ) || []
 
   // Handle broadcast file select
   const handleBroadcastFileSelect = (files: FileList | null) => {
@@ -1856,6 +2021,42 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     
     return suggestions
   }
+
+  // AI Chat Summary function (secret admin feature)
+  const handleSummarizeChat = useCallback(async () => {
+    if (!selectedProfile || !messages) return
+    
+    setIsLoadingChatSummary(true)
+    setChatSummary(null)
+    
+    try {
+      // Get messages for this profile
+      const profileMessages = messages.filter(m => 
+        m.type === 'admin-to-user' && 
+        (m.fromProfileId === selectedProfile.profileId || m.toProfileId === selectedProfile.profileId)
+      ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+      
+      const formattedMessages = profileMessages.map(m => ({
+        from: m.fromProfileId === 'admin' ? 'Admin' : (selectedProfile.fullName || selectedProfile.profileId),
+        message: m.message || (m as any).content || '',
+        timestamp: m.timestamp,
+        location: m.location
+      }))
+      
+      const result = await summarizeChatConversation({
+        messages: formattedMessages,
+        userName: selectedProfile.fullName || selectedProfile.profileId,
+        language
+      })
+      
+      setChatSummary(result)
+    } catch (error) {
+      logger.error('Chat summary error:', error)
+      toast.error(language === 'hi' ? 'सारांश त्रुटि' : 'Summary error')
+    } finally {
+      setIsLoadingChatSummary(false)
+    }
+  }, [selectedProfile, messages, language])
 
   // Admin chat attachment handling functions (WhatsApp-like)
   const handleAdminFileSelect = useCallback((files: FileList | null) => {
@@ -2974,6 +3175,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   <DropdownMenuItem 
                                     onClick={() => {
                                       setSelectedProfile(profile)
+                                      setChatSummary(null) // Reset AI summary when opening new chat
                                       setShowChatDialog(true)
                                     }}
                                     className="text-blue-600 focus:text-blue-600 focus:bg-blue-50"
@@ -3434,6 +3636,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   size="sm"
                                   onClick={() => {
                                     setSelectedProfile(profile)
+                                    setChatSummary(null) // Reset AI summary when opening new chat
                                     setShowChatDialog(true)
                                   }}
                                   title={t.chat}
@@ -3572,14 +3775,29 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Broadcast Message Button */}
-                <div className="mb-4">
+                {/* Broadcast Message Button and Defect Tracking Button */}
+                <div className="mb-4 flex items-center gap-2">
                   <Button 
                     onClick={() => setShowBroadcastDialog(true)}
                     className="gap-2 bg-accent hover:bg-accent/90"
                   >
                     <Bell size={18} weight="fill" />
                     {t.broadcastMessage}
+                  </Button>
+                  {/* Secret Defect Tracking Button - subtle appearance */}
+                  <Button 
+                    variant="ghost"
+                    size="sm"
+                    className="opacity-30 hover:opacity-100 transition-opacity"
+                    onClick={() => setShowDefectsPanel(true)}
+                    title="🐛"
+                  >
+                    <Bug size={18} />
+                    {(defects?.filter(d => d.status === 'open' || d.status === 'in-progress').length || 0) > 0 && (
+                      <Badge variant="destructive" className="ml-1 h-5 min-w-5 text-xs">
+                        {defects?.filter(d => d.status === 'open' || d.status === 'in-progress').length || 0}
+                      </Badge>
+                    )}
                   </Button>
                 </div>
                 <Chat 
@@ -6638,10 +6856,79 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 <span className="text-sm font-normal text-muted-foreground">{selectedProfile?.profileId}</span>
               </div>
             </DialogTitle>
-            <DialogDescription>
-              {selectedProfile?.membershipPlan || 'free'} {selectedProfile?.membershipPlan !== 'free' && selectedProfile?.membershipPlan ? '' : ''} • {language === 'hi' ? 'चैट इतिहास और नया संदेश' : 'Chat history and new message'}
+            <DialogDescription className="flex items-center justify-between">
+              <span>{selectedProfile?.membershipPlan || 'free'} {selectedProfile?.membershipPlan !== 'free' && selectedProfile?.membershipPlan ? '' : ''} • {language === 'hi' ? 'चैट इतिहास और नया संदेश' : 'Chat history and new message'}</span>
+              <div className="flex items-center gap-1">
+                {/* Secret Bug Report Button - lodge defect with conversation */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 opacity-30 hover:opacity-100 transition-opacity"
+                  onClick={handleLodgeDefectFromChat}
+                  title="🐛"
+                >
+                  <Bug size={14} />
+                </Button>
+                {/* Secret AI Summary Button - appears as subtle icon */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 opacity-30 hover:opacity-100 transition-opacity"
+                  onClick={handleSummarizeChat}
+                  disabled={isLoadingChatSummary}
+                  title="✨"
+                >
+                  {isLoadingChatSummary ? (
+                    <Spinner size={14} className="animate-spin" />
+                  ) : (
+                    <Robot size={14} />
+                  )}
+                </Button>
+              </div>
             </DialogDescription>
           </DialogHeader>
+          
+          {/* AI Chat Summary (only visible when generated) */}
+          {chatSummary && (
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-3 text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-1">
+                  <Robot size={14} /> AI Summary
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-5 w-5 p-0"
+                  onClick={() => setChatSummary(null)}
+                >
+                  <X size={12} />
+                </Button>
+              </div>
+              <p className="text-muted-foreground">{chatSummary.summary}</p>
+              {chatSummary.keyTopics.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {chatSummary.keyTopics.map((topic, i) => (
+                    <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0">
+                      {topic}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Badge 
+                  variant={chatSummary.sentiment === 'positive' ? 'default' : chatSummary.sentiment === 'negative' ? 'destructive' : 'secondary'}
+                  className="text-[10px]"
+                >
+                  {chatSummary.sentiment}
+                </Badge>
+                {chatSummary.actionItems.length > 0 && (
+                  <span className="text-muted-foreground">
+                    📋 {chatSummary.actionItems.join(', ')}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
           
           {/* Chat History */}
           <ScrollArea className="flex-1 max-h-[300px] border rounded-lg p-3 bg-muted/20">
@@ -6698,6 +6985,18 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           <span className={`text-xs ${isFromAdmin ? 'opacity-70' : 'text-muted-foreground'}`}>
                             {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
+                          {/* Location indicator - only show on messages FROM users (not admin) */}
+                          {!isFromAdmin && msg.location && (
+                            <a
+                              href={`https://www.google.com/maps?q=${msg.location.latitude},${msg.location.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-0.5 ml-1"
+                              title={`📍 ${msg.location.latitude.toFixed(4)}, ${msg.location.longitude.toFixed(4)}${msg.location.accuracy ? ` (±${Math.round(msg.location.accuracy)}m)` : ''}\n🕐 ${new Date(msg.location.timestamp).toLocaleString()}`}
+                            >
+                              <MapPin size={12} weight="fill" />
+                            </a>
+                          )}
                           {isFromAdmin && (
                             <span className={`flex items-center ${
                               messageStatus === 'read' 
@@ -10645,6 +10944,299 @@ ShaadiPartnerSearch Team
                 : (language === 'hi' ? 'बनाएं' : 'Create')}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Defect Lodge/Edit Dialog */}
+      <Dialog open={showDefectDialog} onOpenChange={setShowDefectDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bug size={20} />
+              {editingDefect?.id ? t.defects : t.lodgeDefect}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'hi' ? 'दोष की जानकारी दर्ज करें' : 'Enter defect details'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t.defectTitle} *</Label>
+              <Input
+                value={defectFormData.title}
+                onChange={(e) => setDefectFormData(prev => ({ ...prev, title: e.target.value }))}
+                placeholder={language === 'hi' ? 'दोष का शीर्षक' : 'Defect title'}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>{t.defectDescription}</Label>
+              <Textarea
+                value={defectFormData.description}
+                onChange={(e) => setDefectFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder={language === 'hi' ? 'विस्तृत विवरण' : 'Detailed description'}
+                rows={3}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t.defectPriority}</Label>
+                <Select
+                  value={defectFormData.priority}
+                  onValueChange={(v) => setDefectFormData(prev => ({ ...prev, priority: v as any }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">{t.defectLow}</SelectItem>
+                    <SelectItem value="medium">{t.defectMedium}</SelectItem>
+                    <SelectItem value="high">{t.defectHigh}</SelectItem>
+                    <SelectItem value="critical">{t.defectCritical}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>{t.defectCategory}</Label>
+                <Select
+                  value={defectFormData.category}
+                  onValueChange={(v) => setDefectFormData(prev => ({ ...prev, category: v as any }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bug">{t.defectBug}</SelectItem>
+                    <SelectItem value="ui">{t.defectUI}</SelectItem>
+                    <SelectItem value="feature">{t.defectFeature}</SelectItem>
+                    <SelectItem value="performance">{t.defectPerformance}</SelectItem>
+                    <SelectItem value="security">{t.defectSecurity}</SelectItem>
+                    <SelectItem value="other">{t.defectOther}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            {/* Show attached conversation info */}
+            {editingDefect?.attachedConversation && (
+              <div className="bg-muted/50 p-3 rounded-lg border">
+                <div className="flex items-center gap-2 text-sm">
+                  <ChatCircle size={16} className="text-primary" />
+                  <span className="font-medium">{t.conversationAttached}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {editingDefect.attachedConversation.userName} ({editingDefect.attachedConversation.userProfileId}) - 
+                  {editingDefect.attachedConversation.messages.length} messages
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDefectDialog(false)}>
+              {language === 'hi' ? 'रद्द करें' : 'Cancel'}
+            </Button>
+            <Button onClick={handleSaveDefect}>
+              <Check className="h-4 w-4 mr-2" />
+              {language === 'hi' ? 'सहेजें' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Defects Panel Dialog - shows all defects */}
+      <Dialog open={showDefectsPanel} onOpenChange={setShowDefectsPanel}>
+        <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bug size={20} />
+              {t.defectTracking}
+              <Badge variant="secondary" className="ml-2">{defects?.length || 0}</Badge>
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'hi' ? 'सभी दर्ज दोषों की सूची' : 'List of all logged defects'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* Filter by status */}
+          <div className="flex items-center gap-2 mb-4">
+            <Label className="text-sm">{t.defectStatus}:</Label>
+            <Select
+              value={defectStatusFilter}
+              onValueChange={(v) => setDefectStatusFilter(v as any)}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{language === 'hi' ? 'सभी' : 'All'}</SelectItem>
+                <SelectItem value="open">{t.defectOpen}</SelectItem>
+                <SelectItem value="in-progress">{t.defectInProgress}</SelectItem>
+                <SelectItem value="fixed">{t.defectFixed}</SelectItem>
+                <SelectItem value="wont-fix">{t.defectWontFix}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto"
+              onClick={() => {
+                setEditingDefect(null)
+                setDefectFormData({ title: '', description: '', priority: 'medium', category: 'bug' })
+                setShowDefectDialog(true)
+              }}
+            >
+              <Plus size={14} className="mr-1" />
+              {t.lodgeDefect}
+            </Button>
+          </div>
+          
+          {/* Defects List */}
+          <ScrollArea className="flex-1">
+            {filteredDefects.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Bug size={40} className="mx-auto mb-2 opacity-30" />
+                <p>{t.noDefects}</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredDefects.map(defect => (
+                  <Card key={defect.id} className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium">{defect.title}</span>
+                          <Badge 
+                            variant={
+                              defect.priority === 'critical' ? 'destructive' :
+                              defect.priority === 'high' ? 'secondary' :
+                              'outline'
+                            }
+                            className={
+                              defect.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                              defect.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                              ''
+                            }
+                          >
+                            {defect.priority}
+                          </Badge>
+                          <Badge variant="outline">{defect.category}</Badge>
+                          <Badge 
+                            variant={
+                              defect.status === 'fixed' ? 'default' :
+                              defect.status === 'in-progress' ? 'secondary' :
+                              defect.status === 'wont-fix' ? 'outline' :
+                              'destructive'
+                            }
+                            className={
+                              defect.status === 'fixed' ? 'bg-green-100 text-green-800' :
+                              defect.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
+                              ''
+                            }
+                          >
+                            {defect.status === 'open' ? t.defectOpen :
+                             defect.status === 'in-progress' ? t.defectInProgress :
+                             defect.status === 'fixed' ? t.defectFixed :
+                             t.defectWontFix}
+                          </Badge>
+                        </div>
+                        
+                        {defect.description && (
+                          <p className="text-sm text-muted-foreground mb-2">{defect.description}</p>
+                        )}
+                        
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span>{formatDateDDMMYYYY(defect.reportedAt)}</span>
+                          {defect.attachedConversation && (
+                            <span className="flex items-center gap-1 text-primary">
+                              <ChatCircle size={12} />
+                              {defect.attachedConversation.userName}
+                            </span>
+                          )}
+                          {defect.fixedAt && (
+                            <span className="text-green-600">
+                              ✓ Fixed {formatDateDDMMYYYY(defect.fixedAt)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-1">
+                        {defect.status !== 'fixed' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={() => handleUpdateDefectStatus(defect.id, 'fixed')}
+                            title={t.markAsFixed}
+                          >
+                            <CheckCircle size={16} />
+                          </Button>
+                        )}
+                        {defect.status === 'open' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8"
+                            onClick={() => handleUpdateDefectStatus(defect.id, 'in-progress')}
+                            title={t.defectInProgress}
+                          >
+                            <Wrench size={16} />
+                          </Button>
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <CaretDown size={16} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => {
+                              setEditingDefect(defect)
+                              setDefectFormData({
+                                title: defect.title,
+                                description: defect.description,
+                                priority: defect.priority,
+                                category: defect.category
+                              })
+                              setShowDefectDialog(true)
+                            }}>
+                              <Pencil size={14} className="mr-2" />
+                              {language === 'hi' ? 'संपादित करें' : 'Edit'}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleUpdateDefectStatus(defect.id, 'open')}>
+                              {t.defectOpen}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateDefectStatus(defect.id, 'in-progress')}>
+                              {t.defectInProgress}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateDefectStatus(defect.id, 'fixed')}>
+                              {t.defectFixed}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateDefectStatus(defect.id, 'wont-fix')}>
+                              {t.defectWontFix}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={() => handleDeleteDefect(defect.id)}
+                            >
+                              <Trash size={14} className="mr-2" />
+                              {language === 'hi' ? 'हटाएं' : 'Delete'}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </section>
