@@ -1301,8 +1301,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       return
     }
 
-    // Calculate membership cost and expiry based on plan
-    const membershipCost = formData.membershipPlan === 'free' ? 0 : formData.membershipPlan === '6-month' ? 500 : 900
+    // Calculate membership cost and expiry based on plan - use admin settings
+    const membershipCost = formData.membershipPlan === 'free' 
+      ? 0 
+      : formData.membershipPlan === '6-month' 
+        ? (membershipSettings?.sixMonthPrice || 500) 
+        : (membershipSettings?.oneYearPrice || 900)
     
     // In edit mode, keep existing membership expiry unless plan changed
     let membershipExpiry: Date

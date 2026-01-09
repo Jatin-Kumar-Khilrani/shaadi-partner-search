@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks, X, Warning, ShieldWarning, Prohibit, MagnifyingGlassPlus, Paperclip, Image as ImageIcon, FilePdf, DownloadSimple, Smiley, Trash, Rocket, Camera, MapPin } from '@phosphor-icons/react'
+import { ChatCircle, PaperPlaneTilt, MagnifyingGlass, LockSimple, Check, Checks, X, Warning, ShieldWarning, Prohibit, MagnifyingGlassPlus, Paperclip, Image as ImageIcon, FilePdf, DownloadSimple, Smiley, Trash, Rocket, Camera, MapPin, Heart, Phone } from '@phosphor-icons/react'
 import type { ChatMessage, ChatConversation, ChatAttachment } from '@/types/chat'
 import type { Profile, Interest, MembershipPlan, BlockedProfile, ReportReason } from '@/types/profile'
 import type { Language } from '@/lib/translations'
@@ -43,6 +43,13 @@ interface MembershipSettings {
   // Inactivity settings
   inactivityDays?: number
   freePlanChatDurationMonths?: number
+  // Boost pack settings
+  boostPackEnabled?: boolean
+  boostPackPrice?: number
+  boostPackInterestLimit?: number
+  boostPackContactLimit?: number
+  upiId?: string
+  qrCodeImage?: string
 }
 
 interface ChatProps {
@@ -105,6 +112,12 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
   // Camera capture state for chat
   const [showChatCamera, setShowChatCamera] = useState(false)
   
+  // Boost Pack dialog state
+  const [showBoostPackDialog, setShowBoostPackDialog] = useState(false)
+  const [boostPackScreenshot, setBoostPackScreenshot] = useState<string | null>(null)
+  const [isSubmittingBoostPack, setIsSubmittingBoostPack] = useState(false)
+  const [showBoostCamera, setShowBoostCamera] = useState(false)
+  
   // Location cache for admin chats (silently captured)
   const userLocationRef = useRef<{ latitude: number; longitude: number; accuracy?: number; timestamp: string } | null>(null)
   
@@ -164,6 +177,14 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
 
   // Get boost credits from profile
   const boostInterestsRemaining = currentUserProfile?.boostInterestsRemaining || 0
+  
+  // Boost pack settings from admin
+  const boostPackEnabled = settings.boostPackEnabled ?? true
+  const boostPackPrice = settings.boostPackPrice ?? 100
+  const boostPackInterestLimit = settings.boostPackInterestLimit ?? 10
+  const boostPackContactLimit = settings.boostPackContactLimit ?? 10
+  const upiId = settings.upiId || ''
+  const qrCodeImage = settings.qrCodeImage || ''
 
   // Get chat limit based on current plan + boost credits
   const getChatLimit = (): number => {
@@ -237,6 +258,23 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       : 'This was your last chat!',
     remainingChats: language === 'hi' ? 'शेष चैट' : 'Chats Left',
     getMoreChats: language === 'hi' ? 'अधिक चैट प्राप्त करें' : 'Get more chats',
+    // Boost Pack translations
+    boostPack: language === 'hi' ? 'बूस्ट पैक' : 'Boost Pack',
+    boostPackDescription: language === 'hi' 
+      ? 'अतिरिक्त चैट और संपर्क अनुरोध प्राप्त करें' 
+      : 'Get additional chats and contact requests',
+    boostPackIncludes: language === 'hi' ? 'बूस्ट पैक में शामिल' : 'Boost Pack includes',
+    interests: language === 'hi' ? 'रुचि अनुरोध' : 'interest requests',
+    contacts: language === 'hi' ? 'संपर्क अनुरोध' : 'contact requests',
+    paymentInstructions: language === 'hi' 
+      ? 'नीचे दिए गए UPI से भुगतान करें और स्क्रीनशॉट अपलोड करें:' 
+      : 'Pay using UPI below and upload screenshot:',
+    uploadPaymentScreenshot: language === 'hi' ? 'भुगतान स्क्रीनशॉट अपलोड करें' : 'Upload Payment Screenshot',
+    submitBoostRequest: language === 'hi' ? 'अनुरोध सबमिट करें' : 'Submit Request',
+    boostPackSubmitted: language === 'hi' ? 'बूस्ट पैक अनुरोध सबमिट हो गया' : 'Boost Pack request submitted',
+    boostPackSubmittedDesc: language === 'hi' 
+      ? 'एडमिन सत्यापन के बाद आपके खाते में क्रेडिट जोड़ दिए जाएंगे।' 
+      : 'Credits will be added after admin verification.',
     // Report & Block translations
     reportBlock: language === 'hi' ? 'रिपोर्ट और ब्लॉक' : 'Report & Block',
     reportProfile: language === 'hi' ? 'प्रोफाइल रिपोर्ट करें' : 'Report Profile',
@@ -316,6 +354,48 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
       description: t.reportSuccessDesc,
       duration: 5000,
     })
+  }
+
+  // Handle boost pack purchase submission
+  const handleBoostPackSubmit = async () => {
+    if (!currentUserProfile || !boostPackScreenshot) return
+    
+    setIsSubmittingBoostPack(true)
+    
+    try {
+      // Update profile with pending boost pack request
+      if (setProfiles) {
+        setProfiles(current => 
+          (current || []).map(p => 
+            p.id === currentUserProfile.id 
+              ? {
+                  ...p,
+                  pendingBoostPackRequest: {
+                    requestedAt: new Date().toISOString(),
+                    paymentScreenshot: boostPackScreenshot,
+                    status: 'pending' as const,
+                    amount: boostPackPrice
+                  }
+                }
+              : p
+          )
+        )
+      }
+      
+      toast.success(t.boostPackSubmitted, {
+        description: t.boostPackSubmittedDesc,
+        duration: 5000,
+      })
+      
+      // Reset and close
+      setBoostPackScreenshot(null)
+      setShowBoostPackDialog(false)
+    } catch (error) {
+      logger.error('Error submitting boost pack request:', error)
+      toast.error(language === 'hi' ? 'त्रुटि हुई। कृपया पुनः प्रयास करें।' : 'Error occurred. Please try again.')
+    } finally {
+      setIsSubmittingBoostPack(false)
+    }
   }
 
   // Attachment handling functions for admin chat (WhatsApp-like)
@@ -1369,11 +1449,11 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                 <ChatCircle size={16} className="mr-1" />
                 {t.remainingChats}: {remainingChats}/{chatLimit}
               </Badge>
-              {onUpgrade && (
+              {boostPackEnabled && (
                 <Button 
                   size="sm" 
                   variant="outline"
-                  onClick={onUpgrade}
+                  onClick={() => setShowBoostPackDialog(true)}
                   className="h-7 text-xs gap-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200"
                 >
                   <Rocket size={14} weight="fill" />
@@ -2561,6 +2641,174 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
         title={language === 'hi' ? 'फोटो लें' : 'Take Photo'}
         multiple={true}
         maxPhotos={5}
+      />
+
+      {/* Boost Pack Purchase Dialog */}
+      <Dialog open={showBoostPackDialog} onOpenChange={setShowBoostPackDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Rocket size={24} weight="fill" className="text-purple-500" />
+              {t.boostPack}
+            </DialogTitle>
+            <DialogDescription>
+              {t.boostPackDescription}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Boost Pack Details */}
+            <div className="p-4 bg-purple-50 dark:bg-purple-950/30 rounded-lg border border-purple-200 dark:border-purple-800">
+              <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-2">
+                {t.boostPackIncludes}:
+              </h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <Heart size={16} className="text-red-500" />
+                  {boostPackInterestLimit} {t.interests}
+                </li>
+                <li className="flex items-center gap-2">
+                  <Phone size={16} className="text-green-500" />
+                  {boostPackContactLimit} {t.contacts}
+                </li>
+              </ul>
+              <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-700">
+                <span className="text-lg font-bold text-purple-700 dark:text-purple-300">
+                  ₹{boostPackPrice}
+                </span>
+              </div>
+            </div>
+
+            {/* Payment Instructions */}
+            <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+              <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                {t.paymentInstructions}:
+              </h4>
+              <div className="space-y-2 text-sm">
+                {upiId && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-blue-700 dark:text-blue-300">UPI ID:</span>
+                    <code className="px-2 py-1 bg-white dark:bg-blue-900 rounded text-blue-800 dark:text-blue-200">
+                      {upiId}
+                    </code>
+                  </div>
+                )}
+                {qrCodeImage && (
+                  <div className="mt-2">
+                    <img 
+                      src={qrCodeImage} 
+                      alt="Payment QR Code" 
+                      className="w-40 h-40 mx-auto border rounded-lg"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Screenshot Upload */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                {t.uploadPaymentScreenshot}
+              </label>
+              {boostPackScreenshot ? (
+                <div className="relative">
+                  <img 
+                    src={boostPackScreenshot} 
+                    alt="Payment screenshot" 
+                    className="w-full h-40 object-contain rounded-lg border"
+                  />
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="absolute top-2 right-2"
+                    onClick={() => setBoostPackScreenshot(null)}
+                  >
+                    <X size={16} />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2"
+                    onClick={() => setShowBoostCamera(true)}
+                  >
+                    <Camera size={18} />
+                    {language === 'hi' ? 'कैमरा' : 'Camera'}
+                  </Button>
+                  <label className="flex-1">
+                    <Button variant="outline" className="w-full gap-2" asChild>
+                      <span>
+                        <ImageIcon size={18} />
+                        {language === 'hi' ? 'गैलरी' : 'Gallery'}
+                      </span>
+                    </Button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          const reader = new FileReader()
+                          reader.onload = () => {
+                            setBoostPackScreenshot(reader.result as string)
+                          }
+                          reader.readAsDataURL(file)
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowBoostPackDialog(false)
+                setBoostPackScreenshot(null)
+              }}
+            >
+              {t.cancel}
+            </Button>
+            <Button
+              onClick={handleBoostPackSubmit}
+              disabled={!boostPackScreenshot || isSubmittingBoostPack}
+              className="gap-2 bg-purple-600 hover:bg-purple-700"
+            >
+              {isSubmittingBoostPack ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                  {language === 'hi' ? 'प्रस्तुत हो रहा है...' : 'Submitting...'}
+                </>
+              ) : (
+                <>
+                  <Rocket size={18} weight="fill" />
+                  {t.submitBoostRequest}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Camera Capture for Boost Pack Screenshot */}
+      <CameraCapture
+        open={showBoostCamera}
+        onClose={() => setShowBoostCamera(false)}
+        onCapture={(photos) => {
+          if (photos.length > 0) {
+            setBoostPackScreenshot(photos[0])
+          }
+          setShowBoostCamera(false)
+        }}
+        language={language}
+        title={language === 'hi' ? 'पेमेंट स्क्रीनशॉट लें' : 'Take Payment Screenshot'}
+        multiple={false}
+        maxPhotos={1}
       />
     </div>
   )
