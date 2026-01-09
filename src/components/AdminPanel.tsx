@@ -1968,8 +1968,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
       if (!(profile as any).annualIncome) {
         suggestions.push('11. वार्षिक आय की जानकारी गायब है।')
       }
-      if (!(profile as any).profession) {
-        suggestions.push('12. पेशे की जानकारी गायब है।')
+      if (!profile.position) {
+        suggestions.push('12. व्यवसाय/पेशे की जानकारी गायब है।')
       }
       
       if (suggestions.length === 0) {
@@ -2010,8 +2010,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
       if (!(profile as any).annualIncome) {
         suggestions.push('11. Annual income information is missing.')
       }
-      if (!(profile as any).profession) {
-        suggestions.push('12. Profession information is missing.')
+      if (!profile.position) {
+        suggestions.push('12. Occupation/Profession information is missing.')
       }
       
       if (suggestions.length === 0) {

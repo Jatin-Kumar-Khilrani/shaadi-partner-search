@@ -431,8 +431,7 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
     diet: language === 'hi' ? 'खान-पान' : 'Diet',
     habits: language === 'hi' ? 'आदतें' : 'Habits',
     annualIncome: language === 'hi' ? 'वार्षिक आय' : 'Annual Income',
-    profession: language === 'hi' ? 'पेशा' : 'Profession',
-    position: language === 'hi' ? 'पद/पदनाम' : 'Position/Designation',
+    profession: language === 'hi' ? 'व्यवसाय/पेशा' : 'Occupation/Profession',
     relation: language === 'hi' ? 'प्रोफाइल किसके लिए बनाई' : 'Profile Created For',
     registeredBy: language === 'hi' ? 'पंजीकरणकर्ता' : 'Registered By',
     notProvided: language === 'hi' ? 'प्रदान नहीं किया गया' : 'Not Provided',
@@ -760,16 +759,10 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                     label={t.annualIncome} 
                     value={profile.salary || t.notProvided} 
                   />
-                  {/* Profession */}
+                  {/* Occupation/Profession */}
                   <InfoItem 
                     icon={<Briefcase size={18} />} 
                     label={t.profession} 
-                    value={profile.occupation || t.notProvided} 
-                  />
-                  {/* Position */}
-                  <InfoItem 
-                    icon={<Briefcase size={18} />} 
-                    label={t.position} 
                     value={profile.position || t.notProvided} 
                   />
                   {/* Relation to Profile */}
