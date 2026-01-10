@@ -82,7 +82,9 @@ export function AdminLoginDialog({
     invalidOtp: language === 'hi' ? 'गलत OTP' : 'Invalid OTP',
     keepMeLoggedIn: language === 'hi' ? 'मुझे लॉग इन रखें' : 'Keep me logged in',
     enterUsername: language === 'hi' ? 'पहले अपना यूज़रनेम दर्ज करें' : 'Enter your username first',
-    credentialsNotConfigured: language === 'hi' ? 'एडमिन क्रेडेंशियल्स कॉन्फ़िगर नहीं हैं' : 'Admin credentials not configured'
+    credentialsNotConfigured: language === 'hi' ? 'एडमिन क्रेडेंशियल्स कॉन्फ़िगर नहीं हैं' : 'Admin credentials not configured',
+    resendOtp: language === 'hi' ? 'OTP पुनः भेजें' : 'Resend OTP',
+    otpResent: language === 'hi' ? 'नया OTP भेजा गया' : 'New OTP sent'
   }
 
   const handleClose = () => {
@@ -141,6 +143,17 @@ export function AdminLoginDialog({
     } else {
       toast.error(t.invalidOtp)
     }
+  }
+
+  const handleResendOtp = () => {
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString()
+    setGeneratedOtp(newOtp)
+    setOtp('') // Clear current OTP input
+    
+    toast.info(t.otpResent, {
+      description: `OTP: ${newOtp}`,
+      duration: 10000
+    })
   }
 
   return (
@@ -259,13 +272,18 @@ export function AdminLoginDialog({
               />
             </div>
 
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={handleClose}>
-                {t.cancel}
+            <div className="flex gap-2 justify-between">
+              <Button type="button" variant="ghost" onClick={handleResendOtp} className="text-primary">
+                {t.resendOtp}
               </Button>
-              <Button type="submit">
-                {t.verify}
-              </Button>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={handleClose}>
+                  {t.cancel}
+                </Button>
+                <Button type="submit">
+                  {t.verify}
+                </Button>
+              </div>
             </div>
           </form>
         )}
