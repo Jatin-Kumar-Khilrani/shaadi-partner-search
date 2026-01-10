@@ -105,36 +105,30 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
   const [showRenewalCamera, setShowRenewalCamera] = useState(false)
   const renewalFileInputRef = useRef<HTMLInputElement>(null)
   
-  // Auto-refresh state for pending payment/approval
+  // Refresh state for pending payment/approval (manual only, no auto-poll)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
+  const [refreshCooldown, setRefreshCooldown] = useState(false)
+  const REFRESH_COOLDOWN_MS = 10000 // 10 second cooldown between checks
 
-  // Auto-poll for status changes when payment is pending or profile is pending approval
-  useEffect(() => {
-    const shouldPoll = profile && (
-      // Poll when payment is pending verification
-      (profile.status === 'pending' && profile.paymentStatus === 'pending' && 
-       profile.paymentScreenshotUrls && profile.paymentScreenshotUrls.length > 0) ||
-      // Poll when profile is pending approval
-      (profile.status === 'pending' && !profile.returnedForEdit && !profile.returnedForPayment) ||
-      // Poll when renewal payment is pending
-      (profile.renewalPaymentStatus === 'pending')
-    )
-
-    if (!shouldPoll || !onRefreshProfile) return
-
-    // Poll every 30 seconds
-    const pollInterval = setInterval(async () => {
-      try {
-        await onRefreshProfile()
-        setLastRefreshTime(new Date())
-      } catch (error) {
-        console.error('Auto-refresh failed:', error)
-      }
-    }, 30000)
-
-    return () => clearInterval(pollInterval)
-  }, [profile?.status, profile?.paymentStatus, profile?.renewalPaymentStatus, onRefreshProfile])
+  // Handle manual status check with cooldown
+  const handleCheckStatus = async () => {
+    if (isRefreshing || refreshCooldown || !onRefreshProfile) return
+    
+    setIsRefreshing(true)
+    try {
+      await onRefreshProfile()
+      setLastRefreshTime(new Date())
+      toast.success(language === 'hi' ? 'स्थिति अपडेट की गई' : 'Status updated')
+      // Set cooldown
+      setRefreshCooldown(true)
+      setTimeout(() => setRefreshCooldown(false), REFRESH_COOLDOWN_MS)
+    } catch (error) {
+      toast.error(language === 'hi' ? 'रिफ्रेश विफल' : 'Refresh failed')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   const t = {
     title: language === 'hi' ? 'मेरी प्रोफाइल' : 'My Profile',
@@ -1091,23 +1085,14 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={async () => {
-                      setIsRefreshing(true)
-                      try {
-                        await onRefreshProfile()
-                        setLastRefreshTime(new Date())
-                        toast.success(language === 'hi' ? 'स्थिति अपडेट की गई' : 'Status updated')
-                      } catch (error) {
-                        toast.error(language === 'hi' ? 'रिफ्रेश विफल' : 'Refresh failed')
-                      } finally {
-                        setIsRefreshing(false)
-                      }
-                    }}
-                    disabled={isRefreshing}
+                    onClick={handleCheckStatus}
+                    disabled={isRefreshing || refreshCooldown}
                     className="border-purple-400 text-purple-700 hover:bg-purple-100"
                   >
                     <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
-                    {language === 'hi' ? 'स्थिति जांचें' : 'Check Status'}
+                    {refreshCooldown 
+                      ? (language === 'hi' ? 'कृपया प्रतीक्षा करें...' : 'Please wait...')
+                      : (language === 'hi' ? 'स्थिति जांचें' : 'Check Status')}
                   </Button>
                 )}
                 {lastRefreshTime && (
@@ -1118,11 +1103,6 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                   </span>
                 )}
               </div>
-              <p className="mt-2 text-xs italic text-purple-600">
-                {language === 'hi' 
-                  ? 'स्वचालित रूप से हर 30 सेकंड में जांच होती है'
-                  : 'Auto-checking every 30 seconds'}
-              </p>
             </AlertDescription>
           </Alert>
         )}
@@ -1150,23 +1130,14 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={async () => {
-                      setIsRefreshing(true)
-                      try {
-                        await onRefreshProfile()
-                        setLastRefreshTime(new Date())
-                        toast.success(language === 'hi' ? 'स्थिति अपडेट की गई' : 'Status updated')
-                      } catch (error) {
-                        toast.error(language === 'hi' ? 'रिफ्रेश विफल' : 'Refresh failed')
-                      } finally {
-                        setIsRefreshing(false)
-                      }
-                    }}
-                    disabled={isRefreshing}
+                    onClick={handleCheckStatus}
+                    disabled={isRefreshing || refreshCooldown}
                     className="border-emerald-400 text-emerald-700 hover:bg-emerald-100"
                   >
                     <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
-                    {language === 'hi' ? 'स्थिति जांचें' : 'Check Status'}
+                    {refreshCooldown 
+                      ? (language === 'hi' ? 'कृपया प्रतीक्षा करें...' : 'Please wait...')
+                      : (language === 'hi' ? 'स्थिति जांचें' : 'Check Status')}
                   </Button>
                 )}
                 {lastRefreshTime && (
@@ -1177,11 +1148,6 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                   </span>
                 )}
               </div>
-              <p className="mt-2 text-xs italic text-emerald-600">
-                {language === 'hi' 
-                  ? 'स्वचालित रूप से हर 30 सेकंड में जांच होती है'
-                  : 'Auto-checking every 30 seconds'}
-              </p>
             </AlertDescription>
           </Alert>
         )}
@@ -1204,23 +1170,14 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={async () => {
-                      setIsRefreshing(true)
-                      try {
-                        await onRefreshProfile()
-                        setLastRefreshTime(new Date())
-                        toast.success(language === 'hi' ? 'स्थिति अपडेट की गई' : 'Status updated')
-                      } catch (error) {
-                        toast.error(language === 'hi' ? 'रिफ्रेश विफल' : 'Refresh failed')
-                      } finally {
-                        setIsRefreshing(false)
-                      }
-                    }}
-                    disabled={isRefreshing}
+                    onClick={handleCheckStatus}
+                    disabled={isRefreshing || refreshCooldown}
                     className="border-blue-400 text-blue-700 hover:bg-blue-100"
                   >
                     <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
-                    {language === 'hi' ? 'स्थिति जांचें' : 'Check Status'}
+                    {refreshCooldown 
+                      ? (language === 'hi' ? 'कृपया प्रतीक्षा करें...' : 'Please wait...')
+                      : (language === 'hi' ? 'स्थिति जांचें' : 'Check Status')}
                   </Button>
                 )}
                 {lastRefreshTime && (
@@ -1231,11 +1188,6 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                   </span>
                 )}
               </div>
-              <p className="mt-2 text-xs italic text-blue-600">
-                {language === 'hi' 
-                  ? 'स्वचालित रूप से हर 30 सेकंड में जांच होती है'
-                  : 'Auto-checking every 30 seconds'}
-              </p>
             </AlertDescription>
           </Alert>
         )}
