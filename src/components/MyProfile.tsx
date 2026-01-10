@@ -940,6 +940,11 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                 <Warning size={24} weight="fill" />
                 {t.editConfirmTitle}
               </DialogTitle>
+              <DialogDescription>
+                {language === 'hi' 
+                  ? 'कृपया प्रोफ़ाइल संपादन से पहले नीचे दी गई जानकारी पढ़ें।'
+                  : 'Please read the information below before editing your profile.'}
+              </DialogDescription>
             </DialogHeader>
             
             <div className="space-y-4">

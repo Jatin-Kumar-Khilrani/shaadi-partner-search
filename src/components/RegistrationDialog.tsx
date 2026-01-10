@@ -1797,9 +1797,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           : (isEditMode ? editProfile?.paymentScreenshotUrls : undefined),
         // IMPORTANT: Preserve existing paymentStatus in edit mode if no NEW payment uploaded
         // Only reset to 'pending' if user uploaded a NEW payment screenshot (not existing ones)
+        // FIX: Use nullish coalescing to ensure we never set paymentStatus to undefined
+        // If editProfile has no paymentStatus but has screenshots, treat as 'pending' (new payment awaiting verification)
         paymentStatus: hasNewPaymentScreenshots 
           ? 'pending' 
-          : (isEditMode ? editProfile?.paymentStatus : (uploadedPaymentScreenshotUrls.length > 0 ? 'pending' : undefined)),
+          : (isEditMode 
+              ? (editProfile?.paymentStatus ?? ((editProfile?.paymentScreenshotUrl || editProfile?.paymentScreenshotUrls?.length) ? 'pending' : undefined))
+              : (uploadedPaymentScreenshotUrls.length > 0 ? 'pending' : undefined)),
         paymentAmount: formData.membershipPlan === '6-month' 
           ? (membershipSettings?.sixMonthPrice || 500) 
           : (membershipSettings?.oneYearPrice || 900),

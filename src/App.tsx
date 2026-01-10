@@ -3,7 +3,8 @@ import { useKV } from '@/hooks/useKV'
 import { logger } from '@/lib/logger'
 import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/sheet'
+import { VisuallyHidden } from '@/components/ui/visually-hidden'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -799,9 +800,24 @@ function App() {
       if (!current) return []
       return current.map(p => {
         if (p.id === profileData.id) {
+          // FIX: Create a clean profileData object that excludes undefined payment fields
+          // This prevents undefined values from overwriting existing verified payment status
+          const cleanProfileData = { ...profileData }
+          // If paymentStatus is undefined in profileData but exists in current profile, preserve it
+          if (cleanProfileData.paymentStatus === undefined && p.paymentStatus !== undefined) {
+            cleanProfileData.paymentStatus = p.paymentStatus
+          }
+          // Same for payment verification fields
+          if (cleanProfileData.paymentVerifiedAt === undefined && p.paymentVerifiedAt !== undefined) {
+            cleanProfileData.paymentVerifiedAt = p.paymentVerifiedAt
+          }
+          if (cleanProfileData.paymentVerifiedBy === undefined && p.paymentVerifiedBy !== undefined) {
+            cleanProfileData.paymentVerifiedBy = p.paymentVerifiedBy
+          }
+          
           return {
             ...p,
-            ...profileData,
+            ...cleanProfileData,
             // Status, returnedForEdit, editReason, returnedAt are already set correctly in profileData
             // Track when profile was edited
             updatedAt: new Date().toISOString(),
@@ -1330,7 +1346,13 @@ function App() {
                 <List size={24} weight="bold" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right">
+            <SheetContent side="right" aria-describedby="mobile-menu-description">
+              <VisuallyHidden>
+                <SheetTitle>{language === 'hi' ? 'मोबाइल मेनू' : 'Mobile Menu'}</SheetTitle>
+                <SheetDescription id="mobile-menu-description">
+                  {language === 'hi' ? 'नेविगेशन मेनू और उपयोगकर्ता विकल्प' : 'Navigation menu and user options'}
+                </SheetDescription>
+              </VisuallyHidden>
               {/* Mobile User Profile Header */}
               {loggedInUser && currentUserProfile && (
                 <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-lg mb-4 mt-4">

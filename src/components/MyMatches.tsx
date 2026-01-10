@@ -10,7 +10,7 @@ import { SearchableSelect } from '@/components/ui/searchable-select'
 import { MultiSelect, EDUCATION_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, OCCUPATION_PROFESSION_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS, DIET_PREFERENCE_OPTIONS, DRINKING_HABIT_OPTIONS, SMOKING_HABIT_OPTIONS, getStateOptionsForCountries, getCityOptionsForStates, COUNTRY_OPTIONS } from '@/components/ui/multi-select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
@@ -2556,7 +2556,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                 )}
               </Button>
             </SheetTrigger>
-            <SheetContent className="w-[350px] sm:w-[400px]" allowBackgroundInteraction>
+            <SheetContent className="w-[350px] sm:w-[400px]" allowBackgroundInteraction aria-describedby="filter-description">
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-2">
                   <Funnel size={20} />
@@ -2565,10 +2565,10 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                     <Badge variant="secondary">{activeFilterCount} active</Badge>
                   )}
                 </SheetTitle>
-                {/* Live result count in filter panel */}
-                <p className="text-sm text-muted-foreground mt-1">
+                <SheetDescription id="filter-description">
+                  {/* Live result count in filter panel */}
                   {sortedProfiles.length.toLocaleString()} {t.matchesFound}
-                </p>
+                </SheetDescription>
               </SheetHeader>
               <div className="mt-6">
                 <FilterPanel />
