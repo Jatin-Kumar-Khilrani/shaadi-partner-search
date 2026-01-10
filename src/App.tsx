@@ -814,6 +814,26 @@ function App() {
           if (cleanProfileData.paymentVerifiedBy === undefined && p.paymentVerifiedBy !== undefined) {
             cleanProfileData.paymentVerifiedBy = p.paymentVerifiedBy
           }
+          // Same for ID proof verification fields - preserve if not explicitly set
+          if (cleanProfileData.idProofVerified === undefined && p.idProofVerified !== undefined) {
+            cleanProfileData.idProofVerified = p.idProofVerified
+          }
+          if (cleanProfileData.idProofVerifiedAt === undefined && p.idProofVerifiedAt !== undefined) {
+            cleanProfileData.idProofVerifiedAt = p.idProofVerifiedAt
+          }
+          if (cleanProfileData.idProofVerifiedBy === undefined && p.idProofVerifiedBy !== undefined) {
+            cleanProfileData.idProofVerifiedBy = p.idProofVerifiedBy
+          }
+          // Same for photo verification fields - preserve if not explicitly set
+          if (cleanProfileData.photoVerified === undefined && p.photoVerified !== undefined) {
+            cleanProfileData.photoVerified = p.photoVerified
+          }
+          if (cleanProfileData.photoVerifiedAt === undefined && p.photoVerifiedAt !== undefined) {
+            cleanProfileData.photoVerifiedAt = p.photoVerifiedAt
+          }
+          if (cleanProfileData.photoVerifiedBy === undefined && p.photoVerifiedBy !== undefined) {
+            cleanProfileData.photoVerifiedBy = p.photoVerifiedBy
+          }
           
           return {
             ...p,
