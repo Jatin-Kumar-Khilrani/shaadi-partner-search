@@ -17,7 +17,7 @@ import {
   User, MapPin, Briefcase, GraduationCap, Heart, House, PencilSimple,
   ChatCircle, Envelope, Phone, Calendar, Warning, FilePdf, Trash,
   CurrencyInr, ArrowClockwise, Camera, CheckCircle, ProhibitInset, ArrowUp,
-  Confetti, UserCirclePlus, HeartBreak
+  Confetti, UserCirclePlus, HeartBreak, Upload, CreditCard
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Profile, Interest, ProfileDeletionReason, ProfileDeletionData, SuccessStory } from '@/types/profile'
@@ -153,6 +153,9 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
     returnedForEdit: language === 'hi' ? 'संपादन आवश्यक' : 'Edit Required',
     returnedForEditDesc: language === 'hi' ? 'एडमिन ने आपकी प्रोफाइल संपादन के लिए वापस भेजी है' : 'Admin has returned your profile for editing',
     adminReason: language === 'hi' ? 'एडमिन संदेश' : 'Admin Message',
+    returnedForPayment: language === 'hi' ? 'भुगतान आवश्यक' : 'Payment Required',
+    returnedForPaymentDesc: language === 'hi' ? 'आपकी प्रोफाइल सत्यापित हो गई है! पंजीकरण पूरा करने के लिए कृपया भुगतान स्क्रीनशॉट अपलोड करें।' : 'Your profile has been verified! Please upload payment screenshot to complete registration.',
+    uploadPaymentScreenshot: language === 'hi' ? 'भुगतान अपलोड करें' : 'Upload Payment',
     generateBiodata: language === 'hi' ? 'बायोडाटा बनाएं' : 'Generate Biodata',
     deleteProfile: language === 'hi' ? 'प्रोफाइल हटाएं' : 'Delete Profile',
     deleteConfirmTitle: language === 'hi' ? 'प्रोफाइल हटाने का कारण बताएं' : 'Tell us why you are leaving',
@@ -328,8 +331,9 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
   }
 
   const handleEditClick = () => {
-    // If profile is returned for edit, go directly to edit
-    if (profile?.returnedForEdit) {
+    // If profile is returned for edit or returned for payment, go directly to edit
+    // (The RegistrationDialog will handle the correct step based on profile state)
+    if (profile?.returnedForEdit || profile?.returnedForPayment) {
       onEdit?.()
     } else {
       // Show confirmation dialog for regular edits
@@ -505,9 +509,21 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
             </Button>
             )}
             {onEdit && (
-              <Button onClick={handleEditClick} className="gap-2">
-                <PencilSimple size={20} />
-                {t.edit}
+              <Button 
+                onClick={handleEditClick} 
+                className={`gap-2 ${profile?.returnedForPayment ? 'bg-green-600 hover:bg-green-700' : ''}`}
+              >
+                {profile?.returnedForPayment ? (
+                  <>
+                    <Upload size={20} />
+                    {t.uploadPaymentScreenshot}
+                  </>
+                ) : (
+                  <>
+                    <PencilSimple size={20} />
+                    {t.edit}
+                  </>
+                )}
               </Button>
             )}
             {onDeleteProfile && (
@@ -872,8 +888,37 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
           </Alert>
         )}
 
-        {/* Pending Approval Alert (when profile is pending and not returned for edit) */}
-        {profile.status === 'pending' && !profile.returnedForEdit && (
+        {/* Returned for Payment Alert */}
+        {profile.status === 'pending' && profile.returnedForPayment && (
+          <Alert className="mb-6 bg-green-50 border-green-400 dark:bg-green-950/30 dark:border-green-700">
+            <CreditCard size={20} weight="fill" className="text-green-600" />
+            <AlertTitle className="text-green-800 dark:text-green-200 font-semibold">
+              {t.returnedForPayment}
+            </AlertTitle>
+            <AlertDescription className="text-green-700 dark:text-green-300">
+              <p>{t.returnedForPaymentDesc}</p>
+              {profile.returnedForPaymentDeadline && (
+                <p className="mt-2 text-sm font-medium">
+                  {language === 'hi' 
+                    ? `भुगतान की अंतिम तिथि: ${new Date(profile.returnedForPaymentDeadline).toLocaleDateString('hi-IN')}`
+                    : `Payment deadline: ${new Date(profile.returnedForPaymentDeadline).toLocaleDateString()}`}
+                </p>
+              )}
+              {onEdit && (
+                <Button 
+                  onClick={onEdit} 
+                  className="mt-4 gap-2 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Upload size={20} weight="bold" />
+                  {t.uploadPaymentScreenshot}
+                </Button>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Pending Approval Alert (when profile is pending and not returned for edit or payment) */}
+        {profile.status === 'pending' && !profile.returnedForEdit && !profile.returnedForPayment && (
           <Alert className="mb-6 bg-blue-50 border-blue-400 dark:bg-blue-950/30 dark:border-blue-700">
             <Warning size={20} weight="fill" className="text-blue-600" />
             <AlertTitle className="text-blue-800 dark:text-blue-200 font-semibold">

@@ -619,10 +619,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       setMobileVerified(true)
       setTermsAccepted(true)
       
-      // If returned for payment, jump directly to step 8 (payment details only)
-      // Or use initialStep if provided (for upgrade flows)
+      // Handle step navigation based on profile state:
+      // - returnedForPayment: jump to step 8 (payment upload only)
+      // - returnedForEdit: go to step 1 (full edit from beginning)
+      // - initialStep provided: use that step (for upgrade flows)
+      // - default: go to step 1
       if (editProfile.returnedForPayment) {
         setStep(8)
+      } else if (editProfile.returnedForEdit) {
+        setStep(1) // Returned for edit - start from step 1
       } else if (initialStep) {
         setStep(initialStep)
       } else {
@@ -1203,15 +1208,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           returnedForPaymentAt: undefined
         }
         
-        // Update profile in storage
-        const existingProfilesData = localStorage.getItem('pendingProfiles')
-        const storedProfiles: Profile[] = existingProfilesData ? JSON.parse(existingProfilesData) : []
-        const profileIndex = storedProfiles.findIndex(p => p.id === editProfile?.id || p.profileId === editProfile?.profileId)
-        
-        if (profileIndex !== -1) {
-          storedProfiles[profileIndex] = { ...storedProfiles[profileIndex], ...updatedProfile } as Profile
-          localStorage.setItem('pendingProfiles', JSON.stringify(storedProfiles))
-        }
+        // Use onSubmit to properly update the profile in the app state
+        onSubmit(updatedProfile)
         
         toast.success(
           language === 'hi' 

@@ -978,7 +978,8 @@ function App() {
                 {/* Notification Bell with Popover */}
                 {(() => {
                   const myNotifications = userNotifications?.filter(
-                    n => n.recipientProfileId === currentUserProfile?.profileId
+                    n => n.recipientProfileId === currentUserProfile?.profileId || 
+                         n.recipientProfileId === currentUserProfile?.id
                   ) || []
                   const unreadCount = myNotifications.filter(n => !n.isRead).length
                   const totalCount = myNotifications.length

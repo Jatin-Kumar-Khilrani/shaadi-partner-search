@@ -49,6 +49,7 @@ function DialogContent({
   className,
   children,
   onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: ComponentProps<typeof DialogPrimitive.Content>) {
   return (
@@ -68,6 +69,17 @@ function DialogContent({
           }
           if (onOpenAutoFocus) {
             onOpenAutoFocus(e)
+          }
+        }}
+        onCloseAutoFocus={(e) => {
+          // Blur focus when closing to prevent aria-hidden warning
+          // This ensures focus is moved before aria-hidden is applied
+          const activeElement = document.activeElement as HTMLElement
+          if (activeElement && activeElement.blur) {
+            activeElement.blur()
+          }
+          if (onCloseAutoFocus) {
+            onCloseAutoFocus(e)
           }
         }}
         {...props}

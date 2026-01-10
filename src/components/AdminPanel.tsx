@@ -1482,12 +1482,13 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     
     // Create notification for the user to upload payment
     if (targetProfile) {
+      const recipientId = targetProfile.profileId || targetProfile.id
       const notification: UserNotification = {
         id: `payment_${profileId}_${Date.now()}`,
-        recipientProfileId: targetProfile.profileId,
+        recipientProfileId: recipientId,
         type: 'payment_required',
-        title: isExtension ? 'Payment Deadline Extended' : 'Payment Required',
-        titleHi: isExtension ? 'भुगतान समयसीमा बढ़ाई गई' : 'भुगतान आवश्यक',
+        title: isExtension ? 'Payment Deadline Extended' : 'Profile Returned for Payment',
+        titleHi: isExtension ? 'भुगतान समयसीमा बढ़ाई गई' : 'प्रोफाइल भुगतान के लिए लौटाई गई',
         description: isExtension 
           ? `Your payment deadline has been extended by ${deadlineDays} days. Please upload your payment screenshot.`
           : `Your profile has been verified! Please upload your payment screenshot within ${deadlineDays} days to complete registration.`,
@@ -2730,7 +2731,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                       </Alert>
                                     )}
                                     {/* Returned for Payment Alert */}
-                                    {profile.returnedForPayment && (
+                                    {profile.returnedForPayment && !profile.paymentScreenshotUrl && !(profile.paymentScreenshotUrls && profile.paymentScreenshotUrls.length > 0) && (
                                       <Alert className="mb-2 bg-green-50 border-green-300 dark:bg-green-950/30 dark:border-green-800">
                                         <CreditCard size={16} className="text-green-600" />
                                         <AlertDescription className="text-sm">
@@ -2740,6 +2741,21 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                           <br />
                                           <span className="text-xs text-muted-foreground">
                                             {language === 'hi' ? 'चेहरा और ID सत्यापित। उपयोगकर्ता को भुगतान अपलोड करना है।' : 'Face & ID verified. User needs to upload payment.'}
+                                          </span>
+                                        </AlertDescription>
+                                      </Alert>
+                                    )}
+                                    {/* Payment Screenshot Uploaded - Pending Review */}
+                                    {profile.returnedForPayment && (profile.paymentScreenshotUrl || (profile.paymentScreenshotUrls && profile.paymentScreenshotUrls.length > 0)) && (
+                                      <Alert className="mb-2 bg-blue-50 border-blue-300 dark:bg-blue-950/30 dark:border-blue-800">
+                                        <Receipt size={16} className="text-blue-600" />
+                                        <AlertDescription className="text-sm">
+                                          <span className="font-semibold text-blue-700 dark:text-blue-300">
+                                            {language === 'hi' ? 'भुगतान स्क्रीनशॉट अपलोड किया गया - समीक्षा लंबित' : 'Payment Screenshot Uploaded - Pending Review'}
+                                          </span>
+                                          <br />
+                                          <span className="text-xs text-muted-foreground">
+                                            {language === 'hi' ? 'उपयोगकर्ता ने भुगतान स्क्रीनशॉट अपलोड किया है। कृपया सत्यापित करें।' : 'User has uploaded payment screenshot. Please verify.'}
                                           </span>
                                         </AlertDescription>
                                       </Alert>
