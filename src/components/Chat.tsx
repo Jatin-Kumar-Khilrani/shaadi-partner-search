@@ -1639,6 +1639,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                           size="icon"
                           onClick={() => setShowChatCamera(true)}
                           title={language === 'hi' ? 'कैमरा से फोटो लें' : 'Take photo'}
+                          aria-label={language === 'hi' ? 'कैमरा से फोटो लें' : 'Take photo'}
                         >
                           <Camera size={20} />
                         </Button>
@@ -1648,6 +1649,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                           size="icon"
                           onClick={() => fileInputRef.current?.click()}
                           title={language === 'hi' ? 'फाइल जोड़ें' : 'Add file'}
+                          aria-label={language === 'hi' ? 'फाइल जोड़ें' : 'Add file'}
                         >
                           <Paperclip size={20} />
                         </Button>
@@ -1922,6 +1924,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                         size="icon"
                         onClick={() => setShowChatCamera(true)}
                         title={language === 'hi' ? 'कैमरा से फोटो लें' : 'Take photo'}
+                        aria-label={language === 'hi' ? 'कैमरा से फोटो लें' : 'Take photo'}
                       >
                         <Camera size={20} />
                       </Button>
@@ -1932,6 +1935,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                         size="icon"
                         onClick={() => fileInputRef.current?.click()}
                         title={language === 'hi' ? 'फाइल जोड़ें (JPG, PNG, PDF - 20 MB तक)' : 'Add file (JPG, PNG, PDF - up to 20 MB)'}
+                        aria-label={language === 'hi' ? 'फाइल जोड़ें' : 'Add file'}
                       >
                         <Paperclip size={20} />
                       </Button>
@@ -1943,6 +1947,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                             variant="ghost" 
                             size="icon"
                             title={language === 'hi' ? 'इमोजी जोड़ें' : 'Add emoji'}
+                            aria-label={language === 'hi' ? 'इमोजी जोड़ें' : 'Add emoji'}
                           >
                             <Smiley size={20} />
                           </Button>
@@ -2006,6 +2011,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                         }} 
                         size="icon"
                         disabled={!messageInput.trim() && pendingAttachments.length === 0}
+                        aria-label={language === 'hi' ? 'संदेश भेजें' : 'Send message'}
                       >
                         <PaperPlaneTilt size={20} weight="fill" />
                       </Button>
@@ -2482,7 +2488,7 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                           onPaste={(isAdmin || isAdminChat) ? handlePaste : undefined}
                         />
-                        <Button onClick={sendMessage} size="icon" className="shrink-0" disabled={!messageInput.trim() && ((isAdmin || isAdminChat) ? pendingAttachments.length === 0 : true)}>
+                        <Button onClick={sendMessage} size="icon" className="shrink-0" disabled={!messageInput.trim() && ((isAdmin || isAdminChat) ? pendingAttachments.length === 0 : true)} aria-label={language === 'hi' ? 'संदेश भेजें' : 'Send message'}>
                           <PaperPlaneTilt size={20} weight="fill" />
                         </Button>
                       </div>

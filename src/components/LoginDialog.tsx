@@ -346,6 +346,7 @@ export function LoginDialog({ open, onClose, onLogin, onUpdatePassword, users, p
                     size="icon"
                     className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? (language === 'hi' ? 'पासवर्ड छुपाएं' : 'Hide password') : (language === 'hi' ? 'पासवर्ड दिखाएं' : 'Show password')}
                   >
                     {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
                   </Button>
@@ -516,6 +517,7 @@ export function LoginDialog({ open, onClose, onLogin, onUpdatePassword, users, p
                   size="icon"
                   className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                   onClick={() => setShowNewPassword(!showNewPassword)}
+                  aria-label={showNewPassword ? (language === 'hi' ? 'पासवर्ड छुपाएं' : 'Hide password') : (language === 'hi' ? 'पासवर्ड दिखाएं' : 'Show password')}
                 >
                   {showNewPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
                 </Button>

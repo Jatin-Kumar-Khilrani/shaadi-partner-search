@@ -1326,7 +1326,7 @@ function App() {
 
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" aria-label={language === 'hi' ? 'मेनू खोलें' : 'Open menu'}>
                 <List size={24} weight="bold" />
               </Button>
             </SheetTrigger>

@@ -6926,6 +6926,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 ...prev,
                                 qrCodeImage: ''
                               }))}
+                              aria-label={language === 'hi' ? 'QR कोड हटाएं' : 'Remove QR code'}
                             >
                               <X size={14} />
                             </Button>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -152,6 +152,11 @@ export function AdminLoginDialog({
             {step === 'password' && t.title}
             {step === 'otp' && t.otpTitle}
           </DialogTitle>
+          <DialogDescription>
+            {step === 'username' && (language === 'hi' ? 'एडमिन पैनल तक पहुंचने के लिए लॉग इन करें' : 'Login to access the admin panel')}
+            {step === 'password' && (language === 'hi' ? 'अपना पासवर्ड दर्ज करें' : 'Enter your password')}
+            {step === 'otp' && (language === 'hi' ? 'सत्यापन के लिए OTP दर्ज करें' : 'Enter OTP for verification')}
+          </DialogDescription>
         </DialogHeader>
 
         {step === 'username' && (
