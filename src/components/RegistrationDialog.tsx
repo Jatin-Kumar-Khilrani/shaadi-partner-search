@@ -1216,6 +1216,11 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           paymentScreenshotUrls: uploadedPaymentUrls, // Store all URLs
           paymentStatus: 'pending',
           paymentUploadedAt: new Date().toISOString(),
+          paymentAmount: editProfile?.membershipPlan === '6-month' 
+            ? (membershipSettings?.sixMonthPrice || 500) 
+            : editProfile?.membershipPlan === '1-year'
+            ? (membershipSettings?.oneYearPrice || 900)
+            : undefined,
           returnedForPayment: false, // Clear the returned for payment flag
           returnedForPaymentAt: undefined
         }
