@@ -1509,6 +1509,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   }
 
   const handleMoveToPending = (profileId: string, reason?: string) => {
+    // Get the profile to get the profileId for notification
+    const targetProfile = profiles?.find(p => p.id === profileId)
+    
     setProfiles((current) => 
       (current || []).map(p => 
         p.id === profileId 
@@ -1523,6 +1526,25 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
           : p
       )
     )
+    
+    // Create notification for the user about profile returned for editing
+    if (targetProfile && reason) {
+      const recipientId = targetProfile.profileId || targetProfile.id
+      const notification: UserNotification = {
+        id: `edit_required_${profileId}_${Date.now()}`,
+        recipientProfileId: recipientId,
+        type: 'profile_returned_for_edit',
+        title: 'Profile Returned for Editing',
+        titleHi: 'प्रोफाइल संपादन के लिए लौटाई गई',
+        description: `Admin has returned your profile for editing. Reason: ${reason}`,
+        descriptionHi: `एडमिन ने आपकी प्रोफाइल संपादन के लिए वापस भेजी है। कारण: ${reason}`,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        actionUrl: 'edit_profile'  // Action identifier for navigation
+      }
+      setUserNotifications(current => [...(current || []), notification])
+    }
+    
     toast.success(reason ? t.profileReturnedForEdit : t.movedToPending)
     setReturnToEditDialog(null)
     setReturnToEditReason('')
