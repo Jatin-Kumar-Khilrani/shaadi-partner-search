@@ -193,6 +193,9 @@ export interface Profile {
   createdAt: string
   updatedAt?: string
   lastEditedAt?: string
+  // Track which fields were edited in the last submission (for admin review)
+  lastEditedFields?: string[]  // List of field names that were changed
+  lastEditedFieldsAt?: string  // When the edit was submitted
   verifiedAt?: string
   membershipPlan?: MembershipPlan
   membershipExpiry?: string

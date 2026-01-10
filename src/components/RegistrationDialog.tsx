@@ -1650,6 +1650,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       ? hasOnlyNonCriticalChanges(editProfile, normalizedNewProfile)
       : false
 
+    // Get the list of all changed fields for admin review
+    const changedFields = isEditMode ? getChangedFieldsSummary() : { critical: [], nonCritical: [] }
+    const allChangedFields = [...changedFields.critical, ...changedFields.nonCritical]
+
     const profile: Partial<Profile> = {
       ...formData,
       // Include existing profile fields for edit mode
@@ -1663,7 +1667,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         status: onlyNonCriticalChanges ? editProfile.status : 'pending',
         returnedForEdit: onlyNonCriticalChanges ? editProfile.returnedForEdit : false,
         editReason: onlyNonCriticalChanges ? editProfile.editReason : undefined,
-        returnedAt: onlyNonCriticalChanges ? editProfile.returnedAt : undefined
+        returnedAt: onlyNonCriticalChanges ? editProfile.returnedAt : undefined,
+        // Track edited fields for admin review
+        lastEditedFields: allChangedFields.length > 0 ? allChangedFields : undefined,
+        lastEditedFieldsAt: allChangedFields.length > 0 ? new Date().toISOString() : undefined
       } : {
         profileId: tempProfileId // Use the temp ID for new registrations
       }),

@@ -1237,6 +1237,58 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   // Helper to get user credentials for a profile
   const getUserCredentials = (profileId: string) => users?.find(u => u.profileId === profileId)
 
+  // Helper to get human-readable field labels for edited fields display
+  const getFieldLabel = (field: string): string => {
+    const labels: Record<string, { hi: string; en: string }> = {
+      fullName: { hi: 'नाम', en: 'Name' },
+      firstName: { hi: 'पहला नाम', en: 'First Name' },
+      lastName: { hi: 'उपनाम', en: 'Last Name' },
+      dateOfBirth: { hi: 'जन्म तिथि', en: 'Date of Birth' },
+      age: { hi: 'आयु', en: 'Age' },
+      gender: { hi: 'लिंग', en: 'Gender' },
+      email: { hi: 'ईमेल', en: 'Email' },
+      mobile: { hi: 'मोबाइल', en: 'Mobile' },
+      photos: { hi: 'फोटो', en: 'Photos' },
+      selfieUrl: { hi: 'सेल्फी', en: 'Selfie' },
+      idProofUrl: { hi: 'पहचान प्रमाण', en: 'ID Proof' },
+      idProofType: { hi: 'पहचान प्रकार', en: 'ID Type' },
+      religion: { hi: 'धर्म', en: 'Religion' },
+      caste: { hi: 'जाति', en: 'Caste' },
+      motherTongue: { hi: 'मातृभाषा', en: 'Mother Tongue' },
+      education: { hi: 'शिक्षा', en: 'Education' },
+      occupation: { hi: 'व्यवसाय', en: 'Occupation' },
+      height: { hi: 'ऊंचाई', en: 'Height' },
+      weight: { hi: 'वजन', en: 'Weight' },
+      maritalStatus: { hi: 'वैवाहिक स्थिति', en: 'Marital Status' },
+      country: { hi: 'देश', en: 'Country' },
+      state: { hi: 'राज्य', en: 'State' },
+      location: { hi: 'शहर', en: 'City' },
+      bio: { hi: 'परिचय', en: 'About Me' },
+      familyDetails: { hi: 'परिवार', en: 'Family' },
+      dietPreference: { hi: 'आहार', en: 'Diet' },
+      drinkingHabit: { hi: 'पीने की आदत', en: 'Drinking' },
+      smokingHabit: { hi: 'धूम्रपान', en: 'Smoking' },
+      salary: { hi: 'आय', en: 'Income' },
+      membershipPlan: { hi: 'सदस्यता', en: 'Membership' },
+      partnerAge: { hi: 'साथी आयु', en: 'Partner Age' },
+      partnerHeight: { hi: 'साथी ऊंचाई', en: 'Partner Height' },
+      partnerEducation: { hi: 'साथी शिक्षा', en: 'Partner Education' },
+      partnerOccupation: { hi: 'साथी व्यवसाय', en: 'Partner Occupation' },
+      partnerLocation: { hi: 'साथी स्थान', en: 'Partner Location' },
+      partnerReligion: { hi: 'साथी धर्म', en: 'Partner Religion' },
+      partnerCaste: { hi: 'साथी जाति', en: 'Partner Caste' },
+      partnerMotherTongue: { hi: 'साथी भाषा', en: 'Partner Language' },
+      partnerMaritalStatus: { hi: 'साथी वैवाहिक', en: 'Partner Marital' },
+      partnerDiet: { hi: 'साथी आहार', en: 'Partner Diet' },
+      partnerDrinking: { hi: 'साथी पीने', en: 'Partner Drinking' },
+      partnerSmoking: { hi: 'साथी धूम्रपान', en: 'Partner Smoking' },
+      partnerManglik: { hi: 'साथी मांगलिक', en: 'Partner Manglik' },
+      partnerDisability: { hi: 'साथी दिव्यांगता', en: 'Partner Disability' },
+      partnerEmploymentStatus: { hi: 'साथी रोजगार', en: 'Partner Employment' },
+    }
+    return labels[field]?.[language] || field
+  }
+
   const pendingProfiles = profiles?.filter(p => p.status === 'pending' && !p.isDeleted) || []
   const approvedProfiles = profiles?.filter(p => p.status === 'verified' && !p.isDeleted) || []
   const rejectedProfiles = profiles?.filter(p => p.status === 'rejected' && !p.isDeleted) || []
@@ -2800,6 +2852,37 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                             {language === 'hi' ? 'संपादन कारण:' : 'Edit Reason:'}
                                           </span>{' '}
                                           {profile.editReason}
+                                        </AlertDescription>
+                                      </Alert>
+                                    )}
+                                    {/* Edited Fields Alert - Show what fields were changed */}
+                                    {profile.lastEditedFields && profile.lastEditedFields.length > 0 && (
+                                      <Alert className="mb-2 bg-blue-50 border-blue-300 dark:bg-blue-950/30 dark:border-blue-800">
+                                        <Info size={16} className="text-blue-600" />
+                                        <AlertDescription className="text-sm">
+                                          <span className="font-semibold text-blue-700 dark:text-blue-300">
+                                            {language === 'hi' ? 'संपादित फ़ील्ड:' : 'Edited Fields:'}
+                                          </span>
+                                          <div className="flex flex-wrap gap-1 mt-1">
+                                            {profile.lastEditedFields.map((field, idx) => (
+                                              <Badge 
+                                                key={idx} 
+                                                variant="secondary" 
+                                                className={`text-[10px] px-1.5 py-0.5 ${
+                                                  (CRITICAL_EDIT_FIELDS as readonly string[]).includes(field) 
+                                                    ? 'bg-amber-100 text-amber-700 border-amber-300' 
+                                                    : 'bg-green-100 text-green-700 border-green-300'
+                                                }`}
+                                              >
+                                                {getFieldLabel(field)}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                          {profile.lastEditedFieldsAt && (
+                                            <p className="text-[10px] text-muted-foreground mt-1">
+                                              {language === 'hi' ? 'संपादित:' : 'Edited:'} {formatDateDDMMYYYY(profile.lastEditedFieldsAt)}
+                                            </p>
+                                          )}
                                         </AlertDescription>
                                       </Alert>
                                     )}
