@@ -614,33 +614,68 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     }
     
     // Build normalized values for comparison
-    const normalizedMobile = `${formData.countryCode || '+91'} ${formData.mobile}`
+    // For mobile: strip all spaces from both old and new values before comparing
+    const normalizedNewMobile = `${formData.countryCode || '+91'}${formData.mobile}`.replace(/\s/g, '')
+    const normalizedOldMobile = (editProfile.mobile || '').replace(/\s/g, '')
     
     // Check critical fields
     if (normalize(editProfile.fullName) !== normalize(formData.fullName)) critical.push('fullName')
     if (normalize(editProfile.dateOfBirth) !== normalize(formData.dateOfBirth)) critical.push('dateOfBirth')
     if (normalize(editProfile.gender) !== normalize(formData.gender)) critical.push('gender')
     if (normalize(editProfile.email) !== normalize(formData.email)) critical.push('email')
-    if (normalize(editProfile.mobile) !== normalize(normalizedMobile)) critical.push('mobile')
+    if (normalizedOldMobile !== normalizedNewMobile) critical.push('mobile')
     
-    // Check photos - compare count and content
+    // Check photos - compare URLs
+    // In edit mode, photos are loaded with preview = original URL
+    // A photo is changed if it's a new base64 data URL or a different URL
     const oldPhotos = editProfile.photos || []
     const newPhotos = photos.map(p => p.preview)
-    if (oldPhotos.length !== newPhotos.length) {
-      critical.push('photos')
-    } else if (newPhotos.some((p, i) => !oldPhotos[i]?.includes(p.substring(0, 30)) && !p.includes(oldPhotos[i]?.substring(0, 30) || ''))) {
-      critical.push('photos')
-    }
     
-    // Check selfie
-    if (selfiePreview && editProfile.selfieUrl !== selfiePreview && !selfiePreview.startsWith('data:')) {
-      critical.push('selfieUrl')
-    } else if (selfiePreview && selfiePreview.startsWith('data:') && editProfile.selfieUrl && !editProfile.selfieUrl.startsWith('data:')) {
-      critical.push('selfieUrl')
-    }
+    const photosChanged = (() => {
+      // Different count = definitely changed
+      if (oldPhotos.length !== newPhotos.length) return true
+      
+      // Compare each photo
+      for (let i = 0; i < newPhotos.length; i++) {
+        const oldPhoto = oldPhotos[i] || ''
+        const newPhoto = newPhotos[i] || ''
+        
+        // If new photo is a data URL, it's a newly selected photo (changed)
+        if (newPhoto.startsWith('data:')) return true
+        
+        // If URLs are different, photo was changed
+        if (oldPhoto !== newPhoto) return true
+      }
+      return false
+    })()
     
-    // Check ID proof
-    if (idProofPreview && editProfile.idProofUrl !== idProofPreview) critical.push('idProofUrl')
+    if (photosChanged) critical.push('photos')
+    
+    // Check selfie - changed if it's a new data URL (newly selected)
+    // In edit mode, selfiePreview is loaded with the original URL
+    const selfieChanged = (() => {
+      if (!selfiePreview) return false // No selfie = no change
+      
+      // If selfie is a new data URL, it's been changed
+      if (selfiePreview.startsWith('data:')) return true
+      
+      // If URLs are different (shouldn't happen normally), it's changed
+      if (editProfile.selfieUrl !== selfiePreview) return true
+      
+      return false
+    })()
+    
+    if (selfieChanged) critical.push('selfieUrl')
+    
+    // Check ID proof - changed if it's a new data URL or different URL
+    const idProofChanged = (() => {
+      if (!idProofPreview) return false
+      if (idProofPreview.startsWith('data:')) return true
+      if (editProfile.idProofUrl !== idProofPreview) return true
+      return false
+    })()
+    
+    if (idProofChanged) critical.push('idProofUrl')
     
     // Check bio and familyDetails - these are CRITICAL (public facing content)
     if (normalize(editProfile.bio) !== normalize(formData.bio)) critical.push('bio')
@@ -1748,13 +1783,27 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       registrationLocation: isEditMode && editProfile?.registrationLocation ? editProfile.registrationLocation : (registrationGeoLocation || undefined),
       // Payment data for paid plans
       ...(formData.membershipPlan && formData.membershipPlan !== 'free' ? {
-        paymentScreenshotUrl: uploadedPaymentScreenshotUrls[0] || undefined, // Keep first for backwards compatibility
-        paymentScreenshotUrls: uploadedPaymentScreenshotUrls.length > 0 ? uploadedPaymentScreenshotUrls : undefined, // Store all
-        paymentStatus: uploadedPaymentScreenshotUrls.length > 0 ? 'pending' : undefined,
+        // Preserve existing payment data in edit mode, only update if new screenshots uploaded
+        paymentScreenshotUrl: uploadedPaymentScreenshotUrls[0] || (isEditMode ? editProfile?.paymentScreenshotUrl : undefined),
+        paymentScreenshotUrls: uploadedPaymentScreenshotUrls.length > 0 
+          ? uploadedPaymentScreenshotUrls 
+          : (isEditMode ? editProfile?.paymentScreenshotUrls : undefined),
+        // IMPORTANT: Preserve existing paymentStatus in edit mode if no new payment uploaded
+        // Only reset to 'pending' if user uploaded a NEW payment screenshot
+        paymentStatus: uploadedPaymentScreenshotUrls.length > 0 
+          ? 'pending' 
+          : (isEditMode ? editProfile?.paymentStatus : undefined),
         paymentAmount: formData.membershipPlan === '6-month' 
           ? (membershipSettings?.sixMonthPrice || 500) 
           : (membershipSettings?.oneYearPrice || 900),
-        paymentUploadedAt: uploadedPaymentScreenshotUrls.length > 0 ? new Date().toISOString() : undefined
+        paymentUploadedAt: uploadedPaymentScreenshotUrls.length > 0 
+          ? new Date().toISOString() 
+          : (isEditMode ? editProfile?.paymentUploadedAt : undefined),
+        // Preserve other payment fields in edit mode
+        ...(isEditMode && editProfile ? {
+          paymentVerifiedAt: editProfile.paymentVerifiedAt,
+          paymentVerifiedBy: editProfile.paymentVerifiedBy
+        } : {})
       } : {
         paymentStatus: 'not-required' as const
       }),

@@ -2865,36 +2865,77 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                       </Alert>
                                     )}
                                     {/* Edited Fields Alert - Show what fields were changed */}
-                                    {profile.lastEditedFields && profile.lastEditedFields.length > 0 && (
-                                      <Alert className="mb-2 bg-blue-50 border-blue-300 dark:bg-blue-950/30 dark:border-blue-800">
-                                        <Info size={16} className="text-blue-600" />
-                                        <AlertDescription className="text-sm">
-                                          <span className="font-semibold text-blue-700 dark:text-blue-300">
-                                            {language === 'hi' ? 'संपादित फ़ील्ड:' : 'Edited Fields:'}
-                                          </span>
-                                          <div className="flex flex-wrap gap-1 mt-1">
-                                            {profile.lastEditedFields.map((field, idx) => (
-                                              <Badge 
-                                                key={idx} 
-                                                variant="secondary" 
-                                                className={`text-[10px] px-1.5 py-0.5 ${
-                                                  (CRITICAL_EDIT_FIELDS as readonly string[]).includes(field) 
-                                                    ? 'bg-amber-100 text-amber-700 border-amber-300' 
-                                                    : 'bg-green-100 text-green-700 border-green-300'
-                                                }`}
-                                              >
-                                                {getFieldLabel(field)}
-                                              </Badge>
-                                            ))}
-                                          </div>
-                                          {profile.lastEditedFieldsAt && (
-                                            <p className="text-[10px] text-muted-foreground mt-1">
-                                              {language === 'hi' ? 'संपादित:' : 'Edited:'} {formatDateDDMMYYYY(profile.lastEditedFieldsAt)}
-                                            </p>
-                                          )}
-                                        </AlertDescription>
-                                      </Alert>
-                                    )}
+                                    {profile.lastEditedFields && profile.lastEditedFields.length > 0 && (() => {
+                                      const criticalEdits = profile.lastEditedFields.filter(f => (CRITICAL_EDIT_FIELDS as readonly string[]).includes(f))
+                                      const nonCriticalEdits = profile.lastEditedFields.filter(f => !(CRITICAL_EDIT_FIELDS as readonly string[]).includes(f))
+                                      const hasCriticalChanges = criticalEdits.length > 0
+                                      
+                                      return (
+                                        <Alert className={`mb-2 ${hasCriticalChanges ? 'bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-800' : 'bg-green-50 border-green-300 dark:bg-green-950/30 dark:border-green-800'}`}>
+                                          <Info size={16} className={hasCriticalChanges ? 'text-amber-600' : 'text-green-600'} />
+                                          <AlertDescription className="text-sm">
+                                            <span className={`font-semibold ${hasCriticalChanges ? 'text-amber-700 dark:text-amber-300' : 'text-green-700 dark:text-green-300'}`}>
+                                              {language === 'hi' ? 'संपादित फ़ील्ड:' : 'Edited Fields:'}
+                                            </span>
+                                            
+                                            {/* Critical Changes Section */}
+                                            {criticalEdits.length > 0 && (
+                                              <div className="mt-1">
+                                                <span className="text-[10px] font-medium text-amber-600">
+                                                  {language === 'hi' ? '⚠️ सत्यापन आवश्यक:' : '⚠️ Needs Verification:'}
+                                                </span>
+                                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                                  {criticalEdits.map((field, idx) => (
+                                                    <Badge 
+                                                      key={idx} 
+                                                      variant="secondary" 
+                                                      className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 border-amber-300"
+                                                    >
+                                                      {getFieldLabel(field)}
+                                                    </Badge>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                            )}
+                                            
+                                            {/* Non-Critical Changes Section */}
+                                            {nonCriticalEdits.length > 0 && (
+                                              <div className="mt-1">
+                                                <span className="text-[10px] font-medium text-green-600">
+                                                  {language === 'hi' ? '✓ स्वतः स्वीकृत:' : '✓ Auto-Approved:'}
+                                                </span>
+                                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                                  {nonCriticalEdits.map((field, idx) => (
+                                                    <Badge 
+                                                      key={idx} 
+                                                      variant="secondary" 
+                                                      className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 border-green-300"
+                                                    >
+                                                      {getFieldLabel(field)}
+                                                    </Badge>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                            )}
+                                            
+                                            {/* Note if only non-critical changes */}
+                                            {!hasCriticalChanges && (
+                                              <p className="text-[10px] text-green-600 mt-1 italic">
+                                                {language === 'hi' 
+                                                  ? 'केवल गैर-महत्वपूर्ण बदलाव - पुनः सत्यापन की आवश्यकता नहीं'
+                                                  : 'Only non-critical changes - no re-verification needed'}
+                                              </p>
+                                            )}
+                                            
+                                            {profile.lastEditedFieldsAt && (
+                                              <p className="text-[10px] text-muted-foreground mt-1">
+                                                {language === 'hi' ? 'संपादित:' : 'Edited:'} {formatDateDDMMYYYY(profile.lastEditedFieldsAt)}
+                                              </p>
+                                            )}
+                                          </AlertDescription>
+                                        </Alert>
+                                      )
+                                    })()}
                                     {/* Returned for Payment Alert */}
                                     {profile.returnedForPayment && !profile.paymentScreenshotUrl && !(profile.paymentScreenshotUrls && profile.paymentScreenshotUrls.length > 0) && (
                                       <Alert className="mb-2 bg-green-50 border-green-300 dark:bg-green-950/30 dark:border-green-800">
