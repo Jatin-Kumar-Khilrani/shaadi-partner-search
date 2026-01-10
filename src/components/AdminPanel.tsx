@@ -3693,19 +3693,26 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                <Badge variant={
-                                  profile.membershipPlan === '1-year' ? 'default' :
-                                  profile.membershipPlan === '6-month' ? 'secondary' :
-                                  'outline'
-                                } className={
-                                  profile.membershipPlan === '1-year' ? 'bg-green-600' :
-                                  profile.membershipPlan === '6-month' ? 'bg-blue-500 text-white' :
-                                  ''
-                                }>
-                                  {profile.membershipPlan === '1-year' ? t.oneYearPlanLabel :
-                                   profile.membershipPlan === '6-month' ? t.sixMonthPlanLabel :
-                                   t.freePlanLabel}
-                                </Badge>
+                                <div className="flex items-center gap-1">
+                                  <Badge variant={
+                                    profile.membershipPlan === '1-year' ? 'default' :
+                                    profile.membershipPlan === '6-month' ? 'secondary' :
+                                    'outline'
+                                  } className={
+                                    profile.membershipPlan === '1-year' ? 'bg-green-600' :
+                                    profile.membershipPlan === '6-month' ? 'bg-blue-500 text-white' :
+                                    ''
+                                  }>
+                                    {profile.membershipPlan === '1-year' ? t.oneYearPlanLabel :
+                                     profile.membershipPlan === '6-month' ? t.sixMonthPlanLabel :
+                                     t.freePlanLabel}
+                                  </Badge>
+                                  {profile.adminFreeUpgrade && (
+                                    <Badge variant="secondary" className="bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 border-amber-300 text-[10px] px-1">
+                                      🎁
+                                    </Badge>
+                                  )}
+                                </div>
                               </TableCell>
                               <TableCell className="font-mono text-primary">{creds?.userId || '-'}</TableCell>
                               <TableCell className="text-sm">
@@ -7196,11 +7203,18 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               </TableCell>
                               <TableCell className="font-mono text-sm">{profile.profileId}</TableCell>
                               <TableCell>
-                                <Badge variant="outline">
-                                  {profile.membershipPlan === '6-month' ? t.sixMonthPlan : 
-                                   profile.membershipPlan === '1-year' ? t.oneYearPlan : 
-                                   profile.membershipPlan === 'free' ? (language === 'hi' ? 'फ्री' : 'Free') : '-'}
-                                </Badge>
+                                <div className="flex items-center gap-1">
+                                  <Badge variant="outline">
+                                    {profile.membershipPlan === '6-month' ? t.sixMonthPlan : 
+                                     profile.membershipPlan === '1-year' ? t.oneYearPlan : 
+                                     profile.membershipPlan === 'free' ? (language === 'hi' ? 'फ्री' : 'Free') : '-'}
+                                  </Badge>
+                                  {profile.adminFreeUpgrade && (
+                                    <Badge variant="secondary" className="bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 border-amber-300 text-[10px] px-1">
+                                      🎁 {language === 'hi' ? 'मुफ्त' : 'FREE'}
+                                    </Badge>
+                                  )}
+                                </div>
                               </TableCell>
                               <TableCell>
                                 <div className="flex flex-col gap-0.5">
@@ -8467,6 +8481,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
             </Button>
             <Button onClick={() => {
               if (editMembershipDialog) {
+                const wasFreePlan = editMembershipDialog.membershipPlan === 'free' || !editMembershipDialog.membershipPlan
+                const isNowPaidPlan = membershipEditData.plan === '6-month' || membershipEditData.plan === '1-year'
+                const isAdminFreeUpgrade = wasFreePlan && isNowPaidPlan
+                
                 setProfiles((current) => 
                   (current || []).map(p => 
                     p.id === editMembershipDialog.id 
@@ -8474,15 +8492,55 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           ...p, 
                           membershipPlan: membershipEditData.plan as any,
                           membershipExpiry: membershipEditData.expiryDate,
+                          membershipEndDate: membershipEditData.expiryDate,
                           boostInterestsRemaining: membershipEditData.boostInterestsRemaining,
                           boostContactsRemaining: membershipEditData.boostContactsRemaining,
                           boostPackDisabled: membershipEditData.boostPackDisabled,
-                          customBoostPackPrice: membershipEditData.customBoostPackPrice ?? undefined
+                          customBoostPackPrice: membershipEditData.customBoostPackPrice ?? undefined,
+                          // Track admin free upgrade
+                          ...(isAdminFreeUpgrade ? {
+                            adminFreeUpgrade: true,
+                            adminFreeUpgradeAt: new Date().toISOString(),
+                            adminFreeUpgradeBy: 'Admin',
+                            adminFreeUpgradePlan: membershipEditData.plan as any,
+                            hasMembership: true,
+                            paymentStatus: 'verified' as const,
+                            paymentVerifiedAt: new Date().toISOString(),
+                            paymentVerifiedBy: 'Admin (Free Upgrade)'
+                          } : {})
                         }
                       : p
                   )
                 )
-                toast.success(t.membershipUpdated)
+                
+                // Send notification to user if this is a free upgrade
+                if (isAdminFreeUpgrade) {
+                  const planLabel = membershipEditData.plan === '1-year' 
+                    ? (language === 'hi' ? '1 वर्ष' : '1 Year')
+                    : (language === 'hi' ? '6 माह' : '6 Month')
+                  
+                  const notification: UserNotification = {
+                    id: `free_upgrade_${editMembershipDialog.id}_${Date.now()}`,
+                    recipientProfileId: editMembershipDialog.profileId || editMembershipDialog.id,
+                    type: 'profile_approved',
+                    title: '🎉 Free Membership Upgrade!',
+                    titleHi: '🎉 मुफ्त सदस्यता अपग्रेड!',
+                    description: `Congratulations! Admin has upgraded your account to ${planLabel} Premium membership for FREE! Enjoy all premium features.`,
+                    descriptionHi: `बधाई हो! एडमिन ने आपके खाते को मुफ्त में ${planLabel} प्रीमियम सदस्यता में अपग्रेड कर दिया है! सभी प्रीमियम सुविधाओं का आनंद लें।`,
+                    isRead: false,
+                    createdAt: new Date().toISOString()
+                  }
+                  setUserNotifications(current => [...(current || []), notification])
+                  
+                  toast.success(
+                    language === 'hi' 
+                      ? `${editMembershipDialog.fullName} को मुफ्त ${planLabel} अपग्रेड दिया गया!`
+                      : `${editMembershipDialog.fullName} given free ${planLabel} upgrade!`
+                  )
+                } else {
+                  toast.success(t.membershipUpdated)
+                }
+                
                 setEditMembershipDialog(null)
               }
             }}>

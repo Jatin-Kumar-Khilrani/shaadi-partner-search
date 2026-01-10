@@ -197,6 +197,11 @@ export interface Profile {
   membershipPlan?: MembershipPlan
   membershipExpiry?: string
   membershipEndDate?: string  // Alias for membershipExpiry for backward compatibility
+  // Admin-provided free upgrade tracking
+  adminFreeUpgrade?: boolean  // True if admin upgraded from free to paid without payment
+  adminFreeUpgradeAt?: string  // When the free upgrade was given
+  adminFreeUpgradeBy?: string  // Admin who provided the free upgrade
+  adminFreeUpgradePlan?: MembershipPlan  // Which plan was given as free upgrade
   emailVerified: boolean
   mobileVerified: boolean
   isBlocked: boolean
@@ -723,7 +728,7 @@ export interface ConversationStarter {
 export interface UserNotification {
   id: string
   recipientProfileId: string
-  type: 'interest_received' | 'interest_accepted' | 'interest_declined' | 'contact_request_received' | 'contact_accepted' | 'contact_declined' | 'message_received' | 'profile_viewed' | 'interest_expired' | 'contact_expired' | 'admin_message' | 'payment_required' | 'payment_rejected'
+  type: 'interest_received' | 'interest_accepted' | 'interest_declined' | 'contact_request_received' | 'contact_accepted' | 'contact_declined' | 'message_received' | 'profile_viewed' | 'interest_expired' | 'contact_expired' | 'admin_message' | 'payment_required' | 'payment_rejected' | 'profile_approved'
   title: string
   titleHi: string
   description: string

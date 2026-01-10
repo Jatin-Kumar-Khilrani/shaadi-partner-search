@@ -555,7 +555,24 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       drinkingHabit: { hi: 'पीने की आदत', en: 'Drinking Habit' },
       smokingHabit: { hi: 'धूम्रपान', en: 'Smoking Habit' },
       salary: { hi: 'वार्षिक आय', en: 'Annual Income' },
+      membershipPlan: { hi: 'सदस्यता योजना', en: 'Membership Plan' },
+      // Partner Preferences
       partnerPreferences: { hi: 'साथी वरीयताएं', en: 'Partner Preferences' },
+      partnerAge: { hi: 'साथी आयु', en: 'Partner Age' },
+      partnerHeight: { hi: 'साथी ऊंचाई', en: 'Partner Height' },
+      partnerEducation: { hi: 'साथी शिक्षा', en: 'Partner Education' },
+      partnerOccupation: { hi: 'साथी व्यवसाय', en: 'Partner Occupation' },
+      partnerLocation: { hi: 'साथी स्थान', en: 'Partner Location' },
+      partnerReligion: { hi: 'साथी धर्म', en: 'Partner Religion' },
+      partnerCaste: { hi: 'साथी जाति', en: 'Partner Caste' },
+      partnerMotherTongue: { hi: 'साथी मातृभाषा', en: 'Partner Mother Tongue' },
+      partnerMaritalStatus: { hi: 'साथी वैवाहिक स्थिति', en: 'Partner Marital Status' },
+      partnerDiet: { hi: 'साथी आहार', en: 'Partner Diet' },
+      partnerDrinking: { hi: 'साथी पीने की आदत', en: 'Partner Drinking' },
+      partnerSmoking: { hi: 'साथी धूम्रपान', en: 'Partner Smoking' },
+      partnerManglik: { hi: 'साथी मांगलिक', en: 'Partner Manglik' },
+      partnerDisability: { hi: 'साथी दिव्यांगता', en: 'Partner Disability' },
+      partnerEmploymentStatus: { hi: 'साथी रोजगार', en: 'Partner Employment' },
     }
     return labels[field]?.[language] || field
   }
@@ -614,6 +631,75 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     if (editProfile.drinkingHabit !== formData.drinkingHabit) nonCritical.push('drinkingHabit')
     if (editProfile.smokingHabit !== formData.smokingHabit) nonCritical.push('smokingHabit')
     if (editProfile.salary !== formData.annualIncome) nonCritical.push('salary')
+    
+    // Check partner preferences changes (all non-critical)
+    const oldPrefs = editProfile.partnerPreferences || {}
+    
+    // Age preferences
+    if (oldPrefs.ageMin !== formData.partnerAgeMin || oldPrefs.ageMax !== formData.partnerAgeMax) {
+      nonCritical.push('partnerAge')
+    }
+    
+    // Height preferences
+    if (oldPrefs.heightMin !== formData.partnerHeightMin || oldPrefs.heightMax !== formData.partnerHeightMax) {
+      nonCritical.push('partnerHeight')
+    }
+    
+    // Helper to compare arrays
+    const arraysEqual = (a: unknown[] | undefined, b: unknown[] | undefined) => {
+      const arr1 = a || []
+      const arr2 = b || []
+      if (arr1.length !== arr2.length) return false
+      return arr1.every((v, i) => v === arr2[i])
+    }
+    
+    // Education preference
+    if (!arraysEqual(oldPrefs.education, formData.partnerEducation)) nonCritical.push('partnerEducation')
+    
+    // Employment status preference
+    if (!arraysEqual(oldPrefs.employmentStatus, formData.partnerEmploymentStatus)) nonCritical.push('partnerEmploymentStatus')
+    
+    // Occupation preference
+    if (!arraysEqual(oldPrefs.occupation, formData.partnerOccupation)) nonCritical.push('partnerOccupation')
+    
+    // Location preferences
+    if (!arraysEqual(oldPrefs.livingCountry, formData.partnerLivingCountry) ||
+        !arraysEqual(oldPrefs.livingState, formData.partnerLivingState) ||
+        !arraysEqual(oldPrefs.location, formData.partnerLocation)) {
+      nonCritical.push('partnerLocation')
+    }
+    
+    // Religion preference
+    if (!arraysEqual(oldPrefs.religion, formData.partnerReligion)) nonCritical.push('partnerReligion')
+    
+    // Caste preference
+    if (!arraysEqual(oldPrefs.caste, formData.partnerCaste)) nonCritical.push('partnerCaste')
+    
+    // Mother tongue preference
+    if (!arraysEqual(oldPrefs.motherTongue, formData.partnerMotherTongue)) nonCritical.push('partnerMotherTongue')
+    
+    // Marital status preference
+    if (!arraysEqual(oldPrefs.maritalStatus, formData.partnerMaritalStatus)) nonCritical.push('partnerMaritalStatus')
+    
+    // Diet preference
+    if (!arraysEqual(oldPrefs.dietPreference, formData.partnerDiet)) nonCritical.push('partnerDiet')
+    
+    // Drinking preference
+    if (!arraysEqual(oldPrefs.drinkingHabit, formData.partnerDrinking)) nonCritical.push('partnerDrinking')
+    
+    // Smoking preference
+    if (!arraysEqual(oldPrefs.smokingHabit, formData.partnerSmoking)) nonCritical.push('partnerSmoking')
+    
+    // Manglik preference
+    if (oldPrefs.manglik !== formData.partnerManglik) nonCritical.push('partnerManglik')
+    
+    // Disability preference
+    if (!arraysEqual(oldPrefs.disability, formData.partnerDisability)) nonCritical.push('partnerDisability')
+    
+    // Check membership plan change - this is CRITICAL as it affects payment
+    if (editProfile.membershipPlan !== formData.membershipPlan) {
+      critical.push('membershipPlan')
+    }
     
     return { critical, nonCritical }
   }

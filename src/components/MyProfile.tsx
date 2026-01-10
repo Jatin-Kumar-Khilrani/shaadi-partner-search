@@ -18,7 +18,7 @@ import {
   User, MapPin, Briefcase, GraduationCap, Heart, House, PencilSimple,
   ChatCircle, Envelope, Phone, Calendar, Warning, FilePdf, Trash,
   CurrencyInr, ArrowClockwise, Camera, CheckCircle, ProhibitInset, ArrowUp,
-  Confetti, UserCirclePlus, HeartBreak, Upload, CreditCard, Receipt
+  Confetti, UserCirclePlus, HeartBreak, Upload, CreditCard, Receipt, ShieldCheck
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Profile, Interest, ProfileDeletionReason, ProfileDeletionData, SuccessStory } from '@/types/profile'
@@ -171,7 +171,8 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
     profileDeleted: language === 'hi' ? 'प्रोफाइल सफलतापूर्वक हटाई गई' : 'Profile deleted successfully',
     invalidOtp: language === 'hi' ? 'गलत OTP' : 'Invalid OTP',
     editConfirmTitle: language === 'hi' ? 'प्रोफ़ाइल संपादित करें?' : 'Edit Profile?',
-    editConfirmDesc: language === 'hi' ? 'संपादन के बाद आपकी प्रोफ़ाइल को एडमिन द्वारा पुनः स्वीकृत करना होगा। स्वीकृति तक आपकी प्रोफ़ाइल अन्य उपयोगकर्ताओं को दिखाई नहीं देगी।' : 'After editing, your profile will need to be re-approved by admin. Your profile will not be visible to other users until approved.',
+    editConfirmDesc: language === 'hi' ? 'महत्वपूर्ण फ़ील्ड (नाम, जन्मतिथि, लिंग, फोटो, सेल्फी, पहचान प्रमाण, ईमेल, मोबाइल, सदस्यता योजना) में बदलाव के लिए एडमिन पुनः-स्वीकृति आवश्यक होगी। स्वीकृति तक आपकी प्रोफ़ाइल अन्य उपयोगकर्ताओं को दिखाई नहीं देगी।' : 'Changes to critical fields (Name, Date of Birth, Gender, Photos, Selfie, ID Proof, Email, Mobile, Membership Plan) will require admin re-approval. Your profile will not be visible to other users until approved.',
+    editConfirmNote: language === 'hi' ? 'सामान्य फ़ील्ड (धर्म, शिक्षा, व्यवसाय, स्थान, साथी वरीयताएं आदि) में परिवर्तन तुरंत लागू होंगे।' : 'Changes to regular fields (Religion, Education, Occupation, Location, Partner Preferences, etc.) will be applied immediately.',
     confirmEdit: language === 'hi' ? 'संपादित करें' : 'Proceed to Edit',
     pendingApproval: language === 'hi' ? 'स्वीकृति लंबित' : 'Pending Approval',
     pendingApprovalDesc: language === 'hi' ? 'आपकी प्रोफ़ाइल एडमिन द्वारा समीक्षा के लिए लंबित है। स्वीकृति तक अन्य उपयोगकर्ताओं को दिखाई नहीं देगी।' : 'Your profile is pending review by admin. It will not be visible to other users until approved.',
@@ -933,16 +934,55 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
 
         {/* Edit Confirmation Dialog */}
         <Dialog open={showEditConfirmDialog} onOpenChange={setShowEditConfirmDialog}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-amber-600">
                 <Warning size={24} weight="fill" />
                 {t.editConfirmTitle}
               </DialogTitle>
-              <DialogDescription>
-                {t.editConfirmDesc}
-              </DialogDescription>
             </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Critical Fields Section */}
+              <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-700">
+                <div className="flex items-start gap-2">
+                  <ShieldCheck size={18} className="text-amber-600 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                      {language === 'hi' ? 'महत्वपूर्ण फ़ील्ड (एडमिन स्वीकृति आवश्यक):' : 'Critical Fields (Admin Approval Required):'}
+                    </p>
+                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+                      {language === 'hi' 
+                        ? 'नाम, जन्मतिथि, लिंग, फोटो, सेल्फी, पहचान प्रमाण, ईमेल, मोबाइल, सदस्यता योजना' 
+                        : 'Name, Date of Birth, Gender, Photos, Selfie, ID Proof, Email, Mobile, Membership Plan'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Non-Critical Fields Section */}
+              <div className="p-3 rounded-lg bg-green-50 border border-green-200 dark:bg-green-950/30 dark:border-green-700">
+                <div className="flex items-start gap-2">
+                  <CheckCircle size={18} className="text-green-600 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+                      {language === 'hi' ? 'सामान्य फ़ील्ड (स्वतः लागू):' : 'Regular Fields (Auto-Applied):'}
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-500 mt-1">
+                      {language === 'hi' 
+                        ? 'धर्म, शिक्षा, व्यवसाय, स्थान, आय, साथी वरीयताएं, आदि' 
+                        : 'Religion, Education, Occupation, Location, Income, Partner Preferences, etc.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-xs text-muted-foreground text-center">
+                {language === 'hi' 
+                  ? 'महत्वपूर्ण फ़ील्ड में बदलाव से प्रोफ़ाइल अन्य उपयोगकर्ताओं को दिखाई नहीं देगी जब तक एडमिन स्वीकृति न दे।' 
+                  : 'Changes to critical fields will make profile invisible to others until admin approves.'}
+              </p>
+            </div>
             
             <div className="flex gap-3 mt-4">
               <Button variant="outline" onClick={() => setShowEditConfirmDialog(false)} className="flex-1">
