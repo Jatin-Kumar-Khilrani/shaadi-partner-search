@@ -39,6 +39,7 @@ export type NotificationType =
   | 'otp_verification'
   | 'welcome'
   | 'registration_complete'
+  | 'payment_rejected'
 
 // ============================================================================
 // PAYLOAD INTERFACES
@@ -359,6 +360,20 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
     description: {
       en: 'Your profile has been created successfully.',
       hi: 'आपकी प्रोफाइल सफलतापूर्वक बन गई है।'
+    }
+  },
+  payment_rejected: {
+    title: {
+      en: '❌ Payment Rejected',
+      hi: '❌ भुगतान अस्वीकृत'
+    },
+    description: {
+      en: 'Your payment was rejected. Reason: {message}. Please re-upload your payment screenshot.',
+      hi: 'आपका भुगतान अस्वीकृत हो गया। कारण: {message}। कृपया अपना भुगतान स्क्रीनशॉट दोबारा अपलोड करें।'
+    },
+    smsTemplate: {
+      en: 'ShaadiPartner: Your payment was rejected. Please login and re-upload payment screenshot.',
+      hi: 'ShaadiPartner: आपका भुगतान अस्वीकृत हो गया। कृपया लॉगिन करके भुगतान स्क्रीनशॉट दोबारा अपलोड करें।'
     }
   }
 }

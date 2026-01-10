@@ -898,13 +898,23 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
 
         {/* Returned for Payment Alert */}
         {profile.status === 'pending' && profile.returnedForPayment && (
-          <Alert className="mb-6 bg-green-50 border-green-400 dark:bg-green-950/30 dark:border-green-700">
-            <CreditCard size={20} weight="fill" className="text-green-600" />
-            <AlertTitle className="text-green-800 dark:text-green-200 font-semibold">
-              {t.returnedForPayment}
+          <Alert className={`mb-6 ${profile.paymentRejectionReason ? 'bg-red-50 border-red-400 dark:bg-red-950/30 dark:border-red-700' : 'bg-green-50 border-green-400 dark:bg-green-950/30 dark:border-green-700'}`}>
+            <CreditCard size={20} weight="fill" className={profile.paymentRejectionReason ? 'text-red-600' : 'text-green-600'} />
+            <AlertTitle className={`font-semibold ${profile.paymentRejectionReason ? 'text-red-800 dark:text-red-200' : 'text-green-800 dark:text-green-200'}`}>
+              {profile.paymentRejectionReason 
+                ? (language === 'hi' ? 'भुगतान अस्वीकृत - पुनः अपलोड करें' : 'Payment Rejected - Please Re-upload')
+                : t.returnedForPayment}
             </AlertTitle>
-            <AlertDescription className="text-green-700 dark:text-green-300">
-              <p>{t.returnedForPaymentDesc}</p>
+            <AlertDescription className={profile.paymentRejectionReason ? 'text-red-700 dark:text-red-300' : 'text-green-700 dark:text-green-300'}>
+              {profile.paymentRejectionReason && (
+                <div className="mb-3 p-3 bg-white/50 dark:bg-black/20 rounded-md border border-red-300">
+                  <span className="font-semibold">{language === 'hi' ? 'अस्वीकृति कारण:' : 'Rejection Reason:'}</span>{' '}
+                  {profile.paymentRejectionReason}
+                </div>
+              )}
+              <p>{profile.paymentRejectionReason 
+                ? (language === 'hi' ? 'कृपया सही भुगतान स्क्रीनशॉट अपलोड करें।' : 'Please upload a valid payment screenshot.')
+                : t.returnedForPaymentDesc}</p>
               {profile.returnedForPaymentDeadline && (
                 <p className="mt-2 text-sm font-medium">
                   {language === 'hi' 
@@ -915,7 +925,7 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
               {onEdit && (
                 <Button 
                   onClick={onEdit} 
-                  className="mt-4 gap-2 bg-green-600 hover:bg-green-700 text-white"
+                  className={`mt-4 gap-2 text-white ${profile.paymentRejectionReason ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
                 >
                   <Upload size={20} weight="bold" />
                   {t.uploadPaymentScreenshot}

@@ -554,6 +554,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [reportsPage, setReportsPage] = useState(1)
   const [_accountsPage, _setAccountsPage] = useState(1)
   const [transactionsPage, setTransactionsPage] = useState(1)
+  // Transactions table sorting
+  const [txSortBy, setTxSortBy] = useState<'receiptNumber' | 'transactionId' | 'name' | 'plan' | 'amount' | 'paymentMode' | 'paymentDate'>('paymentDate')
+  const [txSortOrder, setTxSortOrder] = useState<'asc' | 'desc'>('desc')
   const [servicesPage, setServicesPage] = useState(1)
   
   const [chatMessage, setChatMessage] = useState('')
@@ -4651,18 +4654,99 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>{t.receiptNumber}</TableHead>
-                            <TableHead>{t.transactionId}</TableHead>
-                            <TableHead>{t.name}</TableHead>
-                            <TableHead>{t.membershipPlan}</TableHead>
-                            <TableHead>{t.finalAmount}</TableHead>
-                            <TableHead>{t.paymentMode}</TableHead>
-                            <TableHead>{t.paymentDate}</TableHead>
+                            <TableHead 
+                              className="cursor-pointer hover:bg-muted/50 whitespace-nowrap"
+                              onClick={() => { setTxSortBy('receiptNumber'); setTxSortOrder(prev => txSortBy === 'receiptNumber' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}
+                            >
+                              <span className="flex items-center gap-1">
+                                {t.receiptNumber}
+                                {txSortBy === 'receiptNumber' ? (txSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </span>
+                            </TableHead>
+                            <TableHead 
+                              className="cursor-pointer hover:bg-muted/50 whitespace-nowrap"
+                              onClick={() => { setTxSortBy('transactionId'); setTxSortOrder(prev => txSortBy === 'transactionId' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}
+                            >
+                              <span className="flex items-center gap-1">
+                                {t.transactionId}
+                                {txSortBy === 'transactionId' ? (txSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </span>
+                            </TableHead>
+                            <TableHead 
+                              className="cursor-pointer hover:bg-muted/50 whitespace-nowrap"
+                              onClick={() => { setTxSortBy('name'); setTxSortOrder(prev => txSortBy === 'name' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}
+                            >
+                              <span className="flex items-center gap-1">
+                                {t.name}
+                                {txSortBy === 'name' ? (txSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </span>
+                            </TableHead>
+                            <TableHead 
+                              className="cursor-pointer hover:bg-muted/50 whitespace-nowrap"
+                              onClick={() => { setTxSortBy('plan'); setTxSortOrder(prev => txSortBy === 'plan' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}
+                            >
+                              <span className="flex items-center gap-1">
+                                {t.membershipPlan}
+                                {txSortBy === 'plan' ? (txSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </span>
+                            </TableHead>
+                            <TableHead 
+                              className="cursor-pointer hover:bg-muted/50 whitespace-nowrap"
+                              onClick={() => { setTxSortBy('amount'); setTxSortOrder(prev => txSortBy === 'amount' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}
+                            >
+                              <span className="flex items-center gap-1">
+                                {t.finalAmount}
+                                {txSortBy === 'amount' ? (txSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </span>
+                            </TableHead>
+                            <TableHead 
+                              className="cursor-pointer hover:bg-muted/50 whitespace-nowrap"
+                              onClick={() => { setTxSortBy('paymentMode'); setTxSortOrder(prev => txSortBy === 'paymentMode' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}
+                            >
+                              <span className="flex items-center gap-1">
+                                {t.paymentMode}
+                                {txSortBy === 'paymentMode' ? (txSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </span>
+                            </TableHead>
+                            <TableHead 
+                              className="cursor-pointer hover:bg-muted/50 whitespace-nowrap"
+                              onClick={() => { setTxSortBy('paymentDate'); setTxSortOrder(prev => txSortBy === 'paymentDate' ? (prev === 'asc' ? 'desc' : 'asc') : 'asc') }}
+                            >
+                              <span className="flex items-center gap-1">
+                                {t.paymentDate}
+                                {txSortBy === 'paymentDate' ? (txSortOrder === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                              </span>
+                            </TableHead>
                             <TableHead>{t.actions}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {[...paymentTransactions].reverse().slice((transactionsPage - 1) * ITEMS_PER_PAGE, transactionsPage * ITEMS_PER_PAGE).map(tx => (
+                          {(() => {
+                            // Sort transactions
+                            const sortedTx = [...paymentTransactions].sort((a, b) => {
+                              const multiplier = txSortOrder === 'asc' ? 1 : -1
+                              switch (txSortBy) {
+                                case 'receiptNumber':
+                                  return multiplier * (a.receiptNumber || '').localeCompare(b.receiptNumber || '')
+                                case 'transactionId':
+                                  return multiplier * (a.transactionId || '').localeCompare(b.transactionId || '')
+                                case 'name':
+                                  return multiplier * (a.profileName || '').localeCompare(b.profileName || '')
+                                case 'plan': {
+                                  const planOrder = { 'free': 0, '6-month': 1, '1-year': 2 }
+                                  return multiplier * ((planOrder[a.plan as keyof typeof planOrder] || 0) - (planOrder[b.plan as keyof typeof planOrder] || 0))
+                                }
+                                case 'amount':
+                                  return multiplier * ((a.finalAmount || 0) - (b.finalAmount || 0))
+                                case 'paymentMode':
+                                  return multiplier * (a.paymentMode || '').localeCompare(b.paymentMode || '')
+                                case 'paymentDate':
+                                  return multiplier * (new Date(a.paymentDate).getTime() - new Date(b.paymentDate).getTime())
+                                default:
+                                  return 0
+                              }
+                            })
+                            return sortedTx.slice((transactionsPage - 1) * ITEMS_PER_PAGE, transactionsPage * ITEMS_PER_PAGE).map(tx => (
                             <TableRow key={tx.id}>
                               <TableCell className="font-mono text-xs">{tx.receiptNumber}</TableCell>
                               <TableCell className="font-mono text-xs">{tx.transactionId}</TableCell>
@@ -4738,7 +4822,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 </div>
                               </TableCell>
                             </TableRow>
-                          ))}
+                          ))})()}
                         </TableBody>
                       </Table>
                     </div>
@@ -8941,7 +9025,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
 
       {/* Receipt View Dialog */}
       <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
-        <DialogContent className="max-w-xl max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <FilePdf size={24} className="text-red-600" />
@@ -8950,7 +9034,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
           </DialogHeader>
 
           {selectedTransaction && (
-            <ScrollArea className="flex-1 max-h-[60vh] pr-4">
+            <ScrollArea className="flex-1 min-h-0 pr-4">
               <div id="receipt-content" className="space-y-4">
                 {/* Receipt Header */}
                 <div className="text-center border-b pb-4">
@@ -10455,19 +10539,45 @@ ShaadiPartnerSearch Team
                     size="sm"
                     disabled={!paymentRejectionReason.trim()}
                     onClick={() => {
+                      // Update profile with rejected status and return for payment flag
+                      const updatedProfile = { 
+                        ...paymentViewProfile, 
+                        paymentStatus: 'rejected' as const,
+                        paymentRejectionReason: paymentRejectionReason.trim(),
+                        // Clear old payment screenshots so user can upload new ones
+                        paymentScreenshotUrl: undefined,
+                        paymentScreenshotUrls: undefined,
+                        // Set returned for payment so user can re-upload
+                        returnedForPayment: true,
+                        returnedForPaymentAt: new Date().toISOString(),
+                        returnedForPaymentDeadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+                      }
+                      
                       setProfiles((current) => 
                         (current || []).map(p => 
-                          p.id === paymentViewProfile.id 
-                            ? { 
-                                ...p, 
-                                paymentStatus: 'rejected' as const,
-                                paymentRejectionReason: paymentRejectionReason.trim()
-                              } 
-                            : p
+                          p.id === paymentViewProfile.id ? updatedProfile : p
                         )
                       )
                       setPaymentViewProfile(prev => prev ? {...prev, paymentStatus: 'rejected', paymentRejectionReason: paymentRejectionReason.trim()} : null)
-                      toast.success(language === 'hi' ? 'भुगतान अस्वीकृत। उपयोगकर्ता को नया स्क्रीनशॉट अपलोड करना होगा।' : 'Payment rejected. User will need to upload a new screenshot.')
+                      
+                      // Create notification for user
+                      const rejectionNotification: UserNotification = {
+                        id: `notif-payment-reject-${Date.now()}`,
+                        recipientProfileId: paymentViewProfile.profileId,
+                        type: 'payment_rejected',
+                        title: 'Payment Rejected',
+                        titleHi: 'भुगतान अस्वीकृत',
+                        description: `Your payment screenshot has been rejected. Reason: ${paymentRejectionReason.trim()}. Please upload a valid screenshot.`,
+                        descriptionHi: `आपका भुगतान स्क्रीनशॉट अस्वीकृत कर दिया गया है। कारण: ${paymentRejectionReason.trim()}। कृपया सही स्क्रीनशॉट अपलोड करें।`,
+                        createdAt: new Date().toISOString(),
+                        isRead: false,
+                        actionUrl: '/my-profile'
+                      }
+                      
+                      setUserNotifications(prev => [rejectionNotification, ...(prev || [])])
+                      
+                      toast.success(language === 'hi' ? 'भुगतान अस्वीकृत। उपयोगकर्ता को सूचना भेजी गई।' : 'Payment rejected. User has been notified.')
+                      setShowPaymentViewDialog(false)
                     }}
                   >
                     <XCircle size={16} className="mr-2" />

@@ -4662,8 +4662,26 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           {paymentScreenshotPreviews.map((preview, index) => (
                             <div key={index} className="relative inline-block">
                               {brokenPaymentImages.has(index) ? (
-                                <div className="w-[120px] h-[120px] rounded-lg border border-dashed border-muted-foreground/50 flex items-center justify-center bg-muted/30 text-xs text-muted-foreground text-center p-2">
-                                  <span>Screenshot {index + 1}<br/>(Uploaded ✓)</span>
+                                <div 
+                                  className="w-[120px] h-[120px] rounded-lg border border-dashed border-amber-400 flex flex-col items-center justify-center bg-amber-50/50 text-xs text-amber-700 text-center p-2 cursor-pointer"
+                                  onClick={() => {
+                                    // Remove this broken image and allow re-upload
+                                    setPaymentScreenshotPreviews(prev => prev.filter((_, i) => i !== index))
+                                    setPaymentScreenshotFiles(prev => prev.filter((_, i) => i !== index))
+                                    setBrokenPaymentImages(prev => {
+                                      const newSet = new Set<number>()
+                                      prev.forEach(i => {
+                                        if (i < index) newSet.add(i)
+                                        else if (i > index) newSet.add(i - 1)
+                                      })
+                                      return newSet
+                                    })
+                                    toast.info(language === 'hi' ? 'कृपया पुनः अपलोड करें' : 'Please re-upload this screenshot')
+                                  }}
+                                  title={language === 'hi' ? 'हटाने के लिए क्लिक करें' : 'Click to remove'}
+                                >
+                                  <span>Screenshot {index + 1}</span>
+                                  <span className="text-amber-600 mt-1">(Click to remove)</span>
                                 </div>
                               ) : (
                                 <img 
