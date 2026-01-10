@@ -513,6 +513,19 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const STORAGE_KEY = 'registration_draft'
   const isEditMode = !!editProfile
   
+  // Helper to show admin re-verification indicator on critical fields in Edit mode
+  const AdminVerificationBadge = ({ field }: { field?: string }) => {
+    if (!isEditMode || isAdminMode) return null
+    // Only show for critical fields that require admin re-verification
+    const criticalFields = ['gender', 'photos', 'selfieUrl', 'mobile', 'email', 'bio']
+    if (field && !criticalFields.includes(field)) return null
+    return (
+      <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-medium whitespace-nowrap">
+        ⚠️ {language === 'hi' ? 'पुनः सत्यापन' : 'Re-verification'}
+      </span>
+    )
+  }
+  
   // Payment-only mode: when admin has verified face/ID and returned profile for payment
   // In this mode, only step 7 (membership/payment) is accessible, other steps are frozen
   const isPaymentOnlyMode = isEditMode && editProfile?.returnedForPayment === true
@@ -2529,7 +2542,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="gender">{language === 'hi' ? 'लिंग' : 'Gender'} *</Label>
+                    <Label htmlFor="gender" className="flex items-center flex-wrap">
+                      {language === 'hi' ? 'लिंग' : 'Gender'} *
+                      <AdminVerificationBadge field="gender" />
+                    </Label>
                     <Select onValueChange={(value: Gender) => updateField('gender', value)} value={formData.gender || ''}>
                       <SelectTrigger id="gender" className="w-full">
                         <SelectValue placeholder={t.fields.select} />
@@ -3434,11 +3450,24 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
             {step === 4 && (
               <div className="space-y-6">
+                {/* Admin re-verification notice for edit mode */}
+                {isEditMode && !isAdminMode && (
+                  <Alert className="bg-amber-50 border-amber-400 dark:bg-amber-950/30 dark:border-amber-600">
+                    <Warning size={18} className="text-amber-600" />
+                    <AlertDescription className="text-amber-700 dark:text-amber-400 text-sm">
+                      {language === 'hi' 
+                        ? '⚠️ फोटो या सेल्फी बदलने पर एडमिन द्वारा पुनः सत्यापन आवश्यक होगा।'
+                        : '⚠️ Changing photos or selfie will require admin re-verification.'}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
                 {/* Multiple Photos Upload Section */}
                 <div className="space-y-3">
-                  <Label className="flex items-center gap-2">
+                  <Label className="flex items-center gap-2 flex-wrap">
                     <Image size={20} weight="bold" />
                     {language === 'hi' ? 'फोटो अपलोड करें (न्यूनतम 1, अधिकतम 3 फोटो)' : 'Upload Photos (minimum 1, maximum 3 photos)'} *
+                    <AdminVerificationBadge field="photos" />
                   </Label>
                   
                   <Alert className="bg-amber-50 border-amber-300 dark:bg-amber-950/20 dark:border-amber-700">
@@ -3573,9 +3602,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
                 {/* Live Selfie Capture Section */}
                 <div className="space-y-3">
-                  <Label className="flex items-center gap-2">
+                  <Label className="flex items-center gap-2 flex-wrap">
                     <Camera size={20} weight="bold" />
                     {language === 'hi' ? 'लाइव सेल्फी लें (पहचान सत्यापन के लिए)' : 'Capture Live Selfie (for identity verification)'} *
+                    <AdminVerificationBadge field="selfieUrl" />
                   </Label>
                   
                   <div className="border-2 border-dashed border-primary/30 rounded-lg p-4 bg-muted/20">
@@ -3987,10 +4017,23 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
 
             {step === 5 && (
               <div className="space-y-6">
+                {/* Admin re-verification notice for edit mode */}
+                {isEditMode && !isAdminMode && (
+                  <Alert className="bg-amber-50 border-amber-400 dark:bg-amber-950/30 dark:border-amber-600">
+                    <Warning size={18} className="text-amber-600" />
+                    <AlertDescription className="text-amber-700 dark:text-amber-400 text-sm">
+                      {language === 'hi' 
+                        ? '⚠️ "अपने बारे में" बदलने पर एडमिन द्वारा पुनः सत्यापन आवश्यक होगा।'
+                        : '⚠️ Changing "About Yourself" will require admin re-verification.'}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="bio" className="flex items-center gap-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <Label htmlFor="bio" className="flex items-center gap-2 flex-wrap">
                       {language === 'hi' ? 'अपने बारे में' : 'About Yourself'} *
+                      <AdminVerificationBadge field="bio" />
                     </Label>
                     <Button
                       type="button"
