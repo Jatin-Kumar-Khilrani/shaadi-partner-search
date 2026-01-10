@@ -618,6 +618,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     const normalizedNewMobile = `${formData.countryCode || '+91'}${formData.mobile}`.replace(/\s/g, '')
     const normalizedOldMobile = (editProfile.mobile || '').replace(/\s/g, '')
     
+    // Debug logging for change detection
+    logger.debug('[getChangedFieldsSummary] Mobile comparison:', { 
+      old: normalizedOldMobile, 
+      new: normalizedNewMobile,
+      changed: normalizedOldMobile !== normalizedNewMobile
+    })
+    
     // Check critical fields
     if (normalize(editProfile.fullName) !== normalize(formData.fullName)) critical.push('fullName')
     if (normalize(editProfile.dateOfBirth) !== normalize(formData.dateOfBirth)) critical.push('dateOfBirth')
@@ -651,6 +658,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     
     if (photosChanged) critical.push('photos')
     
+    // Debug logging for photos
+    logger.debug('[getChangedFieldsSummary] Photos comparison:', { 
+      oldCount: oldPhotos.length,
+      newCount: newPhotos.length,
+      newPhotosHaveDataUrl: newPhotos.some(p => p.startsWith('data:')),
+      photosChanged
+    })
+    
     // Check selfie - changed if it's a new data URL (newly selected)
     // In edit mode, selfiePreview is loaded with the original URL
     const selfieChanged = (() => {
@@ -667,6 +682,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     
     if (selfieChanged) critical.push('selfieUrl')
     
+    // Debug logging for selfie
+    logger.debug('[getChangedFieldsSummary] Selfie comparison:', { 
+      hasSelfiePreview: !!selfiePreview,
+      isDataUrl: selfiePreview?.startsWith('data:'),
+      oldSelfieUrl: editProfile.selfieUrl?.substring(0, 50),
+      selfieChanged
+    })
+    
     // Check ID proof - changed if it's a new data URL or different URL
     const idProofChanged = (() => {
       if (!idProofPreview) return false
@@ -676,6 +699,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     })()
     
     if (idProofChanged) critical.push('idProofUrl')
+    
+    // Debug logging for ID proof
+    logger.debug('[getChangedFieldsSummary] ID Proof comparison:', { 
+      hasIdProofPreview: !!idProofPreview,
+      isDataUrl: idProofPreview?.startsWith('data:'),
+      idProofChanged
+    })
     
     // Check bio and familyDetails - these are CRITICAL (public facing content)
     if (normalize(editProfile.bio) !== normalize(formData.bio)) critical.push('bio')
@@ -790,6 +820,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     if (normalize(editProfile.membershipPlan) !== normalize(formData.membershipPlan)) {
       critical.push('membershipPlan')
     }
+    
+    // Debug summary
+    logger.debug('[getChangedFieldsSummary] Final result:', { critical, nonCritical })
     
     return { critical, nonCritical }
   }
