@@ -18,7 +18,7 @@ import { toast } from 'sonner'
 import { logger } from '@/lib/logger'
 import { sendRegistrationEmailOtp, sendRegistrationMobileOtp } from '@/lib/notificationService'
 import { validateSelfie } from '@/lib/azureFaceService'
-import { hasOnlyNonCriticalChanges, CRITICAL_EDIT_FIELDS, NON_CRITICAL_EDIT_FIELDS } from '@/lib/utils'
+import { CRITICAL_EDIT_FIELDS } from '@/lib/utils'
 import type { Gender, MaritalStatus, Profile, MembershipPlan, DisabilityStatus, DietPreference, DrinkingHabit, SmokingHabit, ResidentialStatus } from '@/types/profile'
 import { useTranslation, type Language } from '@/lib/translations'
 import { generateBio, type BioGenerationParams } from '@/lib/aiFoundryService'
@@ -554,7 +554,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       caste: { hi: 'जाति', en: 'Caste' },
       motherTongue: { hi: 'मातृभाषा', en: 'Mother Tongue' },
       education: { hi: 'शिक्षा', en: 'Education' },
-      occupation: { hi: 'व्यवसाय', en: 'Occupation' },
+      occupation: { hi: 'रोजगार स्थिति', en: 'Employment Status' },
+      position: { hi: 'व्यवसाय/पेशा', en: 'Occupation/Profession' },
       height: { hi: 'ऊंचाई', en: 'Height' },
       weight: { hi: 'वजन', en: 'Weight' },
       maritalStatus: { hi: 'वैवाहिक स्थिति', en: 'Marital Status' },
@@ -562,12 +563,19 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       state: { hi: 'राज्य', en: 'State' },
       location: { hi: 'शहर', en: 'City' },
       city: { hi: 'शहर', en: 'City' },
+      residentialStatus: { hi: 'आवासीय स्थिति', en: 'Residential Status' },
       bio: { hi: 'परिचय', en: 'About Me' },
       familyDetails: { hi: 'परिवार विवरण', en: 'Family Details' },
       dietPreference: { hi: 'आहार', en: 'Diet' },
       drinkingHabit: { hi: 'पीने की आदत', en: 'Drinking Habit' },
       smokingHabit: { hi: 'धूम्रपान', en: 'Smoking Habit' },
       salary: { hi: 'वार्षिक आय', en: 'Annual Income' },
+      disability: { hi: 'दिव्यांगता', en: 'Disability' },
+      disabilityDetails: { hi: 'दिव्यांगता विवरण', en: 'Disability Details' },
+      birthTime: { hi: 'जन्म समय', en: 'Birth Time' },
+      birthPlace: { hi: 'जन्म स्थान', en: 'Birth Place' },
+      horoscopeMatching: { hi: 'कुंडली मिलान', en: 'Horoscope Matching' },
+      relationToProfile: { hi: 'प्रोफ़ाइल किसके लिए', en: 'Profile Created For' },
       membershipPlan: { hi: 'सदस्यता योजना', en: 'Membership Plan' },
       // Partner Preferences
       partnerPreferences: { hi: 'साथी वरीयताएं', en: 'Partner Preferences' },
@@ -586,6 +594,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       partnerManglik: { hi: 'साथी मांगलिक', en: 'Partner Manglik' },
       partnerDisability: { hi: 'साथी दिव्यांगता', en: 'Partner Disability' },
       partnerEmploymentStatus: { hi: 'साथी रोजगार', en: 'Partner Employment' },
+      partnerAnnualIncome: { hi: 'साथी वार्षिक आय', en: 'Partner Annual Income' },
     }
     return labels[field]?.[language] || field
   }
@@ -633,24 +642,34 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     // Check ID proof
     if (idProofPreview && editProfile.idProofUrl !== idProofPreview) critical.push('idProofUrl')
     
+    // Check bio and familyDetails - these are CRITICAL (public facing content)
+    if (normalize(editProfile.bio) !== normalize(formData.bio)) critical.push('bio')
+    if (normalize(editProfile.familyDetails) !== normalize(formData.familyDetails)) critical.push('familyDetails')
+    
     // Check non-critical fields (use normalize to treat undefined/null/'' as equal)
     if (normalize(editProfile.religion) !== normalize(formData.religion)) nonCritical.push('religion')
     if (normalize(editProfile.caste) !== normalize(formData.caste)) nonCritical.push('caste')
     if (normalize(editProfile.motherTongue) !== normalize(formData.motherTongue)) nonCritical.push('motherTongue')
     if (normalize(editProfile.education) !== normalize(formData.education)) nonCritical.push('education')
     if (normalize(editProfile.occupation) !== normalize(formData.occupation)) nonCritical.push('occupation')
+    if (normalize(editProfile.position) !== normalize(formData.position)) nonCritical.push('position')
     if (normalize(editProfile.height) !== normalize(formData.height)) nonCritical.push('height')
     if (normalize(editProfile.weight) !== normalize(formData.weight)) nonCritical.push('weight')
     if (normalize(editProfile.maritalStatus) !== normalize(formData.maritalStatus)) nonCritical.push('maritalStatus')
     if (normalize(editProfile.country) !== normalize(formData.country)) nonCritical.push('country')
     if (normalize(editProfile.state) !== normalize(formData.state)) nonCritical.push('state')
     if (normalize(editProfile.location) !== normalize(formData.location)) nonCritical.push('location')
-    if (normalize(editProfile.bio) !== normalize(formData.bio)) nonCritical.push('bio')
-    if (normalize(editProfile.familyDetails) !== normalize(formData.familyDetails)) nonCritical.push('familyDetails')
+    if (normalize(editProfile.residentialStatus) !== normalize(formData.residentialStatus)) nonCritical.push('residentialStatus')
     if (normalize(editProfile.dietPreference) !== normalize(formData.diet)) nonCritical.push('dietPreference')
     if (normalize(editProfile.drinkingHabit) !== normalize(formData.drinkingHabit)) nonCritical.push('drinkingHabit')
     if (normalize(editProfile.smokingHabit) !== normalize(formData.smokingHabit)) nonCritical.push('smokingHabit')
     if (normalize(editProfile.salary) !== normalize(formData.annualIncome)) nonCritical.push('salary')
+    if (normalize(editProfile.disability) !== normalize(formData.disability)) nonCritical.push('disability')
+    if (normalize(editProfile.disabilityDetails) !== normalize(formData.disabilityDetails)) nonCritical.push('disabilityDetails')
+    if (normalize(editProfile.birthTime) !== normalize(formData.birthTime)) nonCritical.push('birthTime')
+    if (normalize(editProfile.birthPlace) !== normalize(formData.birthPlace)) nonCritical.push('birthPlace')
+    if (normalize(editProfile.horoscopeMatching) !== normalize(formData.horoscopeMatching)) nonCritical.push('horoscopeMatching')
+    if (normalize(editProfile.relationToProfile) !== normalize(formData.profileCreatedFor === 'Other' ? formData.otherRelation : formData.profileCreatedFor)) nonCritical.push('relationToProfile')
     
     // Check partner preferences changes (all non-critical)
     const oldPrefs = editProfile.partnerPreferences || {}
@@ -725,6 +744,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     
     // Disability preference
     if (!arraysEqual(oldPrefs.disability, formData.partnerDisability)) nonCritical.push('partnerDisability')
+    
+    // Annual income preference
+    if (normalize(oldPrefs.annualIncomeMin) !== normalize(formData.partnerAnnualIncomeMin) ||
+        normalize(oldPrefs.annualIncomeMax) !== normalize(formData.partnerAnnualIncomeMax)) {
+      nonCritical.push('partnerAnnualIncome')
+    }
     
     // Check membership plan change - this is CRITICAL as it affects payment
     if (normalize(editProfile.membershipPlan) !== normalize(formData.membershipPlan)) {
@@ -1646,30 +1671,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       setIsSubmitting(false)
     }
 
-    // Build the normalized profile for comparison (with same structure as editProfile)
-    const normalizedNewProfile: Partial<Profile> = isEditMode && editProfile ? {
-      fullName: formData.fullName,
-      firstName: formData.fullName.split(' ')[0],
-      lastName: formData.fullName.split(' ').slice(1).join(' ') || formData.fullName.split(' ')[0],
-      dateOfBirth: formData.dateOfBirth,
-      age,
-      gender: formData.gender,
-      email: formData.email,
-      mobile: `${formData.countryCode || '+91'} ${formData.mobile}`,
-      photos: photoUrls,
-      selfieUrl: uploadedSelfieUrl || editProfile.selfieUrl,
-      idProofUrl: uploadedIdProofUrl || editProfile.idProofUrl,
-      idProofType: idProofType || editProfile.idProofType,
-    } : {}
-
-    // Determine if only non-critical changes were made
-    const onlyNonCriticalChanges = isEditMode && editProfile 
-      ? hasOnlyNonCriticalChanges(editProfile, normalizedNewProfile)
-      : false
-
-    // Get the list of all changed fields for admin review
+    // Use getChangedFieldsSummary as the single source of truth for change detection
     const changedFields = isEditMode ? getChangedFieldsSummary() : { critical: [], nonCritical: [] }
     const allChangedFields = [...changedFields.critical, ...changedFields.nonCritical]
+    
+    // Determine if only non-critical changes were made (no admin approval needed)
+    // This is true if there are changes but none of them are critical
+    const onlyNonCriticalChanges = isEditMode && editProfile 
+      ? (allChangedFields.length === 0 || changedFields.critical.length === 0)
+      : false
 
     const profile: Partial<Profile> = {
       ...formData,
@@ -2375,7 +2385,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               </div>
             </div>
           ) : (
-          <div className="flex items-center justify-center gap-1 md:gap-2 mb-6 px-2 overflow-visible">
+          <div className="flex items-center justify-center gap-1 md:gap-2 mb-6 px-6 overflow-visible">
             {(isAdminMode ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6, 7]).map((s) => {
               const isCompleted = s < step || (s === 3 && emailVerified && mobileVerified)
               const isCurrent = s === step
@@ -5359,7 +5369,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 ) : (
                   isAdminMode 
                     ? (language === 'hi' ? 'बदलाव सेव करें' : 'Save Changes')
-                    : (isEditMode ? t.registration.updateProfile : t.registration.submit)
+                    : (isEditMode 
+                        ? (() => {
+                            const changes = getChangedFieldsSummary()
+                            const hasCriticalChanges = changes.critical.length > 0
+                            return hasCriticalChanges 
+                              ? t.registration.sendForVerification 
+                              : t.registration.updateProfile
+                          })()
+                        : t.registration.submit)
                 )}
               </Button>
             ) : step === 8 ? (

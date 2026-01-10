@@ -325,6 +325,12 @@ export function hasOnlyNonCriticalChanges(
   oldProfile: Partial<Profile>,
   newProfile: Partial<Profile>
 ): boolean {
+  // Helper to normalize values - treat undefined, null, and empty string as equivalent
+  const normalize = (val: unknown): string => {
+    if (val === undefined || val === null || val === '') return ''
+    return String(val)
+  }
+  
   // Check each critical field for changes
   for (const field of CRITICAL_EDIT_FIELDS) {
     const oldValue = oldProfile[field]
@@ -358,12 +364,9 @@ export function hasOnlyNonCriticalChanges(
       continue
     }
     
-    // For other fields, simple comparison
-    if (oldValue !== newValue) {
-      // Special case: ignore undefined/empty string differences
-      if (!oldValue && !newValue) continue
-      
-      // Check if it's a meaningful change
+    // For other fields, compare normalized values (treats undefined/null/'' as equal)
+    if (normalize(oldValue) !== normalize(newValue)) {
+      // This is a meaningful change to a critical field
       return false
     }
   }
