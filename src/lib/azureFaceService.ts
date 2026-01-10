@@ -582,6 +582,16 @@ export async function validateSelfie(imageData: string, language: 'hi' | 'en'): 
     }
   }
 
+  if (result.coverage > 100) {
+    return {
+      valid: false,
+      coverage: result.coverage,
+      message: language === 'hi' 
+        ? `चेहरा ${result.coverage}% है जो बहुत करीब है। कृपया कैमरे से थोड़ा दूर हटें (50-100% आवश्यक है)।`
+        : `Face covers ${result.coverage}% which is too close. Please move back from camera (50-100% required).`,
+    }
+  }
+
   return {
     valid: true,
     coverage: result.coverage,

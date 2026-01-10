@@ -2313,7 +2313,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       return
     }
     if (step === 4 && !isAdminMode && selfiePreview && !faceCoverageValid) {
-      toast.error(language === 'hi' ? 'चेहरा फ्रेम का कम से कम 50% होना चाहिए। कृपया पुनः सेल्फी लें।' : 'Face must cover at least 50% of the frame. Please retake selfie.')
+      toast.error(language === 'hi' ? 'चेहरा फ्रेम का 50-100% के बीच होना चाहिए। कृपया पुनः सेल्फी लें।' : 'Face must cover 50-100% of the frame. Please retake selfie.')
       return
     }
     // ID Proof is mandatory for new registrations only (not for edit mode or admin mode)
@@ -3886,8 +3886,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <Info size={16} />
                     <AlertDescription className="text-xs">
                       {language === 'hi' 
-                        ? 'चेहरा फ्रेम का कम से कम 50% होना चाहिए। सेल्फी का उपयोग AI द्वारा पहचान सत्यापन के लिए किया जाएगा।' 
-                        : 'Face must cover at least 50% of the frame. Selfie will be used for AI identity verification.'}
+                        ? 'चेहरा फ्रेम का 50-100% के बीच होना चाहिए। सेल्फी का उपयोग AI द्वारा पहचान सत्यापन के लिए किया जाएगा।' 
+                        : 'Face must cover 50-100% of the frame. Selfie will be used for AI identity verification.'}
                     </AlertDescription>
                   </Alert>
                   
@@ -3900,8 +3900,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                         <Warning size={16} weight="fill" />
                       )}
                       {language === 'hi' 
-                        ? `चेहरा कवरेज: ${faceCoveragePercent}% ${faceCoverageValid ? '✓' : '(50% आवश्यक)'}` 
-                        : `Face coverage: ${faceCoveragePercent}% ${faceCoverageValid ? '✓' : '(50% required)'}`}
+                        ? `चेहरा कवरेज: ${faceCoveragePercent}% ${faceCoverageValid ? '✓' : '(50-100% आवश्यक)'}` 
+                        : `Face coverage: ${faceCoveragePercent}% ${faceCoverageValid ? '✓' : '(50-100% required)'}`}
                     </div>
                   )}
                 </div>
