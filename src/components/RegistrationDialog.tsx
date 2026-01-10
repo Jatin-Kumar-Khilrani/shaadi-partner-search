@@ -1847,8 +1847,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       )
     }
     
-    // Only show verification process toast if not a non-critical edit
-    if (!(isEditMode && onlyNonCriticalChanges)) {
+    // Only show verification process toast for new registrations (not for edit mode)
+    if (!isEditMode) {
       setTimeout(() => {
         toast.info(
           t.registration.verificationProcess,

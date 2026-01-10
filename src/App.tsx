@@ -793,7 +793,8 @@ function App() {
       return
     }
 
-    // Update existing profile - always send back to pending for admin approval
+    // Update existing profile - status is already set correctly by RegistrationDialog
+    // (pending for critical changes, preserved for non-critical changes)
     setProfiles(current => {
       if (!current) return []
       return current.map(p => {
@@ -801,12 +802,7 @@ function App() {
           return {
             ...p,
             ...profileData,
-            // Reset status to pending for admin re-approval
-            status: 'pending',
-            // Clear the returnedForEdit flag
-            returnedForEdit: false,
-            editReason: undefined,
-            returnedAt: undefined,
+            // Status, returnedForEdit, editReason, returnedAt are already set correctly in profileData
             // Track when profile was edited
             updatedAt: new Date().toISOString(),
             lastEditedAt: new Date().toISOString()
@@ -819,17 +815,7 @@ function App() {
     setShowRegistration(false)
     setProfileToEdit(null)
     
-    // Notify user that profile is sent for re-approval
-    toast.info(
-      language === 'hi' 
-        ? 'प्रोफ़ाइल अपडेट हो गई। एडमिन की पुनः स्वीकृति के लिए भेजी गई।' 
-        : 'Profile updated. Sent for admin re-approval.',
-      {
-        description: language === 'hi'
-          ? 'आपकी प्रोफ़ाइल स्वीकृति तक अन्य उपयोगकर्ताओं को दिखाई नहीं देगी।'
-          : 'Your profile will not be visible to other users until approved.'
-      }
-    )
+    // Toast is already shown by RegistrationDialog - no need to show again here
   }
 
   const handleLogout = () => {
