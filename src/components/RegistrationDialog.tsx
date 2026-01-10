@@ -18,7 +18,7 @@ import { toast } from 'sonner'
 import { logger } from '@/lib/logger'
 import { sendRegistrationEmailOtp, sendRegistrationMobileOtp } from '@/lib/notificationService'
 import { validateSelfie } from '@/lib/azureFaceService'
-import { hasOnlyNonCriticalChanges } from '@/lib/utils'
+import { hasOnlyNonCriticalChanges, CRITICAL_EDIT_FIELDS, NON_CRITICAL_EDIT_FIELDS } from '@/lib/utils'
 import type { Gender, MaritalStatus, Profile, MembershipPlan, DisabilityStatus, DietPreference, DrinkingHabit, SmokingHabit, ResidentialStatus } from '@/types/profile'
 import { useTranslation, type Language } from '@/lib/translations'
 import { generateBio, type BioGenerationParams } from '@/lib/aiFoundryService'
@@ -521,6 +521,102 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const isPaymentPendingVerification = isEditMode && 
     editProfile?.paymentStatus === 'pending' && 
     (editProfile?.paymentScreenshotUrl || (editProfile?.paymentScreenshotUrls && editProfile.paymentScreenshotUrls.length > 0))
+
+  // Helper to get human-readable field names
+  const getFieldLabel = (field: string): string => {
+    const labels: Record<string, { hi: string; en: string }> = {
+      fullName: { hi: 'पूरा नाम', en: 'Full Name' },
+      firstName: { hi: 'पहला नाम', en: 'First Name' },
+      lastName: { hi: 'उपनाम', en: 'Last Name' },
+      dateOfBirth: { hi: 'जन्म तिथि', en: 'Date of Birth' },
+      age: { hi: 'आयु', en: 'Age' },
+      gender: { hi: 'लिंग', en: 'Gender' },
+      email: { hi: 'ईमेल', en: 'Email' },
+      mobile: { hi: 'मोबाइल', en: 'Mobile' },
+      photos: { hi: 'फोटो', en: 'Photos' },
+      selfieUrl: { hi: 'सेल्फी', en: 'Selfie' },
+      idProofUrl: { hi: 'पहचान प्रमाण', en: 'ID Proof' },
+      idProofType: { hi: 'पहचान प्रकार', en: 'ID Proof Type' },
+      religion: { hi: 'धर्म', en: 'Religion' },
+      caste: { hi: 'जाति', en: 'Caste' },
+      motherTongue: { hi: 'मातृभाषा', en: 'Mother Tongue' },
+      education: { hi: 'शिक्षा', en: 'Education' },
+      occupation: { hi: 'व्यवसाय', en: 'Occupation' },
+      height: { hi: 'ऊंचाई', en: 'Height' },
+      weight: { hi: 'वजन', en: 'Weight' },
+      maritalStatus: { hi: 'वैवाहिक स्थिति', en: 'Marital Status' },
+      country: { hi: 'देश', en: 'Country' },
+      state: { hi: 'राज्य', en: 'State' },
+      location: { hi: 'शहर', en: 'City' },
+      city: { hi: 'शहर', en: 'City' },
+      bio: { hi: 'परिचय', en: 'About Me' },
+      familyDetails: { hi: 'परिवार विवरण', en: 'Family Details' },
+      dietPreference: { hi: 'आहार', en: 'Diet' },
+      drinkingHabit: { hi: 'पीने की आदत', en: 'Drinking Habit' },
+      smokingHabit: { hi: 'धूम्रपान', en: 'Smoking Habit' },
+      salary: { hi: 'वार्षिक आय', en: 'Annual Income' },
+      partnerPreferences: { hi: 'साथी वरीयताएं', en: 'Partner Preferences' },
+    }
+    return labels[field]?.[language] || field
+  }
+
+  // Get list of changed fields categorized as critical or non-critical
+  const getChangedFieldsSummary = (): { critical: string[]; nonCritical: string[] } => {
+    if (!isEditMode || !editProfile) return { critical: [], nonCritical: [] }
+    
+    const critical: string[] = []
+    const nonCritical: string[] = []
+    
+    // Build normalized values for comparison
+    const normalizedMobile = `${formData.countryCode || '+91'} ${formData.mobile}`
+    
+    // Check critical fields
+    if (editProfile.fullName !== formData.fullName) critical.push('fullName')
+    if (editProfile.dateOfBirth !== formData.dateOfBirth) critical.push('dateOfBirth')
+    if (editProfile.gender !== formData.gender) critical.push('gender')
+    if (editProfile.email !== formData.email) critical.push('email')
+    if (editProfile.mobile !== normalizedMobile) critical.push('mobile')
+    
+    // Check photos - compare count and content
+    const oldPhotos = editProfile.photos || []
+    const newPhotos = photos.map(p => p.preview)
+    if (oldPhotos.length !== newPhotos.length) {
+      critical.push('photos')
+    } else if (newPhotos.some((p, i) => !oldPhotos[i]?.includes(p.substring(0, 30)) && !p.includes(oldPhotos[i]?.substring(0, 30) || ''))) {
+      critical.push('photos')
+    }
+    
+    // Check selfie
+    if (selfiePreview && editProfile.selfieUrl !== selfiePreview && !selfiePreview.startsWith('data:')) {
+      critical.push('selfieUrl')
+    } else if (selfiePreview && selfiePreview.startsWith('data:') && editProfile.selfieUrl && !editProfile.selfieUrl.startsWith('data:')) {
+      critical.push('selfieUrl')
+    }
+    
+    // Check ID proof
+    if (idProofPreview && editProfile.idProofUrl !== idProofPreview) critical.push('idProofUrl')
+    
+    // Check non-critical fields
+    if (editProfile.religion !== formData.religion) nonCritical.push('religion')
+    if (editProfile.caste !== formData.caste) nonCritical.push('caste')
+    if (editProfile.motherTongue !== formData.motherTongue) nonCritical.push('motherTongue')
+    if (editProfile.education !== formData.education) nonCritical.push('education')
+    if (editProfile.occupation !== formData.occupation) nonCritical.push('occupation')
+    if (editProfile.height !== formData.height) nonCritical.push('height')
+    if (editProfile.weight !== formData.weight) nonCritical.push('weight')
+    if (editProfile.maritalStatus !== formData.maritalStatus) nonCritical.push('maritalStatus')
+    if (editProfile.country !== formData.country) nonCritical.push('country')
+    if (editProfile.state !== formData.state) nonCritical.push('state')
+    if (editProfile.location !== formData.location) nonCritical.push('location')
+    if (editProfile.bio !== formData.bio) nonCritical.push('bio')
+    if (editProfile.familyDetails !== formData.familyDetails) nonCritical.push('familyDetails')
+    if (editProfile.dietPreference !== formData.diet) nonCritical.push('dietPreference')
+    if (editProfile.drinkingHabit !== formData.drinkingHabit) nonCritical.push('drinkingHabit')
+    if (editProfile.smokingHabit !== formData.smokingHabit) nonCritical.push('smokingHabit')
+    if (editProfile.salary !== formData.annualIncome) nonCritical.push('salary')
+    
+    return { critical, nonCritical }
+  }
 
   // Load edit profile data when in edit mode
   useEffect(() => {
@@ -1434,6 +1530,27 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       setIsSubmitting(false)
     }
 
+    // Build the normalized profile for comparison (with same structure as editProfile)
+    const normalizedNewProfile: Partial<Profile> = isEditMode && editProfile ? {
+      fullName: formData.fullName,
+      firstName: formData.fullName.split(' ')[0],
+      lastName: formData.fullName.split(' ').slice(1).join(' ') || formData.fullName.split(' ')[0],
+      dateOfBirth: formData.dateOfBirth,
+      age,
+      gender: formData.gender,
+      email: formData.email,
+      mobile: `${formData.countryCode || '+91'} ${formData.mobile}`,
+      photos: photoUrls,
+      selfieUrl: uploadedSelfieUrl || editProfile.selfieUrl,
+      idProofUrl: uploadedIdProofUrl || editProfile.idProofUrl,
+      idProofType: idProofType || editProfile.idProofType,
+    } : {}
+
+    // Determine if only non-critical changes were made
+    const onlyNonCriticalChanges = isEditMode && editProfile 
+      ? hasOnlyNonCriticalChanges(editProfile, normalizedNewProfile)
+      : false
+
     const profile: Partial<Profile> = {
       ...formData,
       // Include existing profile fields for edit mode
@@ -1444,18 +1561,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         trustLevel: editProfile.trustLevel,
         // Only reset to pending if critical fields (name, DOB, photos, etc.) were changed
         // Non-critical fields (religion, occupation, preferences, etc.) don't need re-verification
-        status: hasOnlyNonCriticalChanges(editProfile, formData as Partial<Profile>) 
-          ? editProfile.status 
-          : 'pending',
-        returnedForEdit: hasOnlyNonCriticalChanges(editProfile, formData as Partial<Profile>) 
-          ? editProfile.returnedForEdit 
-          : false, // Only clear returned flag if critical fields changed
-        editReason: hasOnlyNonCriticalChanges(editProfile, formData as Partial<Profile>) 
-          ? editProfile.editReason 
-          : undefined,
-        returnedAt: hasOnlyNonCriticalChanges(editProfile, formData as Partial<Profile>) 
-          ? editProfile.returnedAt 
-          : undefined
+        status: onlyNonCriticalChanges ? editProfile.status : 'pending',
+        returnedForEdit: onlyNonCriticalChanges ? editProfile.returnedForEdit : false,
+        editReason: onlyNonCriticalChanges ? editProfile.editReason : undefined,
+        returnedAt: onlyNonCriticalChanges ? editProfile.returnedAt : undefined
       } : {
         profileId: tempProfileId // Use the temp ID for new registrations
       }),
@@ -1564,14 +1673,27 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       onClose()
       return
     } else if (isEditMode) {
-      toast.success(
-        language === 'hi' ? 'प्रोफ़ाइल अपडेट किया गया!' : 'Profile Updated!',
-        {
-          description: language === 'hi' 
-            ? 'आपकी प्रोफ़ाइल सत्यापन के लिए भेजी गई है।'
-            : 'Your profile has been submitted for verification.'
-        }
-      )
+      if (onlyNonCriticalChanges) {
+        // Non-critical changes - no re-verification needed
+        toast.success(
+          language === 'hi' ? 'प्रोफ़ाइल अपडेट किया गया!' : 'Profile Updated!',
+          {
+            description: language === 'hi' 
+              ? 'आपके परिवर्तन सहेजे गए हैं। पुनः सत्यापन की आवश्यकता नहीं है।'
+              : 'Your changes have been saved. No re-verification needed.'
+          }
+        )
+      } else {
+        // Critical changes - needs re-verification
+        toast.success(
+          language === 'hi' ? 'प्रोफ़ाइल अपडेट हो गई। एडमिन की पुनः स्वीकृति के लिए भेजी गई।' : 'Profile updated. Sent for admin re-approval.',
+          {
+            description: language === 'hi' 
+              ? 'आपकी प्रोफ़ाइल स्वीकृति तक अन्य उपयोगकर्ताओं को दिखाई नहीं देगी।'
+              : 'Your profile will not be visible to other users until approved.'
+          }
+        )
+      }
     } else if (formData.membershipPlan === 'free') {
       toast.success(
         t.registration.profileSubmitted,
@@ -1592,14 +1714,17 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       )
     }
     
-    setTimeout(() => {
-      toast.info(
-        t.registration.verificationProcess,
-        {
-          description: t.registration.reviewNote
-        }
-      )
-    }, 2000)
+    // Only show verification process toast if not a non-critical edit
+    if (!(isEditMode && onlyNonCriticalChanges)) {
+      setTimeout(() => {
+        toast.info(
+          t.registration.verificationProcess,
+          {
+            description: t.registration.reviewNote
+          }
+        )
+      }, 2000)
+    }
 
     setFormData({
       fullName: '',
@@ -4251,6 +4376,77 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             {/* Step 7 - Membership Plan */}
             {step === 7 && (
               <div className="space-y-6">
+                {/* Edit Mode - Changes Summary */}
+                {isEditMode && !isPaymentOnlyMode && (() => {
+                  const changes = getChangedFieldsSummary()
+                  const hasChanges = changes.critical.length > 0 || changes.nonCritical.length > 0
+                  const hasCriticalChanges = changes.critical.length > 0
+                  
+                  if (!hasChanges) return null
+                  
+                  return (
+                    <Card className={`border-2 ${hasCriticalChanges ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/20' : 'border-green-500 bg-green-50/50 dark:bg-green-950/20'}`}>
+                      <CardContent className="pt-4 pb-4">
+                        <div className="flex items-start gap-3">
+                          {hasCriticalChanges ? (
+                            <Warning size={24} weight="fill" className="text-amber-600 shrink-0 mt-0.5" />
+                          ) : (
+                            <CheckCircle size={24} weight="fill" className="text-green-600 shrink-0 mt-0.5" />
+                          )}
+                          <div className="flex-1 space-y-3">
+                            <div>
+                              <h4 className={`font-bold ${hasCriticalChanges ? 'text-amber-700 dark:text-amber-400' : 'text-green-700 dark:text-green-400'}`}>
+                                {hasCriticalChanges 
+                                  ? (language === 'hi' ? '⚠️ प्रोफ़ाइल एडमिन स्वीकृति के लिए भेजी जाएगी' : '⚠️ Profile will be sent for admin approval')
+                                  : (language === 'hi' ? '✓ एडमिन स्वीकृति की आवश्यकता नहीं' : '✓ No admin approval needed')}
+                              </h4>
+                              <p className="text-sm text-muted-foreground">
+                                {hasCriticalChanges 
+                                  ? (language === 'hi' ? 'आपने महत्वपूर्ण फ़ील्ड बदले हैं जिन्हें सत्यापन की आवश्यकता है।' : 'You have changed critical fields that require verification.')
+                                  : (language === 'hi' ? 'आपके परिवर्तन तुरंत लागू होंगे।' : 'Your changes will be applied immediately.')}
+                              </p>
+                            </div>
+                            
+                            {/* Critical Changes */}
+                            {changes.critical.length > 0 && (
+                              <div className="space-y-1">
+                                <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                                  <ShieldCheck size={14} />
+                                  {language === 'hi' ? 'महत्वपूर्ण परिवर्तन (सत्यापन आवश्यक):' : 'Critical Changes (Verification Required):'}
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {changes.critical.map(field => (
+                                    <span key={field} className="bg-amber-200/80 dark:bg-amber-800/50 text-amber-800 dark:text-amber-200 px-2 py-0.5 rounded text-xs font-medium">
+                                      {getFieldLabel(field)}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Non-Critical Changes */}
+                            {changes.nonCritical.length > 0 && (
+                              <div className="space-y-1">
+                                <p className="text-xs font-semibold text-green-700 dark:text-green-400 flex items-center gap-1">
+                                  <CheckCircle size={14} />
+                                  {language === 'hi' ? 'सामान्य परिवर्तन (स्वतः-स्वीकृत):' : 'Regular Changes (Auto-Approved):'}
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {changes.nonCritical.map(field => (
+                                    <span key={field} className="bg-green-200/80 dark:bg-green-800/50 text-green-800 dark:text-green-200 px-2 py-0.5 rounded text-xs font-medium">
+                                      {getFieldLabel(field)}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })()}
+
                 <div className="text-center mb-6">
                   <h3 className="text-2xl font-bold mb-2">{t.registration.choosePlan}</h3>
                   <p className="text-muted-foreground">{t.registration.affordablePricing}</p>
