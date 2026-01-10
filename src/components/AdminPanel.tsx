@@ -2820,11 +2820,19 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                       <div className="col-span-2 truncate">{t.email}: {profile.email}</div>
                                       <div className="col-span-2 truncate">{t.mobile}: {profile.mobile}</div>
                                       <div className="col-span-2 flex items-center gap-2 flex-wrap">
-                                        <ShieldCheck size={14} className={profile.digilockerVerified ? 'text-green-600' : 'text-muted-foreground'} />
+                                        <ShieldCheck size={14} className={profile.idProofVerified ? 'text-green-600' : profile.idProofUrl ? 'text-amber-500' : 'text-muted-foreground'} />
                                         <span>{t.idProofVerification}:</span>
-                                        {profile.digilockerVerified ? (
+                                        {profile.idProofVerified ? (
                                           <Badge variant="outline" className="text-green-600 border-green-400">
                                             ✓ {t.digilockerVerified}
+                                          </Badge>
+                                        ) : profile.idProofRejected ? (
+                                          <Badge variant="outline" className="text-red-600 border-red-400">
+                                            ✗ {language === 'hi' ? 'अस्वीकृत' : 'Rejected'}
+                                          </Badge>
+                                        ) : profile.idProofUrl ? (
+                                          <Badge variant="outline" className="text-amber-600 border-amber-400">
+                                            {language === 'hi' ? 'लंबित' : 'Pending'}
                                           </Badge>
                                         ) : (
                                           <Badge variant="outline" className="text-amber-600 border-amber-400">

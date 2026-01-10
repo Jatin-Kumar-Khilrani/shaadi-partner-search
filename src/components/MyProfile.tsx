@@ -205,6 +205,8 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
     confirmEdit: language === 'hi' ? 'संपादित करें' : 'Proceed to Edit',
     pendingApproval: language === 'hi' ? 'स्वीकृति लंबित' : 'Pending Approval',
     pendingApprovalDesc: language === 'hi' ? 'आपकी प्रोफ़ाइल एडमिन द्वारा समीक्षा के लिए लंबित है। स्वीकृति तक अन्य उपयोगकर्ताओं को दिखाई नहीं देगी।' : 'Your profile is pending review by admin. It will not be visible to other users until approved.',
+    awaitingFinalApproval: language === 'hi' ? 'अंतिम स्वीकृति लंबित' : 'Awaiting Final Approval',
+    awaitingFinalApprovalDesc: language === 'hi' ? '🎉 बधाई हो! आपके सभी सत्यापन (चेहरा, पहचान पत्र, भुगतान) पूर्ण हो गए हैं। एडमिन जल्द ही आपकी प्रोफाइल को अंतिम स्वीकृति देगा। कृपया प्रतीक्षा करें।' : '🎉 Congratulations! All your verifications (Face, ID Proof, Payment) are complete. Admin will give final approval to your profile shortly. Please wait.',
     paymentAwaitingVerification: language === 'hi' ? 'भुगतान सत्यापन लंबित' : 'Payment Awaiting Verification',
     paymentAwaitingVerificationDesc: language === 'hi' ? 'आपका भुगतान स्क्रीनशॉट सफलतापूर्वक अपलोड किया गया है। एडमिन जल्द ही इसकी समीक्षा करेगा और आपकी सदस्यता सक्रिय करेगा।' : 'Your payment screenshot has been uploaded successfully. Admin will review it shortly and activate your membership.',
     // Profile deletion flow translations
@@ -586,11 +588,18 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
             </Button>
             )}
             {onEdit && !(
-              profile?.status === 'pending' && 
+              // Hide edit when payment screenshot uploaded and awaiting verification
+              (profile?.status === 'pending' && 
               profile?.paymentStatus === 'pending' && 
               profile?.paymentScreenshotUrls && 
               profile?.paymentScreenshotUrls.length > 0 &&
-              !profile?.returnedForPayment
+              !profile?.returnedForPayment) ||
+              // Hide edit when all 3 verifications complete but profile still pending final approval
+              (profile?.status === 'pending' && 
+              profile?.photoVerified === true && 
+              profile?.idProofVerified === true && 
+              profile?.paymentStatus === 'verified' &&
+              !profile?.returnedForEdit)
             ) && (
               <Button 
                 onClick={handleEditClick} 
@@ -1118,11 +1127,71 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
           </Alert>
         )}
 
+        {/* Awaiting Final Approval Alert (when all 3 verifications complete but profile still pending) */}
+        {profile.status === 'pending' && 
+         profile.photoVerified === true && 
+         profile.idProofVerified === true && 
+         profile.paymentStatus === 'verified' &&
+         !profile.returnedForEdit && (
+          <Alert className="mb-6 bg-emerald-50 border-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-700">
+            <CheckCircle size={20} weight="fill" className="text-emerald-600" />
+            <AlertTitle className="text-emerald-800 dark:text-emerald-200 font-semibold">
+              {t.awaitingFinalApproval}
+            </AlertTitle>
+            <AlertDescription className="text-emerald-700 dark:text-emerald-300">
+              <p>{t.awaitingFinalApprovalDesc}</p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <Badge className="bg-green-500 text-white">✓ {language === 'hi' ? 'चेहरा सत्यापित' : 'Face Verified'}</Badge>
+                <Badge className="bg-green-500 text-white">✓ {language === 'hi' ? 'पहचान पत्र सत्यापित' : 'ID Verified'}</Badge>
+                <Badge className="bg-green-500 text-white">✓ {language === 'hi' ? 'भुगतान सत्यापित' : 'Payment Verified'}</Badge>
+              </div>
+              <div className="flex items-center gap-3 mt-3">
+                {onRefreshProfile && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      setIsRefreshing(true)
+                      try {
+                        await onRefreshProfile()
+                        setLastRefreshTime(new Date())
+                        toast.success(language === 'hi' ? 'स्थिति अपडेट की गई' : 'Status updated')
+                      } catch (error) {
+                        toast.error(language === 'hi' ? 'रिफ्रेश विफल' : 'Refresh failed')
+                      } finally {
+                        setIsRefreshing(false)
+                      }
+                    }}
+                    disabled={isRefreshing}
+                    className="border-emerald-400 text-emerald-700 hover:bg-emerald-100"
+                  >
+                    <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                    {language === 'hi' ? 'स्थिति जांचें' : 'Check Status'}
+                  </Button>
+                )}
+                {lastRefreshTime && (
+                  <span className="text-xs text-emerald-600">
+                    {language === 'hi' 
+                      ? `अंतिम जांच: ${lastRefreshTime.toLocaleTimeString('hi-IN')}`
+                      : `Last checked: ${lastRefreshTime.toLocaleTimeString()}`}
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 text-xs italic text-emerald-600">
+                {language === 'hi' 
+                  ? 'स्वचालित रूप से हर 30 सेकंड में जांच होती है'
+                  : 'Auto-checking every 30 seconds'}
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Pending Approval Alert (when profile is pending and not returned for edit, payment, or payment screenshot not uploaded) */}
         {profile.status === 'pending' && 
          !profile.returnedForEdit && 
          !profile.returnedForPayment && 
-         !(profile.paymentStatus === 'pending' && profile.paymentScreenshotUrls && profile.paymentScreenshotUrls.length > 0) && (
+         !(profile.paymentStatus === 'pending' && profile.paymentScreenshotUrls && profile.paymentScreenshotUrls.length > 0) &&
+         !(profile.photoVerified === true && profile.idProofVerified === true && profile.paymentStatus === 'verified') && (
           <Alert className="mb-6 bg-blue-50 border-blue-400 dark:bg-blue-950/30 dark:border-blue-700">
             <Warning size={20} weight="fill" className="text-blue-600" />
             <AlertTitle className="text-blue-800 dark:text-blue-200 font-semibold">
