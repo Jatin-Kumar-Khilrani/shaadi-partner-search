@@ -17,7 +17,7 @@ import {
   User, MapPin, Briefcase, GraduationCap, Heart, House, PencilSimple,
   ChatCircle, Envelope, Phone, Calendar, Warning, FilePdf, Trash,
   CurrencyInr, ArrowClockwise, Camera, CheckCircle, ProhibitInset, ArrowUp,
-  Confetti, UserCirclePlus, HeartBreak, Upload, CreditCard
+  Confetti, UserCirclePlus, HeartBreak, Upload, CreditCard, Receipt
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Profile, Interest, ProfileDeletionReason, ProfileDeletionData, SuccessStory } from '@/types/profile'
@@ -172,6 +172,8 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
     confirmEdit: language === 'hi' ? 'संपादित करें' : 'Proceed to Edit',
     pendingApproval: language === 'hi' ? 'स्वीकृति लंबित' : 'Pending Approval',
     pendingApprovalDesc: language === 'hi' ? 'आपकी प्रोफ़ाइल एडमिन द्वारा समीक्षा के लिए लंबित है। स्वीकृति तक अन्य उपयोगकर्ताओं को दिखाई नहीं देगी।' : 'Your profile is pending review by admin. It will not be visible to other users until approved.',
+    paymentAwaitingVerification: language === 'hi' ? 'भुगतान सत्यापन लंबित' : 'Payment Awaiting Verification',
+    paymentAwaitingVerificationDesc: language === 'hi' ? 'आपका भुगतान स्क्रीनशॉट सफलतापूर्वक अपलोड किया गया है। एडमिन जल्द ही इसकी समीक्षा करेगा और आपकी सदस्यता सक्रिय करेगा।' : 'Your payment screenshot has been uploaded successfully. Admin will review it shortly and activate your membership.',
     // Profile deletion flow translations
     selectReason: language === 'hi' ? 'कारण चुनें' : 'Select Reason',
     reasonRequired: language === 'hi' ? 'कृपया कारण चुनें' : 'Please select a reason',
@@ -508,7 +510,13 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
               {isFreePlan && <Badge variant="secondary" className="ml-1 text-xs">{language === 'hi' ? 'वॉटरमार्क' : 'Watermark'}</Badge>}
             </Button>
             )}
-            {onEdit && (
+            {onEdit && !(
+              profile?.status === 'pending' && 
+              profile?.paymentStatus === 'pending' && 
+              profile?.paymentScreenshotUrls && 
+              profile?.paymentScreenshotUrls.length > 0 &&
+              !profile?.returnedForPayment
+            ) && (
               <Button 
                 onClick={handleEditClick} 
                 className={`gap-2 ${profile?.returnedForPayment ? 'bg-green-600 hover:bg-green-700' : ''}`}
@@ -917,8 +925,35 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
           </Alert>
         )}
 
-        {/* Pending Approval Alert (when profile is pending and not returned for edit or payment) */}
-        {profile.status === 'pending' && !profile.returnedForEdit && !profile.returnedForPayment && (
+        {/* Payment Awaiting Verification Alert (when payment screenshot submitted and pending review) */}
+        {profile.status === 'pending' && 
+         profile.paymentStatus === 'pending' && 
+         profile.paymentScreenshotUrls && 
+         profile.paymentScreenshotUrls.length > 0 &&
+         !profile.returnedForPayment && (
+          <Alert className="mb-6 bg-purple-50 border-purple-400 dark:bg-purple-950/30 dark:border-purple-700">
+            <Receipt size={20} weight="fill" className="text-purple-600" />
+            <AlertTitle className="text-purple-800 dark:text-purple-200 font-semibold">
+              {t.paymentAwaitingVerification}
+            </AlertTitle>
+            <AlertDescription className="text-purple-700 dark:text-purple-300">
+              <p>{t.paymentAwaitingVerificationDesc}</p>
+              {profile.paymentUploadedAt && (
+                <p className="mt-2 text-sm">
+                  {language === 'hi' 
+                    ? `अपलोड किया गया: ${new Date(profile.paymentUploadedAt).toLocaleDateString('hi-IN')}` 
+                    : `Uploaded on: ${new Date(profile.paymentUploadedAt).toLocaleDateString()}`}
+                </p>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Pending Approval Alert (when profile is pending and not returned for edit, payment, or payment screenshot not uploaded) */}
+        {profile.status === 'pending' && 
+         !profile.returnedForEdit && 
+         !profile.returnedForPayment && 
+         !(profile.paymentStatus === 'pending' && profile.paymentScreenshotUrls && profile.paymentScreenshotUrls.length > 0) && (
           <Alert className="mb-6 bg-blue-50 border-blue-400 dark:bg-blue-950/30 dark:border-blue-700">
             <Warning size={20} weight="fill" className="text-blue-600" />
             <AlertTitle className="text-blue-800 dark:text-blue-200 font-semibold">
@@ -1451,6 +1486,7 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                     <CardTitle>{t.personalInfo}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* About Me */}
                     {profile.bio && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2">
@@ -1463,6 +1499,11 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                     
                     <Separator />
 
+                    {/* Basic Info Section */}
+                    <h4 className="font-semibold flex items-center gap-2 text-primary">
+                      <User size={18} />
+                      {language === 'hi' ? 'मूल जानकारी' : 'Basic Info'}
+                    </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">{t.gender}</p>
@@ -1511,63 +1552,14 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                           )}
                         </p>
                       </div>
+                    </div>
 
-                      <div>
-                        <p className="text-sm text-muted-foreground">{t.education}</p>
-                        <p className="font-medium flex items-center gap-2">
-                          <GraduationCap size={16} />
-                          {formatEducation(profile.education, language)}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm text-muted-foreground">{t.occupation}</p>
-                        <p className="font-medium flex items-center gap-2">
-                          <Briefcase size={16} />
-                          {formatOccupation(profile.occupation, language)}
-                        </p>
-                      </div>
-
-                      {profile.salary && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">{t.salary}</p>
-                          <p className="font-medium flex items-center gap-2">
-                            <CurrencyInr size={16} />
-                            {profile.salary}
-                          </p>
-                        </div>
-                      )}
-
-                      {profile.position && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">{t.position}</p>
-                          <p className="font-medium flex items-center gap-2">
-                            <Briefcase size={16} />
-                            {profile.position}
-                          </p>
-                        </div>
-                      )}
-
-                      <div>
-                        <p className="text-sm text-muted-foreground">{t.location}</p>
-                        <p className="font-medium flex items-center gap-2">
-                          <MapPin size={16} />
-                          {profile.location}{profile.state ? `, ${profile.state}` : ''}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm text-muted-foreground">{t.country}</p>
-                        <p className="font-medium">{profile.country || 'India'}</p>
-                      </div>
-
-                      {profile.residentialStatus && profile.country !== 'India' && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">{t.residentialStatus}</p>
-                          <p className="font-medium">{getResidentialStatusLabel(profile.residentialStatus)}</p>
-                        </div>
-                      )}
-
+                    {/* Religious & Social Section */}
+                    <Separator />
+                    <h4 className="font-semibold flex items-center gap-2 text-primary">
+                      {language === 'hi' ? 'धार्मिक और सामाजिक' : 'Religious & Social'}
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {profile.religion && (
                         <div>
                           <p className="text-sm text-muted-foreground">{t.religion}</p>
@@ -1595,7 +1587,14 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                           <p className="font-medium">{profile.motherTongue}</p>
                         </div>
                       )}
+                    </div>
 
+                    {/* Marital & Horoscope Section */}
+                    <Separator />
+                    <h4 className="font-semibold flex items-center gap-2 text-primary">
+                      {language === 'hi' ? 'वैवाहिक और कुंडली' : 'Marital & Horoscope'}
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">{t.maritalStatus}</p>
                         <p className="font-medium">{getMaritalStatusLabel(profile.maritalStatus)}</p>
@@ -1606,7 +1605,6 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                         <p className="font-medium">{getManglikLabel(profile.manglik)}</p>
                       </div>
 
-                      {/* Horoscope Section */}
                       <div>
                         <p className="text-sm text-muted-foreground">{t.horoscopeMatching}</p>
                         <p className="font-medium">{getHoroscopeMatchingLabel(profile.horoscopeMatching)}</p>
@@ -1623,6 +1621,78 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                         <div>
                           <p className="text-sm text-muted-foreground">{t.birthPlace}</p>
                           <p className="font-medium">{profile.birthPlace}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Education & Career Section */}
+                    <Separator />
+                    <h4 className="font-semibold flex items-center gap-2 text-primary">
+                      <GraduationCap size={18} />
+                      {language === 'hi' ? 'शिक्षा और करियर' : 'Education & Career'}
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.education}</p>
+                        <p className="font-medium flex items-center gap-2">
+                          <GraduationCap size={16} />
+                          {formatEducation(profile.education, language)}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.occupation}</p>
+                        <p className="font-medium flex items-center gap-2">
+                          <Briefcase size={16} />
+                          {formatOccupation(profile.occupation, language)}
+                        </p>
+                      </div>
+
+                      {profile.position && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.position}</p>
+                          <p className="font-medium flex items-center gap-2">
+                            <Briefcase size={16} />
+                            {profile.position}
+                          </p>
+                        </div>
+                      )}
+
+                      {profile.salary && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.salary}</p>
+                          <p className="font-medium flex items-center gap-2">
+                            <CurrencyInr size={16} />
+                            {profile.salary}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Location Section */}
+                    <Separator />
+                    <h4 className="font-semibold flex items-center gap-2 text-primary">
+                      <MapPin size={18} />
+                      {language === 'hi' ? 'स्थान' : 'Location'}
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.location}</p>
+                        <p className="font-medium flex items-center gap-2">
+                          <MapPin size={16} />
+                          {profile.location}{profile.state ? `, ${profile.state}` : ''}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.country}</p>
+                        <p className="font-medium">{profile.country || 'India'}</p>
+                      </div>
+
+                      {profile.residentialStatus && profile.country !== 'India' && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.residentialStatus}</p>
+                          <p className="font-medium">{getResidentialStatusLabel(profile.residentialStatus)}</p>
                         </div>
                       )}
 

@@ -375,7 +375,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   // Payment screenshot state for paid plans - supports multiple screenshots
   const [paymentScreenshotPreviews, setPaymentScreenshotPreviews] = useState<string[]>([])
   const [paymentScreenshotFiles, setPaymentScreenshotFiles] = useState<File[]>([])
-  
+  const [brokenPaymentImages, setBrokenPaymentImages] = useState<Set<number>>(new Set())  
   // Camera capture dialogs for ID proof, photos, and payment screenshots
   const [showIdProofCamera, setShowIdProofCamera] = useState(false)
   const [showPhotoCamera, setShowPhotoCamera] = useState(false)
@@ -608,6 +608,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       }
       
       // Load payment screenshots if exists (support both single URL and array)
+      // Reset broken image tracking when loading new screenshots
+      setBrokenPaymentImages(new Set())
       if (editProfile.paymentScreenshotUrls && editProfile.paymentScreenshotUrls.length > 0) {
         setPaymentScreenshotPreviews(editProfile.paymentScreenshotUrls)
       } else if (editProfile.paymentScreenshotUrl) {
@@ -1192,8 +1194,18 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           } else if (preview.startsWith('https://')) {
             // Already uploaded URL
             uploadedPaymentUrls.push(preview)
+          } else if (preview.startsWith('data:')) {
+            // Base64 image (from camera capture) - convert to file and upload
+            try {
+              const paymentFile = dataUrlToFile(preview, `payment-${Date.now()}-${i}.jpg`)
+              const result = await uploadPhoto(editProfile?.profileId || 'unknown', paymentFile)
+              uploadedPaymentUrls.push(result.cdnUrl)
+            } catch (uploadErr) {
+              logger.warn('Failed to upload base64 payment to blob:', uploadErr)
+              uploadedPaymentUrls.push(preview) // Fallback to base64
+            }
           } else {
-            uploadedPaymentUrls.push(preview) // Fallback to base64
+            uploadedPaymentUrls.push(preview) // Fallback
           }
         }
         
@@ -4644,12 +4656,21 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                         <div className="flex flex-wrap gap-3">
                           {paymentScreenshotPreviews.map((preview, index) => (
                             <div key={index} className="relative inline-block">
-                              <img 
-                                src={preview} 
-                                alt={`Payment Screenshot ${index + 1}`}
-                                className="w-[120px] h-[120px] object-cover rounded-lg border cursor-pointer"
-                                onClick={() => openLightbox(paymentScreenshotPreviews, index)}
-                              />
+                              {brokenPaymentImages.has(index) ? (
+                                <div className="w-[120px] h-[120px] rounded-lg border border-dashed border-muted-foreground/50 flex items-center justify-center bg-muted/30 text-xs text-muted-foreground text-center p-2">
+                                  <span>Screenshot {index + 1}<br/>(Uploaded ✓)</span>
+                                </div>
+                              ) : (
+                                <img 
+                                  src={preview} 
+                                  alt={`Payment Screenshot ${index + 1}`}
+                                  className="w-[120px] h-[120px] object-cover rounded-lg border cursor-pointer"
+                                  onClick={() => openLightbox(paymentScreenshotPreviews.filter((_, i) => !brokenPaymentImages.has(i)), index)}
+                                  onError={() => {
+                                    setBrokenPaymentImages(prev => new Set([...prev, index]))
+                                  }}
+                                />
+                              )}
                               <Button
                                 type="button"
                                 variant="destructive"
@@ -4658,6 +4679,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                                 onClick={() => {
                                   setPaymentScreenshotPreviews(prev => prev.filter((_, i) => i !== index))
                                   setPaymentScreenshotFiles(prev => prev.filter((_, i) => i !== index))
+                                  // Recalculate broken image indices after removal
+                                  setBrokenPaymentImages(prev => {
+                                    const newSet = new Set<number>()
+                                    prev.forEach(i => {
+                                      if (i < index) newSet.add(i)
+                                      else if (i > index) newSet.add(i - 1)
+                                    })
+                                    return newSet
+                                  })
                                 }}
                               >
                                 <X size={12} />
@@ -4960,7 +4990,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           open={showPaymentCamera}
           onClose={() => setShowPaymentCamera(false)}
           onCapture={(imageDataUrl) => {
+            // Add the base64 preview (will be converted to file during upload)
             setPaymentScreenshotPreviews(prev => [...prev, imageDataUrl])
+            // Convert base64 to File for proper upload
+            try {
+              const paymentFile = dataUrlToFile(imageDataUrl, `payment-camera-${Date.now()}.jpg`)
+              setPaymentScreenshotFiles(prev => [...prev, paymentFile])
+            } catch (err) {
+              logger.warn('Failed to convert camera capture to file:', err)
+              // No file added - base64 will be handled during submit
+            }
           }}
           language={language}
           title={language === 'hi' ? 'भुगतान रसीद कैप्चर करें' : 'Capture Payment Receipt'}

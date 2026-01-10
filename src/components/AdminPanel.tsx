@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, CaretLeft, CaretRight, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User as UserIcon, CreditCard, Upload, ShieldWarning, Prohibit, Warning, Heart, Gift, Trophy, Confetti, MagnifyingGlass, Paperclip, Image as ImageIcon, Smiley, Rocket, Bug, Note, ClipboardText, Wrench } from '@phosphor-icons/react'
+import { ShieldCheck, X, Check, Checks, Info, ChatCircle, ProhibitInset, Robot, PaperPlaneTilt, Eye, Database, Key, Storefront, Plus, Trash, Pencil, ScanSmiley, CheckCircle, XCircle, Spinner, CurrencyInr, Calendar, Percent, Bell, CaretDown, CaretUp, CaretLeft, CaretRight, CaretDoubleLeft, CaretDoubleRight, MapPin, Globe, NavigationArrow, ArrowCounterClockwise, Receipt, FilePdf, ShareNetwork, Envelope, CurrencyCircleDollar, ChartLine, DownloadSimple, Printer, IdentificationCard, User as UserIcon, CreditCard, Upload, ShieldWarning, Prohibit, Warning, Heart, Gift, Trophy, Confetti, MagnifyingGlass, Paperclip, Image as ImageIcon, Smiley, Rocket, Bug, Note, ClipboardText, Wrench } from '@phosphor-icons/react'
 import type { Profile, WeddingService, PaymentTransaction, BlockedProfile, ReportReason, SuccessStory, UserNotification } from '@/types/profile'
 import type { User } from '@/types/user'
 import type { ChatMessage, ChatAttachment, Defect } from '@/types/chat'
@@ -594,6 +594,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [editMembershipDialog, setEditMembershipDialog] = useState<Profile | null>(null)
   const [returnToEditDialog, setReturnToEditDialog] = useState<Profile | null>(null)
   const [returnToEditReason, setReturnToEditReason] = useState('')
+  // Membership table search, sort, and pagination state
+  const [membershipSearch, setMembershipSearch] = useState('')
+  const [membershipSort, setMembershipSort] = useState<{ field: 'name' | 'profileId' | 'plan' | 'expiry' | 'createdAt', direction: 'asc' | 'desc' }>({ field: 'createdAt', direction: 'desc' })
+  const [membershipPage, setMembershipPage] = useState(1)
+  const membershipPageSize = 10
   const [membershipEditData, setMembershipEditData] = useState<{
     plan: string, 
     customAmount: number, 
@@ -680,6 +685,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [showPaymentViewDialog, setShowPaymentViewDialog] = useState(false)
   const [paymentViewProfile, setPaymentViewProfile] = useState<Profile | null>(null)
   const [paymentRejectionReason, setPaymentRejectionReason] = useState('')
+  const [brokenPaymentImages, setBrokenPaymentImages] = useState<Set<string>>(new Set())
   
   // Admin Edit Profile dialog state (uses RegistrationDialog with isAdminMode)
   const [adminEditDialog, setAdminEditDialog] = useState<Profile | null>(null)
@@ -4080,16 +4086,30 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   {/* Payment Screenshot Thumbnail */}
                                   <div className="shrink-0 flex items-start gap-3">
                                     {(profile.paymentScreenshotUrl || (profile.paymentScreenshotUrls && profile.paymentScreenshotUrls.length > 0)) && (
-                                      <img 
-                                        src={profile.paymentScreenshotUrls?.[0] || profile.paymentScreenshotUrl} 
-                                        alt="Payment Screenshot"
-                                        className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border-2 border-amber-400 cursor-pointer hover:opacity-80 transition-opacity"
-                                        onClick={() => {
-                                          setPaymentViewProfile(profile)
-                                          setPaymentRejectionReason('')
-                                          setShowPaymentViewDialog(true)
-                                        }}
-                                      />
+                                      brokenPaymentImages.has(`thumb-${profile.profileId}`) ? (
+                                        <div 
+                                          className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg border-2 border-amber-400 bg-muted/30 flex items-center justify-center text-xs text-muted-foreground text-center cursor-pointer"
+                                          onClick={() => {
+                                            setPaymentViewProfile(profile)
+                                            setPaymentRejectionReason('')
+                                            setShowPaymentViewDialog(true)
+                                          }}
+                                        >
+                                          <span>View<br/>Payment</span>
+                                        </div>
+                                      ) : (
+                                        <img 
+                                          src={profile.paymentScreenshotUrls?.[0] || profile.paymentScreenshotUrl} 
+                                          alt="Payment Screenshot"
+                                          className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border-2 border-amber-400 cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => {
+                                            setPaymentViewProfile(profile)
+                                            setPaymentRejectionReason('')
+                                            setShowPaymentViewDialog(true)
+                                          }}
+                                          onError={() => setBrokenPaymentImages(prev => new Set([...prev, `thumb-${profile.profileId}`]))}
+                                        />
+                                      )
                                     )}
                                     {/* Mobile: Show name next to image */}
                                     <div className="sm:hidden flex-1 min-w-0">
@@ -4271,12 +4291,22 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                                 {/* Renewal Screenshot Thumbnail */}
                                 <div className="shrink-0 flex items-start gap-3">
-                                  <img 
-                                    src={profile.renewalPaymentScreenshotUrl} 
-                                    alt="Renewal Payment Screenshot"
-                                    className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border-2 border-blue-400 cursor-pointer hover:opacity-80 transition-opacity"
-                                    onClick={() => openLightbox([profile.renewalPaymentScreenshotUrl!], 0)}
-                                  />
+                                  {brokenPaymentImages.has(`renewal-${profile.profileId}`) ? (
+                                    <div 
+                                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg border-2 border-blue-400 bg-muted/30 flex items-center justify-center text-xs text-muted-foreground text-center cursor-pointer"
+                                      onClick={() => openLightbox([profile.renewalPaymentScreenshotUrl!], 0)}
+                                    >
+                                      <span>View<br/>Payment</span>
+                                    </div>
+                                  ) : (
+                                    <img 
+                                      src={profile.renewalPaymentScreenshotUrl} 
+                                      alt="Renewal Payment Screenshot"
+                                      className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border-2 border-blue-400 cursor-pointer hover:opacity-80 transition-opacity"
+                                      onClick={() => openLightbox([profile.renewalPaymentScreenshotUrl!], 0)}
+                                      onError={() => setBrokenPaymentImages(prev => new Set([...prev, `renewal-${profile.profileId}`]))}
+                                    />
+                                  )}
                                   {/* Mobile: Show name next to image */}
                                   <div className="sm:hidden flex-1 min-w-0">
                                     <h4 className="font-bold truncate">{profile.fullName}</h4>
@@ -4440,12 +4470,22 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                   {/* Payment Screenshot Thumbnail */}
                                   <div className="shrink-0 flex items-start gap-3">
                                     {boostPack.paymentScreenshotUrl && (
-                                      <img 
-                                        src={boostPack.paymentScreenshotUrl} 
-                                        alt="Boost Pack Payment"
-                                        className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border-2 border-purple-400 cursor-pointer hover:opacity-80 transition-opacity"
-                                        onClick={() => openLightbox([boostPack.paymentScreenshotUrl], 0)}
-                                      />
+                                      brokenPaymentImages.has(`boost-${boostPack.id}`) ? (
+                                        <div 
+                                          className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg border-2 border-purple-400 bg-muted/30 flex items-center justify-center text-xs text-muted-foreground text-center cursor-pointer"
+                                          onClick={() => openLightbox([boostPack.paymentScreenshotUrl], 0)}
+                                        >
+                                          <span>View<br/>Payment</span>
+                                        </div>
+                                      ) : (
+                                        <img 
+                                          src={boostPack.paymentScreenshotUrl} 
+                                          alt="Boost Pack Payment"
+                                          className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border-2 border-purple-400 cursor-pointer hover:opacity-80 transition-opacity"
+                                          onClick={() => openLightbox([boostPack.paymentScreenshotUrl], 0)}
+                                          onError={() => setBrokenPaymentImages(prev => new Set([...prev, `boost-${boostPack.id}`]))}
+                                        />
+                                      )
                                     )}
                                     {/* Mobile: Show name next to image */}
                                     <div className="sm:hidden flex-1 min-w-0">
@@ -6736,23 +6776,142 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="overflow-auto max-h-[400px]">
-                    <Table className="min-w-[1000px]">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="whitespace-nowrap">{t.name}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.profileId}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.membershipPlan}</TableHead>
-                          <TableHead className="whitespace-nowrap">{language === 'hi' ? 'रुचि' : 'Interests'}</TableHead>
-                          <TableHead className="whitespace-nowrap">{language === 'hi' ? 'संपर्क' : 'Contacts'}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.membershipExpiry}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.status}</TableHead>
-                          <TableHead className="whitespace-nowrap">{t.actions}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {profiles?.filter(p => p.status === 'verified' && !p.isDeleted).map((profile) => {
-                          const hasMembership = profile.membershipPlan && profile.membershipPlan !== 'free' && profile.membershipExpiry
+                  {/* Search and Sort Controls */}
+                  <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                    <div className="relative flex-1">
+                      <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder={language === 'hi' ? 'नाम या प्रोफाइल ID से खोजें...' : 'Search by name or profile ID...'}
+                        value={membershipSearch}
+                        onChange={(e) => {
+                          setMembershipSearch(e.target.value)
+                          setMembershipPage(1) // Reset to first page on search
+                        }}
+                        className="pl-9"
+                      />
+                    </div>
+                    <Select 
+                      value={`${membershipSort.field}-${membershipSort.direction}`}
+                      onValueChange={(val) => {
+                        const [field, direction] = val.split('-') as [typeof membershipSort.field, 'asc' | 'desc']
+                        setMembershipSort({ field, direction })
+                        setMembershipPage(1)
+                      }}
+                    >
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder={language === 'hi' ? 'क्रमबद्ध करें' : 'Sort by'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="createdAt-desc">{language === 'hi' ? 'नवीनतम पहले' : 'Newest First'}</SelectItem>
+                        <SelectItem value="createdAt-asc">{language === 'hi' ? 'पुराने पहले' : 'Oldest First'}</SelectItem>
+                        <SelectItem value="name-asc">{language === 'hi' ? 'नाम (A-Z)' : 'Name (A-Z)'}</SelectItem>
+                        <SelectItem value="name-desc">{language === 'hi' ? 'नाम (Z-A)' : 'Name (Z-A)'}</SelectItem>
+                        <SelectItem value="expiry-asc">{language === 'hi' ? 'समाप्ति (जल्द)' : 'Expiry (Soonest)'}</SelectItem>
+                        <SelectItem value="expiry-desc">{language === 'hi' ? 'समाप्ति (देर से)' : 'Expiry (Latest)'}</SelectItem>
+                        <SelectItem value="plan-asc">{language === 'hi' ? 'प्लान (फ्री पहले)' : 'Plan (Free First)'}</SelectItem>
+                        <SelectItem value="plan-desc">{language === 'hi' ? 'प्लान (प्रीमियम पहले)' : 'Plan (Premium First)'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {(() => {
+                    // Filter, sort, and paginate profiles
+                    const filteredProfiles = profiles?.filter(p => {
+                      if (p.status !== 'verified' || p.isDeleted) return false
+                      if (!membershipSearch) return true
+                      const searchLower = membershipSearch.toLowerCase()
+                      return (
+                        p.fullName?.toLowerCase().includes(searchLower) ||
+                        p.profileId?.toLowerCase().includes(searchLower)
+                      )
+                    }) || []
+                    
+                    // Sort profiles
+                    const sortedProfiles = [...filteredProfiles].sort((a, b) => {
+                      const dir = membershipSort.direction === 'asc' ? 1 : -1
+                      switch (membershipSort.field) {
+                        case 'name':
+                          return dir * (a.fullName || '').localeCompare(b.fullName || '')
+                        case 'profileId':
+                          return dir * (a.profileId || '').localeCompare(b.profileId || '')
+                        case 'plan': {
+                          const planOrder = { 'free': 1, '6-month': 2, '1-year': 3 }
+                          const aOrder = planOrder[a.membershipPlan as keyof typeof planOrder] || 0
+                          const bOrder = planOrder[b.membershipPlan as keyof typeof planOrder] || 0
+                          return dir * (aOrder - bOrder)
+                        }
+                        case 'expiry':
+                          return dir * (new Date(a.membershipExpiry || 0).getTime() - new Date(b.membershipExpiry || 0).getTime())
+                        case 'createdAt':
+                        default:
+                          return dir * (new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime())
+                      }
+                    })
+                    
+                    // Paginate
+                    const totalPages = Math.ceil(sortedProfiles.length / membershipPageSize)
+                    const paginatedProfiles = sortedProfiles.slice(
+                      (membershipPage - 1) * membershipPageSize,
+                      membershipPage * membershipPageSize
+                    )
+                    
+                    return (
+                      <>
+                        <div className="overflow-auto max-h-[400px]">
+                          <Table className="min-w-[1000px]">
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => {
+                                  setMembershipSort(prev => ({
+                                    field: 'name',
+                                    direction: prev.field === 'name' && prev.direction === 'asc' ? 'desc' : 'asc'
+                                  }))
+                                }}>
+                                  <div className="flex items-center gap-1">
+                                    {t.name}
+                                    {membershipSort.field === 'name' && (membershipSort.direction === 'asc' ? <CaretUp size={14} /> : <CaretDown size={14} />)}
+                                  </div>
+                                </TableHead>
+                                <TableHead className="whitespace-nowrap">{t.profileId}</TableHead>
+                                <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => {
+                                  setMembershipSort(prev => ({
+                                    field: 'plan',
+                                    direction: prev.field === 'plan' && prev.direction === 'asc' ? 'desc' : 'asc'
+                                  }))
+                                }}>
+                                  <div className="flex items-center gap-1">
+                                    {t.membershipPlan}
+                                    {membershipSort.field === 'plan' && (membershipSort.direction === 'asc' ? <CaretUp size={14} /> : <CaretDown size={14} />)}
+                                  </div>
+                                </TableHead>
+                                <TableHead className="whitespace-nowrap">{language === 'hi' ? 'रुचि' : 'Interests'}</TableHead>
+                                <TableHead className="whitespace-nowrap">{language === 'hi' ? 'संपर्क' : 'Contacts'}</TableHead>
+                                <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => {
+                                  setMembershipSort(prev => ({
+                                    field: 'expiry',
+                                    direction: prev.field === 'expiry' && prev.direction === 'asc' ? 'desc' : 'asc'
+                                  }))
+                                }}>
+                                  <div className="flex items-center gap-1">
+                                    {t.membershipExpiry}
+                                    {membershipSort.field === 'expiry' && (membershipSort.direction === 'asc' ? <CaretUp size={14} /> : <CaretDown size={14} />)}
+                                  </div>
+                                </TableHead>
+                                <TableHead className="whitespace-nowrap">{t.status}</TableHead>
+                                <TableHead className="whitespace-nowrap">{t.actions}</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {paginatedProfiles.length === 0 ? (
+                                <TableRow>
+                                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                    {membershipSearch 
+                                      ? (language === 'hi' ? 'कोई परिणाम नहीं मिला' : 'No results found')
+                                      : (language === 'hi' ? 'कोई सत्यापित प्रोफाइल नहीं' : 'No verified profiles')}
+                                  </TableCell>
+                                </TableRow>
+                              ) : paginatedProfiles.map((profile) => {
+                                const hasMembership = profile.membershipPlan && profile.membershipPlan !== 'free' && profile.membershipExpiry
                           const isExpired = hasMembership && new Date(profile.membershipExpiry!) < new Date()
                           const isExpiringSoon = hasMembership && 
                             new Date(profile.membershipExpiry!) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) &&
@@ -6865,11 +7024,63 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 </Button>
                               </TableCell>
                             </TableRow>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
+                          )})}
+                            </TableBody>
+                          </Table>
+                        </div>
+                        
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                          <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                            <div className="text-sm text-muted-foreground">
+                              {language === 'hi' 
+                                ? `कुल ${sortedProfiles.length} में से ${(membershipPage - 1) * membershipPageSize + 1}-${Math.min(membershipPage * membershipPageSize, sortedProfiles.length)} दिखा रहे हैं`
+                                : `Showing ${(membershipPage - 1) * membershipPageSize + 1}-${Math.min(membershipPage * membershipPageSize, sortedProfiles.length)} of ${sortedProfiles.length}`}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setMembershipPage(1)}
+                                disabled={membershipPage === 1}
+                              >
+                                <CaretDoubleLeft size={14} />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setMembershipPage(p => Math.max(1, p - 1))}
+                                disabled={membershipPage === 1}
+                              >
+                                <CaretLeft size={14} />
+                              </Button>
+                              <span className="text-sm px-3">
+                                {language === 'hi' 
+                                  ? `पृष्ठ ${membershipPage} / ${totalPages}`
+                                  : `Page ${membershipPage} of ${totalPages}`}
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setMembershipPage(p => Math.min(totalPages, p + 1))}
+                                disabled={membershipPage === totalPages}
+                              >
+                                <CaretRight size={14} />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setMembershipPage(totalPages)}
+                                disabled={membershipPage === totalPages}
+                              >
+                                <CaretDoubleRight size={14} />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
                 </CardContent>
               </Card>
             </div>
@@ -10100,28 +10311,46 @@ ShaadiPartnerSearch Team
                   {/* Display multiple screenshots or single screenshot */}
                   {paymentViewProfile.paymentScreenshotUrls && paymentViewProfile.paymentScreenshotUrls.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {paymentViewProfile.paymentScreenshotUrls.map((url, index) => (
-                        <div key={index} className="relative group">
-                          <img 
-                            src={url} 
-                            alt={`Payment Screenshot ${index + 1}`}
-                            className="w-full h-32 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity border"
-                            onClick={() => openLightbox(paymentViewProfile.paymentScreenshotUrls!, index)}
-                          />
-                          <span className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
-                            #{index + 1}
-                          </span>
-                        </div>
-                      ))}
+                      {paymentViewProfile.paymentScreenshotUrls.map((url, index) => {
+                        const imageKey = `${paymentViewProfile.profileId}-${index}`
+                        const isBroken = brokenPaymentImages.has(imageKey)
+                        return (
+                          <div key={index} className="relative group">
+                            {isBroken ? (
+                              <div className="w-full h-32 rounded border border-dashed border-muted-foreground/50 flex items-center justify-center bg-muted/30 text-xs text-muted-foreground text-center p-2">
+                                <span>Screenshot #{index + 1}<br/>(Preview unavailable)</span>
+                              </div>
+                            ) : (
+                              <img 
+                                src={url} 
+                                alt={`Payment Screenshot ${index + 1}`}
+                                className="w-full h-32 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity border"
+                                onClick={() => openLightbox(paymentViewProfile.paymentScreenshotUrls!.filter((_, i) => !brokenPaymentImages.has(`${paymentViewProfile.profileId}-${i}`)), index)}
+                                onError={() => setBrokenPaymentImages(prev => new Set([...prev, imageKey]))}
+                              />
+                            )}
+                            <span className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+                              #{index + 1}
+                            </span>
+                          </div>
+                        )
+                      })}
                     </div>
                   ) : paymentViewProfile.paymentScreenshotUrl ? (
                     <div className="flex items-center justify-center">
-                      <img 
-                        src={paymentViewProfile.paymentScreenshotUrl} 
-                        alt="Payment Screenshot"
-                        className="max-h-[300px] object-contain rounded cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => openLightbox([paymentViewProfile.paymentScreenshotUrl!], 0)}
-                      />
+                      {brokenPaymentImages.has(`${paymentViewProfile.profileId}-single`) ? (
+                        <div className="w-64 h-48 rounded border border-dashed border-muted-foreground/50 flex items-center justify-center bg-muted/30 text-sm text-muted-foreground text-center p-4">
+                          <span>Screenshot preview unavailable<br/>(Image uploaded)</span>
+                        </div>
+                      ) : (
+                        <img 
+                          src={paymentViewProfile.paymentScreenshotUrl} 
+                          alt="Payment Screenshot"
+                          className="max-h-[300px] object-contain rounded cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => openLightbox([paymentViewProfile.paymentScreenshotUrl!], 0)}
+                          onError={() => setBrokenPaymentImages(prev => new Set([...prev, `${paymentViewProfile.profileId}-single`]))}
+                        />
+                      )}
                     </div>
                   ) : (
                     <div className="text-muted-foreground text-sm text-center p-4 flex items-center justify-center min-h-[150px]">
