@@ -3099,18 +3099,18 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                     </div>
                                   ) : profile.photoVerified === true && profile.idProofVerified ? (
                                     <div 
-                                      className="flex items-center gap-3 p-2.5 rounded-lg border-2 border-dashed border-green-500 bg-green-50 cursor-pointer hover:bg-green-100 transition-all"
+                                      className="flex items-center gap-3 p-2.5 rounded-lg border-2 border-dashed border-blue-400 bg-blue-50 cursor-pointer hover:bg-blue-100 hover:border-blue-500 transition-all"
                                       onClick={() => handleReturnForPayment(profile.id)}
                                     >
-                                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-green-500 text-white">
+                                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-blue-500 text-white">
                                         →
                                       </div>
                                       <div className="flex-1">
                                         <div className="flex items-center gap-2">
-                                          <CreditCard size={16} className="text-green-600" />
-                                          <span className="text-sm font-semibold text-green-700">{t.returnForPayment}</span>
+                                          <CreditCard size={16} className="text-blue-600" />
+                                          <span className="text-sm font-semibold text-blue-700">{t.returnForPayment}</span>
                                         </div>
-                                        <p className="text-[10px] text-green-600 mt-0.5">
+                                        <p className="text-[10px] text-blue-600 mt-0.5">
                                           {language === 'hi' ? 'चेहरा और ID सत्यापित। भुगतान लिंक भेजें' : 'Face & ID verified. Send payment link'}
                                         </p>
                                       </div>
@@ -9103,7 +9103,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
 
       {/* Receipt View Dialog */}
       <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
-        <DialogContent className="max-w-xl max-h-[90vh] flex flex-col overflow-hidden p-0">
+        <DialogContent className="max-w-xl max-h-[90vh] flex flex-col p-0">
           <DialogHeader className="shrink-0 p-6 pb-0">
             <DialogTitle className="flex items-center gap-2">
               <FilePdf size={24} className="text-red-600" />
@@ -9112,7 +9112,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
           </DialogHeader>
 
           {selectedTransaction && (
-            <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
               <div id="receipt-content" className="space-y-4">
                 {/* Receipt Header */}
                 <div className="text-center border-b pb-4">

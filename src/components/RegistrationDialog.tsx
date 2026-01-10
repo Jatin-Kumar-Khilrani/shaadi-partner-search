@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Checkbox } from '@/components/ui/checkbox'
-import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, ArrowDown, FloppyDisk, Sparkle, Warning, SpinnerGap, Gift, ShieldCheck, IdentificationCard, ArrowCounterClockwise, Upload, Rocket } from '@phosphor-icons/react'
+import { UserPlus, CheckCircle, Info, CurrencyInr, Camera, Image, X, ArrowUp, ArrowDown, FloppyDisk, Sparkle, Warning, SpinnerGap, Gift, ShieldCheck, IdentificationCard, ArrowCounterClockwise, Upload, Rocket, Hourglass } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { logger } from '@/lib/logger'
 import { sendRegistrationEmailOtp, sendRegistrationMobileOtp } from '@/lib/notificationService'
@@ -515,6 +515,11 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   // Payment-only mode: when admin has verified face/ID and returned profile for payment
   // In this mode, only step 7 (membership/payment) is accessible, other steps are frozen
   const isPaymentOnlyMode = isEditMode && editProfile?.returnedForPayment === true
+  
+  // Payment pending verification mode: when user has submitted payment and waiting for admin
+  const isPaymentPendingVerification = isEditMode && 
+    editProfile?.paymentStatus === 'pending' && 
+    (editProfile?.paymentScreenshotUrl || (editProfile?.paymentScreenshotUrls && editProfile.paymentScreenshotUrls.length > 0))
 
   // Load edit profile data when in edit mode
   useEffect(() => {
@@ -812,6 +817,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         setStep(1)
         setPhotos([])
         setSelfiePreview(undefined)
+        setSelfieFile(null)
+        setFaceCoveragePercent(0)
+        setFaceCoverageValid(false)
+        setIdProofPreview(null)
         setEmailVerified(false)
         setMobileVerified(false)
         setDigilockerVerified(false)
@@ -964,27 +973,23 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         
         // Analyze face coverage using Azure Face API service
         // The service handles all validation: no face, multiple faces, hands/objects, centering, coverage
-        const coverage = await analyzeFaceCoverageFromCanvas(canvas)
-        setFaceCoveragePercent(coverage)
+        const validationResult = await analyzeFaceCoverageFromCanvas(canvas)
+        setFaceCoveragePercent(validationResult.coverage)
         
-        // If coverage is less than 50%, show preview and ask user to retake with live zoom
-        if (coverage < 50 && coverage > 0) {
+        // If validation failed (no face, not centered, multiple faces, low coverage, etc.)
+        if (!validationResult.valid) {
           setFaceCoverageValid(false)
-          // Save preview to show what was captured
-          setSelfiePreview(canvas.toDataURL('image/jpeg'))
-          // Don't enter zoom mode - user should retake with live zoom instead
-          stopCamera()
-          setIsCapturingSelfie(false)
-          return
-        } else if (coverage === 0) {
-          // No face detected at all
-          setFaceCoverageValid(false)
+          // Save preview to show what was captured (if face was detected but validation failed)
+          if (validationResult.coverage > 0) {
+            setSelfiePreview(canvas.toDataURL('image/jpeg'))
+            stopCamera()
+          }
           setIsCapturingSelfie(false)
           return
         }
         
         // Face validated successfully - save selfie
-        finalizeSelfieCapture(coverage)
+        finalizeSelfieCapture(validationResult.coverage)
       }
     }
   }
@@ -1068,7 +1073,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   }
 
   // Analyze face coverage from canvas using Azure Face API service
-  const analyzeFaceCoverageFromCanvas = async (canvas: HTMLCanvasElement): Promise<number> => {
+  const analyzeFaceCoverageFromCanvas = async (canvas: HTMLCanvasElement): Promise<{ valid: boolean; coverage: number }> => {
     // Convert canvas to data URL for face detection service
     const imageData = canvas.toDataURL('image/jpeg', 0.9)
     
@@ -1077,12 +1082,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     
     if (!result.valid) {
       toast.error(result.message, { duration: 5000 })
-      return result.coverage // Return 0 or partial coverage for rejection
+      return { valid: false, coverage: result.coverage } // Return validation status with coverage
     }
     
     // Face detected, validated, and meets all criteria
     toast.success(result.message, { duration: 3000 })
-    return result.coverage
+    return { valid: true, coverage: result.coverage }
   }
 
   // AI Bio Generation
@@ -1569,7 +1574,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
       toast.success(
         t.registration.profileSubmitted,
         {
-          description: `${t.registration.membershipFee}: ₹${membershipCost}। ${t.registration.otpSending}`
+          description: language === 'hi' 
+            ? `${t.registration.membershipFee}: ₹${membershipCost}`
+            : `${t.registration.membershipFee}: ₹${membershipCost}`
         }
       )
     }
@@ -1757,17 +1764,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     
     setShowVerification(true)
     
-    // Send Email OTP via notification service
-    if (!emailVerified && !mobileOnly && formData.email) {
-      const { otp } = sendRegistrationEmailOtp(
-        formData.email,
-        formData.fullName,
-        language
-      )
-      setGeneratedEmailOtp(otp)
-    }
-    
-    // Send Mobile OTP via notification service
+    // Send Mobile OTP first (will appear at bottom)
     if (!mobileVerified && !emailOnly && formData.mobile) {
       const { otp } = sendRegistrationMobileOtp(
         formData.mobile,
@@ -1775,6 +1772,16 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         language
       )
       setGeneratedMobileOtp(otp)
+    }
+    
+    // Send Email OTP second (will appear on top)
+    if (!emailVerified && !mobileOnly && formData.email) {
+      const { otp } = sendRegistrationEmailOtp(
+        formData.email,
+        formData.fullName,
+        language
+      )
+      setGeneratedEmailOtp(otp)
     }
     
     // Show success with remaining attempts
@@ -2052,8 +2059,36 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             })()
           )}
           
+          {/* Payment Pending Verification Alert - show when user has submitted payment and waiting for admin */}
+          {isPaymentPendingVerification && !isPaymentOnlyMode && (
+            <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+              <div className="w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-6">
+                <Hourglass size={40} weight="duotone" className="text-blue-600 animate-pulse" />
+              </div>
+              <h3 className="text-xl font-bold text-blue-800 dark:text-blue-200 mb-3">
+                {language === 'hi' ? '⏳ भुगतान सत्यापन प्रतीक्षित' : '⏳ Payment Verification Pending'}
+              </h3>
+              <p className="text-muted-foreground max-w-md mb-4">
+                {language === 'hi' 
+                  ? 'आपने भुगतान स्क्रीनशॉट अपलोड कर दिया है। कृपया व्यवस्थापक द्वारा सत्यापन की प्रतीक्षा करें। सत्यापन होने पर आपको सूचित किया जाएगा।'
+                  : 'You have uploaded the payment screenshot. Please wait for admin verification. You will be notified once verified.'}
+              </p>
+              <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-full">
+                <CheckCircle size={18} />
+                {language === 'hi' ? 'भुगतान स्क्रीनशॉट प्राप्त हुआ' : 'Payment screenshot received'}
+              </div>
+              <Button 
+                variant="outline" 
+                className="mt-6"
+                onClick={onClose}
+              >
+                {language === 'hi' ? 'बंद करें' : 'Close'}
+              </Button>
+            </div>
+          )}
+          
           {/* Step indicators - hide in payment-only mode, show only Step 8 */}
-          {isPaymentOnlyMode ? (
+          {isPaymentPendingVerification ? null : isPaymentOnlyMode ? (
             <div className="flex items-center justify-center gap-2 mb-6">
               <div className="flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-900/30 rounded-full">
                 <CurrencyInr size={20} weight="bold" className="text-amber-600" />
@@ -2110,7 +2145,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           )}
 
           {/* Step description alert - show different content based on mode */}
-          {!isPaymentOnlyMode && (
+          {!isPaymentOnlyMode && !isPaymentPendingVerification && (
           <Alert className="mb-4">
             <Info size={18} />
             <AlertDescription>
@@ -2128,6 +2163,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           </Alert>
           )}
 
+          {!isPaymentPendingVerification && (
           <Card>
             <CardContent className="pt-6">
             {step === 1 && (
@@ -3311,13 +3347,13 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                             alt="Captured Selfie" 
                             className="w-full h-full object-cover"
                           />
-                          {/* Show coverage info on captured image */}
+                          {/* Show validation failure message on captured image */}
                           {faceCoveragePercent > 0 && !faceCoverageValid && (
                             <div className="absolute inset-0 border-4 border-amber-400 pointer-events-none">
                               <div className="absolute top-2 left-2 right-2 bg-amber-500/90 text-white text-xs px-2 py-1 rounded text-center">
                                 {language === 'hi' 
-                                  ? `चेहरा ${faceCoveragePercent}% - कृपया लाइव ज़ूम के साथ दोबारा लें (50% आवश्यक)`
-                                  : `Face ${faceCoveragePercent}% - Please retake with live zoom (50% required)`}
+                                  ? `चेहरा सत्यापन विफल (${faceCoveragePercent}%) - कृपया दोबारा लें`
+                                  : `Face validation failed (${faceCoveragePercent}%) - Please retake`}
                               </div>
                             </div>
                           )}
@@ -4629,7 +4665,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           <img 
                             src={membershipSettings.qrCodeImage} 
                             alt="Payment QR Code" 
-                            className="w-40 h-40 object-contain border rounded-lg mx-auto mb-2"
+                            className="w-40 h-40 object-contain border rounded-lg mx-auto mb-2 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => openLightbox([membershipSettings.qrCodeImage], 0)}
+                            title={language === 'hi' ? 'बड़ा करने के लिए क्लिक करें' : 'Click to enlarge'}
                           />
                         ) : (
                           <div className="w-32 h-32 bg-muted border-2 border-dashed rounded-lg flex items-center justify-center mx-auto mb-2">
@@ -4637,7 +4675,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           </div>
                         )}
                         <p className="text-xs text-muted-foreground">
-                          {language === 'hi' ? 'QR कोड स्कैन करें' : 'Scan QR Code'}
+                          {membershipSettings?.qrCodeImage 
+                            ? (language === 'hi' ? 'बड़ा करने के लिए क्लिक करें' : 'Click to enlarge')
+                            : (language === 'hi' ? 'QR कोड स्कैन करें' : 'Scan QR Code')}
                         </p>
                       </div>
                     </div>
@@ -4795,10 +4835,11 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             )}
           </CardContent>
         </Card>
+        )}
         </div>
 
         {/* Missing Fields Feedback */}
-        {step <= 5 && !showVerification && getMissingFields(step).length > 0 && (
+        {step <= 5 && !showVerification && !isPaymentPendingVerification && getMissingFields(step).length > 0 && (
           <div className="px-1 pb-2">
             <p className="text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1">
               <Warning size={14} className="mt-0.5 flex-shrink-0" />
@@ -4810,6 +4851,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           </div>
         )}
 
+        {!isPaymentPendingVerification && (
         <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t min-h-[60px] flex-shrink-0">
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Back button - hide in payment-only mode (step 8) since user can only submit payment */}
@@ -4960,6 +5002,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             ) : null}
           </div>
         </div>
+        )}
 
         {/* Photo Lightbox */}
         <PhotoLightbox
