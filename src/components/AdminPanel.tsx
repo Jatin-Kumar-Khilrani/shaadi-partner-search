@@ -27,7 +27,7 @@ import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
 import { RegistrationDialog } from '@/components/RegistrationDialog'
 import { toast } from 'sonner'
-import { formatDateDDMMYYYY, formatEducation, formatOccupation } from '@/lib/utils'
+import { formatDateDDMMYYYY, formatEducation, formatOccupation, CRITICAL_EDIT_FIELDS, NON_CRITICAL_EDIT_FIELDS } from '@/lib/utils'
 import { verifyPhotosWithVision, type PhotoVerificationResult } from '@/lib/visionPhotoVerification'
 import { summarizeChatConversation, type ChatSummaryResult } from '@/lib/aiFoundryService'
 
@@ -1101,6 +1101,11 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     next: language === 'hi' ? 'अगला' : 'Next',
     first: language === 'hi' ? 'पहला' : 'First',
     last: language === 'hi' ? 'अंतिम' : 'Last',
+    // Critical fields verification translations
+    criticalFieldsNote: language === 'hi' ? 'महत्वपूर्ण फ़ील्ड (सत्यापन आवश्यक)' : 'Critical Fields (Verification Required)',
+    nonCriticalFieldsNote: language === 'hi' ? 'गैर-महत्वपूर्ण फ़ील्ड (स्वतः-स्वीकृत)' : 'Non-Critical Fields (Auto-Approved)',
+    criticalFieldChanged: language === 'hi' ? 'महत्वपूर्ण फ़ील्ड बदला गया' : 'Critical Field Changed',
+    onlyNonCriticalChanges: language === 'hi' ? 'केवल गैर-महत्वपूर्ण परिवर्तन' : 'Only Non-Critical Changes',
   }
   
   // Reset pagination when filters change
@@ -2561,6 +2566,35 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   </Alert>
                 ) : (
                   <>
+                    {/* Critical Fields Info Note */}
+                    <Alert className="mb-4 bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
+                      <Info size={16} className="text-blue-600" />
+                      <AlertDescription className="text-xs">
+                        <div className="space-y-1">
+                          <div>
+                            <span className="font-semibold text-blue-700 dark:text-blue-300">
+                              {t.criticalFieldsNote}:
+                            </span>{' '}
+                            <span className="text-blue-600 dark:text-blue-400">
+                              {language === 'hi' 
+                                ? 'नाम, जन्म तिथि, लिंग, फोटो, सेल्फी, ID प्रमाण, ईमेल, मोबाइल' 
+                                : 'Name, Date of Birth, Gender, Photos, Selfie, ID Proof, Email, Mobile'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="font-semibold text-green-700 dark:text-green-300">
+                              {t.nonCriticalFieldsNote}:
+                            </span>{' '}
+                            <span className="text-green-600 dark:text-green-400">
+                              {language === 'hi' 
+                                ? 'धर्म, शिक्षा, व्यवसाय, स्थान, आय, वरीयताएं आदि' 
+                                : 'Religion, Education, Occupation, Location, Income, Preferences etc.'}
+                            </span>
+                          </div>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                    
                     {/* Select All Checkbox */}
                     <div className="flex items-center gap-2 mb-4 pb-4 border-b">
                       <Checkbox 

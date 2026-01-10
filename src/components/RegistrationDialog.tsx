@@ -18,6 +18,7 @@ import { toast } from 'sonner'
 import { logger } from '@/lib/logger'
 import { sendRegistrationEmailOtp, sendRegistrationMobileOtp } from '@/lib/notificationService'
 import { validateSelfie } from '@/lib/azureFaceService'
+import { hasOnlyNonCriticalChanges } from '@/lib/utils'
 import type { Gender, MaritalStatus, Profile, MembershipPlan, DisabilityStatus, DietPreference, DrinkingHabit, SmokingHabit, ResidentialStatus } from '@/types/profile'
 import { useTranslation, type Language } from '@/lib/translations'
 import { generateBio, type BioGenerationParams } from '@/lib/aiFoundryService'
@@ -1441,10 +1442,20 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         profileId: editProfile.profileId,
         createdAt: editProfile.createdAt,
         trustLevel: editProfile.trustLevel,
-        status: 'pending', // Reset to pending for re-verification
-        returnedForEdit: false, // Clear the returned flag
-        editReason: undefined,
-        returnedAt: undefined
+        // Only reset to pending if critical fields (name, DOB, photos, etc.) were changed
+        // Non-critical fields (religion, occupation, preferences, etc.) don't need re-verification
+        status: hasOnlyNonCriticalChanges(editProfile, formData as Partial<Profile>) 
+          ? editProfile.status 
+          : 'pending',
+        returnedForEdit: hasOnlyNonCriticalChanges(editProfile, formData as Partial<Profile>) 
+          ? editProfile.returnedForEdit 
+          : false, // Only clear returned flag if critical fields changed
+        editReason: hasOnlyNonCriticalChanges(editProfile, formData as Partial<Profile>) 
+          ? editProfile.editReason 
+          : undefined,
+        returnedAt: hasOnlyNonCriticalChanges(editProfile, formData as Partial<Profile>) 
+          ? editProfile.returnedAt 
+          : undefined
       } : {
         profileId: tempProfileId // Use the temp ID for new registrations
       }),

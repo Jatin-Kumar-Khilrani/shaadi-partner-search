@@ -127,4 +127,115 @@ describe('Logger', () => {
       }
     })
   })
+
+  describe('logging output methods', () => {
+    it('should call debug method without errors', async () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+      const { logger } = await import('../logger')
+      // @ts-expect-error - enable debug for testing
+      window.enableDebug('debug')
+      expect(() => logger.debug('test message')).not.toThrow()
+      consoleSpy.mockRestore()
+    })
+
+    it('should call info method without errors', async () => {
+      const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {})
+      const { logger } = await import('../logger')
+      // @ts-expect-error - enable debug for testing
+      window.enableDebug('info')
+      expect(() => logger.info('test info')).not.toThrow()
+      consoleSpy.mockRestore()
+    })
+
+    it('should call warn method without errors', async () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const { logger } = await import('../logger')
+      // @ts-expect-error - enable debug for testing
+      window.enableDebug('warn')
+      expect(() => logger.warn('test warning')).not.toThrow()
+      consoleSpy.mockRestore()
+    })
+
+    it('should call error method without errors', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const { logger } = await import('../logger')
+      // @ts-expect-error - enable debug for testing
+      window.enableDebug('error')
+      expect(() => logger.error('test error')).not.toThrow()
+      consoleSpy.mockRestore()
+    })
+
+    it('should call table method without errors', async () => {
+      const consoleSpy = vi.spyOn(console, 'table').mockImplementation(() => {})
+      const { logger } = await import('../logger')
+      // @ts-expect-error - enable debug for testing
+      window.enableDebug('debug')
+      expect(() => logger.table([{ a: 1 }])).not.toThrow()
+      consoleSpy.mockRestore()
+    })
+
+    it('should call group and groupEnd without errors', async () => {
+      const groupSpy = vi.spyOn(console, 'group').mockImplementation(() => {})
+      const groupEndSpy = vi.spyOn(console, 'groupEnd').mockImplementation(() => {})
+      const { logger } = await import('../logger')
+      // @ts-expect-error - enable debug for testing
+      window.enableDebug('debug')
+      expect(() => logger.group('test group')).not.toThrow()
+      expect(() => logger.groupEnd()).not.toThrow()
+      groupSpy.mockRestore()
+      groupEndSpy.mockRestore()
+    })
+
+    it('should call time and timeEnd without errors', async () => {
+      const timeSpy = vi.spyOn(console, 'time').mockImplementation(() => {})
+      const timeEndSpy = vi.spyOn(console, 'timeEnd').mockImplementation(() => {})
+      const { logger } = await import('../logger')
+      // @ts-expect-error - enable debug for testing
+      window.enableDebug('debug')
+      expect(() => logger.time('test-timer')).not.toThrow()
+      expect(() => logger.timeEnd('test-timer')).not.toThrow()
+      timeSpy.mockRestore()
+      timeEndSpy.mockRestore()
+    })
+
+    it('should not log when debug is disabled', async () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+      const { logger } = await import('../logger')
+      // @ts-expect-error - disable debug for testing
+      window.disableDebug()
+      logger.debug('should not log')
+      // The method should not throw even when disabled
+      expect(() => logger.debug('test')).not.toThrow()
+      consoleSpy.mockRestore()
+    })
+
+    it('should not log table when debug is disabled', async () => {
+      const consoleSpy = vi.spyOn(console, 'table').mockImplementation(() => {})
+      const { logger } = await import('../logger')
+      // @ts-expect-error - disable debug for testing
+      window.disableDebug()
+      expect(() => logger.table([{ a: 1 }])).not.toThrow()
+      consoleSpy.mockRestore()
+    })
+
+    it('should not log time when debug is disabled', async () => {
+      const consoleSpy = vi.spyOn(console, 'time').mockImplementation(() => {})
+      const { logger } = await import('../logger')
+      // @ts-expect-error - disable debug for testing
+      window.disableDebug()
+      expect(() => logger.time('test')).not.toThrow()
+      expect(() => logger.timeEnd('test')).not.toThrow()
+      consoleSpy.mockRestore()
+    })
+
+    it('should not log group when debug is disabled', async () => {
+      const consoleSpy = vi.spyOn(console, 'group').mockImplementation(() => {})
+      const { logger } = await import('../logger')
+      // @ts-expect-error - disable debug for testing
+      window.disableDebug()
+      expect(() => logger.group('test')).not.toThrow()
+      expect(() => logger.groupEnd()).not.toThrow()
+      consoleSpy.mockRestore()
+    })
+  })
 })

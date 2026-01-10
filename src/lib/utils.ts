@@ -250,3 +250,124 @@ export function formatDateDDMMYYYY(dateString: string): string {
   const year = date.getFullYear()
   return `${day}/${month}/${year}`
 }
+
+/**
+ * Fields that DO NOT require admin approval when edited by user
+ * These fields can be freely updated without resetting profile status to 'pending'
+ */
+export const NON_CRITICAL_EDIT_FIELDS: (keyof Profile)[] = [
+  // Personal Info (non-identity)
+  'relationToProfile',  // Profile Created for
+  'religion',
+  'motherTongue',
+  'caste',
+  'community',
+  'maritalStatus',
+  'height',
+  'weight',
+  'disability',
+  'disabilityDetails',
+  // Horoscope
+  'horoscopeMatching',
+  'birthTime',
+  'birthPlace',
+  'manglik',
+  // Lifestyle
+  'dietPreference',
+  'drinkingHabit',
+  'smokingHabit',
+  'salary',  // Annual Income
+  // Education & Career (Step 2)
+  'education',
+  'occupation',
+  'position',
+  // Location (can change legitimately)
+  'country',
+  'state',
+  'location',
+  'city',
+  'residentialStatus',
+  // Bio and Family (user-written content)
+  'bio',
+  'familyDetails',
+  'hobbies',
+  // Partner Preferences (entire object)
+  'partnerPreferences',
+  // Privacy settings
+  'hideEmail',
+  'hideMobile',
+]
+
+/**
+ * Fields that REQUIRE admin approval when changed (critical identity fields)
+ * Name, DOB, Gender, Photos, Selfie, ID Proof, Email, Mobile
+ */
+export const CRITICAL_EDIT_FIELDS: (keyof Profile)[] = [
+  'fullName',
+  'firstName',
+  'lastName',
+  'dateOfBirth',
+  'age',
+  'gender',
+  'photos',
+  'selfieUrl',
+  'idProofUrl',
+  'idProofType',
+  'email',
+  'mobile',
+]
+
+/**
+ * Check if only non-critical fields have been changed between old and new profile
+ * Returns true if no critical fields were changed (no admin approval needed)
+ */
+export function hasOnlyNonCriticalChanges(
+  oldProfile: Partial<Profile>,
+  newProfile: Partial<Profile>
+): boolean {
+  // Check each critical field for changes
+  for (const field of CRITICAL_EDIT_FIELDS) {
+    const oldValue = oldProfile[field]
+    const newValue = newProfile[field]
+    
+    // Special handling for arrays (photos)
+    if (Array.isArray(oldValue) || Array.isArray(newValue)) {
+      const oldArr = (oldValue as string[]) || []
+      const newArr = (newValue as string[]) || []
+      
+      // Check if arrays are different
+      if (oldArr.length !== newArr.length) return false
+      
+      // Check if any photo changed (compare URLs, ignore base64 vs CDN differences)
+      const normalizeUrl = (url: string) => {
+        // If it's a CDN URL, extract the filename for comparison
+        if (url.startsWith('https://')) {
+          const parts = url.split('/')
+          return parts[parts.length - 1]
+        }
+        // For base64, just return first 50 chars as a fingerprint
+        return url.substring(0, 50)
+      }
+      
+      const oldNormalized = oldArr.map(normalizeUrl).sort()
+      const newNormalized = newArr.map(normalizeUrl).sort()
+      
+      for (let i = 0; i < oldNormalized.length; i++) {
+        if (oldNormalized[i] !== newNormalized[i]) return false
+      }
+      continue
+    }
+    
+    // For other fields, simple comparison
+    if (oldValue !== newValue) {
+      // Special case: ignore undefined/empty string differences
+      if (!oldValue && !newValue) continue
+      
+      // Check if it's a meaningful change
+      return false
+    }
+  }
+  
+  // All critical fields are unchanged, so only non-critical fields changed
+  return true
+}
