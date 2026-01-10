@@ -1086,6 +1086,12 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     otherReason: language === 'hi' ? 'अन्य' : 'Other',
     chatHistory: language === 'hi' ? 'चैट इतिहास' : 'Chat History',
     noMessagesFound: language === 'hi' ? 'कोई संदेश नहीं मिला' : 'No messages found',
+    deleteReport: language === 'hi' ? 'रिपोर्ट हटाएं' : 'Delete Report',
+    clearAllReports: language === 'hi' ? 'सभी रिपोर्ट साफ़ करें' : 'Clear All Reports',
+    reportDeleted: language === 'hi' ? 'रिपोर्ट हटा दी गई' : 'Report deleted',
+    allReportsCleared: language === 'hi' ? 'सभी रिपोर्ट साफ़ कर दी गईं' : 'All reports cleared',
+    clearAllReportsConfirm: language === 'hi' ? 'क्या आप सभी रिपोर्ट हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।' : 'Do you want to delete all reports? This action cannot be undone.',
+    deleteReportConfirm: language === 'hi' ? 'क्या आप इस रिपोर्ट को हटाना चाहते हैं?' : 'Do you want to delete this report?',
     // Trust Level translations
     trustLevel: language === 'hi' ? 'विश्वास स्तर' : 'Trust Level',
     setTrustLevel: language === 'hi' ? 'विश्वास स्तर सेट करें' : 'Set Trust Level',
@@ -5089,6 +5095,23 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       {blockedProfiles?.filter(b => b.reportedToAdmin).length || 0} {language === 'hi' ? 'कुल रिपोर्ट' : 'total reports'}
                     </CardDescription>
                   </div>
+                  {(blockedProfiles?.filter(b => b.reportedToAdmin).length || 0) > 0 && (
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => {
+                        if (!confirm(t.clearAllReportsConfirm)) return
+                        setBlockedProfiles(current => 
+                          (current || []).filter(b => !b.reportedToAdmin)
+                        )
+                        toast.success(t.allReportsCleared)
+                      }}
+                    >
+                      <Trash size={16} />
+                      {t.clearAllReports}
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -5185,6 +5208,26 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       )
                     }
                     toast.success(t.profileRemoved)
+                  }
+
+                  // Delete individual report
+                  const handleDeleteReport = (reportId: string) => {
+                    if (!confirm(t.deleteReportConfirm)) return
+                    
+                    setBlockedProfiles(current => 
+                      (current || []).filter(b => b.id !== reportId)
+                    )
+                    toast.success(t.reportDeleted)
+                  }
+
+                  // Clear all reports
+                  const handleClearAllReports = () => {
+                    if (!confirm(t.clearAllReportsConfirm)) return
+                    
+                    setBlockedProfiles(current => 
+                      (current || []).filter(b => !b.reportedToAdmin)
+                    )
+                    toast.success(t.allReportsCleared)
                   }
 
                   // View chat history between two users
@@ -5304,6 +5347,16 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 >
                                   <Eye size={14} />
                                   {t.viewChatHistory}
+                                </Button>
+                                
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleDeleteReport(report.id)}
+                                >
+                                  <Trash size={14} />
+                                  {t.deleteReport}
                                 </Button>
                                 
                                 {!report.adminReviewed && (
