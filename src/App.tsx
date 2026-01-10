@@ -2122,7 +2122,7 @@ function App() {
 
         {currentView === 'admin' && (
           <Suspense fallback={<AdminLoadingFallback />}>
-            <AdminPanel profiles={profiles} setProfiles={setProfiles} users={users} language={language} onLogout={() => { setIsAdminLoggedIn(false); setCurrentView('home'); try { localStorage.removeItem('adminLoggedIn'); } catch (e) { logger.error(e); } toast.info(language === 'hi' ? 'एडमिन से लॉगआउट हो गया' : 'Logged out from admin'); }} onLoginAsUser={(userId) => { setLoggedInUser(userId); setCurrentView('home'); toast.success(language === 'hi' ? `उपयोगकर्ता ${userId} के रूप में लॉगिन` : `Logged in as user ${userId}`); }} />
+            <AdminPanel profiles={profiles} setProfiles={setProfiles} users={users} setUsers={setUsers} language={language} onLogout={() => { setIsAdminLoggedIn(false); setCurrentView('home'); try { localStorage.removeItem('adminLoggedIn'); } catch (e) { logger.error(e); } toast.info(language === 'hi' ? 'एडमिन से लॉगआउट हो गया' : 'Logged out from admin'); }} onLoginAsUser={(userId) => { setLoggedInUser(userId); setCurrentView('home'); toast.success(language === 'hi' ? `उपयोगकर्ता ${userId} के रूप में लॉगिन` : `Logged in as user ${userId}`); }} />
           </Suspense>
         )}
 

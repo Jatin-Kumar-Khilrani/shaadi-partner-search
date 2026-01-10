@@ -114,9 +114,9 @@ export function LoginDialog({ open, onClose, onLogin, onUpdatePassword, users, p
     )
 
     if (user) {
-      // Check if profile is deleted
+      // Check if profile exists and is not deleted
       const userProfile = profiles.find(p => p.id === user.profileId)
-      if (userProfile?.isDeleted) {
+      if (!userProfile || userProfile.isDeleted) {
         toast.error(
           language === 'hi' ? 'प्रोफाइल हटा दी गई है' : 'Profile Deleted',
           {

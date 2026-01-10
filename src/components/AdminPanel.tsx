@@ -45,6 +45,7 @@ interface AdminPanelProps {
   profiles: Profile[] | undefined
   setProfiles: (newValue: Profile[] | ((oldValue?: Profile[] | undefined) => Profile[])) => void
   users: User[] | undefined
+  setUsers: (newValue: User[] | ((oldValue?: User[] | undefined) => User[])) => void
   language: 'hi' | 'en'
   onLogout?: () => void
   onLoginAsUser?: (userId: string) => void
@@ -448,7 +449,7 @@ function PendingReviewStoryCard({ story, language, getStatusBadge, setSuccessSto
   )
 }
 
-export function AdminPanel({ profiles, setProfiles, users, language, onLogout, onLoginAsUser }: AdminPanelProps) {
+export function AdminPanel({ profiles, setProfiles, users, setUsers, language, onLogout, onLoginAsUser }: AdminPanelProps) {
   const [_blockedContacts, setBlockedContacts] = useKV<BlockedContact[]>('blockedContacts', [])
   const [blockedProfiles, setBlockedProfiles] = useKV<BlockedProfile[]>('blockedProfiles', [])
   const [messages, setMessages] = useKV<ChatMessage[]>('chatMessages', [])
@@ -1362,7 +1363,18 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   // Permanently delete profile from database
   const handlePermanentDelete = (profileId: string) => {
     if (!confirm(t.permanentDeleteConfirm)) return
+    
+    // Find the profile to get its id for user lookup
+    const profileToDelete = profiles?.find(p => p.id === profileId)
+    
+    // Remove profile from profiles array
     setProfiles((current) => (current || []).filter(p => p.id !== profileId))
+    
+    // Also remove associated user credentials so they cannot login
+    if (profileToDelete) {
+      setUsers((current) => (current || []).filter(u => u.profileId !== profileToDelete.id))
+    }
+    
     toast.success(t.permanentDeleteSuccess)
   }
 
