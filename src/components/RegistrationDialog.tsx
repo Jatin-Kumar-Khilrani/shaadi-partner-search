@@ -1099,6 +1099,21 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         setDigilockerVerified(false)
         setDigilockerData(null)
         setTermsAccepted(false)
+        // Reset OTP states
+        setEmailOtp('')
+        setMobileOtp('')
+        setGeneratedEmailOtp('')
+        setGeneratedMobileOtp('')
+        setShowVerification(false)
+        setOtpResendCount(0)
+        setOtpLastSentAt(0)
+        setOtpCooldownRemaining(0)
+        // Reset payment screenshot states
+        setPaymentScreenshotPreviews([])
+        setPaymentScreenshotFiles([])
+        setBrokenPaymentImages(new Set())
+        // Reset custom city
+        setCustomCity('')
         toast.success(
           language === 'hi' ? 'ड्राफ्ट रीसेट हो गया!' : 'Draft reset successfully!',
           { description: language === 'hi' ? 'आप नए सिरे से शुरू कर सकते हैं' : 'You can start fresh' }
