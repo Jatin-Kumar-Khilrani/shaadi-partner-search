@@ -1626,6 +1626,9 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     let uploadedSelfieUrl: string | undefined = selfiePreview || undefined
     let uploadedIdProofUrl: string | undefined = idProofPreview || undefined
     let uploadedPaymentScreenshotUrls: string[] = [...paymentScreenshotPreviews]
+    // Track if any NEW payment screenshots were uploaded (base64 converted to CDN URL)
+    // This is used to decide whether to reset paymentStatus to 'pending'
+    let hasNewPaymentScreenshots = false
 
     try {
       const blobAvailable = await isBlobStorageAvailable()
@@ -1675,26 +1678,30 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         }
 
         // Upload all payment screenshots that are base64
-        const paymentUploadPromises = paymentScreenshotPreviews.map(async (preview, index) => {
-          if (preview.startsWith('https://')) {
-            return preview // Already uploaded
-          }
-          try {
-            const file = paymentScreenshotFiles[index]
-            if (file) {
-              const { cdnUrl } = await uploadPhoto(tempProfileId, file)
-              return cdnUrl
-            } else {
-              const paymentFile = dataUrlToFile(preview, `payment-screenshot-${index}.jpg`)
-              const { cdnUrl } = await uploadPhoto(tempProfileId, paymentFile)
-              return cdnUrl
+        // Track which ones are new (base64 being uploaded for the first time)
+        const paymentUploadResults = await Promise.all(
+          paymentScreenshotPreviews.map(async (preview, index) => {
+            if (preview.startsWith('https://')) {
+              return { url: preview, isNew: false } // Already uploaded, not new
             }
-          } catch (err) {
-            logger.warn(`Failed to upload payment screenshot ${index}:`, err)
-            return preview // Fallback to base64
-          }
-        })
-        uploadedPaymentScreenshotUrls = await Promise.all(paymentUploadPromises)
+            try {
+              const file = paymentScreenshotFiles[index]
+              if (file) {
+                const { cdnUrl } = await uploadPhoto(tempProfileId, file)
+                return { url: cdnUrl, isNew: true }
+              } else {
+                const paymentFile = dataUrlToFile(preview, `payment-screenshot-${index}.jpg`)
+                const { cdnUrl } = await uploadPhoto(tempProfileId, paymentFile)
+                return { url: cdnUrl, isNew: true }
+              }
+            } catch (err) {
+              logger.warn(`Failed to upload payment screenshot ${index}:`, err)
+              return { url: preview, isNew: true } // Fallback to base64, but still new
+            }
+          })
+        )
+        uploadedPaymentScreenshotUrls = paymentUploadResults.map(r => r.url)
+        hasNewPaymentScreenshots = paymentUploadResults.some(r => r.isNew)
       } else {
         // Fallback: use base64 (not recommended for production)
         photoUrls = photos.map(p => p.preview)
@@ -1788,19 +1795,20 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
         paymentScreenshotUrls: uploadedPaymentScreenshotUrls.length > 0 
           ? uploadedPaymentScreenshotUrls 
           : (isEditMode ? editProfile?.paymentScreenshotUrls : undefined),
-        // IMPORTANT: Preserve existing paymentStatus in edit mode if no new payment uploaded
-        // Only reset to 'pending' if user uploaded a NEW payment screenshot
-        paymentStatus: uploadedPaymentScreenshotUrls.length > 0 
+        // IMPORTANT: Preserve existing paymentStatus in edit mode if no NEW payment uploaded
+        // Only reset to 'pending' if user uploaded a NEW payment screenshot (not existing ones)
+        paymentStatus: hasNewPaymentScreenshots 
           ? 'pending' 
-          : (isEditMode ? editProfile?.paymentStatus : undefined),
+          : (isEditMode ? editProfile?.paymentStatus : (uploadedPaymentScreenshotUrls.length > 0 ? 'pending' : undefined)),
         paymentAmount: formData.membershipPlan === '6-month' 
           ? (membershipSettings?.sixMonthPrice || 500) 
           : (membershipSettings?.oneYearPrice || 900),
-        paymentUploadedAt: uploadedPaymentScreenshotUrls.length > 0 
+        paymentUploadedAt: hasNewPaymentScreenshots 
           ? new Date().toISOString() 
           : (isEditMode ? editProfile?.paymentUploadedAt : undefined),
-        // Preserve other payment fields in edit mode
-        ...(isEditMode && editProfile ? {
+        // Preserve payment verification fields in edit mode ONLY if no new payment uploaded
+        // If new payment is uploaded, clear the verification (needs re-verification)
+        ...(isEditMode && editProfile && !hasNewPaymentScreenshots ? {
           paymentVerifiedAt: editProfile.paymentVerifiedAt,
           paymentVerifiedBy: editProfile.paymentVerifiedBy
         } : {})
