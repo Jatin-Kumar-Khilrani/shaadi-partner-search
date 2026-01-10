@@ -287,9 +287,7 @@ export const NON_CRITICAL_EDIT_FIELDS: (keyof Profile)[] = [
   'location',
   'city',
   'residentialStatus',
-  // Bio and Family (user-written content)
-  'bio',
-  'familyDetails',
+  // Bio (user-written content - note: bio and familyDetails are critical now)
   'hobbies',
   // Partner Preferences (entire object)
   'partnerPreferences',
@@ -315,6 +313,8 @@ export const CRITICAL_EDIT_FIELDS: (keyof Profile)[] = [
   'idProofType',
   'email',
   'mobile',
+  'bio',  // About Me - public facing content
+  'familyDetails',  // Family details - public facing content
 ]
 
 /**

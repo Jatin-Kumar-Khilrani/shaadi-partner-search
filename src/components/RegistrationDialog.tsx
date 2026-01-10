@@ -517,7 +517,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
   const AdminVerificationBadge = ({ field }: { field?: string }) => {
     if (!isEditMode || isAdminMode) return null
     // Only show for critical fields that require admin re-verification
-    const criticalFields = ['gender', 'photos', 'selfieUrl', 'mobile', 'email', 'bio']
+    const criticalFields = ['gender', 'photos', 'selfieUrl', 'mobile', 'email', 'bio', 'familyDetails']
     if (field && !criticalFields.includes(field)) return null
     return (
       <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-medium whitespace-nowrap">
@@ -597,15 +597,22 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     const critical: string[] = []
     const nonCritical: string[] = []
     
+    // Helper to normalize empty/undefined values for comparison
+    // Treats undefined, null, and empty string as equivalent (no value)
+    const normalize = (val: unknown): string => {
+      if (val === undefined || val === null || val === '') return ''
+      return String(val)
+    }
+    
     // Build normalized values for comparison
     const normalizedMobile = `${formData.countryCode || '+91'} ${formData.mobile}`
     
     // Check critical fields
-    if (editProfile.fullName !== formData.fullName) critical.push('fullName')
-    if (editProfile.dateOfBirth !== formData.dateOfBirth) critical.push('dateOfBirth')
-    if (editProfile.gender !== formData.gender) critical.push('gender')
-    if (editProfile.email !== formData.email) critical.push('email')
-    if (editProfile.mobile !== normalizedMobile) critical.push('mobile')
+    if (normalize(editProfile.fullName) !== normalize(formData.fullName)) critical.push('fullName')
+    if (normalize(editProfile.dateOfBirth) !== normalize(formData.dateOfBirth)) critical.push('dateOfBirth')
+    if (normalize(editProfile.gender) !== normalize(formData.gender)) critical.push('gender')
+    if (normalize(editProfile.email) !== normalize(formData.email)) critical.push('email')
+    if (normalize(editProfile.mobile) !== normalize(normalizedMobile)) critical.push('mobile')
     
     // Check photos - compare count and content
     const oldPhotos = editProfile.photos || []
@@ -626,42 +633,52 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     // Check ID proof
     if (idProofPreview && editProfile.idProofUrl !== idProofPreview) critical.push('idProofUrl')
     
-    // Check non-critical fields
-    if (editProfile.religion !== formData.religion) nonCritical.push('religion')
-    if (editProfile.caste !== formData.caste) nonCritical.push('caste')
-    if (editProfile.motherTongue !== formData.motherTongue) nonCritical.push('motherTongue')
-    if (editProfile.education !== formData.education) nonCritical.push('education')
-    if (editProfile.occupation !== formData.occupation) nonCritical.push('occupation')
-    if (editProfile.height !== formData.height) nonCritical.push('height')
-    if (editProfile.weight !== formData.weight) nonCritical.push('weight')
-    if (editProfile.maritalStatus !== formData.maritalStatus) nonCritical.push('maritalStatus')
-    if (editProfile.country !== formData.country) nonCritical.push('country')
-    if (editProfile.state !== formData.state) nonCritical.push('state')
-    if (editProfile.location !== formData.location) nonCritical.push('location')
-    if (editProfile.bio !== formData.bio) nonCritical.push('bio')
-    if (editProfile.familyDetails !== formData.familyDetails) nonCritical.push('familyDetails')
-    if (editProfile.dietPreference !== formData.diet) nonCritical.push('dietPreference')
-    if (editProfile.drinkingHabit !== formData.drinkingHabit) nonCritical.push('drinkingHabit')
-    if (editProfile.smokingHabit !== formData.smokingHabit) nonCritical.push('smokingHabit')
-    if (editProfile.salary !== formData.annualIncome) nonCritical.push('salary')
+    // Check non-critical fields (use normalize to treat undefined/null/'' as equal)
+    if (normalize(editProfile.religion) !== normalize(formData.religion)) nonCritical.push('religion')
+    if (normalize(editProfile.caste) !== normalize(formData.caste)) nonCritical.push('caste')
+    if (normalize(editProfile.motherTongue) !== normalize(formData.motherTongue)) nonCritical.push('motherTongue')
+    if (normalize(editProfile.education) !== normalize(formData.education)) nonCritical.push('education')
+    if (normalize(editProfile.occupation) !== normalize(formData.occupation)) nonCritical.push('occupation')
+    if (normalize(editProfile.height) !== normalize(formData.height)) nonCritical.push('height')
+    if (normalize(editProfile.weight) !== normalize(formData.weight)) nonCritical.push('weight')
+    if (normalize(editProfile.maritalStatus) !== normalize(formData.maritalStatus)) nonCritical.push('maritalStatus')
+    if (normalize(editProfile.country) !== normalize(formData.country)) nonCritical.push('country')
+    if (normalize(editProfile.state) !== normalize(formData.state)) nonCritical.push('state')
+    if (normalize(editProfile.location) !== normalize(formData.location)) nonCritical.push('location')
+    if (normalize(editProfile.bio) !== normalize(formData.bio)) nonCritical.push('bio')
+    if (normalize(editProfile.familyDetails) !== normalize(formData.familyDetails)) nonCritical.push('familyDetails')
+    if (normalize(editProfile.dietPreference) !== normalize(formData.diet)) nonCritical.push('dietPreference')
+    if (normalize(editProfile.drinkingHabit) !== normalize(formData.drinkingHabit)) nonCritical.push('drinkingHabit')
+    if (normalize(editProfile.smokingHabit) !== normalize(formData.smokingHabit)) nonCritical.push('smokingHabit')
+    if (normalize(editProfile.salary) !== normalize(formData.annualIncome)) nonCritical.push('salary')
     
     // Check partner preferences changes (all non-critical)
     const oldPrefs = editProfile.partnerPreferences || {}
     
-    // Age preferences
-    if (oldPrefs.ageMin !== formData.partnerAgeMin || oldPrefs.ageMax !== formData.partnerAgeMax) {
+    // Helper to normalize numbers (treat undefined/null as undefined for comparison)
+    const normalizeNum = (val: number | undefined | null): number | undefined => {
+      if (val === undefined || val === null) return undefined
+      return val
+    }
+    
+    // Age preferences (only count as changed if actual values differ)
+    if (normalizeNum(oldPrefs.ageMin) !== normalizeNum(formData.partnerAgeMin) || 
+        normalizeNum(oldPrefs.ageMax) !== normalizeNum(formData.partnerAgeMax)) {
       nonCritical.push('partnerAge')
     }
     
     // Height preferences
-    if (oldPrefs.heightMin !== formData.partnerHeightMin || oldPrefs.heightMax !== formData.partnerHeightMax) {
+    if (normalize(oldPrefs.heightMin) !== normalize(formData.partnerHeightMin) || 
+        normalize(oldPrefs.heightMax) !== normalize(formData.partnerHeightMax)) {
       nonCritical.push('partnerHeight')
     }
     
-    // Helper to compare arrays
-    const arraysEqual = (a: unknown[] | undefined, b: unknown[] | undefined) => {
+    // Helper to compare arrays (treat undefined/null/[] as equivalent)
+    const arraysEqual = (a: unknown[] | undefined | null, b: unknown[] | undefined | null) => {
       const arr1 = a || []
       const arr2 = b || []
+      // Both empty arrays are equal
+      if (arr1.length === 0 && arr2.length === 0) return true
       if (arr1.length !== arr2.length) return false
       return arr1.every((v, i) => v === arr2[i])
     }
@@ -703,14 +720,14 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     // Smoking preference
     if (!arraysEqual(oldPrefs.smokingHabit, formData.partnerSmoking)) nonCritical.push('partnerSmoking')
     
-    // Manglik preference
-    if (oldPrefs.manglik !== formData.partnerManglik) nonCritical.push('partnerManglik')
+    // Manglik preference (normalize to handle undefined vs empty)
+    if (normalize(oldPrefs.manglik) !== normalize(formData.partnerManglik)) nonCritical.push('partnerManglik')
     
     // Disability preference
     if (!arraysEqual(oldPrefs.disability, formData.partnerDisability)) nonCritical.push('partnerDisability')
     
     // Check membership plan change - this is CRITICAL as it affects payment
-    if (editProfile.membershipPlan !== formData.membershipPlan) {
+    if (normalize(editProfile.membershipPlan) !== normalize(formData.membershipPlan)) {
       critical.push('membershipPlan')
     }
     
@@ -2273,7 +2290,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-1 min-h-0">
+        <div className="flex-1 overflow-y-auto px-2 min-h-0">
           {/* Payment Only Mode Alert */}
           {isPaymentOnlyMode && (
             (() => {
@@ -2358,7 +2375,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               </div>
             </div>
           ) : (
-          <div className="flex items-center justify-center gap-1 md:gap-2 mb-6">
+          <div className="flex items-center justify-center gap-1 md:gap-2 mb-6 px-2 overflow-visible">
             {(isAdminMode ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6, 7]).map((s) => {
               const isCompleted = s < step || (s === 3 && emailVerified && mobileVerified)
               const isCurrent = s === step
@@ -4030,8 +4047,8 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     <Warning size={18} className="text-amber-600" />
                     <AlertDescription className="text-amber-700 dark:text-amber-400 text-sm">
                       {language === 'hi' 
-                        ? '⚠️ "अपने बारे में" बदलने पर एडमिन द्वारा पुनः सत्यापन आवश्यक होगा।'
-                        : '⚠️ Changing "About Yourself" will require admin re-verification.'}
+                        ? '⚠️ "अपने बारे में" या "परिवार विवरण" बदलने पर एडमिन द्वारा पुनः सत्यापन आवश्यक होगा।'
+                        : '⚠️ Changing "About Yourself" or "Family Details" will require admin re-verification.'}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -4082,7 +4099,10 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="familyDetails">{t.registration.familyDetailsLabel}</Label>
+                  <Label htmlFor="familyDetails" className="flex items-center gap-2 flex-wrap">
+                    {t.registration.familyDetailsLabel}
+                    <AdminVerificationBadge field="familyDetails" />
+                  </Label>
                   <Textarea
                     id="familyDetails"
                     placeholder={t.registration.familyPlaceholder}
