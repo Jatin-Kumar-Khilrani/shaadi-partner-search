@@ -9138,6 +9138,50 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 </div>
               )}
 
+              {/* User Uploaded Payment Screenshots */}
+              {(() => {
+                const userProfile = profiles?.find(p => p.profileId === selectedTransaction.profileId)
+                const screenshots = userProfile?.paymentScreenshotUrls || (userProfile?.paymentScreenshotUrl ? [userProfile.paymentScreenshotUrl] : [])
+                if (screenshots.length > 0) {
+                  return (
+                    <div className="space-y-2">
+                      <Separator />
+                      <h4 className="font-semibold text-muted-foreground flex items-center gap-2">
+                        <ImageIcon size={16} />
+                        {language === 'hi' ? 'उपयोगकर्ता द्वारा अपलोड किए गए स्क्रीनशॉट' : 'User Uploaded Screenshots'}
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {screenshots.map((url, idx) => (
+                          <a 
+                            key={idx} 
+                            href={url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="relative group cursor-pointer overflow-hidden rounded-lg border hover:border-primary transition-colors"
+                          >
+                            <img 
+                              src={url} 
+                              alt={`Payment Screenshot ${idx + 1}`}
+                              className="w-full h-32 object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Eye size={24} className="text-white" />
+                            </div>
+                            <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                              {idx + 1}/{screenshots.length}
+                            </div>
+                          </a>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center">
+                        {language === 'hi' ? 'बड़ा देखने के लिए क्लिक करें' : 'Click to view full size'}
+                      </p>
+                    </div>
+                  )
+                }
+                return null
+              })()}
+
               {/* Footer */}
               <div className="text-center text-xs text-muted-foreground border-t pt-4">
                 <p>{language === 'hi' ? 'यह कंप्यूटर जनित रसीद है।' : 'This is a computer generated receipt.'}</p>
