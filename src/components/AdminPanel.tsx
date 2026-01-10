@@ -10803,6 +10803,7 @@ ShaadiPartnerSearch Team
                     size="sm"
                     className="text-red-600 border-red-300"
                     onClick={() => {
+                      // Remove payment verification from profile
                       setProfiles((current) => 
                         (current || []).map(p => 
                           p.id === paymentViewProfile.id 
@@ -10818,8 +10819,14 @@ ShaadiPartnerSearch Team
                             : p
                         )
                       )
+                      
+                      // Also remove any invoices/transactions for this profile
+                      setPaymentTransactions((current) => 
+                        (current || []).filter(t => t.profileId !== paymentViewProfile.profileId)
+                      )
+                      
                       setPaymentViewProfile(prev => prev ? {...prev, paymentStatus: 'pending', paymentVerifiedAt: undefined, hasMembership: false} : null)
-                      toast.success(language === 'hi' ? 'भुगतान सत्यापन हटाया गया!' : 'Payment verification removed!')
+                      toast.success(language === 'hi' ? 'भुगतान सत्यापन और संबंधित रसीद हटाई गई!' : 'Payment verification and related invoice removed!')
                     }}
                   >
                     <ArrowCounterClockwise size={16} className="mr-2" />
