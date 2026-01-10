@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { MultiSelect, MARITAL_STATUS_OPTIONS, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS, OCCUPATION_PROFESSION_OPTIONS, COUNTRY_OPTIONS, EDUCATION_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, DIET_PREFERENCE_OPTIONS, DRINKING_HABIT_OPTIONS, SMOKING_HABIT_OPTIONS, getStateOptionsForCountries } from '@/components/ui/multi-select'
-import { Gear, Heart, Phone, Info, FileText, ShieldCheck, MagnifyingGlass } from '@phosphor-icons/react'
+import { Gear, Heart, Phone, Info, FileText, ShieldCheck, MagnifyingGlass, Moon, Sun } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { TermsContentEmbed } from '@/components/TermsAndConditions'
 import type { Profile, PartnerPreferenceData, DietPreference, DrinkingHabit, SmokingHabit, MaritalStatus } from '@/types/profile'
@@ -460,6 +460,28 @@ export function Settings({ open, onClose, profileId, language, currentProfile, o
   const [preferences, setPreferences] = useKV<PartnerPreferenceData[]>('partnerPreferences', [])
   const [faqSearch, setFaqSearch] = useState('')
   
+  // Dark mode state - initialized from localStorage or system preference
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('shaadi_dark_mode')
+      if (saved !== null) return saved === 'true'
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
+    }
+    return false
+  })
+  
+  // Apply dark mode to document
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.setAttribute('data-appearance', 'dark')
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.removeAttribute('data-appearance')
+      document.documentElement.classList.remove('dark')
+    }
+    localStorage.setItem('shaadi_dark_mode', String(isDarkMode))
+  }, [isDarkMode])
+  
   // Get preferences from the legacy KV store OR from the profile's partnerPreferences
   const legacyPreference = preferences?.find(p => p.profileId === profileId)
   const profilePreference = currentProfile?.partnerPreferences
@@ -723,6 +745,51 @@ Online Safety Tips
 
           <div className="flex-1 overflow-y-auto min-h-0 mt-4">
             <TabsContent value="preferences" className="space-y-4">
+              {/* Display Settings Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    {isDarkMode ? <Moon size={20} weight="fill" /> : <Sun size={20} weight="fill" />}
+                    {language === 'hi' ? 'प्रदर्शन सेटिंग्स' : 'Display Settings'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label className="text-base font-medium">
+                        {language === 'hi' ? 'डार्क मोड' : 'Dark Mode'}
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'hi' 
+                          ? 'अंधेरे में आंखों के लिए आरामदायक'
+                          : 'Easier on the eyes in low light'}
+                      </p>
+                    </div>
+                    <Button
+                      variant={isDarkMode ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setIsDarkMode(!isDarkMode)}
+                      className="gap-2"
+                      aria-label={isDarkMode 
+                        ? (language === 'hi' ? 'लाइट मोड पर स्विच करें' : 'Switch to light mode')
+                        : (language === 'hi' ? 'डार्क मोड पर स्विच करें' : 'Switch to dark mode')}
+                    >
+                      {isDarkMode ? (
+                        <>
+                          <Moon size={16} weight="fill" aria-hidden="true" />
+                          {language === 'hi' ? 'चालू' : 'On'}
+                        </>
+                      ) : (
+                        <>
+                          <Sun size={16} weight="fill" aria-hidden="true" />
+                          {language === 'hi' ? 'बंद' : 'Off'}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              
               <Card>
                 <CardHeader>
                   <CardTitle>{t.partnerPreferences}</CardTitle>

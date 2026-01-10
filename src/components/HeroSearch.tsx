@@ -3,10 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { MagnifyingGlass, Heart, Users, ShieldCheck, Brain } from '@phosphor-icons/react'
+import { MagnifyingGlass, Heart, Users, ShieldCheck, Brain, BookmarkSimple, Trash, FloppyDisk } from '@phosphor-icons/react'
 import { useState } from 'react'
-import type { SearchFilters } from '@/types/profile'
+import type { SearchFilters, SavedSearch } from '@/types/profile'
 import { COUNTRY_OPTIONS, getStateOptionsForCountries, RELIGION_OPTIONS, MOTHER_TONGUE_OPTIONS } from '@/components/ui/multi-select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { toast } from 'sonner'
 
 interface MembershipSettings {
   sixMonthPrice: number
@@ -22,10 +24,17 @@ interface HeroSearchProps {
   onSearch: (filters: SearchFilters) => void
   language?: 'hi' | 'en'
   membershipSettings?: MembershipSettings
+  savedSearches?: SavedSearch[]
+  onSaveSearch?: (name: string, filters: SearchFilters) => void
+  onDeleteSavedSearch?: (id: string) => void
+  currentProfileId?: string
 }
 
-export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: HeroSearchProps) {
+export function HeroSearch({ onSearch, language = 'hi', membershipSettings, savedSearches = [], onSaveSearch, onDeleteSavedSearch, currentProfileId }: HeroSearchProps) {
   const [filters, setFilters] = useState<SearchFilters>({})
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [searchName, setSearchName] = useState('')
+  const [showSavedSearches, setShowSavedSearches] = useState(false)
 
   const handleSearch = () => {
     // Validate age range - swap if min > max
@@ -75,7 +84,49 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
     feature4: language === 'hi' ? 'विवाह तैयारी' : 'Marriage Readiness',
     feature4Desc: language === 'hi' ? 'AI-संचालित आत्म-खोज और EQ मूल्यांकन' : 'AI-powered self-discovery & EQ assessment',
     castePlaceholder: language === 'hi' ? 'यदि ज्ञात हो' : 'If known',
+    // Saved searches translations
+    saveSearch: language === 'hi' ? 'खोज सहेजें' : 'Save Search',
+    savedSearches: language === 'hi' ? 'सहेजी गई खोज' : 'Saved Searches',
+    noSavedSearches: language === 'hi' ? 'कोई सहेजी गई खोज नहीं' : 'No saved searches',
+    searchNamePlaceholder: language === 'hi' ? 'खोज का नाम दें' : 'Name this search',
+    save: language === 'hi' ? 'सहेजें' : 'Save',
+    cancel: language === 'hi' ? 'रद्द करें' : 'Cancel',
+    loadSearch: language === 'hi' ? 'खोज लोड करें' : 'Load Search',
+    searchSaved: language === 'hi' ? 'खोज सहेजी गई!' : 'Search saved!',
+    searchDeleted: language === 'hi' ? 'खोज हटाई गई' : 'Search deleted',
+    filtersApplied: language === 'hi' ? 'फ़िल्टर लागू किए गए' : 'Filters applied',
   }
+
+  // Filter saved searches for current user
+  const userSavedSearches = savedSearches.filter(s => s.profileId === currentProfileId)
+
+  // Handle saving current filters as a saved search
+  const handleSaveSearch = () => {
+    if (!searchName.trim() || !onSaveSearch) return
+    onSaveSearch(searchName.trim(), filters)
+    setSearchName('')
+    setShowSaveDialog(false)
+    toast.success(t.searchSaved)
+  }
+
+  // Handle loading a saved search
+  const handleLoadSavedSearch = (savedSearch: SavedSearch) => {
+    setFilters(savedSearch.filters)
+    setShowSavedSearches(false)
+    toast.success(t.filtersApplied)
+  }
+
+  // Handle deleting a saved search
+  const handleDeleteSavedSearch = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onDeleteSavedSearch) {
+      onDeleteSavedSearch(id)
+      toast.success(t.searchDeleted)
+    }
+  }
+
+  // Check if current filters have any values
+  const hasFilters = Object.values(filters).some(v => v !== undefined && v !== '')
 
   // Get state options based on selected country
   const stateOptions = filters.country ? getStateOptionsForCountries([filters.country]) : []
@@ -173,13 +224,13 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
               {/* Row 2: Age Range (compact inline), Religion, Mother Tongue */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>{t.age}</Label>
-                  <div className="flex items-center gap-2">
+                  <Label id="age-label">{t.age}</Label>
+                  <div className="flex items-center gap-2" role="group" aria-labelledby="age-label">
                     <Select 
                       value={filters.ageMin?.toString() || ''} 
                       onValueChange={(value) => setFilters({ ...filters, ageMin: parseInt(value) || undefined })}
                     >
-                      <SelectTrigger className="w-[75px]">
+                      <SelectTrigger className="w-[75px]" aria-label={language === 'hi' ? 'न्यूनतम आयु' : 'Minimum age'}>
                         <SelectValue placeholder="21" />
                       </SelectTrigger>
                       <SelectContent>
@@ -188,12 +239,12 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
                         ))}
                       </SelectContent>
                     </Select>
-                    <span className="text-muted-foreground text-sm font-medium">{t.to}</span>
+                    <span className="text-muted-foreground text-sm font-medium" aria-hidden="true">{t.to}</span>
                     <Select 
                       value={filters.ageMax?.toString() || ''} 
                       onValueChange={(value) => setFilters({ ...filters, ageMax: parseInt(value) || undefined })}
                     >
-                      <SelectTrigger className="w-[75px]">
+                      <SelectTrigger className="w-[75px]" aria-label={language === 'hi' ? 'अधिकतम आयु' : 'Maximum age'}>
                         <SelectValue placeholder="35" />
                       </SelectTrigger>
                       <SelectContent>
@@ -259,13 +310,129 @@ export function HeroSearch({ onSearch, language = 'hi', membershipSettings }: He
                 </div>
               </div>
 
-              <Button type="submit" size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                <MagnifyingGlass size={20} weight="bold" className="mr-2" />
-                {t.searchButton}
-              </Button>
+              {/* Search buttons row */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button type="submit" size="lg" className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <MagnifyingGlass size={20} weight="bold" className="mr-2" />
+                  {t.searchButton}
+                </Button>
+                
+                {/* Saved Searches buttons - only show when logged in */}
+                {currentProfileId && (
+                  <div className="flex gap-2">
+                    {hasFilters && onSaveSearch && (
+                      <Button 
+                        type="button" 
+                        size="lg" 
+                        variant="outline"
+                        onClick={() => setShowSaveDialog(true)}
+                        className="border-primary/50 hover:bg-primary/10"
+                      >
+                        <FloppyDisk size={20} className="mr-2" />
+                        {t.saveSearch}
+                      </Button>
+                    )}
+                    {userSavedSearches.length > 0 && (
+                      <Button 
+                        type="button" 
+                        size="lg" 
+                        variant="outline"
+                        onClick={() => setShowSavedSearches(true)}
+                        className="border-primary/50 hover:bg-primary/10"
+                      >
+                        <BookmarkSimple size={20} className="mr-2" />
+                        {t.savedSearches} ({userSavedSearches.length})
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
             </form>
           </CardContent>
         </Card>
+
+        {/* Save Search Dialog */}
+        <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FloppyDisk size={24} />
+                {t.saveSearch}
+              </DialogTitle>
+              <DialogDescription>
+                {language === 'hi' 
+                  ? 'इस खोज को एक नाम दें ताकि आप इसे बाद में जल्दी से लोड कर सकें।'
+                  : 'Give this search a name so you can quickly load it later.'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Input
+                placeholder={t.searchNamePlaceholder}
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveSearch()}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
+                {t.cancel}
+              </Button>
+              <Button onClick={handleSaveSearch} disabled={!searchName.trim()}>
+                <FloppyDisk size={18} className="mr-2" />
+                {t.save}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Saved Searches Dialog */}
+        <Dialog open={showSavedSearches} onOpenChange={setShowSavedSearches}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <BookmarkSimple size={24} />
+                {t.savedSearches}
+              </DialogTitle>
+              <DialogDescription>
+                {language === 'hi' 
+                  ? 'अपनी सहेजी गई खोज में से एक चुनें और लोड करें।'
+                  : 'Select one of your saved searches to load.'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-2 max-h-80 overflow-y-auto">
+              {userSavedSearches.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">{t.noSavedSearches}</p>
+              ) : (
+                userSavedSearches.map((savedSearch) => (
+                  <div 
+                    key={savedSearch.id}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
+                    onClick={() => handleLoadSavedSearch(savedSearch)}
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium">{savedSearch.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(savedSearch.createdAt).toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-US')}
+                        {' • '}
+                        {Object.keys(savedSearch.filters).filter(k => savedSearch.filters[k as keyof SearchFilters]).length} 
+                        {language === 'hi' ? ' फ़िल्टर' : ' filters'}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleDeleteSavedSearch(savedSearch.id, e)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      aria-label={language === 'hi' ? `${savedSearch.name} हटाएं` : `Delete ${savedSearch.name}`}
+                    >
+                      <Trash size={18} aria-hidden="true" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div className="max-w-6xl mx-auto mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <FeatureCard

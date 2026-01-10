@@ -83,6 +83,8 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
         setQrCodeDataUrl(qrDataUrl)
       } catch (error) {
         logger.error('Failed to generate QR code:', error)
+        // Show user-friendly error but don't block the UI
+        toast.error(language === 'hi' ? 'QR कोड बनाने में असफल' : 'Failed to generate QR code')
       }
     }
     
@@ -414,15 +416,8 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
       drawSectionHeader(t.personalInfo)
       const maritalLabel = maritalStatusLabels[profile.maritalStatus]?.[language] || profile.maritalStatus
       drawFieldRow(t.name, profile.fullName, t.age, `${profile.age} ${language === 'hi' ? 'वर्ष' : 'years'}`)
-      drawFieldRow(t.dob, profile.dateOfBirth ? formatDateDDMMYYYY(profile.dateOfBirth) : '-', t.height, profile.height || '-')
-      if (profile.weight) {
-        drawFieldRow(t.weight, profile.weight)
-      }
-      drawFieldRow(t.religion, profile.religion || '-', t.caste, profile.caste || '-')
-      if (profile.community || profile.motherTongue) {
-        drawFieldRow(t.community, profile.community || '-', t.motherTongue, profile.motherTongue || '-')
-      }
-      drawFieldRow(t.maritalStatus, maritalLabel, t.manglik, getManglikLabel(profile.manglik))
+      drawFieldRow(t.dob, profile.dateOfBirth ? formatDateDDMMYYYY(profile.dateOfBirth) : '-', t.maritalStatus, maritalLabel)
+      drawFieldRow(t.height, profile.height || '-', t.weight, profile.weight || '-')
       drawFieldRow(t.location, `${profile.location}${profile.state ? ', ' + profile.state : ''}`, t.country, profile.country || 'India')
       if (profile.residentialStatus) {
         const residentialLabel = residentialStatusLabels[profile.residentialStatus]?.[language] || profile.residentialStatus
@@ -436,7 +431,7 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
       }
       yPos += sectionGap
       
-      // Education & Career Section
+      // Education & Career Section - MOVED UP for priority
       drawSectionHeader(t.educationCareer)
       drawFieldRow(t.education, formatEducation(profile.education, language), t.occupation, formatOccupation(profile.occupation, language))
       if (profile.position) {
@@ -445,6 +440,16 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
       if (profile.salary) {
         drawFieldRow(t.salary, profile.salary)
       }
+      yPos += sectionGap
+      
+      // Religious & Community Section - MOVED DOWN after Career
+      const religiousSectionTitle = language === 'hi' ? 'धार्मिक और सामुदायिक' : 'Religious & Community'
+      drawSectionHeader(religiousSectionTitle)
+      drawFieldRow(t.religion, profile.religion || '-', t.caste, profile.caste || '-')
+      if (profile.community || profile.motherTongue) {
+        drawFieldRow(t.community, profile.community || '-', t.motherTongue, profile.motherTongue || '-')
+      }
+      drawFieldRow(t.manglik, getManglikLabel(profile.manglik))
       yPos += sectionGap
       
       // Horoscope Information Section (if available)
@@ -852,7 +857,7 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
                 <p className="text-xs text-gray-500">{t.profileId}: {profile.profileId}</p>
               </div>
               
-              {/* Personal Info */}
+              {/* Personal Info - Basic Details */}
               <Card 
                 className="mb-3 shadow-sm"
                 style={{ borderColor: theme.accent }}
@@ -871,55 +876,36 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
                 </CardHeader>
                 <CardContent className="py-2">
                   <div className="grid grid-cols-2 gap-2 text-xs">
+                    {/* Basic Info */}
                     <div><span className="font-semibold text-gray-600">{t.name}:</span> {profile.fullName}</div>
                     <div><span className="font-semibold text-gray-600">{t.age}:</span> {profile.age} {language === 'hi' ? 'वर्ष' : 'years'}</div>
                     <div><span className="font-semibold text-gray-600">{t.dob}:</span> {profile.dateOfBirth ? formatDateDDMMYYYY(profile.dateOfBirth) : '-'}</div>
-                    <div><span className="font-semibold text-gray-600">{t.height}:</span> {profile.height || '-'}</div>
-                    {profile.weight && <div><span className="font-semibold text-gray-600">{t.weight}:</span> {profile.weight}</div>}
+                    <div><span className="font-semibold text-gray-600">{t.maritalStatus}:</span> {maritalStatusLabels[profile.maritalStatus]?.[language] || profile.maritalStatus}</div>
+                    {/* Education & Career - High priority fields */}
+                    <div><span className="font-semibold text-gray-600">{t.education}:</span> {formatEducation(profile.education, language)}</div>
+                    <div><span className="font-semibold text-gray-600">{t.occupation}:</span> {formatOccupation(profile.occupation, language)}</div>
+                    {profile.position && <div><span className="font-semibold text-gray-600">{t.position}:</span> {profile.position}</div>}
+                    {profile.salary && <div><span className="font-semibold text-gray-600">{t.salary}:</span> {profile.salary}</div>}
+                    {/* Religion & Community */}
                     <div><span className="font-semibold text-gray-600">{t.religion}:</span> {profile.religion || '-'}</div>
                     <div><span className="font-semibold text-gray-600">{t.caste}:</span> {profile.caste || '-'}</div>
                     {profile.community && <div><span className="font-semibold text-gray-600">{t.community}:</span> {profile.community}</div>}
                     {profile.motherTongue && <div><span className="font-semibold text-gray-600">{t.motherTongue}:</span> {profile.motherTongue}</div>}
-                    <div><span className="font-semibold text-gray-600">{t.maritalStatus}:</span> {maritalStatusLabels[profile.maritalStatus]?.[language] || profile.maritalStatus}</div>
-                    <div><span className="font-semibold text-gray-600">{t.manglik}:</span> {getManglikLabel(profile.manglik)}</div>
+                    {/* Physical Attributes */}
+                    <div><span className="font-semibold text-gray-600">{t.height}:</span> {profile.height || '-'}</div>
+                    {profile.weight && <div><span className="font-semibold text-gray-600">{t.weight}:</span> {profile.weight}</div>}
+                    {profile.disability === 'yes' && <div className="col-span-2"><span className="font-semibold text-gray-600">{t.disability}:</span> {profile.disabilityDetails || (language === 'hi' ? 'हां' : 'Yes')}</div>}
+                    {/* Location */}
                     <div><span className="font-semibold text-gray-600">{t.location}:</span> {profile.location}{profile.state ? `, ${profile.state}` : ''}</div>
                     <div><span className="font-semibold text-gray-600">{t.country}:</span> {profile.country || 'India'}</div>
                     {profile.residentialStatus && <div><span className="font-semibold text-gray-600">{t.residentialStatus}:</span> {residentialStatusLabels[profile.residentialStatus]?.[language] || profile.residentialStatus}</div>}
-                    {profile.disability === 'yes' && <div className="col-span-2"><span className="font-semibold text-gray-600">{t.disability}:</span> {profile.disabilityDetails || (language === 'hi' ? 'हां' : 'Yes')}</div>}
                     {profile.relationToProfile && <div><span className="font-semibold text-gray-600">{t.relationToProfile}:</span> {profile.relationToProfile}</div>}
                   </div>
                 </CardContent>
               </Card>
               
-              {/* Education & Career */}
-              <Card 
-                className="mb-3 shadow-sm"
-                style={{ borderColor: theme.accent }}
-              >
-                <CardHeader 
-                  className="py-2"
-                  style={{ background: theme.secondary }}
-                >
-                  <CardTitle 
-                    className="text-sm font-bold flex items-center gap-2"
-                    style={{ color: theme.primary }}
-                  >
-                    <Star size={16} weight="fill" />
-                    {t.educationCareer}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="py-2">
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><span className="font-semibold text-gray-600">{t.education}:</span> {formatEducation(profile.education, language)}</div>
-                    <div><span className="font-semibold text-gray-600">{t.occupation}:</span> {formatOccupation(profile.occupation, language)}</div>
-                    {profile.position && <div><span className="font-semibold text-gray-600">{t.position}:</span> {profile.position}</div>}
-                    {profile.salary && <div><span className="font-semibold text-gray-600">{t.salary}:</span> {profile.salary}</div>}
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {/* Horoscope Information */}
-              {(profile.birthTime || profile.birthPlace || profile.horoscopeMatching) && (
+              {/* Horoscope Information - Moved up */}
+              {(profile.birthTime || profile.birthPlace || profile.horoscopeMatching || profile.manglik !== undefined) && (
                 <Card 
                   className="mb-3 shadow-sm"
                   style={{ borderColor: theme.accent }}
@@ -937,15 +923,16 @@ export function BiodataGenerator({ profile, language, isPaidUser, onClose, open 
                   </CardHeader>
                   <CardContent className="py-2">
                     <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div><span className="font-semibold text-gray-600">{t.manglik}:</span> {getManglikLabel(profile.manglik)}</div>
+                      {profile.horoscopeMatching && <div><span className="font-semibold text-gray-600">{t.horoscopeMatching}:</span> {horoscopeMatchingLabels[profile.horoscopeMatching]?.[language] || profile.horoscopeMatching}</div>}
                       {profile.birthTime && <div><span className="font-semibold text-gray-600">{t.birthTime}:</span> {profile.birthTime}</div>}
                       {profile.birthPlace && <div><span className="font-semibold text-gray-600">{t.birthPlace}:</span> {profile.birthPlace}</div>}
-                      {profile.horoscopeMatching && <div><span className="font-semibold text-gray-600">{t.horoscopeMatching}:</span> {horoscopeMatchingLabels[profile.horoscopeMatching]?.[language] || profile.horoscopeMatching}</div>}
                     </div>
                   </CardContent>
                 </Card>
               )}
               
-              {/* Lifestyle */}
+              {/* Lifestyle - Education & Career now in Personal Info */}
               <Card 
                 className="mb-3 shadow-sm"
                 style={{ borderColor: theme.accent }}

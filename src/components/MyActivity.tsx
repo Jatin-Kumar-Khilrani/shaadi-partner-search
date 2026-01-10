@@ -3211,6 +3211,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
                     id="boost-screenshot"
                     accept="image/*"
                     className="hidden"
+                    aria-label={language === 'hi' ? 'बूस्ट पैक स्क्रीनशॉट अपलोड करें' : 'Upload boost pack screenshot'}
                     onChange={(e) => {
                       const file = e.target.files?.[0]
                       if (file) {
@@ -3259,6 +3260,7 @@ export function MyActivity({ loggedInUserId, profiles, language, onViewProfile: 
                     id="boost-screenshot-gallery"
                     accept="image/*"
                     className="hidden"
+                    aria-label={language === 'hi' ? 'गैलरी से स्क्रीनशॉट अपलोड करें' : 'Upload screenshot from gallery'}
                     onChange={(e) => {
                       const file = e.target.files?.[0]
                       if (file) {

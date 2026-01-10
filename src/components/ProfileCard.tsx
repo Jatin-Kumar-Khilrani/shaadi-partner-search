@@ -1,10 +1,11 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MapPin, Briefcase, GraduationCap, UserCircle, ShieldCheck, Seal, Clock, Lock, Crown, Eye, XCircle, ArrowCounterClockwise, ProhibitInset, Heart, PaperPlaneTilt, Phone, CheckCircle, Sparkle, Star } from '@phosphor-icons/react'
+import { MapPin, Briefcase, GraduationCap, UserCircle, ShieldCheck, Seal, Clock, Lock, Crown, Eye, XCircle, ArrowCounterClockwise, ProhibitInset, Heart, PaperPlaneTilt, Phone, CheckCircle, Sparkle, Star, Lightning } from '@phosphor-icons/react'
 import type { Profile, MembershipPlan } from '@/types/profile'
 import { motion } from 'framer-motion'
 import { PhotoLightbox, useLightbox } from '@/components/PhotoLightbox'
+import { calculateMatchPercentage } from '@/lib/utils'
 
 // Status indicators for profile interactions
 export interface ProfileInteractionStatus {
@@ -35,12 +36,19 @@ interface ProfileCardProps {
   interactionStatus?: ProfileInteractionStatus
   // Callback to navigate to upgrade/settings
   onUpgrade?: () => void
+  // Current user's profile for match calculation
+  currentUserProfile?: Profile | null
 }
 
-export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedIn = false, shouldBlur = false, membershipPlan, isDeclinedByMe = false, isDeclinedByThem = false, onReconsider, interactionStatus, onUpgrade }: ProfileCardProps) {
+export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedIn = false, shouldBlur = false, membershipPlan, isDeclinedByMe = false, isDeclinedByThem = false, onReconsider, interactionStatus, onUpgrade, currentUserProfile }: ProfileCardProps) {
   
   // Lightbox for photo zoom
   const { lightboxState, openLightbox, closeLightbox } = useLightbox()
+  
+  // Calculate match percentage if viewer has partner preferences
+  const matchPercentage = currentUserProfile?.partnerPreferences 
+    ? calculateMatchPercentage(currentUserProfile, profile)
+    : null
   
   // Determine if user has premium access
   const _hasPremiumAccess = membershipPlan === '6-month' || membershipPlan === '1-year'
@@ -228,8 +236,9 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
                   onReconsider(profile.profileId)
                 }}
                 className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300"
+                aria-label={language === 'hi' ? `${profile.fullName} पर पुनर्विचार करें` : `Reconsider ${profile.fullName}`}
               >
-                <ArrowCounterClockwise size={10} weight="bold" />
+                <ArrowCounterClockwise size={10} weight="bold" aria-hidden="true" />
                 {t.reconsider}
               </button>
             )}
@@ -246,40 +255,80 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
           </div>
         )}
         
+        {/* Match percentage badge - show when user has partner preferences */}
+        {matchPercentage !== null && matchPercentage > 0 && isLoggedIn && !hasDeclinedStatus && (
+          <div className={`absolute ${interactionBadge ? 'top-8' : 'top-2'} right-2 z-10`}>
+            <Badge 
+              className={`text-[9px] px-1.5 py-0.5 flex items-center gap-1 shadow-sm border ${
+                matchPercentage >= 80 
+                  ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white border-emerald-400' 
+                  : matchPercentage >= 60 
+                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-blue-400'
+                    : matchPercentage >= 40
+                      ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-amber-400'
+                      : 'bg-gray-100 text-gray-600 border-gray-300 dark:bg-gray-800 dark:text-gray-400'
+              }`}
+              title={language === 'hi' ? `${matchPercentage}% मिलान` : `${matchPercentage}% match`}
+            >
+              <Lightning size={10} weight="fill" />
+              <span>{matchPercentage}%</span>
+            </Badge>
+          </div>
+        )}
+        
         <CardHeader className="pb-2 pt-3 px-3 bg-gradient-to-r from-rose-50/50 via-transparent to-amber-50/50 dark:from-rose-950/30 dark:to-amber-950/30">
           <div className="flex items-start gap-3">
-            <div 
-              className={`relative shrink-0 ${isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0 ? 'cursor-pointer group' : ''}`}
-              onClick={(e) => {
-                if (isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0) {
+            {/* Photo avatar container - interactive when photos available */}
+            {isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0 ? (
+              <div 
+                className="relative shrink-0 cursor-pointer group"
+                onClick={(e) => {
                   e.stopPropagation()
                   openLightbox(profile.photos, 0)
-                }
-              }}
-              title={isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0 ? (language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge') : ''}
-            >
-              <div className="absolute -inset-1 bg-gradient-to-tr from-rose-400 via-pink-300 to-amber-300 rounded-full opacity-60 group-hover/card:opacity-100 transition-opacity blur-sm"></div>
-              <Avatar className={`relative w-14 h-14 border-2 border-white dark:border-gray-800 shadow-lg ${(!isLoggedIn || shouldBlur) ? 'blur-md' : ''} ${isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0 ? 'group-hover:scale-105 transition-transform' : ''}`}>
-                {isLoggedIn && !shouldBlur ? (
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    openLightbox(profile.photos, 0)
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label={language === 'hi' ? `${displayName} की फोटो देखें` : `View ${displayName}'s photo`}
+                title={language === 'hi' ? 'फोटो बड़ा करें' : 'Click to enlarge'}
+              >
+                <div className="absolute -inset-1 bg-gradient-to-tr from-rose-400 via-pink-300 to-amber-300 rounded-full opacity-60 group-hover/card:opacity-100 transition-opacity blur-sm"></div>
+                <Avatar className="relative w-14 h-14 border-2 border-white dark:border-gray-800 shadow-lg group-hover:scale-105 transition-transform">
                   <AvatarImage src={profile.photos?.[0]} alt={displayName} />
-                ) : null}
-                <AvatarFallback className="bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50 text-rose-700 dark:text-rose-300 text-base font-bold">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              {/* Zoom indicator for logged-in users who can see photos */}
-              {isLoggedIn && !shouldBlur && profile.photos && profile.photos.length > 0 && (
+                  <AvatarFallback className="bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50 text-rose-700 dark:text-rose-300 text-base font-bold">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                {/* Zoom indicator */}
                 <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-all">
                   <Eye size={16} weight="fill" className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-              )}
-              {/* Lock overlay for free/pending users */}
-              {shouldBlur && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-full">
-                  <Lock size={18} weight="fill" className="text-white" />
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="relative shrink-0">
+                <div className="absolute -inset-1 bg-gradient-to-tr from-rose-400 via-pink-300 to-amber-300 rounded-full opacity-60 group-hover/card:opacity-100 transition-opacity blur-sm"></div>
+                <Avatar className={`relative w-14 h-14 border-2 border-white dark:border-gray-800 shadow-lg ${(!isLoggedIn || shouldBlur) ? 'blur-md' : ''}`}>
+                  {isLoggedIn && !shouldBlur ? (
+                    <AvatarImage src={profile.photos?.[0]} alt={displayName} />
+                  ) : null}
+                  <AvatarFallback className="bg-gradient-to-br from-rose-100 to-amber-100 dark:from-rose-900/50 dark:to-amber-900/50 text-rose-700 dark:text-rose-300 text-base font-bold">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                {/* Lock overlay for free/pending users */}
+                {shouldBlur && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-full">
+                    <Lock size={18} weight="fill" className="text-white" />
+                  </div>
+                )}
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-1">
                 <h3 

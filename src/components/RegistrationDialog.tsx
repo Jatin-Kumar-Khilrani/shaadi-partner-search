@@ -1728,6 +1728,24 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
     return () => clearInterval(timer)
   }, [otpCooldownRemaining])
 
+  // Cleanup camera stream on unmount or when dialog closes
+  useEffect(() => {
+    if (!open && streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+      setShowCamera(false)
+      setIsCameraReady(false)
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop())
+        streamRef.current = null
+      }
+    }
+  }, [open])
+
   const sendOtps = (emailOnly?: boolean, mobileOnly?: boolean, isResend?: boolean) => {
     // Rate limiting checks for resends (skip check on initial send)
     if (isResend) {
@@ -3378,17 +3396,19 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                           {/* Live Zoom Slider */}
                           <div className="absolute bottom-2 left-2 right-2 bg-black/70 rounded-lg px-3 py-2">
                             <div className="flex items-center gap-2">
-                              <span className="text-white text-xs whitespace-nowrap">
+                              <Label htmlFor="liveZoomSlider" className="text-white text-xs whitespace-nowrap">
                                 {language === 'hi' ? 'ज़ूम:' : 'Zoom:'}
-                              </span>
+                              </Label>
                               <input
                                 type="range"
+                                id="liveZoomSlider"
                                 min="1"
                                 max="3"
                                 step="0.1"
                                 value={liveZoom}
                                 onChange={(e) => setLiveZoom(parseFloat(e.target.value))}
                                 className="flex-1 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-white"
+                                aria-label={language === 'hi' ? 'लाइव ज़ूम नियंत्रण' : 'Live zoom control'}
                               />
                               <span className="text-white text-xs font-medium w-10">{Math.round(liveZoom * 100)}%</span>
                             </div>
@@ -4904,7 +4924,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
             </>
             )}
             
-            {step < (isAdminMode ? 7 : 7) && !showVerification && !(isAdminMode && step === 6) ? (
+            {step < 7 && !showVerification && !(isAdminMode && step === 6) ? (
               isPaymentOnlyMode ? (
                 <Button 
                   size="sm"
@@ -4984,7 +5004,7 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
               <Button 
                 size="sm" 
                 onClick={handleSubmit} 
-                disabled={isSubmitting || paymentScreenshotPreviews.length === 0}
+                disabled={isSubmitting || paymentScreenshotPreviews.length === 0 || paymentScreenshotPreviews.every((_, i) => brokenPaymentImages.has(i))}
                 className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
               >
                 {isSubmitting ? (

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { X, ArrowLeft, ArrowRight } from '@phosphor-icons/react'
+import { X, ArrowLeft, ArrowRight, ImageBroken } from '@phosphor-icons/react'
 
 interface PhotoLightboxProps {
   photos: string[]
@@ -12,13 +12,26 @@ interface PhotoLightboxProps {
 
 export function PhotoLightbox({ photos, initialIndex = 0, open, onClose }: PhotoLightboxProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
+  const [brokenImages, setBrokenImages] = useState<Set<number>>(new Set())
+  const [imageLoading, setImageLoading] = useState(true)
 
-  // Reset currentIndex when dialog opens or photos/initialIndex change
+  // Reset state when dialog opens or photos/initialIndex change
   useEffect(() => {
     if (open) {
       setCurrentIndex(initialIndex)
+      setBrokenImages(new Set())
+      setImageLoading(true)
     }
   }, [open, initialIndex, photos])
+
+  const handleImageError = useCallback((index: number) => {
+    setBrokenImages(prev => new Set(prev).add(index))
+    setImageLoading(false)
+  }, [])
+
+  const handleImageLoad = useCallback(() => {
+    setImageLoading(false)
+  }, [])
 
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1))
@@ -70,11 +83,27 @@ export function PhotoLightbox({ photos, initialIndex = 0, open, onClose }: Photo
           )}
 
           {/* Main Image */}
-          <img
-            src={photos[currentIndex]}
-            alt={`Photo ${currentIndex + 1}`}
-            className="max-w-full max-h-[85vh] object-contain"
-          />
+          {brokenImages.has(currentIndex) ? (
+            <div className="flex flex-col items-center justify-center text-white/60 gap-4 p-8">
+              <ImageBroken size={64} weight="thin" />
+              <p className="text-sm">Image could not be loaded</p>
+            </div>
+          ) : (
+            <>
+              {imageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                </div>
+              )}
+              <img
+                src={photos[currentIndex]}
+                alt={`Photo ${currentIndex + 1}`}
+                className={`max-w-full max-h-[85vh] object-contain transition-opacity ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+                onError={() => handleImageError(currentIndex)}
+                onLoad={handleImageLoad}
+              />
+            </>
+          )}
 
           {/* Image Counter */}
           {photos.length > 1 && (
@@ -90,18 +119,29 @@ export function PhotoLightbox({ photos, initialIndex = 0, open, onClose }: Photo
             {photos.map((photo, index) => (
               <button
                 key={index}
-                onClick={() => setCurrentIndex(index)}
+                onClick={() => {
+                  setCurrentIndex(index)
+                  setImageLoading(true)
+                }}
                 className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
                   index === currentIndex
                     ? 'border-primary scale-110'
                     : 'border-transparent opacity-60 hover:opacity-100'
                 }`}
+                aria-label={`View photo ${index + 1}`}
               >
-                <img
-                  src={photo}
-                  alt={`Thumbnail ${index + 1}`}
-                  className="w-full h-full object-cover"
-                />
+                {brokenImages.has(index) ? (
+                  <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                    <ImageBroken size={20} weight="thin" className="text-gray-500" />
+                  </div>
+                ) : (
+                  <img
+                    src={photo}
+                    alt={`Thumbnail ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    onError={() => handleImageError(index)}
+                  />
+                )}
               </button>
             ))}
           </div>

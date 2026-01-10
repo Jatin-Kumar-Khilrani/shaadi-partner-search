@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
-import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise, CaretDown, User as UserIcon, Trophy, Brain, Sparkle, ChartLine, Target, Robot, ArrowRight, Bell, Check, Crown, Star, CreditCard } from '@phosphor-icons/react'
+import { List, Heart, UserPlus, MagnifyingGlass, ShieldCheck, SignIn, SignOut, UserCircle, Envelope, ChatCircle, Gear, Storefront, ClockCounterClockwise, CaretDown, User as UserIcon, Trophy, Brain, Sparkle, ChartLine, Target, Robot, ArrowRight, Bell, Check, Crown, Star, CreditCard, Clock } from '@phosphor-icons/react'
 import { HeroSearch } from '@/components/HeroSearch'
 import { ProfileCard } from '@/components/ProfileCard'
 import { ProfileDetailDialog } from '@/components/ProfileDetailDialog'
@@ -23,7 +23,7 @@ import { MyProfile } from '@/components/MyProfile'
 import { Settings } from '@/components/Settings'
 import { WeddingServices } from '@/components/WeddingServicesPage'
 import { ReadinessDashboard } from '@/components/readiness'
-import type { Profile, SearchFilters, WeddingService, BlockedProfile, UserNotification, ProfileDeletionData, SuccessStory, ProfileDeletionReason } from '@/types/profile'
+import type { Profile, SearchFilters, SavedSearch, WeddingService, BlockedProfile, UserNotification, ProfileDeletionData, SuccessStory, ProfileDeletionReason } from '@/types/profile'
 import type { User } from '@/types/user'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
@@ -103,10 +103,30 @@ const defaultMembershipSettings: MembershipSettings = {
 }
 
 function App() {
-  const [profiles, setProfiles, , isProfilesLoaded] = useKV<Profile[]>('profiles', [])
+  // Initialize dark mode from localStorage on app load
+  useEffect(() => {
+    try {
+      const savedDarkMode = localStorage.getItem('shaadi_dark_mode')
+      if (savedDarkMode === 'true') {
+        document.documentElement.setAttribute('data-appearance', 'dark')
+        document.documentElement.classList.add('dark')
+      } else if (savedDarkMode === null) {
+        // Check system preference if no saved preference
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.setAttribute('data-appearance', 'dark')
+          document.documentElement.classList.add('dark')
+        }
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [])
+  
+  const [profiles, setProfiles, refreshProfiles, isProfilesLoaded] = useKV<Profile[]>('profiles', [])
   const [users, setUsers, , isUsersLoaded] = useKV<User[]>('users', [])
   const [weddingServices, setWeddingServices] = useKV<WeddingService[]>('weddingServices', [])
   const [userNotifications, setUserNotifications] = useKV<UserNotification[]>('userNotifications', [])
+  const [savedSearches, setSavedSearches] = useKV<SavedSearch[]>('savedSearches', [])
   // IMPORTANT: Login state must be stored in localStorage, NOT in shared KV store!
   // Each device/browser should have its own independent login session
   const [loggedInUser, setLoggedInUser] = useState<string | null>(() => {
@@ -163,6 +183,14 @@ function App() {
   const [activityContactSubTab, setActivityContactSubTab] = useState<'sent-requests' | 'received-requests' | null>(null)
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({})
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
+  const [recentlyViewedProfileIds, setRecentlyViewedProfileIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('shaadi_recently_viewed')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
   const [showRegistration, setShowRegistration] = useState(false)
   const [profileToEdit, setProfileToEdit] = useState<Profile | null>(null)
   const [registrationInitialStep, setRegistrationInitialStep] = useState<number | undefined>(undefined)
@@ -270,6 +298,18 @@ function App() {
     )
     
     setSelectedProfile(profile)
+    
+    // Track recently viewed profiles (for logged-in users viewing other profiles)
+    if (currentUserProfile && profile.profileId !== currentUserProfile.profileId) {
+      setRecentlyViewedProfileIds(prev => {
+        const filtered = prev.filter(id => id !== profile.profileId)
+        const updated = [profile.profileId, ...filtered].slice(0, 10) // Keep last 10
+        try {
+          localStorage.setItem('shaadi_recently_viewed', JSON.stringify(updated))
+        } catch { /* ignore */ }
+        return updated
+      })
+    }
     
     // Notify user about remaining free views
     const remaining = FREE_PROFILE_VIEW_LIMIT - updatedViewedProfiles.length
@@ -1513,7 +1553,78 @@ function App() {
               onSearch={handleSearch} 
               language={language} 
               membershipSettings={membershipSettings || defaultMembershipSettings}
+              savedSearches={savedSearches || []}
+              currentProfileId={currentUserProfile?.profileId}
+              onSaveSearch={(name, filters) => {
+                if (!currentUserProfile) return
+                const newSavedSearch: SavedSearch = {
+                  id: `saved_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                  name,
+                  filters,
+                  createdAt: new Date().toISOString(),
+                  profileId: currentUserProfile.profileId
+                }
+                setSavedSearches([...(savedSearches || []), newSavedSearch])
+              }}
+              onDeleteSavedSearch={(id) => {
+                setSavedSearches((savedSearches || []).filter(s => s.id !== id))
+              }}
             />
+            
+            {/* Recently Viewed Profiles Section - Only for logged-in users */}
+            {loggedInUser && recentlyViewedProfileIds.length > 0 && (() => {
+              const recentlyViewedProfiles = recentlyViewedProfileIds
+                .map(id => profiles?.find(p => p.profileId === id && p.status === 'verified' && !p.deletedAt))
+                .filter((p): p is Profile => p !== undefined)
+                .slice(0, 5)
+              
+              if (recentlyViewedProfiles.length === 0) return null
+              
+              return (
+                <section className="container mx-auto px-4 md:px-8 py-8 bg-gradient-to-r from-purple-50/50 to-pink-50/50 dark:from-purple-950/20 dark:to-pink-950/20">
+                  <div className="max-w-6xl mx-auto">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xl font-bold flex items-center gap-2">
+                        <Clock size={24} className="text-purple-500" />
+                        {language === 'hi' ? 'हाल ही में देखे गए' : 'Recently Viewed'}
+                      </h3>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => {
+                          setRecentlyViewedProfileIds([])
+                          try { localStorage.removeItem('shaadi_recently_viewed') } catch { /* ignore */ }
+                        }}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        {language === 'hi' ? 'साफ करें' : 'Clear'}
+                      </Button>
+                    </div>
+                    <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
+                      {recentlyViewedProfiles.map(profile => (
+                        <div 
+                          key={profile.id} 
+                          className="flex-shrink-0 w-48 snap-start cursor-pointer group"
+                          onClick={() => handleViewProfile(profile)}
+                        >
+                          <div className="relative rounded-lg overflow-hidden border-2 border-transparent group-hover:border-primary transition-colors">
+                            <img 
+                              src={profile.photos?.[0] || '/placeholder-avatar.png'} 
+                              alt={profile.fullName}
+                              className="w-48 h-48 object-cover group-hover:scale-105 transition-transform"
+                            />
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                              <p className="text-white font-medium text-sm truncate">{profile.fullName}</p>
+                              <p className="text-white/70 text-xs">{profile.age} {language === 'hi' ? 'वर्ष' : 'yrs'}, {profile.location}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+              )
+            })()}
             
             {/* Statistics Bar - Matrimony Site Trust Indicators */}
             {(() => {
@@ -1972,6 +2083,7 @@ function App() {
                       isLoggedIn={!!loggedInUser}
                       shouldBlur={currentMembershipStatus.shouldBlur}
                       onUpgrade={() => setShowUpgradeDialog(true)}
+                      currentUserProfile={currentUserProfile}
                     />
                   ))}
                 </div>
@@ -1995,6 +2107,7 @@ function App() {
             membershipPlan={currentUserProfile?.membershipPlan}
             profileStatus={currentUserProfile?.status}
             onUpgrade={() => setShowUpgradeDialog(true)}
+            currentUserProfile={currentUserProfile}
           />
         )}
 
@@ -2052,6 +2165,7 @@ function App() {
               }
             }}
             onDeleteProfile={handleDeleteProfile}
+            onRefreshProfile={refreshProfiles}
             membershipSettings={membershipSettings || defaultMembershipSettings}
             onNavigateHome={() => setCurrentView('home')}
             onNavigateActivity={() => setCurrentView('my-activity')}

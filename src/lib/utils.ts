@@ -1,8 +1,145 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import type { Profile } from '@/types/profile'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+/**
+ * Calculate match percentage between a viewer's partner preferences and a target profile
+ * Returns a percentage (0-100) indicating how well the target matches preferences
+ */
+export function calculateMatchPercentage(viewerProfile: Profile, targetProfile: Profile): number {
+  const prefs = viewerProfile.partnerPreferences
+  if (!prefs) return 0
+  
+  let totalCriteria = 0
+  let matchedCriteria = 0
+  
+  // Age match (weight: 2)
+  if (prefs.ageMin || prefs.ageMax) {
+    totalCriteria += 2
+    const age = targetProfile.age || 0
+    const ageMin = prefs.ageMin || 0
+    const ageMax = prefs.ageMax || 100
+    if (age >= ageMin && age <= ageMax) {
+      matchedCriteria += 2
+    } else if (age < ageMin && ageMin - age <= 2) {
+      matchedCriteria += 1 // Partial match if within 2 years
+    } else if (age > ageMax && age - ageMax <= 2) {
+      matchedCriteria += 1
+    }
+  }
+  
+  // Religion match (weight: 2)
+  if (prefs.religion && prefs.religion.length > 0) {
+    totalCriteria += 2
+    if (targetProfile.religion && prefs.religion.includes(targetProfile.religion)) {
+      matchedCriteria += 2
+    }
+  }
+  
+  // Caste match (weight: 1)
+  if (prefs.caste && prefs.caste.length > 0) {
+    totalCriteria += 1
+    if (targetProfile.caste && prefs.caste.includes(targetProfile.caste)) {
+      matchedCriteria += 1
+    }
+  }
+  
+  // Mother tongue match (weight: 1)
+  if (prefs.motherTongue && prefs.motherTongue.length > 0) {
+    totalCriteria += 1
+    if (targetProfile.motherTongue && prefs.motherTongue.includes(targetProfile.motherTongue)) {
+      matchedCriteria += 1
+    }
+  }
+  
+  // Education match (weight: 1.5)
+  if (prefs.education && prefs.education.length > 0) {
+    totalCriteria += 1.5
+    if (targetProfile.education && prefs.education.includes(targetProfile.education)) {
+      matchedCriteria += 1.5
+    }
+  }
+  
+  // Employment/Occupation match (weight: 1)
+  if (prefs.employmentStatus && prefs.employmentStatus.length > 0) {
+    totalCriteria += 1
+    if (targetProfile.occupation && prefs.employmentStatus.includes(targetProfile.occupation)) {
+      matchedCriteria += 1
+    }
+  }
+  
+  // Location (Country) match (weight: 1.5)
+  if (prefs.livingCountry && prefs.livingCountry.length > 0) {
+    totalCriteria += 1.5
+    if (targetProfile.country && prefs.livingCountry.includes(targetProfile.country)) {
+      matchedCriteria += 1.5
+    }
+  }
+  
+  // State match (weight: 1)
+  if (prefs.livingState && prefs.livingState.length > 0) {
+    totalCriteria += 1
+    if (targetProfile.state && prefs.livingState.includes(targetProfile.state)) {
+      matchedCriteria += 1
+    }
+  }
+  
+  // Marital status match (weight: 1.5)
+  if (prefs.maritalStatus && prefs.maritalStatus.length > 0) {
+    totalCriteria += 1.5
+    if (targetProfile.maritalStatus && prefs.maritalStatus.includes(targetProfile.maritalStatus)) {
+      matchedCriteria += 1.5
+    }
+  }
+  
+  // Diet match (weight: 1)
+  if (prefs.dietPreference && prefs.dietPreference.length > 0) {
+    totalCriteria += 1
+    if (targetProfile.dietPreference && prefs.dietPreference.includes(targetProfile.dietPreference)) {
+      matchedCriteria += 1
+    }
+  }
+  
+  // Drinking habit match (weight: 0.5)
+  if (prefs.drinkingHabit && prefs.drinkingHabit.length > 0) {
+    totalCriteria += 0.5
+    if (targetProfile.drinkingHabit && prefs.drinkingHabit.includes(targetProfile.drinkingHabit)) {
+      matchedCriteria += 0.5
+    }
+  }
+  
+  // Smoking habit match (weight: 0.5)
+  if (prefs.smokingHabit && prefs.smokingHabit.length > 0) {
+    totalCriteria += 0.5
+    if (targetProfile.smokingHabit && prefs.smokingHabit.includes(targetProfile.smokingHabit)) {
+      matchedCriteria += 0.5
+    }
+  }
+  
+  // Manglik match (weight: 1)
+  if (prefs.manglik && prefs.manglik !== 'doesnt-matter') {
+    totalCriteria += 1
+    const targetManglik = targetProfile.manglik ? 'yes' : 'no'
+    if (prefs.manglik === targetManglik) {
+      matchedCriteria += 1
+    }
+  }
+  
+  // Disability match (weight: 1)
+  if (prefs.disability && prefs.disability.length > 0) {
+    totalCriteria += 1
+    if (targetProfile.disability && prefs.disability.includes(targetProfile.disability)) {
+      matchedCriteria += 1
+    }
+  }
+  
+  if (totalCriteria === 0) return 0
+  
+  return Math.round((matchedCriteria / totalCriteria) * 100)
 }
 
 /**

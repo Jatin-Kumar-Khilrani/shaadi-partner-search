@@ -1396,9 +1396,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
           status: 'verified' as const, 
           verifiedAt: new Date().toISOString(),
           trustLevel,
-          // Clear returnedForPayment flag so user can edit normally after approval
+          // Clear returnedForPayment flag and deadline so user can edit normally after approval
           returnedForPayment: false,
-          returnedForPaymentAt: undefined
+          returnedForPaymentAt: undefined,
+          returnedForPaymentDeadline: undefined
         }
       })
     )
@@ -1531,7 +1532,12 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
               returnedForPayment: false,
               returnedForPaymentAt: undefined,
               returnedForPaymentDeadline: undefined,
+              paymentDeadlineExtendedCount: undefined,
               paymentStatus: 'not-required' as const,
+              paymentAmount: undefined,
+              paymentScreenshotUrl: undefined,
+              paymentScreenshotUrls: undefined,
+              paymentRejectionReason: undefined,
               // Keep face and ID verification status
               faceVerified: p.faceVerified,
               idProofVerified: p.idProofVerified
@@ -4188,7 +4194,9 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                                   membershipEndDate: expiryDate.toISOString(),
                                                   // Clear returnedForPayment so user can edit normally
                                                   returnedForPayment: false,
-                                                  returnedForPaymentAt: undefined
+                                                  returnedForPaymentAt: undefined,
+                                                  returnedForPaymentDeadline: undefined,
+                                                  paymentDeadlineExtendedCount: undefined
                                                 } 
                                               : p
                                           )
@@ -6508,6 +6516,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                               boostPackEnabled: e.target.checked
                             }))}
                             className="h-4 w-4 rounded border-gray-300"
+                            aria-label={language === 'hi' ? 'बूस्ट पैक खरीद सक्षम करें' : 'Enable Boost Pack Purchase'}
                           />
                           <Label htmlFor="boostPackEnabled" className="text-xs font-medium">
                             {language === 'hi' ? 'बूस्ट पैक खरीद सक्षम करें' : 'Enable Boost Pack Purchase'}
@@ -8330,6 +8339,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                         boostPackDisabled: e.target.checked
                       }))}
                       className="h-4 w-4 rounded border-red-300"
+                      aria-label={language === 'hi' ? 'इस यूजर के लिए बूस्ट पैक अक्षम करें' : 'Disable Boost Pack for this user'}
                     />
                     <Label htmlFor="boostPackDisabledProfile" className="text-xs font-medium text-red-700 dark:text-red-300">
                       {language === 'hi' ? 'इस यूजर के लिए बूस्ट पैक अक्षम करें' : 'Disable Boost Pack for this user'}
@@ -8755,6 +8765,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
                 multiple
                 className="hidden"
+                aria-label={language === 'hi' ? 'फाइल जोड़ें' : 'Add file attachment'}
                 onChange={(e) => handleBroadcastFileSelect(e.target.files)}
               />
               
@@ -8782,6 +8793,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                       <button
                         onClick={() => removeBroadcastAttachment(attachment.id)}
                         className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        title={language === 'hi' ? 'अटैचमेंट हटाएं' : 'Remove attachment'}
+                        aria-label={language === 'hi' ? 'अटैचमेंट हटाएं' : 'Remove attachment'}
                       >
                         <X size={12} weight="bold" />
                       </button>
@@ -10638,9 +10651,11 @@ ShaadiPartnerSearch Team
                                 hasMembership: true,
                                 membershipStartDate: now.toISOString(),
                                 membershipEndDate: expiryDate.toISOString(),
-                                // Clear returnedForPayment so user can edit normally
+                                // Clear returnedForPayment and deadline so user can edit normally
                                 returnedForPayment: false,
-                                returnedForPaymentAt: undefined
+                                returnedForPaymentAt: undefined,
+                                returnedForPaymentDeadline: undefined,
+                                paymentDeadlineExtendedCount: undefined
                               } 
                             : p
                         )

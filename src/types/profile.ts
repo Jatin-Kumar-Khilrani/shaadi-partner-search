@@ -370,6 +370,14 @@ export interface SearchFilters {
   smokingHabit?: SmokingHabit
 }
 
+export interface SavedSearch {
+  id: string
+  name: string
+  filters: SearchFilters
+  createdAt: string
+  profileId: string  // Owner of this saved search
+}
+
 export interface Interest {
   id: string
   fromProfileId: string

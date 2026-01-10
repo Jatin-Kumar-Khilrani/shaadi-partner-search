@@ -56,6 +56,7 @@ interface MyMatchesProps {
   membershipPlan?: MembershipPlan
   profileStatus?: ProfileStatus
   onUpgrade?: () => void
+  currentUserProfile?: Profile | null  // For match percentage calculation
 }
 
 // Local storage key for saved filter drafts
@@ -64,7 +65,7 @@ const FILTER_DRAFT_KEY = 'myMatches_filterDraft'
 // Sort options for profiles
 type SortOption = 'newest' | 'age-asc' | 'age-desc' | 'name-asc' | 'compatibility'
 
-export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, membershipPlan, profileStatus, onUpgrade }: MyMatchesProps) {
+export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, membershipPlan, profileStatus, onUpgrade, currentUserProfile }: MyMatchesProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFiltersInternal] = useState<ExtendedFilters>({})
   const [showFilters, setShowFilters] = useState(false)
@@ -114,7 +115,6 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
     }
   }, [searchQuery])
 
-  const currentUserProfile = profiles.find(p => p.id === loggedInUserId)
   const prefs = currentUserProfile?.partnerPreferences
   
   // Free plan users or pending approval users should have restricted access
@@ -1866,6 +1866,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               checked={usePartnerPreferences}
               onCheckedChange={setUsePartnerPreferences}
               disabled={!hasPartnerPreferences}
+              aria-label={language === 'hi' ? 'स्मार्ट मैचिंग टॉगल करें' : 'Toggle smart matching'}
             />
           </div>
           <p className="text-xs text-muted-foreground mt-3 ml-11">
@@ -2594,6 +2595,8 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
               <button
                 onClick={() => setSearchQuery('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                title={language === 'hi' ? 'खोज साफ़ करें' : 'Clear search'}
+                aria-label={language === 'hi' ? 'खोज साफ़ करें' : 'Clear search'}
               >
                 <X size={16} />
               </button>
@@ -2788,6 +2791,7 @@ export function MyMatches({ loggedInUserId, profiles, onViewProfile, language, m
                     onReconsider={handleReconsiderProfile}
                     interactionStatus={status.interactionStatus}
                     onUpgrade={onUpgrade}
+                    currentUserProfile={currentUserProfile}
                   />
                 )
               })}

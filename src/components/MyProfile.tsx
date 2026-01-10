@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useKV } from '@/hooks/useKV'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Progress } from '@/components/ui/progress'
 import { formatEducation, formatOccupation } from '@/lib/utils'
 import { 
   User, MapPin, Briefcase, GraduationCap, Heart, House, PencilSimple,
@@ -46,6 +47,7 @@ interface MyProfileProps {
   onUpgradeNow?: () => void  // Opens edit dialog directly at membership plan step
   onDeleteProfile?: (profileId: string, deletionData?: ProfileDeletionData) => void
   onUpdateProfile?: (updatedProfile: Partial<Profile>) => void
+  onRefreshProfile?: () => Promise<void>  // Callback to refresh profile data from server
   membershipSettings?: MembershipSettings
   onNavigateHome?: () => void
   onNavigateActivity?: () => void
@@ -53,7 +55,7 @@ interface MyProfileProps {
   onNavigateChat?: () => void
 }
 
-export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeNow, onDeleteProfile, onUpdateProfile, membershipSettings, onNavigateHome, onNavigateActivity, onNavigateInbox, onNavigateChat }: MyProfileProps) {
+export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeNow, onDeleteProfile, onUpdateProfile, onRefreshProfile, membershipSettings, onNavigateHome, onNavigateActivity, onNavigateInbox, onNavigateChat }: MyProfileProps) {
   // Get interests from KV store for accepted interests selection
   const [interests] = useKV<Interest[]>('interests', [])
   
@@ -102,6 +104,37 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
   const [renewalPaymentPreview, setRenewalPaymentPreview] = useState<string | null>(null)
   const [showRenewalCamera, setShowRenewalCamera] = useState(false)
   const renewalFileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Auto-refresh state for pending payment/approval
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
+
+  // Auto-poll for status changes when payment is pending or profile is pending approval
+  useEffect(() => {
+    const shouldPoll = profile && (
+      // Poll when payment is pending verification
+      (profile.status === 'pending' && profile.paymentStatus === 'pending' && 
+       profile.paymentScreenshotUrls && profile.paymentScreenshotUrls.length > 0) ||
+      // Poll when profile is pending approval
+      (profile.status === 'pending' && !profile.returnedForEdit && !profile.returnedForPayment) ||
+      // Poll when renewal payment is pending
+      (profile.renewalPaymentStatus === 'pending')
+    )
+
+    if (!shouldPoll || !onRefreshProfile) return
+
+    // Poll every 30 seconds
+    const pollInterval = setInterval(async () => {
+      try {
+        await onRefreshProfile()
+        setLastRefreshTime(new Date())
+      } catch (error) {
+        console.error('Auto-refresh failed:', error)
+      }
+    }, 30000)
+
+    return () => clearInterval(pollInterval)
+  }, [profile?.status, profile?.paymentStatus, profile?.renewalPaymentStatus, onRefreshProfile])
 
   const t = {
     title: language === 'hi' ? 'मेरी प्रोफाइल' : 'My Profile',
@@ -307,6 +340,48 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
     }
     return horoscope ? (labels[horoscope]?.[language] || horoscope) : '-'
   }
+
+  // Calculate profile completion percentage
+  const calculateProfileCompletion = () => {
+    if (!profile) return { percentage: 0, missingFields: [] as string[], tips: [] as string[] }
+    
+    const fields = [
+      { key: 'fullName', label: language === 'hi' ? 'नाम' : 'Name', filled: !!profile.fullName },
+      { key: 'gender', label: language === 'hi' ? 'लिंग' : 'Gender', filled: !!profile.gender },
+      { key: 'dateOfBirth', label: language === 'hi' ? 'जन्म तिथि' : 'Date of Birth', filled: !!profile.dateOfBirth },
+      { key: 'photos', label: language === 'hi' ? 'फोटो' : 'Photos', filled: profile.photos && profile.photos.length > 0 },
+      { key: 'education', label: language === 'hi' ? 'शिक्षा' : 'Education', filled: !!profile.education },
+      { key: 'occupation', label: language === 'hi' ? 'व्यवसाय' : 'Occupation', filled: !!profile.occupation },
+      { key: 'salary', label: language === 'hi' ? 'आय' : 'Income', filled: !!profile.salary },
+      { key: 'religion', label: language === 'hi' ? 'धर्म' : 'Religion', filled: !!profile.religion },
+      { key: 'caste', label: language === 'hi' ? 'जाति' : 'Caste', filled: !!profile.caste },
+      { key: 'motherTongue', label: language === 'hi' ? 'मातृभाषा' : 'Mother Tongue', filled: !!profile.motherTongue },
+      { key: 'height', label: language === 'hi' ? 'ऊंचाई' : 'Height', filled: !!profile.height },
+      { key: 'location', label: language === 'hi' ? 'स्थान' : 'Location', filled: !!profile.location },
+      { key: 'bio', label: language === 'hi' ? 'परिचय' : 'About Me', filled: !!profile.bio },
+      { key: 'familyDetails', label: language === 'hi' ? 'पारिवारिक विवरण' : 'Family Details', filled: !!profile.familyDetails },
+      { key: 'partnerPreferences', label: language === 'hi' ? 'पार्टनर प्राथमिकता' : 'Partner Preferences', filled: !!(profile.partnerPreferences && (profile.partnerPreferences.ageMin || profile.partnerPreferences.education?.length)) },
+    ]
+    
+    const filledCount = fields.filter(f => f.filled).length
+    const percentage = Math.round((filledCount / fields.length) * 100)
+    const missingFields = fields.filter(f => !f.filled).map(f => f.label)
+    
+    const tips: string[] = []
+    if (!profile.photos || profile.photos.length < 3) {
+      tips.push(language === 'hi' ? '3+ फोटो अपलोड करने से 40% अधिक प्रतिक्रिया मिलती है' : 'Adding 3+ photos increases responses by 40%')
+    }
+    if (!profile.bio) {
+      tips.push(language === 'hi' ? 'अपना परिचय लिखें - यह प्रोफाइल को आकर्षक बनाता है' : 'Write about yourself - it makes your profile attractive')
+    }
+    if (!profile.familyDetails) {
+      tips.push(language === 'hi' ? 'पारिवारिक विवरण जोड़ने से विश्वास बढ़ता है' : 'Adding family details builds trust')
+    }
+    
+    return { percentage, missingFields, tips }
+  }
+
+  const profileCompletion = calculateProfileCompletion()
 
   const getProfileCreatedByLabel = (relation: string | undefined) => {
     const labels: Record<string, { hi: string; en: string }> = {
@@ -546,6 +621,53 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
             )}
           </div>
         </div>
+
+        {/* Profile Completion Indicator */}
+        {profileCompletion.percentage < 100 && (
+          <Card className="mb-6 border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30">
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={20} className={profileCompletion.percentage >= 80 ? 'text-green-500' : 'text-amber-500'} />
+                  <span className="font-semibold">
+                    {language === 'hi' ? 'प्रोफाइल पूर्णता' : 'Profile Completion'}
+                  </span>
+                </div>
+                <Badge variant={profileCompletion.percentage >= 80 ? 'default' : 'secondary'} className={profileCompletion.percentage >= 80 ? 'bg-green-500' : ''}>
+                  {profileCompletion.percentage}%
+                </Badge>
+              </div>
+              <Progress value={profileCompletion.percentage} className="h-2 mb-3" />
+              
+              {profileCompletion.missingFields.length > 0 && (
+                <div className="text-sm text-muted-foreground mb-2">
+                  <span className="font-medium">{language === 'hi' ? 'अधूरे फील्ड:' : 'Missing fields:'}</span>{' '}
+                  {profileCompletion.missingFields.slice(0, 3).join(', ')}
+                  {profileCompletion.missingFields.length > 3 && ` +${profileCompletion.missingFields.length - 3} ${language === 'hi' ? 'और' : 'more'}`}
+                </div>
+              )}
+              
+              {profileCompletion.tips.length > 0 && (
+                <div className="text-sm text-amber-700 dark:text-amber-400 flex items-start gap-2">
+                  <span className="text-lg">💡</span>
+                  <span>{profileCompletion.tips[0]}</span>
+                </div>
+              )}
+              
+              {onEdit && (
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="mt-3 gap-2 border-amber-300 text-amber-700 hover:bg-amber-100"
+                  onClick={handleEditClick}
+                >
+                  <ArrowUp size={16} />
+                  {language === 'hi' ? 'प्रोफाइल पूरी करें' : 'Complete Profile'}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Delete Profile Dialog - Multi-step flow */}
         <Dialog open={showDeleteDialog} onOpenChange={handleCloseDeleteDialog}>
@@ -955,6 +1077,43 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                     : `Uploaded on: ${new Date(profile.paymentUploadedAt).toLocaleDateString()}`}
                 </p>
               )}
+              <div className="flex items-center gap-3 mt-3">
+                {onRefreshProfile && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      setIsRefreshing(true)
+                      try {
+                        await onRefreshProfile()
+                        setLastRefreshTime(new Date())
+                        toast.success(language === 'hi' ? 'स्थिति अपडेट की गई' : 'Status updated')
+                      } catch (error) {
+                        toast.error(language === 'hi' ? 'रिफ्रेश विफल' : 'Refresh failed')
+                      } finally {
+                        setIsRefreshing(false)
+                      }
+                    }}
+                    disabled={isRefreshing}
+                    className="border-purple-400 text-purple-700 hover:bg-purple-100"
+                  >
+                    <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                    {language === 'hi' ? 'स्थिति जांचें' : 'Check Status'}
+                  </Button>
+                )}
+                {lastRefreshTime && (
+                  <span className="text-xs text-purple-600">
+                    {language === 'hi' 
+                      ? `अंतिम जांच: ${lastRefreshTime.toLocaleTimeString('hi-IN')}`
+                      : `Last checked: ${lastRefreshTime.toLocaleTimeString()}`}
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 text-xs italic text-purple-600">
+                {language === 'hi' 
+                  ? 'स्वचालित रूप से हर 30 सेकंड में जांच होती है'
+                  : 'Auto-checking every 30 seconds'}
+              </p>
             </AlertDescription>
           </Alert>
         )}
@@ -970,7 +1129,44 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
               {t.pendingApproval}
             </AlertTitle>
             <AlertDescription className="text-blue-700 dark:text-blue-300">
-              {t.pendingApprovalDesc}
+              <p>{t.pendingApprovalDesc}</p>
+              <div className="flex items-center gap-3 mt-3">
+                {onRefreshProfile && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      setIsRefreshing(true)
+                      try {
+                        await onRefreshProfile()
+                        setLastRefreshTime(new Date())
+                        toast.success(language === 'hi' ? 'स्थिति अपडेट की गई' : 'Status updated')
+                      } catch (error) {
+                        toast.error(language === 'hi' ? 'रिफ्रेश विफल' : 'Refresh failed')
+                      } finally {
+                        setIsRefreshing(false)
+                      }
+                    }}
+                    disabled={isRefreshing}
+                    className="border-blue-400 text-blue-700 hover:bg-blue-100"
+                  >
+                    <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                    {language === 'hi' ? 'स्थिति जांचें' : 'Check Status'}
+                  </Button>
+                )}
+                {lastRefreshTime && (
+                  <span className="text-xs text-blue-600">
+                    {language === 'hi' 
+                      ? `अंतिम जांच: ${lastRefreshTime.toLocaleTimeString('hi-IN')}`
+                      : `Last checked: ${lastRefreshTime.toLocaleTimeString()}`}
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 text-xs italic text-blue-600">
+                {language === 'hi' 
+                  ? 'स्वचालित रूप से हर 30 सेकंड में जांच होती है'
+                  : 'Auto-checking every 30 seconds'}
+              </p>
             </AlertDescription>
           </Alert>
         )}
@@ -1219,6 +1415,7 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                   ref={renewalFileInputRef}
                   accept="image/*"
                   className="hidden"
+                  aria-label={language === 'hi' ? 'भुगतान स्क्रीनशॉट अपलोड करें' : 'Upload Payment Screenshot'}
                   onChange={(e) => {
                     const file = e.target.files?.[0]
                     if (file) {
@@ -1539,103 +1736,13 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                         </p>
                       </div>
 
-                      {profile.height && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">{t.height}</p>
-                          <p className="font-medium">{profile.height}</p>
-                        </div>
-                      )}
-
-                      {profile.weight && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">{t.weight}</p>
-                          <p className="font-medium">{profile.weight}</p>
-                        </div>
-                      )}
-
-                      <div>
-                        <p className="text-sm text-muted-foreground">{t.disability}</p>
-                        <p className="font-medium">
-                          {getDisabilityLabel(profile.disability)}
-                          {profile.disability !== 'no' && profile.disabilityDetails && (
-                            <span className="text-muted-foreground text-sm ml-2">({profile.disabilityDetails})</span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Religious & Social Section */}
-                    <Separator />
-                    <h4 className="font-semibold flex items-center gap-2 text-primary">
-                      {language === 'hi' ? 'धार्मिक और सामाजिक' : 'Religious & Social'}
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {profile.religion && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">{t.religion}</p>
-                          <p className="font-medium">{profile.religion}</p>
-                        </div>
-                      )}
-
-                      {profile.caste && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">{t.caste}</p>
-                          <p className="font-medium">{profile.caste}</p>
-                        </div>
-                      )}
-
-                      {profile.community && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">{t.community}</p>
-                          <p className="font-medium">{profile.community}</p>
-                        </div>
-                      )}
-
-                      {profile.motherTongue && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">{t.motherTongue}</p>
-                          <p className="font-medium">{profile.motherTongue}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Marital & Horoscope Section */}
-                    <Separator />
-                    <h4 className="font-semibold flex items-center gap-2 text-primary">
-                      {language === 'hi' ? 'वैवाहिक और कुंडली' : 'Marital & Horoscope'}
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">{t.maritalStatus}</p>
                         <p className="font-medium">{getMaritalStatusLabel(profile.maritalStatus)}</p>
                       </div>
-
-                      <div>
-                        <p className="text-sm text-muted-foreground">{t.manglik}</p>
-                        <p className="font-medium">{getManglikLabel(profile.manglik)}</p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm text-muted-foreground">{t.horoscopeMatching}</p>
-                        <p className="font-medium">{getHoroscopeMatchingLabel(profile.horoscopeMatching)}</p>
-                      </div>
-
-                      {profile.birthTime && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">{t.birthTime}</p>
-                          <p className="font-medium">{profile.birthTime}</p>
-                        </div>
-                      )}
-
-                      {profile.birthPlace && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">{t.birthPlace}</p>
-                          <p className="font-medium">{profile.birthPlace}</p>
-                        </div>
-                      )}
                     </div>
 
-                    {/* Education & Career Section */}
+                    {/* Education & Career Section - Moved up for priority */}
                     <Separator />
                     <h4 className="font-semibold flex items-center gap-2 text-primary">
                       <GraduationCap size={18} />
@@ -1677,6 +1784,72 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                           </p>
                         </div>
                       )}
+                    </div>
+
+                    {/* Religious & Social Section */}
+                    <Separator />
+                    <h4 className="font-semibold flex items-center gap-2 text-primary">
+                      {language === 'hi' ? 'धार्मिक और सामाजिक' : 'Religious & Social'}
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {profile.religion && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.religion}</p>
+                          <p className="font-medium">{profile.religion}</p>
+                        </div>
+                      )}
+
+                      {profile.caste && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.caste}</p>
+                          <p className="font-medium">{profile.caste}</p>
+                        </div>
+                      )}
+
+                      {profile.community && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.community}</p>
+                          <p className="font-medium">{profile.community}</p>
+                        </div>
+                      )}
+
+                      {profile.motherTongue && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.motherTongue}</p>
+                          <p className="font-medium">{profile.motherTongue}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Physical Attributes Section */}
+                    <Separator />
+                    <h4 className="font-semibold flex items-center gap-2 text-primary">
+                      {language === 'hi' ? 'शारीरिक विशेषताएं' : 'Physical Attributes'}
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {profile.height && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.height}</p>
+                          <p className="font-medium">{profile.height}</p>
+                        </div>
+                      )}
+
+                      {profile.weight && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.weight}</p>
+                          <p className="font-medium">{profile.weight}</p>
+                        </div>
+                      )}
+
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.disability}</p>
+                        <p className="font-medium">
+                          {getDisabilityLabel(profile.disability)}
+                          {profile.disability !== 'no' && profile.disabilityDetails && (
+                            <span className="text-muted-foreground text-sm ml-2">({profile.disabilityDetails})</span>
+                          )}
+                        </p>
+                      </div>
                     </div>
 
                     {/* Location Section */}
@@ -1731,6 +1904,37 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                         <p className="text-sm text-muted-foreground">{t.smoking}</p>
                         <p className="font-medium">{getHabitLabel(profile.smokingHabit)}</p>
                       </div>
+                    </div>
+
+                    {/* Horoscope Section */}
+                    <Separator />
+                    <h4 className="font-semibold flex items-center gap-2 text-primary">
+                      {language === 'hi' ? 'कुंडली जानकारी' : 'Horoscope Information'}
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.manglik}</p>
+                        <p className="font-medium">{getManglikLabel(profile.manglik)}</p>
+                      </div>
+
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t.horoscopeMatching}</p>
+                        <p className="font-medium">{getHoroscopeMatchingLabel(profile.horoscopeMatching)}</p>
+                      </div>
+
+                      {profile.birthTime && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.birthTime}</p>
+                          <p className="font-medium">{profile.birthTime}</p>
+                        </div>
+                      )}
+
+                      {profile.birthPlace && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t.birthPlace}</p>
+                          <p className="font-medium">{profile.birthPlace}</p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

@@ -602,16 +602,49 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
               {t.personalInfo}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden">
+              {/* Basic Info */}
               <InfoItem icon={<MapPin size={18} />} label={t.location} value={`${profile.location}, ${profile.country}`} />
               <InfoItem icon={<Calendar size={18} />} label={t.dateOfBirth} value={formatDateDDMMYYYY(profile.dateOfBirth)} />
+              
+              {/* Education & Career - Grouped logically */}
               <InfoItem icon={<GraduationCap size={18} />} label={t.education} value={formatEducation(profile.education, language)} />
               <InfoItem icon={<Briefcase size={18} />} label={t.occupation} value={formatOccupation(profile.occupation, language)} />
+              {canSeeAllDetails && (
+                <>
+                  {/* Occupation/Profession - right after Employment Status */}
+                  <InfoItem 
+                    icon={<Briefcase size={18} />} 
+                    label={t.profession} 
+                    value={profile.position || t.notProvided} 
+                  />
+                  {/* Annual Income - after profession */}
+                  <InfoItem 
+                    icon={<CurrencyInr size={18} />} 
+                    label={t.annualIncome} 
+                    value={profile.salary || t.notProvided} 
+                  />
+                </>
+              )}
+              
+              {/* Religion & Community */}
               {profile.religion && (
                 <InfoItem icon={<UserCircle size={18} />} label={t.religion} value={profile.religion} />
               )}
               {profile.caste && (
                 <InfoItem icon={<UserCircle size={18} />} label={t.caste} value={profile.caste} />
               )}
+              {profile.motherTongue && (
+                <InfoItem icon={<UserCircle size={18} />} label={t.motherTongue} value={profile.motherTongue} />
+              )}
+              {canSeeAllDetails && profile.community && (
+                <InfoItem 
+                  icon={<UsersThree size={18} />} 
+                  label={t.community} 
+                  value={profile.community} 
+                />
+              )}
+              
+              {/* Physical Attributes */}
               {profile.height && (
                 <InfoItem icon={<UserCircle size={18} />} label={t.height} value={profile.height} />
               )}
@@ -634,21 +667,17 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                   } 
                 />
               )}
-              {profile.motherTongue && (
-                <InfoItem icon={<UserCircle size={18} />} label={t.motherTongue} value={profile.motherTongue} />
-              )}
-              {/* Show last login for logged in users */}
-              {canSeeFullDetails && (
+              {canSeeAllDetails && profile.disabilityDetails && (
                 <InfoItem 
-                  icon={<Clock size={18} className="text-green-600" />} 
-                  label={t.lastLogin} 
-                  value={formatLastLogin(profile.lastLoginAt)} 
+                  icon={<Wheelchair size={18} />} 
+                  label={language === 'hi' ? 'दिव्यांगता विवरण' : 'Disability Details'} 
+                  value={profile.disabilityDetails} 
                 />
               )}
-              {/* Paid verified users, Admin, and Self view see all additional fields */}
+              
+              {/* Location Details - for verified users */}
               {canSeeAllDetails && (
                 <>
-                  {/* State */}
                   {profile.state && (
                     <InfoItem 
                       icon={<MapPin size={18} />} 
@@ -656,13 +685,11 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                       value={profile.state} 
                     />
                   )}
-                  {/* Country */}
                   <InfoItem 
                     icon={<Globe size={18} />} 
                     label={t.country} 
                     value={profile.country || t.notProvided} 
                   />
-                  {/* Residential Status */}
                   {profile.residentialStatus && (
                     <InfoItem 
                       icon={<Buildings size={18} />} 
@@ -670,27 +697,58 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                       value={profile.residentialStatus.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} 
                     />
                   )}
-                  {/* Community */}
-                  {profile.community && (
-                    <InfoItem 
-                      icon={<UsersThree size={18} />} 
-                      label={t.community} 
-                      value={profile.community} 
-                    />
-                  )}
-                  {/* Birth Time */}
+                </>
+              )}
+              
+              {/* Lifestyle - Diet, Drinking, Smoking */}
+              {canSeeAllDetails && (
+                <>
+                  <InfoItem 
+                    icon={<ForkKnife size={18} />} 
+                    label={t.diet} 
+                    value={
+                      profile.dietPreference === 'veg' ? t.veg :
+                      profile.dietPreference === 'non-veg' ? t.nonVeg :
+                      profile.dietPreference === 'eggetarian' ? t.eggetarian :
+                      t.notProvided
+                    } 
+                  />
+                  <InfoItem 
+                    icon={<Wine size={18} />} 
+                    label={t.drinkingHabit} 
+                    value={
+                      profile.drinkingHabit === 'never' ? t.never :
+                      profile.drinkingHabit === 'occasionally' ? t.occasionally :
+                      profile.drinkingHabit === 'regularly' ? t.regularly :
+                      t.notProvided
+                    } 
+                  />
+                  <InfoItem 
+                    icon={<Cigarette size={18} />} 
+                    label={t.smokingHabit} 
+                    value={
+                      profile.smokingHabit === 'never' ? t.never :
+                      profile.smokingHabit === 'occasionally' ? t.occasionally :
+                      profile.smokingHabit === 'regularly' ? t.regularly :
+                      t.notProvided
+                    } 
+                  />
+                </>
+              )}
+              
+              {/* Horoscope & Birth Details */}
+              {canSeeAllDetails && (
+                <>
                   <InfoItem 
                     icon={<Clock size={18} />} 
                     label={t.birthTime} 
                     value={profile.birthTime || t.notProvided} 
                   />
-                  {/* Birth Place */}
                   <InfoItem 
                     icon={<MapPin size={18} />} 
                     label={t.birthPlace} 
                     value={profile.birthPlace || t.notProvided} 
                   />
-                  {/* Horoscope Matching */}
                   <InfoItem 
                     icon={<Sun size={18} />} 
                     label={t.horoscopeMatching} 
@@ -702,40 +760,6 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                       t.notProvided
                     } 
                   />
-                  {/* Diet Preference */}
-                  <InfoItem 
-                    icon={<ForkKnife size={18} />} 
-                    label={t.diet} 
-                    value={
-                      profile.dietPreference === 'veg' ? t.veg :
-                      profile.dietPreference === 'non-veg' ? t.nonVeg :
-                      profile.dietPreference === 'eggetarian' ? t.eggetarian :
-                      t.notProvided
-                    } 
-                  />
-                  {/* Drinking Habit */}
-                  <InfoItem 
-                    icon={<Wine size={18} />} 
-                    label={t.drinkingHabit} 
-                    value={
-                      profile.drinkingHabit === 'never' ? t.never :
-                      profile.drinkingHabit === 'occasionally' ? t.occasionally :
-                      profile.drinkingHabit === 'regularly' ? t.regularly :
-                      t.notProvided
-                    } 
-                  />
-                  {/* Smoking Habit */}
-                  <InfoItem 
-                    icon={<Cigarette size={18} />} 
-                    label={t.smokingHabit} 
-                    value={
-                      profile.smokingHabit === 'never' ? t.never :
-                      profile.smokingHabit === 'occasionally' ? t.occasionally :
-                      profile.smokingHabit === 'regularly' ? t.regularly :
-                      t.notProvided
-                    } 
-                  />
-                  {/* Manglik */}
                   <InfoItem 
                     icon={<Star size={18} />} 
                     label={t.manglik} 
@@ -745,34 +769,31 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                       t.notProvided
                     } 
                   />
-                  {/* Disability Details */}
-                  {profile.disabilityDetails && (
-                    <InfoItem 
-                      icon={<Wheelchair size={18} />} 
-                      label={language === 'hi' ? 'दिव्यांगता विवरण' : 'Disability Details'} 
-                      value={profile.disabilityDetails} 
-                    />
-                  )}
-                  {/* Annual Income / Salary */}
-                  <InfoItem 
-                    icon={<CurrencyInr size={18} />} 
-                    label={t.annualIncome} 
-                    value={profile.salary || t.notProvided} 
-                  />
-                  {/* Occupation/Profession */}
-                  <InfoItem 
-                    icon={<Briefcase size={18} />} 
-                    label={t.profession} 
-                    value={profile.position || t.notProvided} 
-                  />
-                  {/* Relation to Profile */}
+                </>
+              )}
+              
+              {/* Last Login - for verified users */}
+              {canSeeFullDetails && (
+                <InfoItem 
+                  icon={<Clock size={18} className="text-green-600" />} 
+                  label={t.lastLogin} 
+                  value={formatLastLogin(profile.lastLoginAt)} 
+                />
+              )}
+              
+              {/* Admin/Self only fields */}
+              {canSeeAllDetails && (
+                <>
                   <InfoItem 
                     icon={<UsersThree size={18} />} 
                     label={t.relation} 
                     value={profile.relationToProfile || (language === 'hi' ? 'स्वयं' : 'Self')} 
                   />
-                  {/* Membership Plan - Only visible to Admin or Self */}
-                  {(isAdmin || isSelf) && (
+                </>
+              )}
+              
+              {/* Membership Plan - Only visible to Admin or Self */}
+              {(isAdmin || isSelf) && (
                     <InfoItem 
                       icon={<Star size={18} className="text-amber-500" />} 
                       label={t.membershipPlan} 
@@ -799,8 +820,6 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
                       value={profile.idProofType.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} 
                     />
                   )}
-                </>
-              )}
             </div>
           </section>
 
