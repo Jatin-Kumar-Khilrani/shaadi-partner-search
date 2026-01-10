@@ -1036,6 +1036,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     removeVerification: language === 'hi' ? 'सत्यापन हटाएं' : 'Remove Verification',
     markFaceVerified: language === 'hi' ? 'चेहरा सत्यापित चिह्नित करें' : 'Mark Face Verified',
     markFaceNotVerified: language === 'hi' ? 'चेहरा असत्यापित चिह्नित करें' : 'Mark Face Not Verified',
+    resetFaceVerification: language === 'hi' ? 'चेहरा सत्यापन रीसेट करें' : 'Reset Face Verification',
+    faceVerificationReset: language === 'hi' ? 'चेहरा सत्यापन रीसेट हो गया!' : 'Face Verification Reset!',
     faceVerifiedSuccess: language === 'hi' ? 'चेहरा सत्यापित के रूप में चिह्नित!' : 'Marked as Face Verified!',
     faceNotVerifiedSuccess: language === 'hi' ? 'चेहरा असत्यापित के रूप में चिह्नित!' : 'Marked as Face Not Verified!',
     photoVerifiedBadge: language === 'hi' ? 'फोटो सत्यापित' : 'Photo Verified',
@@ -1946,6 +1948,28 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
     } else {
       toast.warning(t.faceNotVerifiedSuccess)
     }
+  }
+
+  // Handle resetting face verification (set to undefined/pending)
+  const handleResetFaceVerification = (profile: Profile) => {
+    const updatedProfile: Profile = {
+      ...profile,
+      photoVerified: undefined,
+      photoVerifiedAt: undefined,
+      photoVerifiedBy: undefined,
+      photoVerificationNotes: undefined,
+      photoVerificationConfidence: undefined
+    }
+    
+    // Update profiles state (this auto-persists to KV storage)
+    setProfiles((current) => 
+      (current || []).map(p => p.id === profile.id ? updatedProfile : p)
+    )
+    
+    // Update dialog state to show the updated profile
+    setFaceVerificationDialog(updatedProfile)
+    
+    toast.info(t.faceVerificationReset)
   }
 
   // Handle setting trust level manually by admin
@@ -8111,6 +8135,16 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                   <ScanSmiley size={16} />
                   {isVerifyingFace ? t.verifying : t.verifyWithAI}
                 </Button>
+                {faceVerificationDialog.photoVerified !== undefined && (
+                  <Button 
+                    onClick={() => handleResetFaceVerification(faceVerificationDialog)}
+                    variant="outline"
+                    className="gap-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                  >
+                    <ArrowCounterClockwise size={16} />
+                    {t.resetFaceVerification}
+                  </Button>
+                )}
                 <Button 
                   onClick={() => handleMarkPhotoVerified(faceVerificationDialog, false)}
                   variant="outline"

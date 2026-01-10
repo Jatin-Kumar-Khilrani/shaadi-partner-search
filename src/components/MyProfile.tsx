@@ -105,30 +105,6 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
   const [showRenewalCamera, setShowRenewalCamera] = useState(false)
   const renewalFileInputRef = useRef<HTMLInputElement>(null)
   
-  // Refresh state for pending payment/approval (manual only, no auto-poll)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null)
-  const [refreshCooldown, setRefreshCooldown] = useState(false)
-  const REFRESH_COOLDOWN_MS = 10000 // 10 second cooldown between checks
-
-  // Handle manual status check with cooldown
-  const handleCheckStatus = async () => {
-    if (isRefreshing || refreshCooldown || !onRefreshProfile) return
-    
-    setIsRefreshing(true)
-    try {
-      await onRefreshProfile()
-      setLastRefreshTime(new Date())
-      toast.success(language === 'hi' ? 'स्थिति अपडेट की गई' : 'Status updated')
-      // Set cooldown
-      setRefreshCooldown(true)
-      setTimeout(() => setRefreshCooldown(false), REFRESH_COOLDOWN_MS)
-    } catch (error) {
-      toast.error(language === 'hi' ? 'रिफ्रेश विफल' : 'Refresh failed')
-    } finally {
-      setIsRefreshing(false)
-    }
-  }
 
   const t = {
     title: language === 'hi' ? 'मेरी प्रोफाइल' : 'My Profile',
@@ -1080,29 +1056,6 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                     : `Uploaded on: ${new Date(profile.paymentUploadedAt).toLocaleDateString()}`}
                 </p>
               )}
-              <div className="flex items-center gap-3 mt-3">
-                {onRefreshProfile && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleCheckStatus}
-                    disabled={isRefreshing || refreshCooldown}
-                    className="border-purple-400 text-purple-700 hover:bg-purple-100"
-                  >
-                    <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
-                    {refreshCooldown 
-                      ? (language === 'hi' ? 'कृपया प्रतीक्षा करें...' : 'Please wait...')
-                      : (language === 'hi' ? 'स्थिति जांचें' : 'Check Status')}
-                  </Button>
-                )}
-                {lastRefreshTime && (
-                  <span className="text-xs text-purple-600">
-                    {language === 'hi' 
-                      ? `अंतिम जांच: ${lastRefreshTime.toLocaleTimeString('hi-IN')}`
-                      : `Last checked: ${lastRefreshTime.toLocaleTimeString()}`}
-                  </span>
-                )}
-              </div>
             </AlertDescription>
           </Alert>
         )}
@@ -1125,29 +1078,6 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
                 <Badge className="bg-green-500 text-white">✓ {language === 'hi' ? 'पहचान पत्र सत्यापित' : 'ID Verified'}</Badge>
                 <Badge className="bg-green-500 text-white">✓ {language === 'hi' ? 'भुगतान सत्यापित' : 'Payment Verified'}</Badge>
               </div>
-              <div className="flex items-center gap-3 mt-3">
-                {onRefreshProfile && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleCheckStatus}
-                    disabled={isRefreshing || refreshCooldown}
-                    className="border-emerald-400 text-emerald-700 hover:bg-emerald-100"
-                  >
-                    <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
-                    {refreshCooldown 
-                      ? (language === 'hi' ? 'कृपया प्रतीक्षा करें...' : 'Please wait...')
-                      : (language === 'hi' ? 'स्थिति जांचें' : 'Check Status')}
-                  </Button>
-                )}
-                {lastRefreshTime && (
-                  <span className="text-xs text-emerald-600">
-                    {language === 'hi' 
-                      ? `अंतिम जांच: ${lastRefreshTime.toLocaleTimeString('hi-IN')}`
-                      : `Last checked: ${lastRefreshTime.toLocaleTimeString()}`}
-                  </span>
-                )}
-              </div>
             </AlertDescription>
           </Alert>
         )}
@@ -1165,29 +1095,6 @@ export function MyProfile({ profile, profiles = [], language, onEdit, onUpgradeN
             </AlertTitle>
             <AlertDescription className="text-blue-700 dark:text-blue-300">
               <p>{t.pendingApprovalDesc}</p>
-              <div className="flex items-center gap-3 mt-3">
-                {onRefreshProfile && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleCheckStatus}
-                    disabled={isRefreshing || refreshCooldown}
-                    className="border-blue-400 text-blue-700 hover:bg-blue-100"
-                  >
-                    <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
-                    {refreshCooldown 
-                      ? (language === 'hi' ? 'कृपया प्रतीक्षा करें...' : 'Please wait...')
-                      : (language === 'hi' ? 'स्थिति जांचें' : 'Check Status')}
-                  </Button>
-                )}
-                {lastRefreshTime && (
-                  <span className="text-xs text-blue-600">
-                    {language === 'hi' 
-                      ? `अंतिम जांच: ${lastRefreshTime.toLocaleTimeString('hi-IN')}`
-                      : `Last checked: ${lastRefreshTime.toLocaleTimeString()}`}
-                  </span>
-                )}
-              </div>
             </AlertDescription>
           </Alert>
         )}
