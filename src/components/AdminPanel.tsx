@@ -599,7 +599,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
   const [returnToEditReason, setReturnToEditReason] = useState('')
   // Membership table search, sort, and pagination state
   const [membershipSearch, setMembershipSearch] = useState('')
-  const [membershipSort, setMembershipSort] = useState<{ field: 'name' | 'profileId' | 'plan' | 'expiry' | 'createdAt', direction: 'asc' | 'desc' }>({ field: 'createdAt', direction: 'desc' })
+  const [membershipSort, setMembershipSort] = useState<{ field: 'name' | 'profileId' | 'plan' | 'interests' | 'contacts' | 'expiry' | 'status' | 'createdAt', direction: 'asc' | 'desc' }>({ field: 'createdAt', direction: 'desc' })
   const [membershipPage, setMembershipPage] = useState(1)
   const membershipPageSize = 10
   const [membershipEditData, setMembershipEditData] = useState<{
@@ -6913,6 +6913,38 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                     // Sort profiles
                     const sortedProfiles = [...filteredProfiles].sort((a, b) => {
                       const dir = membershipSort.direction === 'asc' ? 1 : -1
+                      
+                      // Helper to calculate interests remaining
+                      const getInterestsRemaining = (p: typeof a) => {
+                        const interestsUsed = p.chatRequestsUsed?.length || 0
+                        const boostInterests = p.boostInterestsRemaining || 0
+                        const planLimit = p.membershipPlan === '1-year' ? (membershipSettings?.oneYearChatLimit || 50) :
+                          p.membershipPlan === '6-month' ? (membershipSettings?.sixMonthChatLimit || 30) :
+                          (membershipSettings?.freePlanChatLimit || 10)
+                        return Math.max(0, planLimit + boostInterests - interestsUsed)
+                      }
+                      
+                      // Helper to calculate contacts remaining
+                      const getContactsRemaining = (p: typeof a) => {
+                        const contactsUsed = p.contactViewsUsed?.length || 0
+                        const boostContacts = p.boostContactsRemaining || 0
+                        const planLimit = p.membershipPlan === '1-year' ? (membershipSettings?.oneYearContactLimit || 50) :
+                          p.membershipPlan === '6-month' ? (membershipSettings?.sixMonthContactLimit || 30) :
+                          (membershipSettings?.freePlanContactLimit || 0)
+                        return Math.max(0, planLimit + boostContacts - contactsUsed)
+                      }
+                      
+                      // Helper to get status order
+                      const getStatusOrder = (p: typeof a) => {
+                        const hasMembership = p.membershipPlan && p.membershipPlan !== 'free' && p.membershipExpiry
+                        if (!hasMembership) return 0 // No Membership
+                        const isExpired = new Date(p.membershipExpiry!) < new Date()
+                        if (isExpired) return 1 // Expired
+                        const isExpiringSoon = new Date(p.membershipExpiry!) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                        if (isExpiringSoon) return 2 // Expiring Soon
+                        return 3 // Active
+                      }
+                      
                       switch (membershipSort.field) {
                         case 'name':
                           return dir * (a.fullName || '').localeCompare(b.fullName || '')
@@ -6924,8 +6956,14 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                           const bOrder = planOrder[b.membershipPlan as keyof typeof planOrder] || 0
                           return dir * (aOrder - bOrder)
                         }
+                        case 'interests':
+                          return dir * (getInterestsRemaining(a) - getInterestsRemaining(b))
+                        case 'contacts':
+                          return dir * (getContactsRemaining(a) - getContactsRemaining(b))
                         case 'expiry':
                           return dir * (new Date(a.membershipExpiry || 0).getTime() - new Date(b.membershipExpiry || 0).getTime())
+                        case 'status':
+                          return dir * (getStatusOrder(a) - getStatusOrder(b))
                         case 'createdAt':
                         default:
                           return dir * (new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime())
@@ -6953,10 +6991,20 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 }}>
                                   <div className="flex items-center gap-1">
                                     {t.name}
-                                    {membershipSort.field === 'name' && (membershipSort.direction === 'asc' ? <CaretUp size={14} /> : <CaretDown size={14} />)}
+                                    {membershipSort.field === 'name' ? (membershipSort.direction === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                                   </div>
                                 </TableHead>
-                                <TableHead className="whitespace-nowrap">{t.profileId}</TableHead>
+                                <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => {
+                                  setMembershipSort(prev => ({
+                                    field: 'profileId',
+                                    direction: prev.field === 'profileId' && prev.direction === 'asc' ? 'desc' : 'asc'
+                                  }))
+                                }}>
+                                  <div className="flex items-center gap-1">
+                                    {t.profileId}
+                                    {membershipSort.field === 'profileId' ? (membershipSort.direction === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                                  </div>
+                                </TableHead>
                                 <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => {
                                   setMembershipSort(prev => ({
                                     field: 'plan',
@@ -6965,11 +7013,31 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 }}>
                                   <div className="flex items-center gap-1">
                                     {t.membershipPlan}
-                                    {membershipSort.field === 'plan' && (membershipSort.direction === 'asc' ? <CaretUp size={14} /> : <CaretDown size={14} />)}
+                                    {membershipSort.field === 'plan' ? (membershipSort.direction === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                                   </div>
                                 </TableHead>
-                                <TableHead className="whitespace-nowrap">{language === 'hi' ? 'रुचि' : 'Interests'}</TableHead>
-                                <TableHead className="whitespace-nowrap">{language === 'hi' ? 'संपर्क' : 'Contacts'}</TableHead>
+                                <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => {
+                                  setMembershipSort(prev => ({
+                                    field: 'interests',
+                                    direction: prev.field === 'interests' && prev.direction === 'asc' ? 'desc' : 'asc'
+                                  }))
+                                }}>
+                                  <div className="flex items-center gap-1">
+                                    {language === 'hi' ? 'रुचि' : 'Interests'}
+                                    {membershipSort.field === 'interests' ? (membershipSort.direction === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                                  </div>
+                                </TableHead>
+                                <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => {
+                                  setMembershipSort(prev => ({
+                                    field: 'contacts',
+                                    direction: prev.field === 'contacts' && prev.direction === 'asc' ? 'desc' : 'asc'
+                                  }))
+                                }}>
+                                  <div className="flex items-center gap-1">
+                                    {language === 'hi' ? 'संपर्क' : 'Contacts'}
+                                    {membershipSort.field === 'contacts' ? (membershipSort.direction === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                                  </div>
+                                </TableHead>
                                 <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => {
                                   setMembershipSort(prev => ({
                                     field: 'expiry',
@@ -6978,10 +7046,20 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                                 }}>
                                   <div className="flex items-center gap-1">
                                     {t.membershipExpiry}
-                                    {membershipSort.field === 'expiry' && (membershipSort.direction === 'asc' ? <CaretUp size={14} /> : <CaretDown size={14} />)}
+                                    {membershipSort.field === 'expiry' ? (membershipSort.direction === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
                                   </div>
                                 </TableHead>
-                                <TableHead className="whitespace-nowrap">{t.status}</TableHead>
+                                <TableHead className="whitespace-nowrap cursor-pointer hover:bg-muted/50" onClick={() => {
+                                  setMembershipSort(prev => ({
+                                    field: 'status',
+                                    direction: prev.field === 'status' && prev.direction === 'asc' ? 'desc' : 'asc'
+                                  }))
+                                }}>
+                                  <div className="flex items-center gap-1">
+                                    {t.status}
+                                    {membershipSort.field === 'status' ? (membershipSort.direction === 'asc' ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />) : <CaretDown size={14} className="opacity-30" />}
+                                  </div>
+                                </TableHead>
                                 <TableHead className="whitespace-nowrap">{t.actions}</TableHead>
                               </TableRow>
                             </TableHeader>
@@ -9025,8 +9103,8 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
 
       {/* Receipt View Dialog */}
       <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
-        <DialogContent className="max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
-          <DialogHeader className="shrink-0">
+        <DialogContent className="max-w-xl max-h-[90vh] flex flex-col overflow-hidden p-0">
+          <DialogHeader className="shrink-0 p-6 pb-0">
             <DialogTitle className="flex items-center gap-2">
               <FilePdf size={24} className="text-red-600" />
               {t.paymentReceipt}
@@ -9034,7 +9112,7 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
           </DialogHeader>
 
           {selectedTransaction && (
-            <ScrollArea className="flex-1 min-h-0 pr-4">
+            <div className="flex-1 overflow-y-auto px-6 py-4">
               <div id="receipt-content" className="space-y-4">
                 {/* Receipt Header */}
                 <div className="text-center border-b pb-4">
@@ -9188,10 +9266,10 @@ export function AdminPanel({ profiles, setProfiles, users, language, onLogout, o
                 <p>{language === 'hi' ? 'धन्यवाद!' : 'Thank you for your payment!'}</p>
               </div>
               </div>
-            </ScrollArea>
+            </div>
           )}
 
-          <div className="flex justify-end gap-2 mt-4 flex-wrap shrink-0">
+          <div className="flex justify-end gap-2 p-6 pt-4 flex-wrap shrink-0 border-t bg-background">
             <Button variant="outline" onClick={() => setShowReceiptDialog(false)}>
               {t.close}
             </Button>
