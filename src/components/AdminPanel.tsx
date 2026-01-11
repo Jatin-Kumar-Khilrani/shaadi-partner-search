@@ -1100,8 +1100,14 @@ export function AdminPanel({ profiles, setProfiles, users, setUsers, language, o
     trustLevel2: language === 'hi' ? 'स्तर 2 - फोटो सत्यापित' : 'Level 2 - Photo Verified',
     trustLevel3: language === 'hi' ? 'स्तर 3 - ID सत्यापित' : 'Level 3 - ID Verified',
     trustLevel4: language === 'hi' ? 'स्तर 4 - पूर्ण सत्यापित' : 'Level 4 - Fully Verified',
-    trustLevel5: language === 'hi' ? 'स्तर 5 - प्रीमियम सत्यापित' : 'Level 5 - Premium Verified',
+    trustLevel5: language === 'hi' ? 'स्तर 5 - प्रीमियम (व्यक्तिगत सत्यापन)' : 'Level 5 - Premium (Personal Verification)',
     trustLevelUpdated: language === 'hi' ? 'विश्वास स्तर अपडेट हो गया!' : 'Trust level updated!',
+    trustLevelHelp1: language === 'hi' ? 'ईमेल + मोबाइल OTP सत्यापित' : 'Email + Mobile OTP verified',
+    trustLevelHelp2: language === 'hi' ? 'सेल्फी फोटो मैच हुआ' : 'Selfie photo matched',
+    trustLevelHelp3: language === 'hi' ? 'सरकारी ID सत्यापित' : 'Government ID verified',
+    trustLevelHelp4: language === 'hi' ? 'फोटो + ID दोनों सत्यापित' : 'Both Photo + ID verified',
+    trustLevelHelp5: language === 'hi' ? 'Admin द्वारा व्यक्तिगत रूप से सत्यापित' : 'Personally verified by Admin',
+    trustLevelAutoNote: language === 'hi' ? 'L1-L4 स्वचालित, L5 केवल मैनुअल' : 'L1-L4 auto-set, L5 manual only',
     // Pagination translations
     page: language === 'hi' ? 'पृष्ठ' : 'Page',
     of: language === 'hi' ? 'का' : 'of',
@@ -3538,55 +3544,75 @@ export function AdminPanel({ profiles, setProfiles, users, setUsers, language, o
                                       {t.setTrustLevel}
                                       <span className="ml-auto text-xs opacity-70">L{profile.trustLevel}</span>
                                     </DropdownMenuSubTrigger>
-                                    <DropdownMenuSubContent>
+                                    <DropdownMenuSubContent className="w-72">
+                                      {/* Help note at top */}
+                                      <div className="px-2 py-1.5 text-[10px] text-muted-foreground border-b mb-1">
+                                        ℹ️ {t.trustLevelAutoNote}
+                                      </div>
                                       <DropdownMenuItem 
                                         onClick={() => handleSetTrustLevel(profile, 1)}
                                         className={profile.trustLevel === 1 ? 'bg-muted' : ''}
                                       >
-                                        <div className="flex items-center gap-2">
-                                          <span className="w-3 h-3 rounded-full bg-gray-400" />
-                                          <span>{t.trustLevel1}</span>
-                                          {profile.trustLevel === 1 && <Check size={14} className="ml-auto" />}
+                                        <div className="flex items-center gap-2 w-full">
+                                          <span className="w-3 h-3 rounded-full bg-gray-400 shrink-0" />
+                                          <div className="flex-1 min-w-0">
+                                            <span className="block text-sm">{t.trustLevel1}</span>
+                                            <span className="block text-[10px] text-muted-foreground">{t.trustLevelHelp1}</span>
+                                          </div>
+                                          {profile.trustLevel === 1 && <Check size={14} className="ml-auto shrink-0" />}
                                         </div>
                                       </DropdownMenuItem>
                                       <DropdownMenuItem 
                                         onClick={() => handleSetTrustLevel(profile, 2)}
                                         className={profile.trustLevel === 2 ? 'bg-blue-500/10' : ''}
                                       >
-                                        <div className="flex items-center gap-2">
-                                          <span className="w-3 h-3 rounded-full bg-blue-500" />
-                                          <span>{t.trustLevel2}</span>
-                                          {profile.trustLevel === 2 && <Check size={14} className="ml-auto" />}
+                                        <div className="flex items-center gap-2 w-full">
+                                          <span className="w-3 h-3 rounded-full bg-blue-500 shrink-0" />
+                                          <div className="flex-1 min-w-0">
+                                            <span className="block text-sm">{t.trustLevel2}</span>
+                                            <span className="block text-[10px] text-muted-foreground">{t.trustLevelHelp2}</span>
+                                          </div>
+                                          {profile.trustLevel === 2 && <Check size={14} className="ml-auto shrink-0" />}
                                         </div>
                                       </DropdownMenuItem>
                                       <DropdownMenuItem 
                                         onClick={() => handleSetTrustLevel(profile, 3)}
                                         className={profile.trustLevel === 3 ? 'bg-teal/10' : ''}
                                       >
-                                        <div className="flex items-center gap-2">
-                                          <span className="w-3 h-3 rounded-full bg-teal" />
-                                          <span>{t.trustLevel3}</span>
-                                          {profile.trustLevel === 3 && <Check size={14} className="ml-auto" />}
+                                        <div className="flex items-center gap-2 w-full">
+                                          <span className="w-3 h-3 rounded-full bg-teal shrink-0" />
+                                          <div className="flex-1 min-w-0">
+                                            <span className="block text-sm">{t.trustLevel3}</span>
+                                            <span className="block text-[10px] text-muted-foreground">{t.trustLevelHelp3}</span>
+                                          </div>
+                                          {profile.trustLevel === 3 && <Check size={14} className="ml-auto shrink-0" />}
                                         </div>
                                       </DropdownMenuItem>
                                       <DropdownMenuItem 
                                         onClick={() => handleSetTrustLevel(profile, 4)}
                                         className={profile.trustLevel === 4 ? 'bg-green-600/10' : ''}
                                       >
-                                        <div className="flex items-center gap-2">
-                                          <span className="w-3 h-3 rounded-full bg-green-600" />
-                                          <span>{t.trustLevel4}</span>
-                                          {profile.trustLevel === 4 && <Check size={14} className="ml-auto" />}
+                                        <div className="flex items-center gap-2 w-full">
+                                          <span className="w-3 h-3 rounded-full bg-green-600 shrink-0" />
+                                          <div className="flex-1 min-w-0">
+                                            <span className="block text-sm">{t.trustLevel4}</span>
+                                            <span className="block text-[10px] text-muted-foreground">{t.trustLevelHelp4}</span>
+                                          </div>
+                                          {profile.trustLevel === 4 && <Check size={14} className="ml-auto shrink-0" />}
                                         </div>
                                       </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
                                       <DropdownMenuItem 
                                         onClick={() => handleSetTrustLevel(profile, 5)}
-                                        className={profile.trustLevel === 5 ? 'bg-accent/10' : ''}
+                                        className={`${profile.trustLevel === 5 ? 'bg-accent/10' : ''}`}
                                       >
-                                        <div className="flex items-center gap-2">
-                                          <span className="w-3 h-3 rounded-full bg-accent" />
-                                          <span>{t.trustLevel5}</span>
-                                          {profile.trustLevel === 5 && <Check size={14} className="ml-auto" />}
+                                        <div className="flex items-center gap-2 w-full">
+                                          <span className="w-3 h-3 rounded-full bg-accent shrink-0" />
+                                          <div className="flex-1 min-w-0">
+                                            <span className="block text-sm font-medium text-accent">{t.trustLevel5}</span>
+                                            <span className="block text-[10px] text-muted-foreground">{t.trustLevelHelp5}</span>
+                                          </div>
+                                          {profile.trustLevel === 5 && <Check size={14} className="ml-auto shrink-0" />}
                                         </div>
                                       </DropdownMenuItem>
                                     </DropdownMenuSubContent>
