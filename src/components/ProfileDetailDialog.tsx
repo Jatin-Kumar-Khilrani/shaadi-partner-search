@@ -155,21 +155,38 @@ export function ProfileDetailDialog({ profile, open, onClose, language, currentU
   const getTrustBadge = () => {
     if (profile.trustLevel >= 5) {
       return { 
-        text: language === 'hi' ? 'स्तर 5 - वीडियो सत्यापित' : 'Level 5 - Video Verified', 
+        text: language === 'hi' ? 'प्रीमियम सत्यापित' : 'Premium Verified', 
         color: 'bg-accent text-accent-foreground', 
-        icon: <Seal weight="fill" size={18} /> 
+        icon: <Seal weight="fill" size={18} />,
+        tooltip: language === 'hi' ? 'फोटो, ID और एडमिन द्वारा समीक्षित - उच्चतम विश्वास स्तर' : 'Photo, ID & Admin reviewed - Highest trust level'
+      }
+    } else if (profile.trustLevel >= 4) {
+      return { 
+        text: language === 'hi' ? 'पूर्ण सत्यापित' : 'Fully Verified', 
+        color: 'bg-green-600 text-white', 
+        icon: <ShieldCheck weight="fill" size={18} />,
+        tooltip: language === 'hi' ? 'फोटो और ID दोनों सत्यापित - पहचान एवं फोटो प्रामाणिक' : 'Photo & ID both verified - Identity & photos confirmed'
       }
     } else if (profile.trustLevel >= 3) {
       return { 
-        text: language === 'hi' ? 'स्तर 3 - ID सत्यापित' : 'Level 3 - ID Verified', 
+        text: language === 'hi' ? 'ID सत्यापित' : 'ID Verified', 
         color: 'bg-teal text-teal-foreground', 
-        icon: <ShieldCheck weight="fill" size={18} /> 
+        icon: <ShieldCheck weight="fill" size={18} />,
+        tooltip: language === 'hi' ? 'सरकारी ID सत्यापित - पहचान प्रामाणिक' : 'Government ID verified - Identity confirmed'
+      }
+    } else if (profile.trustLevel >= 2) {
+      return { 
+        text: language === 'hi' ? 'फोटो सत्यापित' : 'Photo Verified', 
+        color: 'bg-blue-500 text-white', 
+        icon: <ShieldCheck weight="duotone" size={18} />,
+        tooltip: language === 'hi' ? 'सेल्फी फोटो से मैच हुई - वास्तविक फोटो' : 'Selfie matched with photos - Real photos'
       }
     } else if (profile.trustLevel >= 1) {
       return { 
-        text: language === 'hi' ? 'स्तर 1 - मोबाइल सत्यापित' : 'Level 1 - Mobile Verified', 
+        text: language === 'hi' ? 'संपर्क सत्यापित' : 'Contact Verified', 
         color: 'bg-muted text-muted-foreground', 
-        icon: <ShieldCheck weight="regular" size={18} /> 
+        icon: <ShieldCheck weight="regular" size={18} />,
+        tooltip: language === 'hi' ? 'ईमेल और मोबाइल सत्यापित' : 'Email & Mobile verified'
       }
     }
     return null

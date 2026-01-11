@@ -1096,9 +1096,11 @@ export function AdminPanel({ profiles, setProfiles, users, setUsers, language, o
     // Trust Level translations
     trustLevel: language === 'hi' ? 'विश्वास स्तर' : 'Trust Level',
     setTrustLevel: language === 'hi' ? 'विश्वास स्तर सेट करें' : 'Set Trust Level',
-    trustLevel1: language === 'hi' ? 'स्तर 1 - मोबाइल सत्यापित' : 'Level 1 - Mobile Verified',
+    trustLevel1: language === 'hi' ? 'स्तर 1 - संपर्क सत्यापित' : 'Level 1 - Contact Verified',
+    trustLevel2: language === 'hi' ? 'स्तर 2 - फोटो सत्यापित' : 'Level 2 - Photo Verified',
     trustLevel3: language === 'hi' ? 'स्तर 3 - ID सत्यापित' : 'Level 3 - ID Verified',
-    trustLevel5: language === 'hi' ? 'स्तर 5 - वीडियो सत्यापित' : 'Level 5 - Video Verified',
+    trustLevel4: language === 'hi' ? 'स्तर 4 - पूर्ण सत्यापित' : 'Level 4 - Fully Verified',
+    trustLevel5: language === 'hi' ? 'स्तर 5 - प्रीमियम सत्यापित' : 'Level 5 - Premium Verified',
     trustLevelUpdated: language === 'hi' ? 'विश्वास स्तर अपडेट हो गया!' : 'Trust level updated!',
     // Pagination translations
     page: language === 'hi' ? 'पृष्ठ' : 'Page',
@@ -1461,21 +1463,35 @@ export function AdminPanel({ profiles, setProfiles, users, setUsers, language, o
     setDigilockerFormData({ documentType: 'aadhaar', notes: '' })
   }
 
+  // Helper function to calculate trust level based on verification status
+  // Level 1: Contact Verified (Email & Mobile) - Base level for all approved profiles
+  // Level 2: Photo Verified (Selfie matches profile photos)
+  // Level 3: ID Verified (Government ID verified)
+  // Level 4: Fully Verified (Photo + ID verified)
+  // Level 5: Premium Verified (Photo + ID + Admin reviewed) - Set manually by admin only
+  const calculateTrustLevel = (profile: { idProofVerified?: boolean; photoVerified?: boolean; trustLevel?: number }): number => {
+    // If admin has set Level 5 (Premium), keep it - only admin can set/remove this
+    if (profile.trustLevel === 5) {
+      return 5
+    }
+    
+    if (profile.idProofVerified && profile.photoVerified === true) {
+      return 4 // Both ID and Photo/Face verified
+    } else if (profile.idProofVerified) {
+      return 3 // Only ID verified
+    } else if (profile.photoVerified === true) {
+      return 2 // Only Photo/Face verified
+    }
+    return 1 // Base level - Contact verified
+  }
+
   const handleApprove = (profileId: string) => {
     setProfiles((current) => 
       (current || []).map(p => {
         if (p.id !== profileId) return p
         
-        // Calculate trust level based on verification status
-        // Level 1: Mobile verified (base)
-        // Level 3: ID verified (idProofVerified)
-        // Level 5: Video/Face verified (photoVerified with face match)
-        let trustLevel = p.trustLevel || 1
-        if (p.idProofVerified && p.photoVerified === true) {
-          trustLevel = 5 // Both ID and Face verified
-        } else if (p.idProofVerified) {
-          trustLevel = 3 // Only ID verified
-        }
+        // Use helper function to calculate trust level
+        const trustLevel = calculateTrustLevel(p)
         
         return { 
           ...p, 
@@ -1566,6 +1582,28 @@ export function AdminPanel({ profiles, setProfiles, users, setUsers, language, o
     toast.success(reason ? t.profileReturnedForEdit : t.movedToPending)
     setReturnToEditDialog(null)
     setReturnToEditReason('')
+  }
+
+  // Handle bulk move to pending (for rejected profiles)
+  const handleBulkMoveToPending = (ids: string[]) => {
+    const count = ids.length
+    ids.forEach(id => {
+      setProfiles((current) => 
+        (current || []).map(p => 
+          p.id === id 
+            ? { 
+                ...p, 
+                status: 'pending' as const, 
+                verifiedAt: undefined,
+                rejectionReason: undefined,
+                rejectedAt: undefined
+              }
+            : p
+        )
+      )
+    })
+    setSelectedDatabaseProfiles([])
+    toast.success(language === 'hi' ? `${count} प्रोफाइल पेंडिंग में ले जाया गया!` : `${count} profiles moved to pending!`)
   }
 
   // Handle Return for Payment Only (after face and ID verification)
@@ -2027,13 +2065,20 @@ export function AdminPanel({ profiles, setProfiles, users, setUsers, language, o
 
   // Handle marking photo as verified/not verified (manual admin action)
   const handleMarkPhotoVerified = (profile: Profile, isVerified: boolean) => {
+    // Calculate new trust level based on updated photo verification status
+    const newTrustLevel = calculateTrustLevel({
+      ...profile,
+      photoVerified: isVerified
+    })
+    
     const updatedProfile: Profile = {
       ...profile,
       photoVerified: isVerified,
       photoVerifiedAt: new Date().toISOString(),
       photoVerifiedBy: 'Admin',
       photoVerificationNotes: isVerified ? 'Manually verified by admin' : 'Manually marked as not verified by admin',
-      photoVerificationConfidence: isVerified ? 100 : 0
+      photoVerificationConfidence: isVerified ? 100 : 0,
+      trustLevel: newTrustLevel
     }
     
     // Update profiles state (this auto-persists to KV storage)
@@ -2053,13 +2098,20 @@ export function AdminPanel({ profiles, setProfiles, users, setUsers, language, o
 
   // Handle resetting face verification (set to undefined/pending)
   const handleResetFaceVerification = (profile: Profile) => {
+    // Recalculate trust level with photo verification removed
+    const newTrustLevel = calculateTrustLevel({
+      ...profile,
+      photoVerified: undefined
+    })
+    
     const updatedProfile: Profile = {
       ...profile,
       photoVerified: undefined,
       photoVerifiedAt: undefined,
       photoVerifiedBy: undefined,
       photoVerificationNotes: undefined,
-      photoVerificationConfidence: undefined
+      photoVerificationConfidence: undefined,
+      trustLevel: newTrustLevel
     }
     
     // Update profiles state (this auto-persists to KV storage)
@@ -2074,7 +2126,7 @@ export function AdminPanel({ profiles, setProfiles, users, setUsers, language, o
   }
 
   // Handle setting trust level manually by admin
-  const handleSetTrustLevel = (profile: Profile, level: 1 | 3 | 5) => {
+  const handleSetTrustLevel = (profile: Profile, level: 1 | 2 | 3 | 4 | 5) => {
     setProfiles((current) => 
       (current || []).map(p => 
         p.id === profile.id 
@@ -3498,6 +3550,16 @@ export function AdminPanel({ profiles, setProfiles, users, setUsers, language, o
                                         </div>
                                       </DropdownMenuItem>
                                       <DropdownMenuItem 
+                                        onClick={() => handleSetTrustLevel(profile, 2)}
+                                        className={profile.trustLevel === 2 ? 'bg-blue-500/10' : ''}
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <span className="w-3 h-3 rounded-full bg-blue-500" />
+                                          <span>{t.trustLevel2}</span>
+                                          {profile.trustLevel === 2 && <Check size={14} className="ml-auto" />}
+                                        </div>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem 
                                         onClick={() => handleSetTrustLevel(profile, 3)}
                                         className={profile.trustLevel === 3 ? 'bg-teal/10' : ''}
                                       >
@@ -3505,6 +3567,16 @@ export function AdminPanel({ profiles, setProfiles, users, setUsers, language, o
                                           <span className="w-3 h-3 rounded-full bg-teal" />
                                           <span>{t.trustLevel3}</span>
                                           {profile.trustLevel === 3 && <Check size={14} className="ml-auto" />}
+                                        </div>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem 
+                                        onClick={() => handleSetTrustLevel(profile, 4)}
+                                        className={profile.trustLevel === 4 ? 'bg-green-600/10' : ''}
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <span className="w-3 h-3 rounded-full bg-green-600" />
+                                          <span>{t.trustLevel4}</span>
+                                          {profile.trustLevel === 4 && <Check size={14} className="ml-auto" />}
                                         </div>
                                       </DropdownMenuItem>
                                       <DropdownMenuItem 
@@ -3660,6 +3732,25 @@ export function AdminPanel({ profiles, setProfiles, users, setUsers, language, o
                       <X size={14} />
                       {t.bulkReject}
                     </Button>
+                    {/* Show Move to Pending button when any selected profile is rejected or verified */}
+                    {selectedDatabaseProfiles.some(id => {
+                      const profile = profiles?.find(p => p.id === id)
+                      return profile?.status === 'rejected' || profile?.status === 'verified'
+                    }) && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="gap-1 text-orange-600 hover:text-orange-700"
+                        onClick={() => {
+                          if (confirm(language === 'hi' ? `क्या आप ${selectedDatabaseProfiles.length} प्रोफाइल को पेंडिंग में ले जाना चाहते हैं?` : `Move ${selectedDatabaseProfiles.length} profiles to pending?`)) {
+                            handleBulkMoveToPending(selectedDatabaseProfiles)
+                          }
+                        }}
+                      >
+                        <ArrowCounterClockwise size={14} />
+                        {language === 'hi' ? 'पेंडिंग में ले जाएं' : 'Move to Pending'}
+                      </Button>
+                    )}
                     <Button 
                       size="sm" 
                       variant="outline"
@@ -10588,6 +10679,12 @@ ShaadiPartnerSearch Team
                     size="sm"
                     className="bg-green-600 hover:bg-green-700"
                     onClick={() => {
+                      // Calculate new trust level with ID verified
+                      const newTrustLevel = calculateTrustLevel({
+                        ...idProofViewProfile,
+                        idProofVerified: true
+                      })
+                      
                       setProfiles((current) => 
                         (current || []).map(p => 
                           p.id === idProofViewProfile.id 
@@ -10603,12 +10700,14 @@ ShaadiPartnerSearch Team
                                 digilockerVerified: true,
                                 digilockerVerifiedAt: new Date().toISOString(),
                                 digilockerVerifiedBy: 'Admin',
-                                digilockerDocumentType: idProofViewProfile.idProofType as any
+                                digilockerDocumentType: idProofViewProfile.idProofType as any,
+                                // Auto-update trust level
+                                trustLevel: newTrustLevel
                               } 
                             : p
                         )
                       )
-                      setIdProofViewProfile(prev => prev ? {...prev, idProofVerified: true, idProofVerifiedAt: new Date().toISOString(), idProofRejected: false, idProofRejectionReason: undefined, digilockerVerified: true} : null)
+                      setIdProofViewProfile(prev => prev ? {...prev, idProofVerified: true, idProofVerifiedAt: new Date().toISOString(), idProofRejected: false, idProofRejectionReason: undefined, digilockerVerified: true, trustLevel: newTrustLevel} : null)
                       toast.success(language === 'hi' ? 'पहचान प्रमाण सत्यापित!' : 'ID Proof verified!')
                     }}
                   >
@@ -10635,6 +10734,12 @@ ShaadiPartnerSearch Team
                     size="sm"
                     className="text-red-600 border-red-300"
                     onClick={() => {
+                      // Calculate new trust level with ID verification removed
+                      const newTrustLevel = calculateTrustLevel({
+                        ...idProofViewProfile,
+                        idProofVerified: false
+                      })
+                      
                       setProfiles((current) => 
                         (current || []).map(p => 
                           p.id === idProofViewProfile.id 
@@ -10645,12 +10750,14 @@ ShaadiPartnerSearch Team
                                 idProofVerifiedBy: undefined,
                                 digilockerVerified: false,
                                 digilockerVerifiedAt: undefined,
-                                digilockerVerifiedBy: undefined
+                                digilockerVerifiedBy: undefined,
+                                // Auto-update trust level
+                                trustLevel: newTrustLevel
                               } 
                             : p
                         )
                       )
-                      setIdProofViewProfile(prev => prev ? {...prev, idProofVerified: false, idProofVerifiedAt: undefined, digilockerVerified: false} : null)
+                      setIdProofViewProfile(prev => prev ? {...prev, idProofVerified: false, idProofVerifiedAt: undefined, digilockerVerified: false, trustLevel: newTrustLevel} : null)
                       toast.success(language === 'hi' ? 'सत्यापन हटाया गया!' : 'Verification removed!')
                     }}
                   >
@@ -10663,6 +10770,12 @@ ShaadiPartnerSearch Team
                     size="sm"
                     className="bg-green-600 hover:bg-green-700"
                     onClick={() => {
+                      // Calculate new trust level with ID verified
+                      const newTrustLevel = calculateTrustLevel({
+                        ...idProofViewProfile,
+                        idProofVerified: true
+                      })
+                      
                       setProfiles((current) => 
                         (current || []).map(p => 
                           p.id === idProofViewProfile.id 
@@ -10677,12 +10790,14 @@ ShaadiPartnerSearch Team
                                 digilockerVerified: true,
                                 digilockerVerifiedAt: new Date().toISOString(),
                                 digilockerVerifiedBy: 'Admin',
-                                digilockerDocumentType: idProofViewProfile.idProofType as any
+                                digilockerDocumentType: idProofViewProfile.idProofType as any,
+                                // Auto-update trust level
+                                trustLevel: newTrustLevel
                               } 
                             : p
                         )
                       )
-                      setIdProofViewProfile(prev => prev ? {...prev, idProofVerified: true, idProofVerifiedAt: new Date().toISOString(), idProofRejected: false, idProofRejectionReason: undefined, digilockerVerified: true} : null)
+                      setIdProofViewProfile(prev => prev ? {...prev, idProofVerified: true, idProofVerifiedAt: new Date().toISOString(), idProofRejected: false, idProofRejectionReason: undefined, digilockerVerified: true, trustLevel: newTrustLevel} : null)
                       toast.success(language === 'hi' ? 'पहचान प्रमाण सत्यापित!' : 'ID Proof verified!')
                     }}
                   >
