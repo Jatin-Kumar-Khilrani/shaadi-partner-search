@@ -69,10 +69,24 @@ export function CameraCapture({
       setError(null)
       setIsCameraReady(false)
       
-      // First enumerate available cameras
+      // First request camera permission to get proper device labels
+      // This is needed because enumerateDevices() won't show labels without permission
+      let tempStream: MediaStream | null = null
+      try {
+        tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      } catch (permErr) {
+        console.error('Camera permission error:', permErr)
+        setError(t.cameraError)
+        return
+      }
+      
+      // Now enumerate available cameras (labels will be available)
       const devices = await navigator.mediaDevices.enumerateDevices()
       const videoDevices = devices.filter(device => device.kind === 'videoinput')
       setAvailableCameras(videoDevices)
+      
+      // Stop the temp stream - we'll start a new one with the right camera
+      tempStream.getTracks().forEach(track => track.stop())
       
       if (videoDevices.length === 0) {
         setError(t.noCameraFound)
