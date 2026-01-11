@@ -24,9 +24,25 @@
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
   },
   "mimeTypes": {
+    ".js": "text/javascript",
+    ".mjs": "text/javascript",
+    ".css": "text/css",
     ".json": "application/json",
+    ".html": "text/html",
+    ".htm": "text/html",
+    ".svg": "image/svg+xml",
     ".webp": "image/webp",
-    ".avif": "image/avif"
+    ".avif": "image/avif",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".ico": "image/x-icon",
+    ".woff": "font/woff",
+    ".woff2": "font/woff2",
+    ".ttf": "font/ttf",
+    ".eot": "application/vnd.ms-fontobject",
+    ".webmanifest": "application/manifest+json"
   },
   "responseOverrides": {
     "404": {
