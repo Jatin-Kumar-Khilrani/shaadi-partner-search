@@ -3321,7 +3321,15 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                     type="email"
                     placeholder="example@email.com"
                     value={formData.email || ''}
-                    onChange={(e) => updateField('email', e.target.value)}
+                    onChange={(e) => {
+                      updateField('email', e.target.value)
+                      // Reset email verification if email is changed
+                      if (emailVerified) {
+                        setEmailVerified(false)
+                        setEmailOtp('')
+                        setGeneratedEmailOtp('')
+                      }
+                    }}
                     required
                     disabled={isEditMode && !isAdminMode}
                     className={isEditMode && !isAdminMode ? 'bg-muted' : ''}
@@ -3376,6 +3384,12 @@ export function RegistrationDialog({ open, onClose, onSubmit, language, existing
                         const maxLength = getPhoneLengthInfo(formData.countryCode || '+91').max
                         const value = e.target.value.replace(/\D/g, '').slice(0, maxLength)
                         updateField('mobile', value)
+                        // Reset mobile verification if mobile is changed
+                        if (mobileVerified) {
+                          setMobileVerified(false)
+                          setMobileOtp('')
+                          setGeneratedMobileOtp('')
+                        }
                       }}
                       maxLength={getPhoneLengthInfo(formData.countryCode || '+91').max}
                       required
