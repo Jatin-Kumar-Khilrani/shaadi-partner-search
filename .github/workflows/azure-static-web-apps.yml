@@ -19,8 +19,18 @@ permissions:
   contents: read
   pull-requests: write
 
+concurrency:
+  group: "azure-swa"
+  cancel-in-progress: true
+
 jobs:
+  # Run CI checks first - deployment only proceeds if CI passes
+  ci:
+    name: CI Checks
+    uses: ./.github/workflows/ci.yml
+
   build_and_deploy:
+    needs: ci  # Wait for CI to pass before building
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     name: Build and Deploy
