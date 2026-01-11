@@ -274,7 +274,7 @@ export function ProfileCard({ profile, onViewProfile, language = 'hi', isLoggedI
         
         {/* Match percentage badge - show when user has partner preferences */}
         {matchPercentage !== null && matchPercentage > 0 && isLoggedIn && !hasDeclinedStatus && (
-          <div className={`absolute ${interactionBadge ? 'top-8' : 'top-2'} right-2 z-10`}>
+          <div className={`absolute ${interactionBadge ? 'top-10' : 'top-2'} right-2 z-10`}>
             <Badge 
               className={`text-[9px] px-1.5 py-0.5 flex items-center gap-1 shadow-sm border ${
                 matchPercentage >= 80 

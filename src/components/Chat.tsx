@@ -1400,6 +1400,36 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
     return title.includes(searchQuery.toLowerCase())
   })
 
+  // Connected conversations - profiles with accepted interests (available even for free members)
+  // These are user-to-user conversations where both parties have an accepted interest
+  const connectedConversations = useMemo(() => {
+    if (!currentUserProfile || !interests) return []
+    
+    const currentProfileId = currentUserProfile.profileId
+    
+    // Get all profile IDs that have accepted interests with current user
+    const connectedProfileIds = new Set<string>()
+    interests.forEach(interest => {
+      if (interest.status === 'accepted') {
+        if (interest.fromProfileId === currentProfileId) {
+          connectedProfileIds.add(interest.toProfileId)
+        } else if (interest.toProfileId === currentProfileId) {
+          connectedProfileIds.add(interest.fromProfileId)
+        }
+      }
+    })
+    
+    // Filter conversations to only include connected profiles (not admin)
+    return conversations.filter(conv => {
+      // Skip admin conversations
+      if (conv.id.startsWith('admin-') || conv.id === 'admin-broadcast') return false
+      
+      // Check if this is a connected conversation
+      const otherProfileId = conv.participants?.find(id => id !== currentProfileId && id !== 'admin')
+      return otherProfileId && connectedProfileIds.has(otherProfileId)
+    })
+  }, [currentUserProfile, interests, conversations])
+
   // Calculate total unread messages
   const totalUnread = conversations.reduce((acc, conv) => acc + (conv.unreadCount || 0), 0)
 
@@ -1742,17 +1772,95 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                   )
                 })()}
 
+                {/* Connected Profiles Section - Show profiles with accepted interests */}
+                {connectedConversations.length > 0 && (
+                  <>
+                    <Separator className="my-4" />
+                    <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                      <Heart size={12} weight="fill" className="text-primary" />
+                      {language === 'hi' ? 'कनेक्टेड प्रोफाइल' : 'Connected Profiles'}
+                    </p>
+                    {connectedConversations.map(conv => {
+                      const profile = getConversationProfile(conv)
+                      const hasUnread = conv.unreadCount > 0
+                      
+                      return (
+                        <div
+                          key={conv.id}
+                          onClick={() => setSelectedConversation(conv.id)}
+                          className={`p-3 rounded-lg cursor-pointer transition-all ${
+                            selectedConversation === conv.id 
+                              ? 'bg-primary/10 border border-primary shadow-sm' 
+                              : hasUnread 
+                                ? 'bg-green-50 dark:bg-green-950/30 border-l-4 border-green-500 hover:bg-green-100 dark:hover:bg-green-950/50'
+                                : 'hover:bg-muted'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              {profile?.photos?.[0] ? (
+                                <img 
+                                  src={profile.photos[0]} 
+                                  alt={profile.fullName} 
+                                  className="w-12 h-12 rounded-full object-cover border-2 border-background shadow-sm"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-primary font-semibold shadow-sm">
+                                  {getInitials(profile?.fullName || '')}
+                                </div>
+                              )}
+                              {/* Unread badge */}
+                              {hasUnread && (
+                                <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 bg-green-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md animate-pulse">
+                                  {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <p className={`font-semibold truncate ${hasUnread ? 'text-green-700 dark:text-green-400' : ''}`}>
+                                  {profile?.fullName || 'Unknown'}
+                                </p>
+                                {conv.lastMessage && (
+                                  <span className={`text-xs ${hasUnread ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
+                                    {formatRelativeDate(conv.lastMessage.timestamp)}
+                                  </span>
+                                )}
+                              </div>
+                              <p className={`text-sm truncate ${hasUnread ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                                {conv.lastMessage 
+                                  ? getMessagePreview(conv) 
+                                  : (language === 'hi' ? 'बातचीत शुरू करें' : 'Start conversation')}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </>
+                )}
+
                 <Separator className="my-4" />
 
-                {/* Locked message for other chats */}
-                <div className="text-center py-4">
-                  <LockSimple size={32} className="mx-auto mb-2 text-amber-600" weight="bold" />
-                  <p className="text-sm text-muted-foreground">
-                    {language === 'hi' 
-                      ? 'अन्य प्रोफाइल के साथ चैट के लिए प्रीमियम सदस्यता आवश्यक है' 
-                      : 'Premium membership required to chat with other profiles'}
-                  </p>
-                </div>
+                {/* Locked message for other chats - only show if no connected profiles */}
+                {connectedConversations.length === 0 ? (
+                  <div className="text-center py-4">
+                    <LockSimple size={32} className="mx-auto mb-2 text-amber-600" weight="bold" />
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'hi' 
+                        ? 'अन्य प्रोफाइल के साथ चैट के लिए प्रीमियम सदस्यता आवश्यक है' 
+                        : 'Premium membership required to chat with other profiles'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-center py-2">
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'hi' 
+                        ? 'कनेक्टेड प्रोफाइल के साथ चैट करें' 
+                        : 'Chat with your connected profiles'}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -2026,12 +2134,172 @@ export function Chat({ currentUserProfile, profiles, language, isAdmin = false, 
                     </p>
                   </div>
                 </>
+              ) : selectedConversation && connectedConversations.some(c => c.id === selectedConversation) ? (
+                // Connected user-to-user chat for free members
+                (() => {
+                  const conv = conversations.find(c => c.id === selectedConversation)
+                  const chatProfile = conv ? getConversationProfile(conv) : undefined
+                  const otherProfileId = selectedConversation.split('-').find(id => id !== currentUserProfile?.profileId)
+                  
+                  return (
+                    <>
+                      {/* Connected chat header */}
+                      <CardHeader className="border-b">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {chatProfile?.photos?.[0] ? (
+                              <img 
+                                src={chatProfile.photos[0]} 
+                                alt={chatProfile.fullName} 
+                                className="w-10 h-10 rounded-full object-cover border-2 border-background"
+                              />
+                            ) : (
+                              <Avatar className="w-10 h-10 bg-primary/20 flex items-center justify-center">
+                                <span className="text-lg font-semibold text-primary">
+                                  {getInitials(chatProfile?.fullName || '')}
+                                </span>
+                              </Avatar>
+                            )}
+                            <div>
+                              <CardTitle className="text-lg flex items-center gap-2">
+                                {chatProfile?.fullName || 'Unknown'}
+                                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                  <Heart size={10} weight="fill" className="mr-1" />
+                                  {language === 'hi' ? 'कनेक्टेड' : 'Connected'}
+                                </Badge>
+                              </CardTitle>
+                              <p className="text-xs text-muted-foreground">
+                                {chatProfile?.profileId}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => openReportDialog(otherProfileId || '', chatProfile?.fullName || 'Unknown')}
+                          >
+                            <ShieldWarning size={18} className="mr-1" />
+                            {language === 'hi' ? 'रिपोर्ट' : 'Report'}
+                          </Button>
+                        </div>
+                      </CardHeader>
+
+                      {/* Connected chat messages */}
+                      <ScrollArea className="flex-1 p-4">
+                        <div className="space-y-4">
+                          {(() => {
+                            if (!messagesLoaded) {
+                              return (
+                                <div className="text-center text-muted-foreground py-8">
+                                  <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-3" />
+                                  <p className="text-sm">
+                                    {language === 'hi' ? 'संदेश लोड हो रहे हैं...' : 'Loading messages...'}
+                                  </p>
+                                </div>
+                              )
+                            }
+                            
+                            const [profileId1, profileId2] = selectedConversation.split('-')
+                            const filteredMsgs = messages
+                              ?.filter(m => 
+                                m.type === 'user-to-user' && (
+                                  (m.fromProfileId === profileId1 && m.toProfileId === profileId2) ||
+                                  (m.fromProfileId === profileId2 && m.toProfileId === profileId1)
+                                )
+                              )
+                              .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) || []
+                            
+                            if (filteredMsgs.length === 0) {
+                              return (
+                                <div className="text-center text-muted-foreground py-8">
+                                  <ChatCircle size={48} className="mx-auto mb-3 opacity-40" weight="light" />
+                                  <p className="text-sm">
+                                    {language === 'hi' ? 'अभी कोई संदेश नहीं। बातचीत शुरू करें!' : 'No messages yet. Start the conversation!'}
+                                  </p>
+                                </div>
+                              )
+                            }
+                            
+                            return filteredMsgs.map((msg) => {
+                              const isFromUser = msg.fromProfileId === currentUserProfile?.profileId
+                              const getMessageStatus = () => {
+                                if (msg.status) return msg.status
+                                if (msg.read || msg.readAt) return 'read'
+                                if (msg.delivered || msg.deliveredAt) return 'delivered'
+                                return 'sent'
+                              }
+                              const messageStatus = getMessageStatus()
+
+                              return (
+                                <div
+                                  key={msg.id}
+                                  className={`flex ${isFromUser ? 'justify-end' : 'justify-start'}`}
+                                >
+                                  <div className={`max-w-[80%] p-3 rounded-lg ${
+                                    isFromUser 
+                                      ? 'bg-primary text-primary-foreground'
+                                      : 'bg-muted'
+                                  }`}>
+                                    {(msg.message || (msg as any).content) && (
+                                      <p className="text-sm">{msg.message || (msg as any).content}</p>
+                                    )}
+                                    <div className="flex items-center justify-end gap-1 mt-1">
+                                      <span className={`text-xs ${
+                                        isFromUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                                      }`}>
+                                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      </span>
+                                      {isFromUser && (
+                                        <span className={`flex items-center ${
+                                          messageStatus === 'read' 
+                                            ? 'text-blue-400' 
+                                            : messageStatus === 'delivered' 
+                                              ? 'text-gray-400' 
+                                              : 'text-gray-300'
+                                        }`}>
+                                          {messageStatus === 'sent' ? (
+                                            <Check size={14} weight="bold" />
+                                          ) : (
+                                            <Checks size={14} weight="bold" />
+                                          )}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })
+                          })()}
+                          <div ref={messagesEndRef} />
+                        </div>
+                      </ScrollArea>
+
+                      {/* Connected chat input */}
+                      <div className="p-4 border-t">
+                        <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
+                          <Input
+                            value={messageInput}
+                            onChange={(e) => setMessageInput(e.target.value)}
+                            placeholder={language === 'hi' ? 'संदेश लिखें...' : 'Type a message...'}
+                            className="flex-1"
+                          />
+                          <Button type="submit" disabled={!messageInput.trim()}>
+                            <PaperPlaneTilt size={20} />
+                          </Button>
+                        </form>
+                      </div>
+                    </>
+                  )
+                })()
               ) : (
                 <CardContent className="flex-1 flex items-center justify-center">
                   <div className="text-center">
                     <ChatCircle size={48} className="mx-auto mb-4 text-muted-foreground" weight="light" />
                     <p className="text-muted-foreground">
-                      {language === 'hi' ? 'एडमिन सहायता चुनें' : 'Select Admin Support to chat'}
+                      {connectedConversations.length > 0 
+                        ? (language === 'hi' ? 'चैट करने के लिए प्रोफाइल चुनें' : 'Select a profile to chat')
+                        : (language === 'hi' ? 'एडमिन सहायता चुनें' : 'Select Admin Support to chat')}
                     </p>
                   </div>
                 </CardContent>
