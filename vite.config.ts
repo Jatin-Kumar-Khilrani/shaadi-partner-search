@@ -16,8 +16,8 @@ export default defineConfig({
       '@': resolve(projectRoot, 'src')
     }
   },
-  // GitHub Pages deployment base path (set to repo name for production)
-  base: process.env.GITHUB_PAGES ? '/shaadi-partner-search/' : '/',
+  // Azure Static Web Apps deployment (root path)
+  base: '/',
   build: {
     outDir: 'dist',
     sourcemap: false,
