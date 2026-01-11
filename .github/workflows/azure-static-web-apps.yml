@@ -119,9 +119,10 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          # Frontend only - API is deployed separately to Azure Functions
-          app_location: "/"
-          output_location: "dist"
+          # Deploy pre-built dist folder directly
+          # app_location points to the built output, NOT source
+          app_location: "/dist"
+          output_location: ""
           skip_app_build: true
           skip_api_build: true
 
