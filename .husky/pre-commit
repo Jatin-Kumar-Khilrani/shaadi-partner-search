@@ -1,6 +1,29 @@
 #!/bin/sh
 
+# ============================================================
+# PRE-COMMIT HOOK
+# ============================================================
+# To skip these checks (use sparingly):
+#   git commit --no-verify -m "your message"
+#   OR: git commit -n -m "your message"
+#   OR: SKIP_HOOKS=1 git commit -m "your message"
+# ============================================================
+
+# Allow skipping via environment variable
+if [ "$SKIP_HOOKS" = "1" ] || [ "$SKIP_PRECOMMIT" = "1" ]; then
+  echo "⏭️  Skipping pre-commit hooks (SKIP_HOOKS=1)"
+  exit 0
+fi
+
+# Skip for merge commits
+if [ -f .git/MERGE_HEAD ]; then
+  echo "⏭️  Skipping pre-commit hooks (merge commit)"
+  exit 0
+fi
+
 echo "🔍 Running pre-commit checks..."
+echo "   (Use 'git commit -n' or SKIP_HOOKS=1 to skip)"
+echo ""
 
 # Run lint-staged (ESLint on staged files)
 echo "📝 Linting staged files..."
@@ -14,4 +37,5 @@ npm run typecheck
 echo "🧪 Running unit tests..."
 npm run test:run -- --passWithNoTests
 
+echo ""
 echo "✅ Pre-commit checks passed!"
