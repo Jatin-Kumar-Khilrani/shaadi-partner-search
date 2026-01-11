@@ -90,6 +90,18 @@ jobs:
         env:
           NODE_ENV: production
 
+      # Clean up large folders before deployment
+      # API is deployed separately to Azure Functions, not needed here
+      - name: Prepare for deployment
+        run: |
+          rm -rf api/node_modules
+          rm -rf coverage
+          rm -rf playwright-report
+          rm -rf test-results
+          rm -rf node_modules
+          echo "Cleaned up large folders for deployment"
+          du -sh dist
+
       - name: Deploy to Azure Static Web Apps
         id: deploy
         uses: Azure/static-web-apps-deploy@v1
