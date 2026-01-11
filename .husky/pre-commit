@@ -1,1 +1,17 @@
+#!/bin/sh
+
+echo "🔍 Running pre-commit checks..."
+
+# Run lint-staged (ESLint on staged files)
+echo "📝 Linting staged files..."
 npx lint-staged
+
+# Type check (fast, catches type errors)
+echo "🔷 Type checking..."
+npm run typecheck
+
+# Run unit tests on affected files
+echo "🧪 Running unit tests..."
+npm run test:run -- --passWithNoTests
+
+echo "✅ Pre-commit checks passed!"

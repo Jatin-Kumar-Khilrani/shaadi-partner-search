@@ -9,6 +9,7 @@
     "build:fast": "tsc -b --noCheck && vite build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
@@ -16,6 +17,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
+    "ci:local": "npm run lint && npm run typecheck && npm run test:run && npm run build",
     "prepare": "husky"
   },
   "dependencies": {
@@ -113,8 +115,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "eslint --fix",
-      "bash -c 'npm run typecheck'"
+      "eslint --fix"
     ]
   }
 }
